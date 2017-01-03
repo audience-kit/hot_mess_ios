@@ -11,7 +11,6 @@ target 'HotMess' do
   pod 'EstimoteSDK'
   pod 'FacebookCore'
   pod 'FacebookLogin'
-  pod 'FacebookShare'
 
   target 'HotMessTests' do
     inherit! :search_paths

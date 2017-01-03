@@ -14,34 +14,24 @@ PODS:
     - FacebookCore (~> 0.2)
     - FBSDKCoreKit (~> 4.15)
     - FBSDKLoginKit (~> 4.15)
-  - FacebookShare (0.2.0):
-    - Bolts (~> 1.8)
-    - FacebookCore (~> 0.2)
-    - FBSDKCoreKit (~> 4.15)
-    - FBSDKShareKit (~> 4.15)
   - FBSDKCoreKit (4.18.0):
     - Bolts (~> 1.7)
   - FBSDKLoginKit (4.18.0):
-    - FBSDKCoreKit
-  - FBSDKShareKit (4.18.0):
     - FBSDKCoreKit
 
 DEPENDENCIES:
   - EstimoteSDK
   - FacebookCore
   - FacebookLogin
-  - FacebookShare
 
 SPEC CHECKSUMS:
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
   EstimoteSDK: 610acba391b958bd247f9ac351d2791a893b3797
   FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
   FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
-  FacebookShare: 8e9ee8ea06505e6a1d3d719b0cc63e840fb8aaeb
   FBSDKCoreKit: 15fef8804a4629f98c6f4e55e81a76c9d725d85e
   FBSDKLoginKit: 6773073e970b2b15fb12e451ce7f11da0532b880
-  FBSDKShareKit: 0b8d6cc3f103c75297eb3c62caec284a2ccf1b9e
 
-PODFILE CHECKSUM: 16ad313c4860f2b94b58ad40203c617ce220a020
+PODFILE CHECKSUM: eb69cf168609d3f11c4b1a1a5570d277543247f2
 
 COCOAPODS: 1.1.1
