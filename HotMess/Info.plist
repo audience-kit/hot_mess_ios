@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Hot Mess uses your location in the background to esitmate the number of people in a venue and to make recomendations based on other patrons.</string>
+	<key>kBeaconIdentifier</key>
+	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>

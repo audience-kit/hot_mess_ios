@@ -59,6 +59,7 @@
 		C94A5AD11E1B7B2B004601AA /* HotMessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HotMessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotMessUITests.swift; sourceTree = "<group>"; };
 		C94A5AD71E1B7B2B004601AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BridgeHeader.h; sourceTree = "<group>"; };
 		D7697D8D67C5BCFBC5E60BD2 /* Pods-HotMess.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMess.debug.xcconfig"; path = "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.debug.xcconfig"; sourceTree = "<group>"; };
 		D8453045752088229BA3E7B5 /* Pods-HotMess.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMess.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -136,6 +137,7 @@
 				C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */,
 				C94A5ABE1E1B7B2B004601AA /* LaunchScreen.storyboard */,
 				C94A5AC11E1B7B2B004601AA /* Info.plist */,
+				C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */,
 			);
 			path = HotMess;
 			sourceTree = "<group>";
@@ -612,6 +614,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
 				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
@@ -626,6 +629,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
 				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
