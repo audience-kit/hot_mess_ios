@@ -26,6 +26,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         beaconManager.startMonitoring(for: CLBeaconRegion(proximityUUID: UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!, identifier: "social.hotmess.beacon"))
         
+        SessionService.registerNotifications()
+        
+        if (FBSDKAccessToken.current() != nil)
+        {
+            NotificationCenter.default.post(name: SessionService.tokenNotification, object: self, userInfo: ["token": FBSDKAccessToken.current()])
+        }
+        
         return true
     }
 

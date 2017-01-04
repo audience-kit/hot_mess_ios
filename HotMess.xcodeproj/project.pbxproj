@@ -16,6 +16,7 @@
 		C94A5AC01E1B7B2B004601AA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C94A5ABE1E1B7B2B004601AA /* LaunchScreen.storyboard */; };
 		C94A5ACB1E1B7B2B004601AA /* HotMessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5ACA1E1B7B2B004601AA /* HotMessTests.swift */; };
 		C94A5AD61E1B7B2B004601AA /* HotMessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */; };
+		C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
 		C99EFFDA1E1C682000720341 /* HeroViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* HeroViewController.swift */; };
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
 		F348DD0B5851CD79CA6F04CD /* Pods_HotMess.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 580A18D82915AD829D2D8A27 /* Pods_HotMess.framework */; };
@@ -62,6 +63,7 @@
 		C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotMessUITests.swift; sourceTree = "<group>"; };
 		C94A5AD71E1B7B2B004601AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BridgeHeader.h; sourceTree = "<group>"; };
+		C98BEDC81E1CB5F2008F48AB /* SessionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionService.swift; path = Services/SessionService.swift; sourceTree = "<group>"; };
 		C99EFFD91E1C682000720341 /* HeroViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HeroViewController.swift; path = ViewControllers/HeroViewController.swift; sourceTree = "<group>"; };
 		C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotMess.entitlements; sourceTree = "<group>"; };
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
@@ -169,6 +171,7 @@
 		C98BEDC41E1CB001008F48AB /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				C98BEDC81E1CB5F2008F48AB /* SessionService.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -499,6 +502,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C99EFFDA1E1C682000720341 /* HeroViewController.swift in Sources */,
+				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* SecondViewController.swift in Sources */,
 				C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* FirstViewController.swift in Sources */,
