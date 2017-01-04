@@ -11,7 +11,9 @@ import UIKit
 import FBSDKLoginKit
 
 class SessionService {
-    static let tokenNotification: Notification.Name = Notification.Name(rawValue: "SessionService.tokenNotification")
+    public static let tokenNotification: Notification.Name = Notification.Name(rawValue: "SessionService.tokenNotification")
+    public static let loginNotification: Notification.Name = Notification.Name(rawValue: "SessionService.loginNotification")
+    public static let logoutNotification: Notification.Name = Notification.Name(rawValue: "SessionService.logoutNotification")
     
     private static var _sharedInstance: SessionService?
     
@@ -25,10 +27,13 @@ class SessionService {
     }
     
     static func registerNotifications() {
-        NotificationCenter.default.addObserver(forName: nil, object: self, queue: sharedInstance.operationQueue) { notification in
+        NotificationCenter.default.addObserver(forName: nil, object: nil, queue: sharedInstance.operationQueue) { notification in
             switch (notification.name) {
             case tokenNotification:
-                break;
+                let token = notification.userInfo?["token"] as! FBSDKAccessToken
+                RequestService.sharedInstance.request(relativeUrl: "/token", with: ["token": token]) { result in
+                    
+                }
             default:
                 break;
             }
@@ -36,4 +41,6 @@ class SessionService {
     }
     
     let operationQueue = OperationQueue()
+    
+    
 }

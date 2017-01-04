@@ -17,6 +17,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     let beaconManager = ESTBeaconManager()
+    
+    public static let baseUrl = URL(string: Bundle.main.infoDictionary?["HotMessServerBase"] as! String)
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.

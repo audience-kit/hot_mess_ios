@@ -11,6 +11,8 @@ target 'HotMess' do
   pod 'EstimoteSDK'
   pod 'FacebookCore'
   pod 'FacebookLogin'
+  
+  pod 'Reveal-SDK', :configurations => ['Debug']
 
   target 'HotMessTests' do
     inherit! :search_paths
