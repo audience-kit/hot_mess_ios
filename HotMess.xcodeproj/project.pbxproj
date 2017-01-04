@@ -138,7 +138,7 @@
 			children = (
 				C98BEDC51E1CB00A008F48AB /* Support Files */,
 				C98BEDC41E1CB001008F48AB /* Services */,
-				C99EFFD81E1C67EB00720341 /* ViewControllers */,
+				C99EFFD81E1C67EB00720341 /* View Controllers */,
 				C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */,
 				C94A5AB51E1B7B2B004601AA /* FirstViewController.swift */,
 				C94A5AB71E1B7B2B004601AA /* SecondViewController.swift */,
@@ -184,12 +184,12 @@
 			name = "Support Files";
 			sourceTree = "<group>";
 		};
-		C99EFFD81E1C67EB00720341 /* ViewControllers */ = {
+		C99EFFD81E1C67EB00720341 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
 				C99EFFD91E1C682000720341 /* HeroViewController.swift */,
 			);
-			name = ViewControllers;
+			name = "View Controllers";
 			sourceTree = "<group>";
 		};
 		EF24620A0379C7B73FF563EA /* Frameworks */ = {

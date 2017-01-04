@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>HotMessServerBase</key>
+	<string>http://Gibson.local:3000/</string>
+	<key>HotMessBeaconID</key>
+	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
@@ -18,8 +22,6 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>HotMessBeaconID</key>
-	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

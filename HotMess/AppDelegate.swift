@@ -22,6 +22,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
         
+        beaconManager.requestAlwaysAuthorization()
+        
+        beaconManager.startMonitoring(for: CLBeaconRegion(proximityUUID: UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!, identifier: "social.hotmess.beacon"))
+        
         return true
     }
 
