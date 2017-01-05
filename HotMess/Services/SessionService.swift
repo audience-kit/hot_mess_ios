@@ -17,7 +17,9 @@ class SessionService {
     
     static func registerNotifications() {
         NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
-            RequestService.sharedInstance.request(relativeUrl: "/token", with: ["token": AccessToken.current!.authenticationToken], { (result) in
+            if (AccessToken.current == nil) { return }
+            
+            RequestService.sharedInstance.request(relativeUrl: "/token", with: ["facebook_token": AccessToken.current!.authenticationToken], { (result) in
                 
             })
         }
