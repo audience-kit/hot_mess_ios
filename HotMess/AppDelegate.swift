@@ -9,7 +9,6 @@
 import UIKit
 import FacebookCore
 import FacebookLogin
-import FBSDKLoginKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -22,18 +21,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
-        FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
+        SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
         
         beaconManager.requestAlwaysAuthorization()
         
         beaconManager.startMonitoring(for: CLBeaconRegion(proximityUUID: UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!, identifier: "social.hotmess.beacon"))
         
         SessionService.registerNotifications()
-        
-        if (FBSDKAccessToken.current() != nil)
-        {
-            NotificationCenter.default.post(name: SessionService.tokenNotification, object: self, userInfo: ["token": FBSDKAccessToken.current()])
-        }
         
         return true
     }
@@ -61,7 +55,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
-        return FBSDKApplicationDelegate.sharedInstance().application(app, open: url, options: options)
+        return SDKApplicationDelegate.shared.application(app, open: url, options: options)
     }
 }
 

@@ -8,39 +8,20 @@
 
 import Foundation
 import UIKit
+import FacebookCore
+import FacebookLogin
 import FBSDKLoginKit
 
 class SessionService {
-    public static let tokenNotification: Notification.Name = Notification.Name(rawValue: "SessionService.tokenNotification")
-    public static let loginNotification: Notification.Name = Notification.Name(rawValue: "SessionService.loginNotification")
-    public static let logoutNotification: Notification.Name = Notification.Name(rawValue: "SessionService.logoutNotification")
-    
-    private static var _sharedInstance: SessionService?
-    
-    static var sharedInstance: SessionService {
-        if (_sharedInstance == nil)
-        {
-            _sharedInstance = SessionService()
-        }
-        
-        return _sharedInstance!
-    }
+    private static let sharedInstance = SessionService()
     
     static func registerNotifications() {
-        NotificationCenter.default.addObserver(forName: nil, object: nil, queue: sharedInstance.operationQueue) { notification in
-            switch (notification.name) {
-            case tokenNotification:
-                let token = notification.userInfo?["token"] as! FBSDKAccessToken
-                RequestService.sharedInstance.request(relativeUrl: "/token", with: ["token": token]) { result in
-                    
-                }
-            default:
-                break;
-            }
+        NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
+            RequestService.sharedInstance.request(relativeUrl: "/token", with: ["token": AccessToken.current!.authenticationToken], { (result) in
+                
+            })
         }
     }
     
     let operationQueue = OperationQueue()
-    
-    
 }

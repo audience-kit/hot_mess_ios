@@ -1,6 +1,0 @@
-framework module Pods_HotMessTests {
-  umbrella header "Pods-HotMessTests-umbrella.h"
-
-  export *
-  module * { export * }
-}

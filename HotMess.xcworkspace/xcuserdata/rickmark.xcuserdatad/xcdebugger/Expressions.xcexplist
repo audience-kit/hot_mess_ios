@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "RequestService.request(relativeUrl : String, with : [String : Any], ([String : Any]) -&gt; ()) -&gt; ():RequestService.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "request.httpBody">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>

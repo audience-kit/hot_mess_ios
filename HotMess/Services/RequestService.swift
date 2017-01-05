@@ -12,7 +12,25 @@ class RequestService
 {
     public static let sharedInstance = RequestService()
     
+    public static let baseUrl = URL(string: Bundle.main.infoDictionary?["HotMessServerBase"] as! String)
+    
     func request(relativeUrl: String, with: [String: Any], _ block : ([String: Any]) -> Void) {
+        let url = URL(string: relativeUrl, relativeTo: RequestService.baseUrl)
+        
+        var request = URLRequest(url: url!)
+        
+        do {
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONSerialization.data(withJSONObject: with, options: .prettyPrinted)
+            
+            let result = URLSession.shared.downloadTask(with: request)
+            result.resume()
+
+        }
+        catch {
+            block([:])
+        }
         
     }
 }

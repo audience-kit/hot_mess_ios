@@ -16,6 +16,7 @@
 		C94A5AC01E1B7B2B004601AA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C94A5ABE1E1B7B2B004601AA /* LaunchScreen.storyboard */; };
 		C94A5ACB1E1B7B2B004601AA /* HotMessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5ACA1E1B7B2B004601AA /* HotMessTests.swift */; };
 		C94A5AD61E1B7B2B004601AA /* HotMessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */; };
+		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
 		C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
 		C99EFFDA1E1C682000720341 /* HeroViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* HeroViewController.swift */; };
@@ -64,6 +65,7 @@
 		C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotMessUITests.swift; sourceTree = "<group>"; };
 		C94A5AD71E1B7B2B004601AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BridgeHeader.h; sourceTree = "<group>"; };
+		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C98BEDC81E1CB5F2008F48AB /* SessionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionService.swift; path = Services/SessionService.swift; sourceTree = "<group>"; };
 		C98BEDCA1E1CC420008F48AB /* RequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RequestService.swift; path = Services/RequestService.swift; sourceTree = "<group>"; };
 		C99EFFD91E1C682000720341 /* HeroViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HeroViewController.swift; path = ViewControllers/HeroViewController.swift; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 				C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */,
 				C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */,
 				C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */,
+				C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */,
 			);
 			name = "Support Files";
 			sourceTree = "<group>";
@@ -341,6 +344,7 @@
 			files = (
 				C94A5AC01E1B7B2B004601AA /* LaunchScreen.storyboard in Resources */,
 				C94A5ABD1E1B7B2B004601AA /* Assets.xcassets in Resources */,
+				C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */,
 				C94A5ABB1E1B7B2B004601AA /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -559,6 +563,14 @@
 				C94A5ABF1E1B7B2B004601AA /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C9782C9C1E1E02D5005FB286 /* Base */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

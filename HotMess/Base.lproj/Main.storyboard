@@ -108,10 +108,10 @@
             </objects>
             <point key="canvasLocation" x="0.0" y="0.0"/>
         </scene>
-        <!--Hero View Controller-->
+        <!--Delegate-->
         <scene sceneID="dbI-Zk-obS">
             <objects>
-                <viewController id="yHQ-kb-I15" customClass="HeroViewController" customModule="HotMess" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Hero" id="yHQ-kb-I15" customClass="HeroViewController" customModule="HotMess" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="wgr-cF-G2C"/>
                         <viewControllerLayoutGuide type="bottom" id="C8D-1O-FMS"/>
@@ -124,12 +124,15 @@
                                 <rect key="frame" x="108" y="303" width="159" height="61"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Button"/>
+                                <connections>
+                                    <outlet property="delegate" destination="yHQ-kb-I15" id="3za-kE-rsL"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <connections>
-                        <outlet property="loginButton" destination="Q4b-9A-x58" id="CrL-7X-b2j"/>
+                        <outlet property="loginButton" destination="Q4b-9A-x58" id="CqE-Bd-cdl"/>
                         <segue destination="49e-Tb-3d3" kind="show" identifier="loginSuccess" id="eRE-2L-ZvN"/>
                     </connections>
                 </viewController>
