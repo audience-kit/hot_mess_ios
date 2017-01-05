@@ -11,6 +11,7 @@ target 'HotMess' do
   pod 'EstimoteSDK'
   pod 'FacebookCore'
   pod 'FacebookLogin'
+  pod 'Locksmith'
   
   pod 'Reveal-SDK', :configurations => ['Debug']
 

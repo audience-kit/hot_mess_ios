@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 import FacebookCore
 import FacebookLogin
-import FBSDKLoginKit
+import Locksmith
 
 class SessionService {
     private static let sharedInstance = SessionService()
@@ -21,9 +21,13 @@ class SessionService {
             
             RequestService.sharedInstance.request(relativeUrl: "/token", with: ["facebook_token": AccessToken.current!.authenticationToken], { (result) in
                 
+                let token = result["token"] as! String
+                
+                let _ = try? Locksmith.saveData(data: ["token" : token], forUserAccount: "social.hotmess.account")
+
             })
         }
     }
-    
+
     let operationQueue = OperationQueue()
 }
