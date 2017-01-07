@@ -24,9 +24,12 @@ class RequestService
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONSerialization.data(withJSONObject: with, options: .prettyPrinted)
             
+            
             let result = URLSession.shared.downloadTask(with: request)
+            
             result.resume()
 
+            
         }
         catch {
             block([:])
