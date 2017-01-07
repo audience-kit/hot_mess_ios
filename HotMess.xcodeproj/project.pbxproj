@@ -19,8 +19,11 @@
 		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
 		C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
-		C99EFFDA1E1C682000720341 /* HeroViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* HeroViewController.swift */; };
+		C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* LoginViewController.swift */; };
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
+		C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9F34AF01E2089E100C5049B /* LoginView.xib */; };
+		C9F34AF31E208BA800C5049B /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F34AF21E208BA800C5049B /* UserService.swift */; };
+		C9F34AF61E208BF100C5049B /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F34AF51E208BF100C5049B /* User.swift */; };
 		F348DD0B5851CD79CA6F04CD /* Pods_HotMess.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 580A18D82915AD829D2D8A27 /* Pods_HotMess.framework */; };
 		FDDEBA24E515FF2FB977FF26 /* Pods_HotMessUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 79CB199A43A3B1C7B5801D8C /* Pods_HotMessUITests.framework */; };
 /* End PBXBuildFile section */
@@ -68,9 +71,12 @@
 		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C98BEDC81E1CB5F2008F48AB /* SessionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionService.swift; path = Services/SessionService.swift; sourceTree = "<group>"; };
 		C98BEDCA1E1CC420008F48AB /* RequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RequestService.swift; path = Services/RequestService.swift; sourceTree = "<group>"; };
-		C99EFFD91E1C682000720341 /* HeroViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HeroViewController.swift; path = ViewControllers/HeroViewController.swift; sourceTree = "<group>"; };
+		C99EFFD91E1C682000720341 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LoginViewController.swift; path = ViewControllers/LoginViewController.swift; sourceTree = "<group>"; };
 		C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotMess.entitlements; sourceTree = "<group>"; };
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
+		C9F34AF01E2089E100C5049B /* LoginView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = LoginView.xib; path = Views/LoginView.xib; sourceTree = "<group>"; };
+		C9F34AF21E208BA800C5049B /* UserService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = UserService.swift; path = Services/UserService.swift; sourceTree = "<group>"; };
+		C9F34AF51E208BF100C5049B /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = User.swift; path = Models/User.swift; sourceTree = "<group>"; };
 		D7697D8D67C5BCFBC5E60BD2 /* Pods-HotMess.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMess.debug.xcconfig"; path = "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.debug.xcconfig"; sourceTree = "<group>"; };
 		D8453045752088229BA3E7B5 /* Pods-HotMess.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMess.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -142,14 +148,14 @@
 		C94A5AB21E1B7B2B004601AA /* HotMess */ = {
 			isa = PBXGroup;
 			children = (
+				C9F34AF41E208BE200C5049B /* Models */,
+				C9F34AEF1E2089C100C5049B /* Views */,
 				C98BEDC51E1CB00A008F48AB /* Support Files */,
 				C98BEDC41E1CB001008F48AB /* Services */,
 				C99EFFD81E1C67EB00720341 /* View Controllers */,
 				C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */,
 				C94A5AB51E1B7B2B004601AA /* FirstViewController.swift */,
 				C94A5AB71E1B7B2B004601AA /* SecondViewController.swift */,
-				C94A5AB91E1B7B2B004601AA /* Main.storyboard */,
-				C94A5ABE1E1B7B2B004601AA /* LaunchScreen.storyboard */,
 			);
 			path = HotMess;
 			sourceTree = "<group>";
@@ -177,6 +183,7 @@
 			children = (
 				C98BEDC81E1CB5F2008F48AB /* SessionService.swift */,
 				C98BEDCA1E1CC420008F48AB /* RequestService.swift */,
+				C9F34AF21E208BA800C5049B /* UserService.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -196,9 +203,27 @@
 		C99EFFD81E1C67EB00720341 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
-				C99EFFD91E1C682000720341 /* HeroViewController.swift */,
+				C99EFFD91E1C682000720341 /* LoginViewController.swift */,
 			);
 			name = "View Controllers";
+			sourceTree = "<group>";
+		};
+		C9F34AEF1E2089C100C5049B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				C94A5ABE1E1B7B2B004601AA /* LaunchScreen.storyboard */,
+				C94A5AB91E1B7B2B004601AA /* Main.storyboard */,
+				C9F34AF01E2089E100C5049B /* LoginView.xib */,
+			);
+			name = Views;
+			sourceTree = "<group>";
+		};
+		C9F34AF41E208BE200C5049B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C9F34AF51E208BF100C5049B /* User.swift */,
+			);
+			name = Models;
 			sourceTree = "<group>";
 		};
 		EF24620A0379C7B73FF563EA /* Frameworks */ = {
@@ -345,6 +370,7 @@
 				C94A5AC01E1B7B2B004601AA /* LaunchScreen.storyboard in Resources */,
 				C94A5ABD1E1B7B2B004601AA /* Assets.xcassets in Resources */,
 				C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */,
+				C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */,
 				C94A5ABB1E1B7B2B004601AA /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -508,9 +534,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C99EFFDA1E1C682000720341 /* HeroViewController.swift in Sources */,
+				C9F34AF31E208BA800C5049B /* UserService.swift in Sources */,
+				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
 				C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */,
 				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
+				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* SecondViewController.swift in Sources */,
 				C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* FirstViewController.swift in Sources */,

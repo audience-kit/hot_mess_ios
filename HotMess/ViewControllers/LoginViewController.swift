@@ -9,14 +9,11 @@
 import UIKit
 import FBSDKLoginKit
 
-class HeroViewController : UIViewController {
+class LoginViewController : UIViewController {
     @IBOutlet var loginButton: FBSDKLoginButton?
     
     override func viewDidLoad() {
-        if ((FBSDKAccessToken.current()) != nil)
-        {
-            self.performSegue(withIdentifier: "loginSuccess", sender: self)
-        }
+        
     }
 }
 
