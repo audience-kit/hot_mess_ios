@@ -19,7 +19,11 @@ class SessionService {
         NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
             if (AccessToken.current == nil) { return }
             
-            RequestService.sharedInstance.request(relativeUrl: "/token", with: ["facebook_token": AccessToken.current!.authenticationToken], { (result) in
+            let deviceToken = UIDevice.current.identifierForVendor?.uuidString
+            
+            let parameters = ["facebook_token": AccessToken.current!.authenticationToken, "apple_device_identifier": deviceToken]
+            
+            RequestService.sharedInstance.request(relativeUrl: "/token", with: parameters, { (result) in
                 
                 let token = result["token"] as! String
                 
