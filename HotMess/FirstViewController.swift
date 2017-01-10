@@ -9,10 +9,15 @@
 import UIKit
 
 class FirstViewController: UIViewController {
+    @IBOutlet var label: UILabel?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        UserService.shared.me { (user) in
+            self.label?.text = user.name
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -21,5 +26,14 @@ class FirstViewController: UIViewController {
     }
 
 
+    @IBAction func refreshButtonPressed(_ sender: UIButton) {
+        UserService.shared.me { (user) in
+            self.label?.text = user.name
+        }
+    }
+    
+    @IBAction func logOutButtonPressed(_ sender: UIButton) {
+        SessionService.logOut()
+    }
 }
 

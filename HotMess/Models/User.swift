@@ -1,4 +1,4 @@
-//
+    //
 //  User.swift
 //  HotMess
 //
@@ -10,9 +10,12 @@ import Foundation
 
 class User {
     let id: UUID
+    let name: String
     
     init(with: [ String : Any ]) {
         // TODO: HORIBLE series of assertions
         id = UUID(uuidString: with["id"] as! String)!
+        
+        name = with["name"] as! String
     }
 }
