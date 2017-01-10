@@ -39,6 +39,10 @@ class RequestService
             }
             
             let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) in
+                if error != nil {
+                    NSLog(error.debugDescription)
+                }
+                
                 let httpResponse = response as! HTTPURLResponse
                 
                 if (httpResponse.statusCode == 401)

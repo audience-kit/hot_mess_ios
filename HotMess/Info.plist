@@ -47,7 +47,7 @@
 	<key>HotMessBeaconID</key>
 	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>HotMessServerBase</key>
-	<string>http://Gibson.local:3000/</string>
+	<string>http://gibson.local:3000/</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>
