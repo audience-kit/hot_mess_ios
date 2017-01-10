@@ -29,6 +29,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         SessionService.registerNotifications()
         
+        NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self, userInfo: nil)
+        
         return true
     }
 
