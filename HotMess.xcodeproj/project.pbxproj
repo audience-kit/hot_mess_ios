@@ -701,6 +701,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D7697D8D67C5BCFBC5E60BD2 /* Pods-HotMess.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
@@ -717,6 +718,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D8453045752088229BA3E7B5 /* Pods-HotMess.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				DEVELOPMENT_TEAM = DWVXMLB45Y;

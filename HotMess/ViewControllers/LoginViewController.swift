@@ -43,6 +43,14 @@ class LoginViewController : UIViewController {
                 
             })
         }
+        
+
+    }
+    
+    @IBAction func dismissButtonPressed(sender: UIButton) {
+        if FBSDKAccessToken.current() != nil {
+            NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self)
+        }
     }
 }
 
