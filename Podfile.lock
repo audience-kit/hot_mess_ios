@@ -5,7 +5,7 @@ PODS:
   - Bolts/AppLinks (1.8.4):
     - Bolts/Tasks
   - Bolts/Tasks (1.8.4)
-  - EstimoteSDK (4.12.1)
+  - EstimoteSDK (4.12.2)
   - FacebookCore (0.2.0):
     - Bolts (~> 1.8)
     - FBSDKCoreKit (~> 4.15)
@@ -19,7 +19,7 @@ PODS:
   - FBSDKLoginKit (4.18.0):
     - FBSDKCoreKit
   - Locksmith (3.0.0)
-  - NewRelicAgent (5.8.3)
+  - NewRelicAgent (5.9.0)
   - Reveal-SDK (5)
 
 DEPENDENCIES:
@@ -32,13 +32,13 @@ DEPENDENCIES:
 
 SPEC CHECKSUMS:
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
-  EstimoteSDK: 610acba391b958bd247f9ac351d2791a893b3797
+  EstimoteSDK: 8856f0b894a7347f0275740a79bf7cce80f9c681
   FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
   FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
   FBSDKCoreKit: 15fef8804a4629f98c6f4e55e81a76c9d725d85e
   FBSDKLoginKit: 6773073e970b2b15fb12e451ce7f11da0532b880
   Locksmith: 310b4cc5031af5728bf4db5d4de547a5100c6a3b
-  NewRelicAgent: faddcb43507aa2470200b63bf191fb3e34302d80
+  NewRelicAgent: aa2fd08f9c4836282fe336993c8a7876251e5e91
   Reveal-SDK: 7e3945c0c3649106c3cc8923672ee545e25605c0
 
 PODFILE CHECKSUM: cfa720dcc72166b3a91ff79c15dffc809a1b9c38

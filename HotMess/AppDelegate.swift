@@ -21,7 +21,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     public static var baseUrl : URL?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        NewRelicAgent.start(withApplicationToken: "AA5dabc9f850e6c50f0013911941d1e39fc552a037")
+        NewRelicAgent.start(withApplicationToken: Bundle.main.infoDictionary?["NewRelicIdentifier"] as! String)
         
         UserDefaults.standard.register(defaults: ["server_url": AppDelegate.defaultBaseUrl])
         
