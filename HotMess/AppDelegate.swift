@@ -17,9 +17,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let beaconManager = ESTBeaconManager()
     
-    public static let baseUrl = URL(string: Bundle.main.infoDictionary?["HotMessServerBase"] as! String)
+    public static let defaultBaseUrl = Bundle.main.infoDictionary?["HotMessServerBase"] as! String
+    public static var baseUrl : URL?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        UserDefaults.standard.register(defaults: ["server_url": AppDelegate.defaultBaseUrl])
+        
+        AppDelegate.baseUrl = URL(string: UserDefaults.standard.string(forKey: "server_url")!)
+        
         // Override point for customization after application launch.
         SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
         

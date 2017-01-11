@@ -13,14 +13,12 @@ class RequestService
 {
     public static let sharedInstance = RequestService()
     
-    public static let baseUrl = URL(string: Bundle.main.infoDictionary?["HotMessServerBase"] as! String)
-    
     func request(relativeUrl: String, _ callback : @escaping ([String: Any]) -> Void) {
         return self.request(relativeUrl: relativeUrl, with: nil, callback)
     }
     
     func request(relativeUrl: String, with: [String: Any]?, _ callback : @escaping ([String: Any]) -> Void) {
-        let url = URL(string: relativeUrl, relativeTo: RequestService.baseUrl)
+        let url = URL(string: relativeUrl, relativeTo: AppDelegate.baseUrl)
         
         var request = URLRequest(url: url!)
         
