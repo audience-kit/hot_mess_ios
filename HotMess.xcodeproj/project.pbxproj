@@ -16,9 +16,11 @@
 		C94A5AC01E1B7B2B004601AA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C94A5ABE1E1B7B2B004601AA /* LaunchScreen.storyboard */; };
 		C94A5ACB1E1B7B2B004601AA /* HotMessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5ACA1E1B7B2B004601AA /* HotMessTests.swift */; };
 		C94A5AD61E1B7B2B004601AA /* HotMessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */; };
+		C96779191E26082900BC263D /* VenueViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96779181E26082900BC263D /* VenueViewController.swift */; };
 		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
 		C98A26011E25890500F62464 /* Venue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26001E25890500F62464 /* Venue.swift */; };
 		C98A26031E25891900F62464 /* VenuesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26021E25891900F62464 /* VenuesService.swift */; };
+		C98A26051E25BB9000F62464 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C98A26041E25BB9000F62464 /* Settings.bundle */; };
 		C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
 		C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* LoginViewController.swift */; };
@@ -70,9 +72,11 @@
 		C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotMessUITests.swift; sourceTree = "<group>"; };
 		C94A5AD71E1B7B2B004601AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BridgeHeader.h; sourceTree = "<group>"; };
+		C96779181E26082900BC263D /* VenueViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueViewController.swift; sourceTree = "<group>"; };
 		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C98A26001E25890500F62464 /* Venue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Venue.swift; path = Models/Venue.swift; sourceTree = "<group>"; };
 		C98A26021E25891900F62464 /* VenuesService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenuesService.swift; path = Services/VenuesService.swift; sourceTree = "<group>"; };
+		C98A26041E25BB9000F62464 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		C98BEDC81E1CB5F2008F48AB /* SessionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionService.swift; path = Services/SessionService.swift; sourceTree = "<group>"; };
 		C98BEDCA1E1CC420008F48AB /* RequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RequestService.swift; path = Services/RequestService.swift; sourceTree = "<group>"; };
 		C99EFFD91E1C682000720341 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LoginViewController.swift; path = ViewControllers/LoginViewController.swift; sourceTree = "<group>"; };
@@ -199,6 +203,7 @@
 				C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */,
 				C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */,
 				C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */,
+				C98A26041E25BB9000F62464 /* Settings.bundle */,
 			);
 			name = "Support Files";
 			sourceTree = "<group>";
@@ -209,6 +214,7 @@
 				C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */,
 				C94A5AB51E1B7B2B004601AA /* FirstViewController.swift */,
 				C99EFFD91E1C682000720341 /* LoginViewController.swift */,
+				C96779181E26082900BC263D /* VenueViewController.swift */,
 			);
 			name = "View Controllers";
 			sourceTree = "<group>";
@@ -377,6 +383,7 @@
 				C94A5ABD1E1B7B2B004601AA /* Assets.xcassets in Resources */,
 				C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */,
 				C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */,
+				C98A26051E25BB9000F62464 /* Settings.bundle in Resources */,
 				C94A5ABB1E1B7B2B004601AA /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -540,6 +547,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C96779191E26082900BC263D /* VenueViewController.swift in Sources */,
 				C9F34AF31E208BA800C5049B /* UserService.swift in Sources */,
 				C98A26031E25891900F62464 /* VenuesService.swift in Sources */,
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,

@@ -8,3 +8,4 @@
 
 #import <EstimoteSDK/EstimoteSDK.h>
 #import <FBSDKCoreKit/FBSDKCoreKit.h>
+#import <NewRelicAgent/NewRelic.h>

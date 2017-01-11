@@ -19,6 +19,7 @@ PODS:
   - FBSDKLoginKit (4.18.0):
     - FBSDKCoreKit
   - Locksmith (3.0.0)
+  - NewRelicAgent (5.8.3)
   - Reveal-SDK (5)
 
 DEPENDENCIES:
@@ -26,6 +27,7 @@ DEPENDENCIES:
   - FacebookCore
   - FacebookLogin
   - Locksmith
+  - NewRelicAgent
   - Reveal-SDK
 
 SPEC CHECKSUMS:
@@ -36,8 +38,9 @@ SPEC CHECKSUMS:
   FBSDKCoreKit: 15fef8804a4629f98c6f4e55e81a76c9d725d85e
   FBSDKLoginKit: 6773073e970b2b15fb12e451ce7f11da0532b880
   Locksmith: 310b4cc5031af5728bf4db5d4de547a5100c6a3b
+  NewRelicAgent: faddcb43507aa2470200b63bf191fb3e34302d80
   Reveal-SDK: 7e3945c0c3649106c3cc8923672ee545e25605c0
 
-PODFILE CHECKSUM: f105ae0e65bf9840251e2abf0b43d1e230a1bb15
+PODFILE CHECKSUM: cfa720dcc72166b3a91ff79c15dffc809a1b9c38
 
 COCOAPODS: 1.1.1

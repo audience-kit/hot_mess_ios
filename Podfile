@@ -12,6 +12,7 @@ target 'HotMess' do
   pod 'FacebookCore'
   pod 'FacebookLogin'
   pod 'Locksmith'
+  pod 'NewRelicAgent'
   
   pod 'Reveal-SDK', :configurations => ['Debug']
 
