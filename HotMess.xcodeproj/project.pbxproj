@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */; };
 		C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */; };
-		C94A5AB61E1B7B2B004601AA /* FirstViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB51E1B7B2B004601AA /* FirstViewController.swift */; };
+		C94A5AB61E1B7B2B004601AA /* UserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB51E1B7B2B004601AA /* UserViewController.swift */; };
 		C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */; };
 		C94A5ABB1E1B7B2B004601AA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C94A5AB91E1B7B2B004601AA /* Main.storyboard */; };
 		C94A5ABD1E1B7B2B004601AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */; };
@@ -25,6 +25,8 @@
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
 		C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* LoginViewController.swift */; };
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
+		C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D71E284783005CF7FD /* EventsService.swift */; };
+		C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D91E2847A9005CF7FD /* Event.swift */; };
 		C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9F34AF01E2089E100C5049B /* LoginView.xib */; };
 		C9F34AF31E208BA800C5049B /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F34AF21E208BA800C5049B /* UserService.swift */; };
 		C9F34AF61E208BF100C5049B /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F34AF51E208BF100C5049B /* User.swift */; };
@@ -59,7 +61,7 @@
 		BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"; sourceTree = "<group>"; };
 		C94A5AB01E1B7B2B004601AA /* HotMess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotMess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		C94A5AB51E1B7B2B004601AA /* FirstViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstViewController.swift; sourceTree = "<group>"; };
+		C94A5AB51E1B7B2B004601AA /* UserViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserViewController.swift; sourceTree = "<group>"; };
 		C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesViewController.swift; sourceTree = "<group>"; };
 		C94A5ABA1E1B7B2B004601AA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -82,6 +84,8 @@
 		C99EFFD91E1C682000720341 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LoginViewController.swift; path = ViewControllers/LoginViewController.swift; sourceTree = "<group>"; };
 		C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotMess.entitlements; sourceTree = "<group>"; };
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
+		C9F1F5D71E284783005CF7FD /* EventsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsService.swift; path = Services/EventsService.swift; sourceTree = "<group>"; };
+		C9F1F5D91E2847A9005CF7FD /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Event.swift; path = Models/Event.swift; sourceTree = "<group>"; };
 		C9F34AF01E2089E100C5049B /* LoginView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = LoginView.xib; path = Views/LoginView.xib; sourceTree = "<group>"; };
 		C9F34AF21E208BA800C5049B /* UserService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = UserService.swift; path = Services/UserService.swift; sourceTree = "<group>"; };
 		C9F34AF51E208BF100C5049B /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = User.swift; path = Models/User.swift; sourceTree = "<group>"; };
@@ -191,6 +195,7 @@
 				C98BEDCA1E1CC420008F48AB /* RequestService.swift */,
 				C9F34AF21E208BA800C5049B /* UserService.swift */,
 				C98A26021E25891900F62464 /* VenuesService.swift */,
+				C9F1F5D71E284783005CF7FD /* EventsService.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -212,7 +217,7 @@
 			isa = PBXGroup;
 			children = (
 				C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */,
-				C94A5AB51E1B7B2B004601AA /* FirstViewController.swift */,
+				C94A5AB51E1B7B2B004601AA /* UserViewController.swift */,
 				C99EFFD91E1C682000720341 /* LoginViewController.swift */,
 				C96779181E26082900BC263D /* VenueViewController.swift */,
 			);
@@ -234,6 +239,7 @@
 			children = (
 				C9F34AF51E208BF100C5049B /* User.swift */,
 				C98A26001E25890500F62464 /* Venue.swift */,
+				C9F1F5D91E2847A9005CF7FD /* Event.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -551,13 +557,15 @@
 				C9F34AF31E208BA800C5049B /* UserService.swift in Sources */,
 				C98A26031E25891900F62464 /* VenuesService.swift in Sources */,
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
+				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
 				C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */,
 				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
 				C98A26011E25890500F62464 /* Venue.swift in Sources */,
 				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */,
-				C94A5AB61E1B7B2B004601AA /* FirstViewController.swift in Sources */,
+				C94A5AB61E1B7B2B004601AA /* UserViewController.swift in Sources */,
+				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -623,6 +631,7 @@
 		C94A5AD81E1B7B2B004601AA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -673,6 +682,7 @@
 		C94A5AD91E1B7B2B004601AA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";

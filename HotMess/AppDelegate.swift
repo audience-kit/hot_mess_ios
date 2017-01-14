@@ -11,17 +11,21 @@ import FacebookCore
 import FacebookLogin
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, ESTBeaconManagerDelegate {
 
     var window: UIWindow?
 
     let beaconManager = ESTBeaconManager()
     
-    public static let defaultBaseUrl = Bundle.main.infoDictionary?["HotMessServerBase"] as! String
+
+    static let serverBaseIdentifier = "HotMessServerBase"
+    static let beaconIdentifier = "social.hotmess.beacon"
+    
+    public static let defaultBaseUrl = Bundle.main.infoDictionary?[serverBaseIdentifier] as! String
     public static var baseUrl : URL?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        NewRelicAgent.start(withApplicationToken: Bundle.main.infoDictionary?["NewRelicIdentifier"] as! String)
+        //NewRelicAgent.start(withApplicationToken: Bundle.main.infoDictionary?[AppDelegate.serverBaseIdentifier] as! String)
         
         UserDefaults.standard.register(defaults: ["server_url": AppDelegate.defaultBaseUrl])
         
@@ -29,10 +33,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Override point for customization after application launch.
         SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
-        
-        beaconManager.requestAlwaysAuthorization()
-        
-        beaconManager.startMonitoring(for: CLBeaconRegion(proximityUUID: UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!, identifier: "social.hotmess.beacon"))
+
+        ESTConfig.setupAppID("hot-mess-kbh", andAppToken: "5891455d913f6dd8903240b4dae6298c")
+        ESTAnalyticsManager.enableMonitoringAnalytics(true)
+        ESTAnalyticsManager.enableRangingAnalytics(true)
+        let beaconId = UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!
+        let beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: AppDelegate.beaconIdentifier)
+
+        self.beaconManager.requestAlwaysAuthorization()
+        self.beaconManager.delegate = self
+        self.beaconManager.startRangingBeacons(in: beaconRegion)
+        self.beaconManager.startMonitoring(for: beaconRegion)
         
         SessionService.registerNotifications()
         
@@ -65,6 +76,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
         return SDKApplicationDelegate.shared.application(app, open: url, options: options)
+    }
+    
+    func beaconManager(_ manager: Any, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+        
     }
 }
 

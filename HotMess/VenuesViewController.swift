@@ -11,6 +11,8 @@ import UIKit
 class VenuesViewController: UITableViewController {
     
     var venues: [ Venue ] = []
+    
+    var venue: Venue?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,7 +45,15 @@ class VenuesViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.venue = self.venues[indexPath.row]
+        
         self.performSegue(withIdentifier: "showVenue", sender: self)
+    }
+
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let venueViewController = segue.destination as? VenueViewController {
+            venueViewController.venue = self.venue
+        }
     }
 }
 

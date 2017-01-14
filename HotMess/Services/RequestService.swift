@@ -12,6 +12,10 @@ import Locksmith
 class RequestService
 {
     public static let sharedInstance = RequestService()
+
+    public static var shared: RequestService {
+        return RequestService.sharedInstance
+    }
     
     func request(relativeUrl: String, _ callback : @escaping ([String: Any]) -> Void) {
         return self.request(relativeUrl: relativeUrl, with: nil, callback)
