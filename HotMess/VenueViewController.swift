@@ -13,7 +13,7 @@ class VenueViewController : UITableViewController {
     var events: [ Event ] = []
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "LabelCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "venueCell", for: indexPath)
         
         cell.textLabel?.text = events[indexPath.row].name
         
@@ -25,7 +25,7 @@ class VenueViewController : UITableViewController {
     }
     
     
-    override func viewWillAppear(_ animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) -> Void {
         guard self.venue != nil else { return }
         
         EventsService.shared.index(venue: self.venue!) { (events) in

@@ -25,6 +25,7 @@
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
 		C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* LoginViewController.swift */; };
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
+		C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */; };
 		C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D71E284783005CF7FD /* EventsService.swift */; };
 		C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D91E2847A9005CF7FD /* Event.swift */; };
 		C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9F34AF01E2089E100C5049B /* LoginView.xib */; };
@@ -84,6 +85,7 @@
 		C99EFFD91E1C682000720341 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LoginViewController.swift; path = ViewControllers/LoginViewController.swift; sourceTree = "<group>"; };
 		C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotMess.entitlements; sourceTree = "<group>"; };
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
+		C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsViewController.swift; path = ViewControllers/EventsViewController.swift; sourceTree = "<group>"; };
 		C9F1F5D71E284783005CF7FD /* EventsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsService.swift; path = Services/EventsService.swift; sourceTree = "<group>"; };
 		C9F1F5D91E2847A9005CF7FD /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Event.swift; path = Models/Event.swift; sourceTree = "<group>"; };
 		C9F34AF01E2089E100C5049B /* LoginView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = LoginView.xib; path = Views/LoginView.xib; sourceTree = "<group>"; };
@@ -220,6 +222,7 @@
 				C94A5AB51E1B7B2B004601AA /* UserViewController.swift */,
 				C99EFFD91E1C682000720341 /* LoginViewController.swift */,
 				C96779181E26082900BC263D /* VenueViewController.swift */,
+				C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */,
 			);
 			name = "View Controllers";
 			sourceTree = "<group>";
@@ -564,6 +567,7 @@
 				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */,
+				C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* UserViewController.swift in Sources */,
 				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,
 			);

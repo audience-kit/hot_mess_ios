@@ -33,7 +33,7 @@ class VenuesViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "LabelCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "venueCell", for: indexPath)
         
         cell.textLabel?.text = venues[indexPath.row].name
         
@@ -46,13 +46,15 @@ class VenuesViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         self.venue = self.venues[indexPath.row]
-        
-        self.performSegue(withIdentifier: "showVenue", sender: self)
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let venueViewController = segue.destination as? VenueViewController {
-            venueViewController.venue = self.venue
+            if let senderCell = sender as? UITableViewCell {
+                let indexPath = self.tableView.indexPath(for: senderCell)
+                
+                venueViewController.venue = self.venues[indexPath!.row]
+            }
         }
     }
 }

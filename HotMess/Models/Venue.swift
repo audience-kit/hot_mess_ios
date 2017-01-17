@@ -14,6 +14,7 @@ class Venue {
     
     init(with: [ String: Any]) {
         self.id = UUID(uuidString: with["id"] as! String)!
+        
         self.name = with["name"] as! String
     }
 }
