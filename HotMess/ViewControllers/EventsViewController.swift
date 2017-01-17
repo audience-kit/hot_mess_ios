@@ -9,7 +9,7 @@
 import UIKit
 
 class EventsViewController : UITableViewController {
-    var events : [ Event ]?
+    var events : [ Event ] = []
     
     override func viewWillAppear(_ animated: Bool) {
         EventsService.shared.index { (events) in
@@ -22,17 +22,15 @@ class EventsViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard events != nil else { return 0 }
-        
-        return events!.count
+        return events.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let event = self.events?[indexPath.row]
+        let event = self.events[indexPath.row]
         
         let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell")
         
-        cell?.textLabel?.text = event?.name
+        cell?.textLabel?.text = event.name
         
         return cell!
     }

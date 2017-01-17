@@ -13,7 +13,7 @@ class VenueViewController : UITableViewController {
     var events: [ Event ] = []
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "venueCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "venueEventCell", for: indexPath)
         
         cell.textLabel?.text = events[indexPath.row].name
         
