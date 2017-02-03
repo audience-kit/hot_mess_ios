@@ -16,7 +16,13 @@ class VenuesService {
     }
     
     func index(_ callback: @escaping ([ Venue ]) -> Void) {
-        RequestService.sharedInstance.request(relativeUrl: "/venues") { (result) in
+        var path = "/venues"
+        
+        if let locale = LocaleService.closest {
+            path = "/locales/\(locale.id)/venues?\(LocaleService.shared.coordinates.queryParameters)"
+        }
+
+        RequestService.sharedInstance.request(relativeUrl: path) { (result) in
             let venues = result["venues"] as! [ [ String : Any ] ]
             var parsed: [ Venue ] = []
             

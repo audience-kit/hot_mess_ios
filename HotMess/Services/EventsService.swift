@@ -16,7 +16,7 @@ class EventsService {
     }
     
     func index(callback: @escaping ([ Event ]) -> Void) {
-        RequestService.sharedInstance.request(relativeUrl: "/events") { (result) in
+        RequestService.sharedInstance.request(relativeUrl: "/locales/\(LocaleService.closest!.id)/events") { (result) in
             let events = result["events"] as! [ [ String : Any ] ]
             var results: [ Event ] = []
             

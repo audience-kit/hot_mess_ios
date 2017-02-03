@@ -45,9 +45,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ESTBeaconManagerDelegate 
         self.beaconManager.startRangingBeacons(in: beaconRegion)
         self.beaconManager.startMonitoring(for: beaconRegion)
         
+        LocaleService.shared.start()
+        
         SessionService.registerNotifications()
         
-        NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self, userInfo: nil)
+        //NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self, userInfo: nil)
         
         return true
     }

@@ -20,4 +20,12 @@ class UserService {
             callback(User(with: result))
         }
     }
+    
+    func location(_ location: CLLocation) {
+        let location = [ "coordinates": [ "latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude] ]
+        
+        RequestService.shared.request(relativeUrl: "/me/location", with: location) { result in
+            
+        }
+    }
 }

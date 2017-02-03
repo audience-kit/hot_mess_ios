@@ -17,6 +17,8 @@
 		C94A5ACB1E1B7B2B004601AA /* HotMessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5ACA1E1B7B2B004601AA /* HotMessTests.swift */; };
 		C94A5AD61E1B7B2B004601AA /* HotMessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */; };
 		C96779191E26082900BC263D /* VenueViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96779181E26082900BC263D /* VenueViewController.swift */; };
+		C96F09821E4307DE009B3911 /* Locale.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09811E4307DE009B3911 /* Locale.swift */; };
+		C96F09841E430822009B3911 /* LocaleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09831E430822009B3911 /* LocaleService.swift */; };
 		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
 		C98A26011E25890500F62464 /* Venue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26001E25890500F62464 /* Venue.swift */; };
 		C98A26031E25891900F62464 /* VenuesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26021E25891900F62464 /* VenuesService.swift */; };
@@ -76,6 +78,8 @@
 		C94A5AD71E1B7B2B004601AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BridgeHeader.h; sourceTree = "<group>"; };
 		C96779181E26082900BC263D /* VenueViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueViewController.swift; sourceTree = "<group>"; };
+		C96F09811E4307DE009B3911 /* Locale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Locale.swift; path = Models/Locale.swift; sourceTree = "<group>"; };
+		C96F09831E430822009B3911 /* LocaleService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocaleService.swift; path = Services/LocaleService.swift; sourceTree = "<group>"; };
 		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C98A26001E25890500F62464 /* Venue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Venue.swift; path = Models/Venue.swift; sourceTree = "<group>"; };
 		C98A26021E25891900F62464 /* VenuesService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenuesService.swift; path = Services/VenuesService.swift; sourceTree = "<group>"; };
@@ -198,6 +202,7 @@
 				C9F34AF21E208BA800C5049B /* UserService.swift */,
 				C98A26021E25891900F62464 /* VenuesService.swift */,
 				C9F1F5D71E284783005CF7FD /* EventsService.swift */,
+				C96F09831E430822009B3911 /* LocaleService.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -243,6 +248,7 @@
 				C9F34AF51E208BF100C5049B /* User.swift */,
 				C98A26001E25890500F62464 /* Venue.swift */,
 				C9F1F5D91E2847A9005CF7FD /* Event.swift */,
+				C96F09811E4307DE009B3911 /* Locale.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -561,6 +567,7 @@
 				C98A26031E25891900F62464 /* VenuesService.swift in Sources */,
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
+				C96F09821E4307DE009B3911 /* Locale.swift in Sources */,
 				C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */,
 				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
 				C98A26011E25890500F62464 /* Venue.swift in Sources */,
@@ -570,6 +577,7 @@
 				C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* UserViewController.swift in Sources */,
 				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,
+				C96F09841E430822009B3911 /* LocaleService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
