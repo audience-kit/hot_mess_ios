@@ -46,7 +46,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>3</string>
 	<key>FacebookAppID</key>
 	<string>713525445368431</string>
 	<key>FacebookDisplayName</key>
@@ -54,7 +54,7 @@
 	<key>HotMessBeaconID</key>
 	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>HotMessServerBase</key>
-	<string>http://localhost:3000/</string>
+	<string>https://api.hotmess.social</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

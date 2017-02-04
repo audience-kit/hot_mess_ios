@@ -20,7 +20,7 @@
 			<key>Key</key>
 			<string>server_url</string>
 			<key>DefaultValue</key>
-			<string>gibson.local</string>
+			<string>https://api.hotmess.social</string>
 			<key>IsSecure</key>
 			<false/>
 			<key>KeyboardType</key>
