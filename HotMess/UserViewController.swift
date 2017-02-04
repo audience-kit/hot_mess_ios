@@ -8,7 +8,7 @@
 
 import UIKit
 
-class FirstViewController: UIViewController {
+class UserViewController: UIViewController {
     @IBOutlet var label: UILabel?
 
     override func viewDidLoad() {

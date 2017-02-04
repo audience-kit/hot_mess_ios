@@ -11,9 +11,13 @@ import Foundation
 class Venue {
     let id: UUID
     let name: String
+    let distance: Double?
     
     init(with: [ String: Any]) {
         self.id = UUID(uuidString: with["id"] as! String)!
+        
         self.name = with["name"] as! String
+        
+        self.distance = with["distance"] as? Double
     }
 }

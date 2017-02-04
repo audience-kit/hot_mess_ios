@@ -2,10 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NewRelicIdentifier</key>
+	<string>AA5dabc9f850e6c50f0013911941d1e39fc552a037</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
 			<key>gibson.local</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
@@ -39,7 +46,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>3</string>
 	<key>FacebookAppID</key>
 	<string>713525445368431</string>
 	<key>FacebookDisplayName</key>
@@ -47,7 +54,7 @@
 	<key>HotMessBeaconID</key>
 	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>HotMessServerBase</key>
-	<string>http://gibson.local:3000/</string>
+	<string>https://api.hotmess.social</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

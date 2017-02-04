@@ -11,10 +11,21 @@ import UIKit
 class VenuesViewController: UITableViewController {
     
     var venues: [ Venue ] = []
+    
+    var venue: Venue?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        NotificationCenter.default.addObserver(forName: LocaleService.kHMLocaleUpdated, object: self, queue: OperationQueue.main) { (notification) in
+            self.navigationItem.title = LocaleService.closest?.name
+            self.tableView.reloadData()
+        }
+        
+        if let locale = LocaleService.closest {
+            self.navigationItem.title = locale.name
+        }
         
         VenuesService.shared.index { (venues) in
             self.venues = venues
@@ -31,9 +42,18 @@ class VenuesViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "LabelCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "venueCell", for: indexPath)
         
-        cell.textLabel?.text = venues[indexPath.row].name
+        let venue = venues[indexPath.row]
+        
+        cell.textLabel?.text = venue.name
+        
+        if let distance = venue.distance {
+            cell.detailTextLabel?.text = "\(String(format: "%.1f", distance)) m"
+        }
+        else {
+            cell.detailTextLabel?.text = ""
+        }
         
         return cell
     }
@@ -43,7 +63,17 @@ class VenuesViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.performSegue(withIdentifier: "showVenue", sender: self)
+        self.venue = self.venues[indexPath.row]
+    }
+
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let venueViewController = segue.destination as? VenueViewController {
+            if let senderCell = sender as? UITableViewCell {
+                let indexPath = self.tableView.indexPath(for: senderCell)
+                
+                venueViewController.venue = self.venues[indexPath!.row]
+            }
+        }
     }
 }
 

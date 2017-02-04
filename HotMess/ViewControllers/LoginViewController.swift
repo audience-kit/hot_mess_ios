@@ -10,28 +10,15 @@ import UIKit
 import FBSDKLoginKit
 
 class LoginViewController : UIViewController {
-    static weak var shared: LoginViewController?
-    
     static func registerNotifications() {
         NotificationCenter.default.addObserver(forName: SessionService.loginRequired, object: nil, queue: OperationQueue.main) { (notification) in
             let rootViewController = UIApplication.shared.keyWindow?.rootViewController!
-            
-            if let sharedController = LoginViewController.shared {
-                rootViewController?.present(sharedController, animated: true, completion: {
-                    
-                })
-                
-            }
-            else {
-                let sharedController = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
-                
-                LoginViewController.shared = sharedController
-                
-                rootViewController?.present(sharedController, animated: true, completion: {
-                    
-                })
-            }
-        
+
+            let loginViewController = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
+
+            rootViewController?.present(loginViewController, animated: true, completion: {
+            })
+
         }
     }
     
@@ -39,12 +26,9 @@ class LoginViewController : UIViewController {
     
     override func viewDidLoad() {
         NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
-            self.dismiss(animated: true, completion: { 
-                
+            self.dismiss(animated: true, completion: {
             })
         }
-        
-
     }
     
     @IBAction func dismissButtonPressed(sender: UIButton) {
