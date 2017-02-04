@@ -19,13 +19,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ESTBeaconManagerDelegate 
     
 
     static let serverBaseIdentifier = "HotMessServerBase"
+    static let newRelicIdentifier = "NewRelicIdentifier"
     static let beaconIdentifier = "social.hotmess.beacon"
     
     public static let defaultBaseUrl = Bundle.main.infoDictionary?[serverBaseIdentifier] as! String
     public static var baseUrl : URL?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        //NewRelicAgent.start(withApplicationToken: Bundle.main.infoDictionary?[AppDelegate.serverBaseIdentifier] as! String)
+        NewRelicAgent.start(withApplicationToken: Bundle.main.infoDictionary?[AppDelegate.newRelicIdentifier] as! String)
         
         UserDefaults.standard.register(defaults: ["server_url": AppDelegate.defaultBaseUrl])
         
