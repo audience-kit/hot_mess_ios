@@ -18,6 +18,9 @@ class VenuesViewController: UITableViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
+        self.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        self.refreshControl?.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        
         NotificationCenter.default.addObserver(forName: LocaleService.kHMLocaleUpdated, object: self, queue: OperationQueue.main) { (notification) in
             self.navigationItem.title = LocaleService.closest?.name
             self.tableView.reloadData()
@@ -27,6 +30,10 @@ class VenuesViewController: UITableViewController {
             self.navigationItem.title = locale.name
         }
         
+        self.handleRefresh(control: self.tableView.refreshControl!)
+    }
+    
+    func handleRefresh(control: UIRefreshControl) {
         VenuesService.shared.index { (venues) in
             self.venues = venues
             
@@ -34,6 +41,8 @@ class VenuesViewController: UITableViewController {
                 self.tableView.reloadData()
             }
         }
+        
+        control.endRefreshing()
     }
 
     override func didReceiveMemoryWarning() {

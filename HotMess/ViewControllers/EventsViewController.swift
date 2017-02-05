@@ -20,6 +20,14 @@ class EventsViewController : UITableViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        self.tableView.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        
+        self.tableView.refreshControl?.addTarget(self, action: #selector(handleRefresh(control:)), for: .valueChanged)
+        
+        self.handleRefresh(control: self.tableView.refreshControl!)
+    }
+    
+    func handleRefresh(control: UIRefreshControl) {
         EventsService.shared.index { (events) in
             self.events = events
             
@@ -27,6 +35,8 @@ class EventsViewController : UITableViewController {
                 self.tableView.reloadData()
             }
         }
+        
+        control.endRefreshing()
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
