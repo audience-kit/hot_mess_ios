@@ -17,7 +17,9 @@ class UserService {
     
     func me(callback: @escaping (User) -> Void) {
         RequestService.sharedInstance.request(relativeUrl: "/me") { (result: [String : Any]) in
-            callback(User(with: result))
+            if result["id"] != nil {
+                callback(User(with: result))
+            }
         }
     }
     
