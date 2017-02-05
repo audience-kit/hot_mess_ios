@@ -12,6 +12,7 @@ class Venue {
     let id: UUID
     let name: String
     let distance: Double?
+    let address: String
     
     init(with: [ String: Any]) {
         self.id = UUID(uuidString: with["id"] as! String)!
@@ -19,5 +20,12 @@ class Venue {
         self.name = with["name"] as! String
         
         self.distance = with["distance"] as? Double
+        
+        if let address = with["address"] as? String {
+            self.address = address
+        }
+        else {
+            self.address = "unknown"
+        }
     }
 }

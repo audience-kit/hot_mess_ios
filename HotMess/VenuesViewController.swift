@@ -51,18 +51,11 @@ class VenuesViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "venueCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "venueCell", for: indexPath) as! VenueTableViewCell
         
         let venue = venues[indexPath.row]
         
-        cell.textLabel?.text = venue.name
-        
-        if let distance = venue.distance {
-            cell.detailTextLabel?.text = "\(String(format: "%.1f", distance)) m"
-        }
-        else {
-            cell.detailTextLabel?.text = ""
-        }
+        cell.setVenue(venue: venue)
         
         return cell
     }

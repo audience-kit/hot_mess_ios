@@ -46,11 +46,9 @@ class EventsViewController : UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let event = self.events[indexPath.row]
         
-        let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell")
+        let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell") as! EventTableViewCell
+        cell.setEvent(event: event)
         
-        cell?.textLabel?.text = event.name
-        cell?.detailTextLabel?.text = "\(formatter!.string(from: event.startDate)) at \(event.venue!.name) "
-        
-        return cell!
+        return cell
     }
 }
