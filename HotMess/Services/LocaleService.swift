@@ -40,9 +40,11 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
     }
     
     var coordinates: [ String : Any ] {
-        guard _locationManager.location != nil else { return [ String: Any]() }
-    
-        return [ "longitude" : _locationManager.location!.coordinate.longitude, "latitude" : _locationManager.location!.coordinate.latitude ]
+        if let location = _locationManager.location {
+            return [ "longitude" : location.coordinate.longitude, "latitude" : location.coordinate.latitude ]
+        }
+        
+        return [ String: Any]()
     }
     
     func closest(callback: @escaping (Locale) -> Void) {
