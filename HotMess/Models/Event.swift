@@ -12,6 +12,7 @@ class Event {
     let id: UUID
     let name: String
     let startDate: Date
+    let facebookId: IntMax
     let venue: Venue?
     
     init(with: [ String : Any ]) {
@@ -22,6 +23,7 @@ class Event {
         self.name = with["name"] as! String
         let startAt = with["start_at"] as! String
         self.startDate = formatter.date(from: startAt)!
+        self.facebookId = with["facebook_id"] as! IntMax
         
         if let venue_data = with["venue"] as? [ String : Any ] {
             self.venue = Venue(with: venue_data)
@@ -29,5 +31,9 @@ class Event {
         else {
             venue = nil
         }
+    }
+    
+    var facebookUrl : URL {
+        return URL(string: "https://facebook.com/events/\(self.facebookId)")!
     }
 }

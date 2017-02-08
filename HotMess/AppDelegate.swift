@@ -11,7 +11,7 @@ import FacebookCore
 import FacebookLogin
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, ESTBeaconManagerDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
@@ -42,7 +42,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ESTBeaconManagerDelegate 
         let beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: AppDelegate.beaconIdentifier)
 
         self.beaconManager.requestAlwaysAuthorization()
-        self.beaconManager.delegate = self
+        self.beaconManager.delegate = LocaleService.shared
         self.beaconManager.startRangingBeacons(in: beaconRegion)
         self.beaconManager.startMonitoring(for: beaconRegion)
         
@@ -79,10 +79,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ESTBeaconManagerDelegate 
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
         return SDKApplicationDelegate.shared.application(app, open: url, options: options)
-    }
-    
-    func beaconManager(_ manager: Any, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
-        
     }
 }
 

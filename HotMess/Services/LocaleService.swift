@@ -8,13 +8,15 @@
 
 import UIKit
 
-class LocaleService : NSObject, CLLocationManagerDelegate {
+class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDelegate {
     static let kHMLocaleUpdated = Notification.Name(rawValue: "kHMLocaleUpdated")
     
     private static let _shared = LocaleService()
     
     private var _closest : Locale? = nil
     private let _locationManager = CLLocationManager()
+    private var beaconMajor = 0
+    private var beaconMinor = 0
     
     static var shared : LocaleService {
         return _shared
@@ -40,11 +42,19 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
     }
     
     var coordinates: [ String : Any ] {
+        var parameters = [ String : Any ]()
+        
         if let location = _locationManager.location {
-            return [ "longitude" : location.coordinate.longitude, "latitude" : location.coordinate.latitude ]
+            parameters["longitude"] = location.coordinate.longitude
+            parameters["latitude"] = location.coordinate.latitude
         }
         
-        return [ String: Any]()
+        if beaconMajor != 0 && beaconMinor != 0 {
+            parameters["major"] = self.beaconMajor
+            parameters["minor"] = self.beaconMinor
+        }
+        
+        return parameters
     }
     
     func closest(callback: @escaping (Locale) -> Void) {
@@ -68,5 +78,31 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
         closest { locale in
         
         }
+    }
+    
+    func beaconManager(_ manager: Any, didEnter region: CLBeaconRegion) {
+        let beaconManager = manager as! ESTBeaconManager
+        
+        beaconManager.startRangingBeacons(in: region)
+    }
+    
+    func beaconManager(_ manager: Any, didDetermineState state: CLRegionState, for region: CLBeaconRegion) {
+
+    }
+    
+    func beaconManager(_ manager: Any, didExitRegion region: CLBeaconRegion) {
+        let beaconManager = manager as! ESTBeaconManager
+        
+        beaconManager.stopRangingBeacons(in: region)
+        
+    }
+    
+    func beaconManager(_ manager: Any, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+        guard beacons.count > 0 else { return }
+        
+        self.beaconMajor = beacons.first?.major as! Int
+        self.beaconMajor = beacons.first?.minor as! Int
+        
+        UserService.shared.location(_locationManager.location!, beaconMajor: self.beaconMajor, beaconMinor: self.beaconMinor)
     }
 }

@@ -51,4 +51,11 @@ class EventsViewController : UITableViewController {
         
         return cell
     }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let event = events[indexPath.row]
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        UIApplication.shared.open(event.facebookUrl, options: [:], completionHandler: nil)
+    }
 }

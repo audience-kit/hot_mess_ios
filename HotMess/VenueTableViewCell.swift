@@ -18,7 +18,7 @@ class VenueTableViewCell : UITableViewCell {
         addressLabel?.text = venue.address
         
         if let distance = venue.distance {
-            distanceLabel?.text = "\(String(format: "%.01f", distance)) m"
+            distanceLabel?.text = DistanceFormatter.shared.string(forMeters: distance)
         }
         else {
             distanceLabel?.text = "unknown"

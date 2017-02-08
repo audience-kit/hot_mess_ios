@@ -23,8 +23,8 @@ class UserService {
         }
     }
     
-    func location(_ location: CLLocation) {
-        let location = [ "coordinates": [ "latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude] ]
+    func location(_ location: CLLocation, beaconMajor: Int = 0, beaconMinor: Int = 0) {
+        let location = [ "coordinates": [ "latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude], "beacon": [ "major": beaconMajor, "minor": beaconMinor] ] as [String : Any]
         
         RequestService.shared.request(relativeUrl: "/me/location", with: location) { result in
             
