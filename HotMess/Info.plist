@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NewRelicIdentifier</key>
 	<string>AA5dabc9f850e6c50f0013911941d1e39fc552a037</string>
 	<key>NSAppTransportSecurity</key>
