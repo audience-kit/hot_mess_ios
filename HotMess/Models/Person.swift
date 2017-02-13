@@ -11,9 +11,15 @@ import Foundation
 class Person {
     let id: UUID
     let name: String
+    let facebookId: IntMax
     
     init(_ data: [ String : Any]) {
         self.id = UUID(uuidString: data["id"] as! String)!
         self.name = data["name"] as! String
+        self.facebookId = data["facebook_id"] as! IntMax
+    }
+    
+    var facebookUrl: URL {
+        return URL(string: "https://facebook.com/\(self.facebookId)")!
     }
 }

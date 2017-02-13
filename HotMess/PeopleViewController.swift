@@ -22,7 +22,9 @@ class PeopleViewController : UITableViewController {
         PeopleService.shared.index { (people) in
             self.people = people
             
-            self.tableView.reloadData()
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
             
             control.endRefreshing()
         }
@@ -39,5 +41,13 @@ class PeopleViewController : UITableViewController {
         cell?.textLabel?.text = person.name
         
         return cell!
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let person = self.people[indexPath.row]
+        
+        UIApplication.shared.open(person.facebookUrl, options: [:], completionHandler: nil)
+        
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
