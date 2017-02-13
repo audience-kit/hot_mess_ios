@@ -31,6 +31,14 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
         
         _locationManager.delegate = self
         _locationManager.pausesLocationUpdatesAutomatically = true
+        
+        if let localeIdString = UserDefaults.standard.string(forKey: "localeId") {
+            let localeName = UserDefaults.standard.string(forKey: "localeName")
+            let localeId = UUID(uuidString: localeIdString)
+            
+            self._closest = Locale(id: localeId!, name: localeName!)
+        }
+        
     }
     
     func start() {
@@ -65,6 +73,10 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
         RequestService.shared.request(relativeUrl: path) { result in
             let locale = Locale(result)
             self._closest = locale
+            
+            UserDefaults.standard.set(locale.name, forKey: "localeName")
+            UserDefaults.standard.set(locale.id.uuidString, forKey: "localeId")
+            UserDefaults.standard.synchronize()
             
             callback(locale)
             

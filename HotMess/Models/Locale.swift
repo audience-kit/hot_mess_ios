@@ -16,4 +16,9 @@ class Locale {
         self.id = UUID(uuidString: data["id"] as! String)!
         self.name = data["name"] as! String
     }
+    
+    init(id: UUID, name: String) {
+        self.id = id
+        self.name = name
+    }
 }
