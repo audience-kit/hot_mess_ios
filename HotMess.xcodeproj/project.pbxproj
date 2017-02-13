@@ -18,6 +18,7 @@
 		C94A5AD61E1B7B2B004601AA /* HotMessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */; };
 		C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9570A2A1E479F7A00A94395 /* EventTableViewCell.swift */; };
 		C9570A2D1E47A71500A94395 /* VenueTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9570A2C1E47A71500A94395 /* VenueTableViewCell.swift */; };
+		C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */; };
 		C96779191E26082900BC263D /* VenueViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96779181E26082900BC263D /* VenueViewController.swift */; };
 		C96F09821E4307DE009B3911 /* Locale.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09811E4307DE009B3911 /* Locale.swift */; };
 		C96F09841E430822009B3911 /* LocaleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09831E430822009B3911 /* LocaleService.swift */; };
@@ -29,6 +30,8 @@
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
 		C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* LoginViewController.swift */; };
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
+		C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D171E516EA600A9A9D6 /* Person.swift */; };
+		C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */; };
 		C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */; };
 		C9CE0C411E4A8FBC00E9A909 /* DistanceFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */; };
 		C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D71E284783005CF7FD /* EventsService.swift */; };
@@ -82,6 +85,7 @@
 		C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BridgeHeader.h; sourceTree = "<group>"; };
 		C9570A2A1E479F7A00A94395 /* EventTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventTableViewCell.swift; sourceTree = "<group>"; };
 		C9570A2C1E47A71500A94395 /* VenueTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueTableViewCell.swift; sourceTree = "<group>"; };
+		C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeopleViewController.swift; sourceTree = "<group>"; };
 		C96779181E26082900BC263D /* VenueViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueViewController.swift; sourceTree = "<group>"; };
 		C96F09811E4307DE009B3911 /* Locale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Locale.swift; path = Models/Locale.swift; sourceTree = "<group>"; };
 		C96F09831E430822009B3911 /* LocaleService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocaleService.swift; path = Services/LocaleService.swift; sourceTree = "<group>"; };
@@ -94,6 +98,8 @@
 		C99EFFD91E1C682000720341 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LoginViewController.swift; path = ViewControllers/LoginViewController.swift; sourceTree = "<group>"; };
 		C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotMess.entitlements; sourceTree = "<group>"; };
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
+		C9A81D171E516EA600A9A9D6 /* Person.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Person.swift; path = Models/Person.swift; sourceTree = "<group>"; };
+		C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PeopleService.swift; path = Services/PeopleService.swift; sourceTree = "<group>"; };
 		C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsViewController.swift; path = ViewControllers/EventsViewController.swift; sourceTree = "<group>"; };
 		C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DistanceFormatter.swift; path = Views/DistanceFormatter.swift; sourceTree = "<group>"; };
 		C9F1F5D71E284783005CF7FD /* EventsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsService.swift; path = Services/EventsService.swift; sourceTree = "<group>"; };
@@ -209,6 +215,7 @@
 				C98A26021E25891900F62464 /* VenuesService.swift */,
 				C9F1F5D71E284783005CF7FD /* EventsService.swift */,
 				C96F09831E430822009B3911 /* LocaleService.swift */,
+				C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -234,6 +241,7 @@
 				C99EFFD91E1C682000720341 /* LoginViewController.swift */,
 				C96779181E26082900BC263D /* VenueViewController.swift */,
 				C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */,
+				C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */,
 			);
 			name = "View Controllers";
 			sourceTree = "<group>";
@@ -258,6 +266,7 @@
 				C98A26001E25890500F62464 /* Venue.swift */,
 				C9F1F5D91E2847A9005CF7FD /* Event.swift */,
 				C96F09811E4307DE009B3911 /* Locale.swift */,
+				C9A81D171E516EA600A9A9D6 /* Person.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -591,6 +600,7 @@
 				C98A26031E25891900F62464 /* VenuesService.swift in Sources */,
 				C9570A2D1E47A71500A94395 /* VenueTableViewCell.swift in Sources */,
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
+				C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
 				C96F09821E4307DE009B3911 /* Locale.swift in Sources */,
 				C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */,
@@ -599,10 +609,12 @@
 				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,
+				C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */,
 				C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */,
 				C9CE0C411E4A8FBC00E9A909 /* DistanceFormatter.swift in Sources */,
 				C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* UserViewController.swift in Sources */,
+				C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */,
 				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,
 				C96F09841E430822009B3911 /* LocaleService.swift in Sources */,
 			);
