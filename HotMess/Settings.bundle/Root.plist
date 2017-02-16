@@ -30,6 +30,22 @@
 			<key>AutocorrectionType</key>
 			<string>No</string>
 		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTextFieldSpecifier</string>
+			<key>Title</key>
+			<string>Facebook</string>
+			<key>Key</key>
+			<string>facebook_app_id</string>
+			<key>AutocorrectionType</key>
+			<string>No</string>
+			<key>AutocapitalizationType</key>
+			<string>None</string>
+			<key>DefaultValue</key>
+			<string>713525445368431</string>
+			<key>KeyboardType</key>
+			<string>NumberPad</string>
+		</dict>
 	</array>
 </dict>
 </plist>

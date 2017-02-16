@@ -24,33 +24,25 @@
                     <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 </imageView>
-                <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ad0-lW-tug" customClass="FBSDKLoginButton">
-                    <rect key="frame" x="65" y="317" width="224" height="94"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                    <state key="normal" title="Button"/>
-                </button>
-                <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3uw-qe-RzF">
-                    <rect key="frame" x="155" y="617" width="64" height="30"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                    <state key="normal" title="Dismiss"/>
-                    <connections>
-                        <action selector="dismissButtonPressedWithSender:" destination="-1" eventType="touchUpInside" id="alX-df-Z7u"/>
-                    </connections>
-                </button>
-                <button opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="h28-Ak-v67" customClass="FBSDKLoginButton">
-                    <rect key="frame" x="65" y="317" width="224" height="94"/>
-                    <state key="normal" title="Button"/>
+                <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ad0-lW-tug" customClass="FBSDKLoginButton">
+                    <rect key="frame" x="20" y="547" width="335" height="100"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="100" id="yFg-jk-tyQ"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" pointSize="28"/>
+                    <state key="normal" title="Facebook Login"/>
                 </button>
             </subviews>
             <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
             <constraints>
-                <constraint firstItem="h28-Ak-v67" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="Add-yH-ycQ"/>
-                <constraint firstItem="h28-Ak-v67" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="hfF-Uq-2N3"/>
+                <constraint firstAttribute="bottom" secondItem="ad0-lW-tug" secondAttribute="bottom" constant="20" id="4Yz-Pb-89c"/>
+                <constraint firstItem="ad0-lW-tug" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="20" id="5gF-UO-dXU"/>
+                <constraint firstAttribute="trailing" secondItem="ad0-lW-tug" secondAttribute="trailing" constant="20" id="gTJ-zL-0c9"/>
             </constraints>
             <point key="canvasLocation" x="35.5" y="53.5"/>
         </view>
     </objects>
     <resources>
-        <image name="LoginBackground" width="310" height="552"/>
+        <image name="LoginBackground" width="414" height="736"/>
     </resources>
 </document>

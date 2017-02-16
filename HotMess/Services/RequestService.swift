@@ -14,6 +14,10 @@ class RequestService
     public static let sharedInstance = RequestService()
     
     private var _isAuthenticating = false
+    
+    var baseUrl: URL {
+        return AppDelegate.baseUrl
+    }
 
     public static var shared: RequestService {
         return RequestService.sharedInstance
@@ -42,9 +46,11 @@ class RequestService
                 request.httpMethod = "GET"
             }
             
+            NSLog("\(request.httpMethod!): \(request.url!)")
+            
             let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) in
-                if error != nil {
-                    NSLog(error.debugDescription)
+                if let error = error {
+                    NSLog(error.localizedDescription)
                 }
                 
                 let httpResponse = response as! HTTPURLResponse

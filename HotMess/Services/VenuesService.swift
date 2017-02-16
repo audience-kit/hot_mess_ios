@@ -33,4 +33,14 @@ class VenuesService {
             callback(parsed)
         }
     }
+    
+    func closest(_ callback: @escaping (Venue) -> Void) {
+        let path = "/venues/closest?\(LocaleService.shared.coordinates.queryParameters)"
+        
+        RequestService.shared.request(relativeUrl: path) { (result) in
+            if let venue = result["venue"] as? [ String : Any ] {
+                callback(Venue(with: venue))
+            }
+        }
+    }
 }

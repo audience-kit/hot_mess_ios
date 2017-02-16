@@ -35,12 +35,12 @@ class PeopleViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "personCell")
+        let cell = tableView.dequeueReusableCell(withIdentifier: "personCell") as! PersonTableViewCell
         let person = people[indexPath.row]
         
-        cell?.textLabel?.text = person.name
+        cell.setPerson(person)
         
-        return cell!
+        return cell
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

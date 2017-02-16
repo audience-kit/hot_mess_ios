@@ -26,14 +26,29 @@ class LoginViewController : UIViewController {
     
     override func viewDidLoad() {
         NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
-            self.dismiss(animated: true, completion: {
-            })
+            self.dismiss()
         }
     }
     
-    @IBAction func dismissButtonPressed(sender: UIButton) {
+    override func viewDidAppear(_ animated: Bool) {
         if FBSDKAccessToken.current() != nil {
-            NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self)
+            self.dismiss()
+        }
+    }
+    
+    func dismiss() {
+        if FBSDKAccessToken.current() != nil {
+            DispatchQueue.global().async {
+                SessionService.getToken(token: FBSDKAccessToken.current().tokenString!, callback: {
+                    LocaleService.shared.closest(callback: { (locale) in
+                        DispatchQueue.main.async {
+                            self.dismiss(animated: true, completion: {
+                                NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self)
+                            })
+                        }
+                    })
+                })
+            }
         }
     }
 }

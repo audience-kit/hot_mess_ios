@@ -17,20 +17,22 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.6</string>
+	<string>1.0.5</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>fb842337999153841</string>
 				<string>fb713525445368431</string>
+				<string>fb915436455177328</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>21</string>
+	<string>111</string>
 	<key>FacebookAppID</key>
-	<string>713525445368431</string>
+	<string>842337999153841</string>
 	<key>FacebookDisplayName</key>
 	<string>Hot Mess</string>
 	<key>HotMessBeaconID</key>
@@ -64,8 +66,6 @@
 			</dict>
 		</dict>
 	</dict>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Hot Mess communicates with sensors in bars to give accurate details about the venue.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Hot Mess uses your location in the background to esitmate the number of people in a venue and to make recomendations based on other patrons.</string>
 	<key>NewRelicIdentifier</key>

@@ -10,6 +10,8 @@ import Foundation
 
 class UserService {
     private static let _sharedInstance = UserService()
+    private var lastUpdate = Date.distantPast
+    private let updateInterval = TimeInterval(exactly: 100.0)!
     
     static var shared: UserService {
         return _sharedInstance
@@ -24,6 +26,12 @@ class UserService {
     }
     
     func location(_ location: CLLocation, beaconMajor: Int = 0, beaconMinor: Int = 0) {
+        if (lastUpdate + updateInterval) > Date() {
+            return
+        }
+        
+        lastUpdate = Date()
+        
         let location = [ "coordinates": [ "latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude], "beacon": [ "major": beaconMajor, "minor": beaconMinor] ] as [String : Any]
         
         RequestService.shared.request(relativeUrl: "/me/location", with: location) { result in

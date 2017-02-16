@@ -17,6 +17,8 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
     private let _locationManager = CLLocationManager()
     private var beaconMajor = 0
     private var beaconMinor = 0
+    private var beaconRegion: CLBeaconRegion
+
     
     static var shared : LocaleService {
         return _shared
@@ -27,7 +29,12 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
     }
     
     override init() {
+        
+        let beaconId = UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!
+        self.beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: AppDelegate.beaconIdentifier)
+        
         super.init()
+        
         
         _locationManager.delegate = self
         _locationManager.pausesLocationUpdatesAutomatically = true
@@ -43,7 +50,8 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
     
     func start() {
         _locationManager.startMonitoringSignificantLocationChanges()
-        
+        _locationManager.startMonitoring(for: beaconRegion)
+
         closest { (locale) in
             
         }

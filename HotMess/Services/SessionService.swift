@@ -21,18 +21,9 @@ class SessionService {
     
     static func registerNotifications() {
         NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
-            if (AccessToken.current == nil) { return }
-            
-            let deviceToken = UIDevice.current.identifierForVendor?.uuidString
-            
-            let parameters = ["facebook_token": AccessToken.current!.authenticationToken, "device": ["type": "apple", "identifier": deviceToken]] as [String : Any]
-            
-            RequestService.sharedInstance.request(relativeUrl: "/token", with: parameters, { (result) in
-                
-                let token = result["token"] as! String
-                
-                let _ = try? Locksmith.saveData(data: ["token" : token], forUserAccount: accountIdentifier)
 
+            self.getToken(token: (AccessToken.current?.authenticationToken)!, callback: { 
+                
             })
         }
         
@@ -55,6 +46,22 @@ class SessionService {
         }
         
         return nil
+    }
+    
+    static func getToken(token: String, callback: @escaping () -> Void) {
+        
+        let deviceToken = UIDevice.current.identifierForVendor?.uuidString
+        
+        let parameters = ["facebook_token": token, "device": ["type": "apple", "identifier": deviceToken]] as [String : Any]
+        
+        RequestService.sharedInstance.request(relativeUrl: "/token", with: parameters, { (result) in
+            
+            let token = result["token"] as! String
+            
+            let _ = try? Locksmith.saveData(data: ["token" : token], forUserAccount: accountIdentifier)
+            
+            callback()
+        })
     }
 
     let operationQueue = OperationQueue()
