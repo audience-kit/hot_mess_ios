@@ -13,12 +13,14 @@ class Venue {
     let name: String
     let distance: Double?
     let address: String
+    let facebookId: String?
+    let phone: String?
     
     init(with: [ String: Any]) {
         self.id = UUID(uuidString: with["id"] as! String)!
-        
         self.name = with["name"] as! String
-        
+        self.facebookId = with["facebook_id"] as? String
+        self.phone = with["phone"] as? String
         self.distance = with["distance"] as? Double
         
         if let address = with["address"] as? String {

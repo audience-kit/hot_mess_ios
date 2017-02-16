@@ -29,6 +29,7 @@ class LoginViewController : UIViewController {
             self.dismiss()
         }
     }
+
     
     override func viewDidAppear(_ animated: Bool) {
         if FBSDKAccessToken.current() != nil {

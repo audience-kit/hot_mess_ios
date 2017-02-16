@@ -16,7 +16,6 @@ class SessionService {
     private static let sharedInstance = SessionService()
     
     static let accountIdentifier = "social.hotmess.account";
-    
     static let loginRequired = Notification.Name("social.hotmess.loginRequired")
     
     static func registerNotifications() {
@@ -52,13 +51,13 @@ class SessionService {
         
         let deviceToken = UIDevice.current.identifierForVendor?.uuidString
         
-        let parameters = ["facebook_token": token, "device": ["type": "apple", "identifier": deviceToken]] as [String : Any]
+        let parameters = [ "facebook_token" : token, "device" : ["type" : "apple", "identifier" : deviceToken ] ] as [ String : Any ]
         
         RequestService.sharedInstance.request(relativeUrl: "/token", with: parameters, { (result) in
             
             let token = result["token"] as! String
             
-            let _ = try? Locksmith.saveData(data: ["token" : token], forUserAccount: accountIdentifier)
+            let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
             
             callback()
         })

@@ -7,15 +7,20 @@
 //
 
 import UIKit
+import FBSDKCoreKit
 
 class VenueTableViewCell : UITableViewCell {
     @IBOutlet var nameLabel : UILabel?
     @IBOutlet var distanceLabel : UILabel?
     @IBOutlet var addressLabel: UILabel?
+    @IBOutlet var profilePictureView: FBSDKProfilePictureView?
     
     func setVenue(venue: Venue) {
         nameLabel?.text = venue.name
         addressLabel?.text = venue.address
+        
+        profilePictureView?.profileID = venue.facebookId
+        profilePictureView?.setNeedsImageUpdate()
         
         if let distance = venue.distance {
             distanceLabel?.text = DistanceFormatter.shared.string(forMeters: distance)
