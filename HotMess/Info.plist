@@ -30,7 +30,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>145</string>
+	<string>147</string>
 	<key>FacebookAppID</key>
 	<string>842337999153841</string>
 	<key>FacebookDisplayName</key>
@@ -72,8 +72,6 @@
 	<string>AA5dabc9f850e6c50f0013911941d1e39fc552a037</string>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>bluetooth-central</string>
-		<string>bluetooth-peripheral</string>
 		<string>fetch</string>
 		<string>location</string>
 		<string>remote-notification</string>
