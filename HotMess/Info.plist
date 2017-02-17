@@ -30,7 +30,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>147</string>
+	<string>149</string>
 	<key>FacebookAppID</key>
 	<string>842337999153841</string>
 	<key>FacebookDisplayName</key>
@@ -66,6 +66,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Hot Mess communicates with sensors in bars to give accurate details about the venue.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Hot Mess uses your location in the background to esitmate the number of people in a venue and to make recomendations based on other patrons.</string>
 	<key>NewRelicIdentifier</key>

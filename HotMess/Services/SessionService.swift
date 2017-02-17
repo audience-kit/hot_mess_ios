@@ -20,10 +20,12 @@ class SessionService {
     
     static func registerNotifications() {
         NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
-
-            self.getToken(token: (AccessToken.current?.authenticationToken)!, callback: { 
+            if AccessToken.current != nil {
+            
+                self.getToken(token: (AccessToken.current?.authenticationToken)!, callback: { 
                 
-            })
+                })
+            }
         }
         
         LoginViewController.registerNotifications()
