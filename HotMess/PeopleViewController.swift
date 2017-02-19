@@ -15,6 +15,8 @@ class PeopleViewController : UITableViewController {
     override func viewDidLoad() {
         self.tableView.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
         
+        self.tableView.refreshControl?.addTarget(self, action: #selector(handleRefresh(control:)), for: .valueChanged)
+        
         self.handleRefresh(control: self.tableView.refreshControl!)
     }
     

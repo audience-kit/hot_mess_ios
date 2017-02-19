@@ -30,6 +30,13 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
                 self.nameLabel?.text = user.name
             }
         }
+        
+        let mask = CAShapeLayer()
+        
+        mask.fillColor = UIColor.black.cgColor
+        mask.path = UIBezierPath(ovalIn: CGRect(origin: CGPoint.zero, size: profileImage!.frame.size)).cgPath
+        
+        profileImage!.layer.mask = mask
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
