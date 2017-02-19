@@ -49,6 +49,7 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
     }
     
     func start() {
+        _locationManager.requestAlwaysAuthorization()
         _locationManager.startMonitoringSignificantLocationChanges()
         _locationManager.startMonitoring(for: beaconRegion)
 
