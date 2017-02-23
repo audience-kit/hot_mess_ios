@@ -15,6 +15,7 @@ class Venue {
     let address: String
     let facebookId: String?
     let phone: String?
+    let photoUrl: URL?
     
     init(with: [ String: Any]) {
         self.id = UUID(uuidString: with["id"] as! String)!
@@ -28,6 +29,13 @@ class Venue {
         }
         else {
             self.address = "unknown"
+        }
+        
+        if let photoUrlString = with["photo_url"] as? String {
+            self.photoUrl = URL(string: photoUrlString)
+        }
+        else {
+            self.photoUrl = nil
         }
     }
 }

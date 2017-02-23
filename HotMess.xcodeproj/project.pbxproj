@@ -30,6 +30,10 @@
 		C98A26051E25BB9000F62464 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C98A26041E25BB9000F62464 /* Settings.bundle */; };
 		C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
+		C998EE2A1E5EA1F30017ED96 /* Friend.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE291E5EA1F30017ED96 /* Friend.swift */; };
+		C998EE2C1E5EA7C40017ED96 /* FriendsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */; };
+		C998EE2E1E5EADE70017ED96 /* FriendTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */; };
+		C998EE301E5EB2000017ED96 /* HeroTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2F1E5EB2000017ED96 /* HeroTableViewCell.swift */; };
 		C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* LoginViewController.swift */; };
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
 		C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D171E516EA600A9A9D6 /* Person.swift */; };
@@ -99,6 +103,10 @@
 		C98A26041E25BB9000F62464 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		C98BEDC81E1CB5F2008F48AB /* SessionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionService.swift; path = Services/SessionService.swift; sourceTree = "<group>"; };
 		C98BEDCA1E1CC420008F48AB /* RequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RequestService.swift; path = Services/RequestService.swift; sourceTree = "<group>"; };
+		C998EE291E5EA1F30017ED96 /* Friend.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Friend.swift; path = Models/Friend.swift; sourceTree = "<group>"; };
+		C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FriendsService.swift; path = Services/FriendsService.swift; sourceTree = "<group>"; };
+		C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FriendTableViewCell.swift; path = Views/FriendTableViewCell.swift; sourceTree = "<group>"; };
+		C998EE2F1E5EB2000017ED96 /* HeroTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HeroTableViewCell.swift; path = Views/HeroTableViewCell.swift; sourceTree = "<group>"; };
 		C99EFFD91E1C682000720341 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LoginViewController.swift; path = ViewControllers/LoginViewController.swift; sourceTree = "<group>"; };
 		C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotMess.entitlements; sourceTree = "<group>"; };
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
@@ -220,6 +228,7 @@
 				C9F1F5D71E284783005CF7FD /* EventsService.swift */,
 				C96F09831E430822009B3911 /* LocaleService.swift */,
 				C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */,
+				C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -261,6 +270,8 @@
 				C9570A2C1E47A71500A94395 /* VenueTableViewCell.swift */,
 				C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */,
 				C97F0DE81E552FCD00C615BA /* PersonTableViewCell.swift */,
+				C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */,
+				C998EE2F1E5EB2000017ED96 /* HeroTableViewCell.swift */,
 			);
 			name = Views;
 			sourceTree = "<group>";
@@ -273,6 +284,7 @@
 				C9F1F5D91E2847A9005CF7FD /* Event.swift */,
 				C96F09811E4307DE009B3911 /* Locale.swift */,
 				C9A81D171E516EA600A9A9D6 /* Person.swift */,
+				C998EE291E5EA1F30017ED96 /* Friend.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -603,8 +615,10 @@
 			files = (
 				C96779191E26082900BC263D /* VenueViewController.swift in Sources */,
 				C9F34AF31E208BA800C5049B /* UserService.swift in Sources */,
+				C998EE2A1E5EA1F30017ED96 /* Friend.swift in Sources */,
 				C98A26031E25891900F62464 /* VenuesService.swift in Sources */,
 				C9570A2D1E47A71500A94395 /* VenueTableViewCell.swift in Sources */,
+				C998EE2C1E5EA7C40017ED96 /* FriendsService.swift in Sources */,
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
 				C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */,
 				C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */,
@@ -617,6 +631,8 @@
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,
 				C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */,
+				C998EE2E1E5EADE70017ED96 /* FriendTableViewCell.swift in Sources */,
+				C998EE301E5EB2000017ED96 /* HeroTableViewCell.swift in Sources */,
 				C97F0DE71E54F1C100C615BA /* SettingsViewController.swift in Sources */,
 				C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */,
 				C9CE0C411E4A8FBC00E9A909 /* DistanceFormatter.swift in Sources */,
