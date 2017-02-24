@@ -14,9 +14,7 @@ class NowViewController: UITableViewController {
     
     var imageViewCell: HeroTableViewCell?
     
-    var venue: Venue?
-    var events = [ Event ]()
-    var friends = [ Friend ]()
+    var now : Now?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -24,42 +22,39 @@ class NowViewController: UITableViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        VenuesService.shared.closest { (venue) in
-            self.venue = venue
+        self.tableView.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        
+        self.tableView.refreshControl?.addTarget(self, action: #selector(handleRefresh(control:)), for: .valueChanged)
+        
+        self.handleRefresh(control: self.tableView.refreshControl!)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(backgrondRefresh), name: LocaleService.LocationChanged, object: nil)
+    }
+    
+    func backgrondRefresh() -> Void {
+        
+    }
+    
+    func handleRefresh(control : UIRefreshControl) {
+        NowService.shared.now { (now) in
+            self.now = now
+            
+            do {
+                let data = try Data(contentsOf: now.venue.photoUrl!)
+                let image = UIImage(data: data)
+                DispatchQueue.main.async {
+                    self.imageViewCell?.imageViewCustom?.image = image
+                }
+            }
+            catch {}
             
             DispatchQueue.main.async {
-                self.titleLabel?.text = venue.name
-                
-            }
-            
-            EventsService.shared.index(venue: venue, callback: { (events) in
-                self.events = events
-            
-                DispatchQueue.main.async {
-                    self.tableView.reloadData()
-                }
-            })
-            
-            FriendsService.shared.venue(venue, callback: { (friends) in
-                self.friends = friends
-                
-                DispatchQueue.main.async {
-                    self.tableView.reloadData()
-                }
-            })
-            
-            if venue.photoUrl != nil {
-                do {
-                    let data = try Data(contentsOf: venue.photoUrl!)
-                
-                    DispatchQueue.main.async {
-                        self.imageViewCell?.imageViewCustom?.image = UIImage(data: data)
-                    }
-                }
-                catch {
-                }
+                self.titleLabel?.text = now.title
+                self.tableView.reloadData()
             }
         }
+        
+        control.endRefreshing()
     }
 
     override func didReceiveMemoryWarning() {
@@ -93,29 +88,35 @@ class NowViewController: UITableViewController {
         }
         
         if indexPath.section == 1 {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendCell") as! FriendTableViewCell
             
-            if friends.count == 0 {
-                cell.textLabel?.text = "You're the first to arrive"
+            
+            if now == nil || now?.friends.count == 0 {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell")
+                
+                cell!.textLabel?.text = "You're the first to arrive"
+                
+                return cell!
             }
             else {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendCell") as! FriendTableViewCell
+                
                 cell.textLabel?.text = nil
-                let friend = self.friends[indexPath.row]
+                let friend = self.now!.friends[indexPath.row]
                 
                 cell.setFriend(friend)
+                
+                return cell
             }
-            
-            return cell
         }
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "nowEventCell")!
         
-        if events.count == 0 {
+        if now == nil || now?.events.count == 0 {
             cell.textLabel?.text = "No Events"
             cell.accessoryType = .none
         }
         else {
-            let event = self.events[indexPath.row]
+            let event = self.now!.events[indexPath.row]
             cell.textLabel?.text = event.name
             cell.accessoryType = .disclosureIndicator
         }
@@ -129,19 +130,19 @@ class NowViewController: UITableViewController {
         }
         
         if section == 1 {
-            if friends.count == 0 {
+            if now == nil || now?.friends.count == 0 {
                 return 1
             }
             
-            return friends.count
+            return now!.friends.count
         }
         
-        if events.count == 0 {
+        if now == nil || now?.events.count == 0 {
             return 1
         }
         
         
-        return events.count
+        return now!.events.count
     }
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {

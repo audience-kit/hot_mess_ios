@@ -9,7 +9,8 @@
 import UIKit
 
 class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDelegate {
-    static let kHMLocaleUpdated = Notification.Name(rawValue: "kHMLocaleUpdated")
+    static let LocaleUpdated = Notification.Name(rawValue: "LocaleUpdated")
+    static let LocationChanged = Notification.Name(rawValue: "LocationChanged")
     
     private static let _shared = LocaleService()
     
@@ -18,6 +19,9 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
     private var beaconMajor = 0
     private var beaconMinor = 0
     private var beaconRegion: CLBeaconRegion
+    private var lastLocation: CLLocation?
+    
+    private let tolerance = 0.001
 
     
     static var shared : LocaleService {
@@ -89,16 +93,29 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
             
             callback(locale)
             
-            NotificationCenter.default.post(name: LocaleService.kHMLocaleUpdated, object: nil)
+            NotificationCenter.default.post(name: LocaleService.LocaleUpdated, object: nil)
         }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        UserService.shared.location(locations.first!)
-        
         closest { locale in
         
         }
+        
+        if let location = lastLocation {
+            let currentLocation = locations.first
+            
+            let deltaX = abs((currentLocation?.coordinate.latitude)! - location.coordinate.latitude)
+            let deltaY = abs((currentLocation?.coordinate.longitude)! - location.coordinate.longitude)
+            
+            if deltaX > tolerance || deltaY > tolerance {
+                UserService.shared.location(locations.first!)
+                
+                NotificationCenter.default.post(name: LocaleService.LocationChanged, object: self)
+            }
+        }
+        
+        self.lastLocation = locations.first
     }
     
     func beaconManager(_ manager: Any, didEnter region: CLBeaconRegion) {

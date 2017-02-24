@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */; };
+		C93373121E5EEB5B00497879 /* NowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373111E5EEB5B00497879 /* NowService.swift */; };
+		C93373161E5EEF0000497879 /* Now.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373151E5EEF0000497879 /* Now.swift */; };
 		C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */; };
 		C94A5AB61E1B7B2B004601AA /* NowViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB51E1B7B2B004601AA /* NowViewController.swift */; };
 		C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */; };
@@ -74,6 +76,8 @@
 		79CB199A43A3B1C7B5801D8C /* Pods_HotMessUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_HotMessUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BF8AB7DBAEABF8D94F2DA24 /* Pods-HotMessUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessUITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests.release.xcconfig"; sourceTree = "<group>"; };
 		BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"; sourceTree = "<group>"; };
+		C93373111E5EEB5B00497879 /* NowService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NowService.swift; path = Services/NowService.swift; sourceTree = "<group>"; };
+		C93373151E5EEF0000497879 /* Now.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Now.swift; path = Models/Now.swift; sourceTree = "<group>"; };
 		C94A5AB01E1B7B2B004601AA /* HotMess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotMess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C94A5AB51E1B7B2B004601AA /* NowViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowViewController.swift; sourceTree = "<group>"; };
@@ -229,6 +233,7 @@
 				C96F09831E430822009B3911 /* LocaleService.swift */,
 				C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */,
 				C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */,
+				C93373111E5EEB5B00497879 /* NowService.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -279,6 +284,7 @@
 		C9F34AF41E208BE200C5049B /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				C93373151E5EEF0000497879 /* Now.swift */,
 				C9F34AF51E208BF100C5049B /* User.swift */,
 				C98A26001E25890500F62464 /* Venue.swift */,
 				C9F1F5D91E2847A9005CF7FD /* Event.swift */,
@@ -620,6 +626,7 @@
 				C9570A2D1E47A71500A94395 /* VenueTableViewCell.swift in Sources */,
 				C998EE2C1E5EA7C40017ED96 /* FriendsService.swift in Sources */,
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
+				C93373121E5EEB5B00497879 /* NowService.swift in Sources */,
 				C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */,
 				C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
@@ -628,6 +635,7 @@
 				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
 				C98A26011E25890500F62464 /* Venue.swift in Sources */,
 				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
+				C93373161E5EEF0000497879 /* Now.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,
 				C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */,
