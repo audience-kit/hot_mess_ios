@@ -14,8 +14,6 @@ target 'HotMess' do
   pod 'Locksmith'
   pod 'NewRelicAgent'
   
-  pod 'Reveal-SDK', :configurations => ['Debug']
-
   target 'HotMessTests' do
     inherit! :search_paths
     # Pods for testing
