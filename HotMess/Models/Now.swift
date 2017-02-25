@@ -39,4 +39,15 @@ class Now {
         
         self.events = events
     }
+    
+    static func ==(lhs: Now, rhs: Now) -> Bool {
+        return rhs.title == lhs.title &&
+               rhs.venue == lhs.venue &&
+               rhs.friends.elementsEqual(lhs.friends, by: { (flhs, frhs) -> Bool in flhs == frhs }) &&
+               rhs.events.elementsEqual(lhs.events, by: { (elhs, erhs) -> Bool in elhs == erhs })
+    }
+    
+    static func !=(lhs: Now, rhs: Now) -> Bool {
+        return !(lhs == rhs)
+    }
 }

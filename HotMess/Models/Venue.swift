@@ -38,4 +38,8 @@ class Venue {
             self.photoUrl = nil
         }
     }
+    
+    static func ==(rhs: Venue, lhs: Venue) -> Bool {
+        return rhs.id == lhs.id
+    }
 }

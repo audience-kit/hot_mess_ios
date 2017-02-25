@@ -21,7 +21,7 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
     private var beaconRegion: CLBeaconRegion
     private var lastLocation: CLLocation?
     
-    private let tolerance = 0.001
+    private let tolerance = 0.0001
 
     
     static var shared : LocaleService {

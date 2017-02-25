@@ -36,4 +36,8 @@ class Event {
     var facebookUrl : URL {
         return URL(string: "https://facebook.com/events/\(self.facebookId)")!
     }
+    
+    static func ==(rhs: Event, lhs: Event) -> Bool {
+        return rhs.id == lhs.id
+    }
 }

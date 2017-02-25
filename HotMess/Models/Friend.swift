@@ -19,4 +19,8 @@ class Friend {
         self.name = data["name"] as! String
         self.facebookId = data["facebook_id"] as! IntMax
     }
+    
+    static func ==(rhs: Friend, lhs: Friend) -> Bool {
+        return rhs.id == lhs.id
+    }
 }

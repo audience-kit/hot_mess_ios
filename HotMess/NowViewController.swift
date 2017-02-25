@@ -32,25 +32,28 @@ class NowViewController: UITableViewController {
     }
     
     func backgrondRefresh() -> Void {
-        
+        self.handleRefresh(control: self.tableView.refreshControl!)
     }
     
     func handleRefresh(control : UIRefreshControl) {
         NowService.shared.now { (now) in
-            self.now = now
+            if self.now == nil || now != self.now! {
             
-            do {
-                let data = try Data(contentsOf: now.venue.photoUrl!)
-                let image = UIImage(data: data)
-                DispatchQueue.main.async {
-                    self.imageViewCell?.imageViewCustom?.image = image
+                self.now = now
+                
+                do {
+                    let data = try Data(contentsOf: now.venue.photoUrl!)
+                    let image = UIImage(data: data)
+                    DispatchQueue.main.async {
+                        self.imageViewCell?.imageViewCustom?.image = image
+                    }
                 }
-            }
-            catch {}
-            
-            DispatchQueue.main.async {
-                self.titleLabel?.text = now.title
-                self.tableView.reloadData()
+                catch {}
+                
+                DispatchQueue.main.async {
+                    self.titleLabel?.text = now.title
+                    self.tableView.reloadData()
+                }
             }
         }
         
