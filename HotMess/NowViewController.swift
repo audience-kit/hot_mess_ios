@@ -9,9 +9,6 @@
 import UIKit
 
 class NowViewController: UITableViewController {
-
-    @IBOutlet var titleLabel: UILabel?
-    
     var imageViewCell: HeroTableViewCell?
     
     var now : Now?
@@ -51,7 +48,7 @@ class NowViewController: UITableViewController {
                 catch {}
                 
                 DispatchQueue.main.async {
-                    self.titleLabel?.text = now.title
+                    self.navigationItem.title = now.title
                     self.tableView.reloadData()
                 }
             }
@@ -158,6 +155,8 @@ class NowViewController: UITableViewController {
             return nil
         }
     }
+    
+    
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let path = self.tableView.indexPathForSelectedRow!
