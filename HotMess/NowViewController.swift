@@ -158,5 +158,19 @@ class NowViewController: UITableViewController {
             return nil
         }
     }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let path = self.tableView.indexPathForSelectedRow!
+        
+        switch segue.identifier! {
+        case "showEvent":
+            let targetViewController = segue.destination as! EventViewController
+            let event = self.now!.events[path.row]
+            
+            targetViewController.event = event
+        default:
+            break;
+        }
+    }
 }
 

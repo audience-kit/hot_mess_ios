@@ -102,20 +102,20 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
         
         }
         
-        if let location = lastLocation {
-            let currentLocation = locations.first
+        //if let location = lastLocation {
+        //    let currentLocation = locations.first
             
-            let deltaX = abs((currentLocation?.coordinate.latitude)! - location.coordinate.latitude)
-            let deltaY = abs((currentLocation?.coordinate.longitude)! - location.coordinate.longitude)
+        //    let deltaX = abs((currentLocation?.coordinate.latitude)! - location.coordinate.latitude)
+        //    let deltaY = abs((currentLocation?.coordinate.longitude)! - location.coordinate.longitude)
             
-            if deltaX > tolerance || deltaY > tolerance {
+        //     if deltaX > tolerance || deltaY > tolerance {
                 UserService.shared.location(locations.first!)
                 
                 NotificationCenter.default.post(name: LocaleService.LocationChanged, object: self)
-            }
-        }
+        //    }
+        //}
         
-        self.lastLocation = locations.first
+        //self.lastLocation = locations.first
     }
     
     func beaconManager(_ manager: Any, didEnter region: CLBeaconRegion) {

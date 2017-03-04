@@ -44,12 +44,18 @@ class PeopleViewController : UITableViewController {
         
         return cell
     }
-    
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let person = self.people[indexPath.row]
+
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let path = self.tableView.indexPathForSelectedRow!
         
-        UIApplication.shared.open(person.facebookUrl, options: [:], completionHandler: nil)
-        
-        tableView.deselectRow(at: indexPath, animated: true)
+        switch segue.identifier! {
+        case "showPerson":
+            let targetViewController = segue.destination as! PersonViewController
+            let person = self.people[path.row]
+            
+            targetViewController.person = person
+        default:
+            break;
+        }
     }
 }

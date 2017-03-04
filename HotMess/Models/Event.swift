@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Event {
+class Event : Model {
     let id: UUID
     let name: String
     let startDate: Date

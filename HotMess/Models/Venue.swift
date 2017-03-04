@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Venue {
+class Venue : Model {
     let id: UUID
     let name: String
     let distance: Double?

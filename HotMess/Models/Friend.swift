@@ -9,7 +9,7 @@
 import Foundation
 
 
-class Friend {
+class Friend : Model {
     var id: UUID
     var name: String
     var facebookId: IntMax

@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Locale {
+class Locale : Model {
     let id: UUID
     let name: String
     

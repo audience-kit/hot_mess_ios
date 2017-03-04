@@ -25,6 +25,9 @@
 		C96F09821E4307DE009B3911 /* Locale.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09811E4307DE009B3911 /* Locale.swift */; };
 		C96F09841E430822009B3911 /* LocaleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09831E430822009B3911 /* LocaleService.swift */; };
 		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
+		C97E4B461E67A0800069E965 /* PersonViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97E4B451E67A0800069E965 /* PersonViewController.swift */; };
+		C97E4B481E67A0B80069E965 /* EventViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97E4B471E67A0B80069E965 /* EventViewController.swift */; };
+		C97E4B4A1E67A10A0069E965 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97E4B491E67A10A0069E965 /* Model.swift */; };
 		C97F0DE71E54F1C100C615BA /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */; };
 		C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0DE81E552FCD00C615BA /* PersonTableViewCell.swift */; };
 		C98A26011E25890500F62464 /* Venue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26001E25890500F62464 /* Venue.swift */; };
@@ -100,6 +103,9 @@
 		C96F09811E4307DE009B3911 /* Locale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Locale.swift; path = Models/Locale.swift; sourceTree = "<group>"; };
 		C96F09831E430822009B3911 /* LocaleService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocaleService.swift; path = Services/LocaleService.swift; sourceTree = "<group>"; };
 		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C97E4B451E67A0800069E965 /* PersonViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PersonViewController.swift; sourceTree = "<group>"; };
+		C97E4B471E67A0B80069E965 /* EventViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventViewController.swift; path = ViewControllers/EventViewController.swift; sourceTree = "<group>"; };
+		C97E4B491E67A10A0069E965 /* Model.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Model.swift; path = Models/Model.swift; sourceTree = "<group>"; };
 		C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SettingsViewController.swift; path = ViewControllers/SettingsViewController.swift; sourceTree = "<group>"; };
 		C97F0DE81E552FCD00C615BA /* PersonTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonTableViewCell.swift; path = Views/PersonTableViewCell.swift; sourceTree = "<group>"; };
 		C98A26001E25890500F62464 /* Venue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Venue.swift; path = Models/Venue.swift; sourceTree = "<group>"; };
@@ -261,6 +267,8 @@
 				C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */,
 				C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */,
 				C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */,
+				C97E4B451E67A0800069E965 /* PersonViewController.swift */,
+				C97E4B471E67A0B80069E965 /* EventViewController.swift */,
 			);
 			name = "View Controllers";
 			sourceTree = "<group>";
@@ -291,6 +299,7 @@
 				C96F09811E4307DE009B3911 /* Locale.swift */,
 				C9A81D171E516EA600A9A9D6 /* Person.swift */,
 				C998EE291E5EA1F30017ED96 /* Friend.swift */,
+				C97E4B491E67A10A0069E965 /* Model.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -627,6 +636,7 @@
 				C998EE2C1E5EA7C40017ED96 /* FriendsService.swift in Sources */,
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
 				C93373121E5EEB5B00497879 /* NowService.swift in Sources */,
+				C97E4B461E67A0800069E965 /* PersonViewController.swift in Sources */,
 				C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */,
 				C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
@@ -639,6 +649,7 @@
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,
 				C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */,
+				C97E4B481E67A0B80069E965 /* EventViewController.swift in Sources */,
 				C998EE2E1E5EADE70017ED96 /* FriendTableViewCell.swift in Sources */,
 				C998EE301E5EB2000017ED96 /* HeroTableViewCell.swift in Sources */,
 				C97F0DE71E54F1C100C615BA /* SettingsViewController.swift in Sources */,
@@ -647,6 +658,7 @@
 				C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* NowViewController.swift in Sources */,
 				C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */,
+				C97E4B4A1E67A10A0069E965 /* Model.swift in Sources */,
 				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,
 				C96F09841E430822009B3911 /* LocaleService.swift in Sources */,
 			);

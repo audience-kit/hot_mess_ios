@@ -52,10 +52,17 @@ class EventsViewController : UITableViewController {
         return cell
     }
     
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let event = events[indexPath.row]
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let path = self.tableView.indexPathForSelectedRow!
         
-        UIApplication.shared.open(event.facebookUrl, options: [:], completionHandler: nil)
+        switch segue.identifier! {
+        case "showEvent":
+            let targetViewController = segue.destination as! EventViewController
+            let event = self.events[path.row]
+            
+            targetViewController.event = event
+        default:
+            break;
+        }
     }
 }
