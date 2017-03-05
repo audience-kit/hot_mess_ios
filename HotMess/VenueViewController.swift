@@ -9,6 +9,8 @@
 import UIKit
 
 class VenueViewController : UITableViewController {
+    @IBOutlet var heroImage: UIImageView?
+    
     var venue: Venue?
     var events: [ Event ] = []
     
@@ -22,6 +24,9 @@ class VenueViewController : UITableViewController {
             case 1:
                 cell?.textLabel?.text = "phone"
                 cell?.detailTextLabel?.text = venue!.phone
+            case 2:
+                cell?.textLabel?.text = "facebook"
+                cell?.detailTextLabel?.text = "View on Facebook"
             default:
                 cell?.textLabel?.text = "invalid"
             }
@@ -29,25 +34,33 @@ class VenueViewController : UITableViewController {
             return cell!
         }
         else {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "venueEventCell", for: indexPath)
+            if events.count != 0 {
+                let cell = tableView.dequeueReusableCell(withIdentifier: "venueEventCell", for: indexPath) as! EventTableViewCell
+                let event = events[indexPath.row]
+                cell.setEvent(event: event)
         
-            if events.count == 0 {
-                
-                cell.textLabel?.text = "No Events"
-                cell.accessoryType = .none
+                return cell
             }
             else {
-                cell.textLabel?.text = events[indexPath.row].name
-                cell.accessoryType = .disclosureIndicator
+                let cell = UITableViewCell()
+                cell.textLabel?.text = "No Events"
+                
+                return cell
             }
-        
-            return cell
         }
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.section == 1 {
+            return 86.0
+        }
+        
+        return 44.0
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            return 2
+            return 3
         }
         
         if self.events.count == 0 {
@@ -70,6 +83,21 @@ class VenueViewController : UITableViewController {
                 self.tableView.reloadData()
             }
         }
+        
+        DispatchQueue.global().async {
+            do {
+                if let photoUrl = self.venue!.photoUrl {
+                    let data = try Data(contentsOf: photoUrl)
+                    let image = UIImage(data: data)
+                    DispatchQueue.main.async {
+                        self.heroImage?.image = image
+                    }
+                }
+            }
+            catch {
+                
+            }
+        }
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -79,10 +107,17 @@ class VenueViewController : UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: false)
         
-        if indexPath.section == 1 && events.count != 0 {
-            let event = events[indexPath.row]
-            
-            UIApplication.shared.open(event.facebookUrl, options: [:], completionHandler: nil)
+        if indexPath.section == 0 {
+            switch indexPath.row {
+            case 0:
+                break
+            case 1:
+                break
+            case 2:
+                UIApplication.shared.open(venue!.facebookUrl, options: [:], completionHandler: nil)
+            default:
+                break
+            }
         }
     }
     

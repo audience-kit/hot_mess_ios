@@ -7,3 +7,4 @@
 //
 
 #import <EstimoteSDK/EstimoteSDK.h>
+#import <NewRelicAgent/NewRelic.h>

@@ -14,6 +14,7 @@ class Event : Model {
     let startDate: Date
     let facebookId: IntMax
     let venue: Venue?
+    let person: Person?
     
     init(with: [ String : Any ]) {
         let formatter = DateFormatter()
@@ -29,7 +30,14 @@ class Event : Model {
             self.venue = Venue(with: venue_data)
         }
         else {
-            venue = nil
+            self.venue = nil
+        }
+        
+        if let person_data = with["person"] as? [ String : Any ] {
+            self.person = Person(person_data)
+        }
+        else {
+            self.person = nil
         }
     }
     

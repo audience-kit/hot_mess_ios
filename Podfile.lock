@@ -14,30 +14,43 @@ PODS:
     - FacebookCore (~> 0.2)
     - FBSDKCoreKit (~> 4.15)
     - FBSDKLoginKit (~> 4.15)
+  - FacebookShare (0.2.0):
+    - Bolts (~> 1.8)
+    - FacebookCore (~> 0.2)
+    - FBSDKCoreKit (~> 4.15)
+    - FBSDKShareKit (~> 4.15)
   - FBSDKCoreKit (4.20.0):
     - Bolts (~> 1.7)
   - FBSDKLoginKit (4.20.0):
     - FBSDKCoreKit
+  - FBSDKShareKit (4.20.0):
+    - FBSDKCoreKit
   - Locksmith (3.0.0)
   - NewRelicAgent (5.11.0)
+  - Starscream (2.0.3)
 
 DEPENDENCIES:
   - EstimoteSDK
   - FacebookCore
   - FacebookLogin
+  - FacebookShare
   - Locksmith
   - NewRelicAgent
+  - Starscream
 
 SPEC CHECKSUMS:
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
   EstimoteSDK: 207cc0d4fa7635023c75a490b2d6ee9a417377cb
   FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
   FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
+  FacebookShare: 8e9ee8ea06505e6a1d3d719b0cc63e840fb8aaeb
   FBSDKCoreKit: 2d16979b28fe28c2b95af0d275ad5f9703c6c8de
   FBSDKLoginKit: a9d9391506c687e2304a590bf9312837fce7f375
+  FBSDKShareKit: 1b91af62a603d67f392bc7fde63bc4a0705dde31
   Locksmith: 310b4cc5031af5728bf4db5d4de547a5100c6a3b
   NewRelicAgent: 4634181acfa98817f0f8c35d6383883a20b3e13a
+  Starscream: 3fdd5c277e57cca6b5c406d274e3f34a7c88f2ce
 
-PODFILE CHECKSUM: 8c727c2a2dd57c240d506f1ed8f77f17e65856aa
+PODFILE CHECKSUM: bfafba09b6a43c8c4c623a7ed958ba0474786551
 
 COCOAPODS: 1.2.0

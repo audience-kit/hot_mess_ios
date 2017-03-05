@@ -11,7 +11,7 @@ import Locksmith
 
 class RequestService
 {
-    public static let sharedInstance = RequestService()
+    private static let sharedInstance = RequestService()
     
     private var _isAuthenticating = false
     

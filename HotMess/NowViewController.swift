@@ -9,7 +9,7 @@
 import UIKit
 
 class NowViewController: UITableViewController {
-    var imageViewCell: HeroTableViewCell?
+    @IBOutlet var heroBanner: UIImageView?
     
     var now : Now?
     
@@ -42,7 +42,7 @@ class NowViewController: UITableViewController {
                     let data = try Data(contentsOf: now.venue.photoUrl!)
                     let image = UIImage(data: data)
                     DispatchQueue.main.async {
-                        self.imageViewCell?.imageViewCustom?.image = image
+                        self.heroBanner?.image = image
                     }
                 }
                 catch {}
@@ -64,30 +64,23 @@ class NowViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if indexPath.section == 0 {
-            return 200.0
+            return 60.0
         }
         
-        if indexPath.section == 1 {
-            return 60.0
+        if indexPath.section == 1 && now != nil && now!.events.count != 0 {
+            return 86.0
         }
         
         return 44.0
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return 3
+        return 2
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+
         if indexPath.section == 0 {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "nowHeroCell")
-            
-            self.imageViewCell = cell as? HeroTableViewCell
-            
-            return cell!
-        }
-        
-        if indexPath.section == 1 {
             
             
             if now == nil || now?.friends.count == 0 {
@@ -109,27 +102,23 @@ class NowViewController: UITableViewController {
             }
         }
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "nowEventCell")!
-        
-        if now == nil || now?.events.count == 0 {
-            cell.textLabel?.text = "No Events"
-            cell.accessoryType = .none
-        }
-        else {
+        if now != nil && now!.events.count != 0 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "nowEventCell") as! EventTableViewCell
+            
             let event = self.now!.events[indexPath.row]
-            cell.textLabel?.text = event.name
-            cell.accessoryType = .disclosureIndicator
+            cell.setEvent(event: event)
+            
+            return cell
         }
+        
+        let cell = tableView.dequeueReusableCell(withIdentifier: "nowNoEventsCell")!
+        cell.textLabel?.text = "No Events"
         
         return cell
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            return 1
-        }
-        
-        if section == 1 {
             if now == nil || now?.friends.count == 0 {
                 return 1
             }
@@ -147,9 +136,9 @@ class NowViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
-        case 1:
+        case 0:
             return "Friends Here"
-        case 2:
+        case 1:
             return "Events"
         default:
             return nil
@@ -160,6 +149,7 @@ class NowViewController: UITableViewController {
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let path = self.tableView.indexPathForSelectedRow!
+        tableView.deselectRow(at: path, animated: true)
         
         switch segue.identifier! {
         case "showEvent":

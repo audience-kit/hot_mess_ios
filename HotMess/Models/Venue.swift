@@ -39,6 +39,11 @@ class Venue : Model {
         }
     }
     
+    
+    var facebookUrl: URL {
+        return URL(string: "https://facebook.com/\(self.facebookId!)")!
+    }
+    
     static func ==(rhs: Venue, lhs: Venue) -> Bool {
         return rhs.id == lhs.id
     }

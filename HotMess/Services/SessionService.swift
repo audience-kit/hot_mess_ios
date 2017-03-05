@@ -55,7 +55,7 @@ class SessionService {
         
         let parameters = [ "facebook_token" : token, "device" : ["type" : "apple", "identifier" : deviceToken ] ] as [ String : Any ]
         
-        RequestService.sharedInstance.request(relativeUrl: "/token", with: parameters, { (result) in
+        RequestService.shared.request(relativeUrl: "/token", with: parameters, { (result) in
             
             let token = result["token"] as! String
             

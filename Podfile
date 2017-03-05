@@ -11,8 +11,11 @@ target 'HotMess' do
   pod 'EstimoteSDK'
   pod 'FacebookCore'
   pod 'FacebookLogin'
+  pod 'FacebookShare'
   pod 'Locksmith'
   pod 'NewRelicAgent'
+  pod 'Starscream'
+  
   
   target 'HotMessTests' do
     inherit! :search_paths

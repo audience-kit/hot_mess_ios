@@ -22,7 +22,7 @@ class VenuesService {
             path = "/locales/\(locale.id)/venues?\(LocaleService.shared.coordinates.queryParameters)"
         }
 
-        RequestService.sharedInstance.request(relativeUrl: path) { (result) in
+        RequestService.shared.request(relativeUrl: path) { (result) in
             let venues = result["venues"] as! [ [ String : Any ] ]
             var parsed: [ Venue ] = []
             

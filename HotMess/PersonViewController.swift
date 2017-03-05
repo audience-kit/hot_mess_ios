@@ -7,19 +7,34 @@
 //
 
 import UIKit
+import FBSDKCoreKit
+import FBSDKShareKit
 
 class PersonViewController : UITableViewController {
+    @IBOutlet var personProfileImage: FBSDKProfilePictureView?
+    @IBOutlet var personTitleLabel: UILabel?
+    @IBOutlet var personLikeButton: FBSDKLikeControl?
     
     var person: Person? = nil
+    
     
     override func viewWillAppear(_ animated: Bool) {
         guard person != nil else { return }
         
         self.navigationItem.title = person?.name
         
+        self.personLikeButton?.objectType = FBSDKLikeObjectType.page
+        self.personLikeButton?.likeControlStyle = .boxCount
+        
         PeopleService.shared.get(person!) { (person) in
             DispatchQueue.main.async {
                 self.person = person
+                self.personProfileImage?.profileID = "\(person.facebookId)"
+                self.personProfileImage?.setNeedsImageUpdate()
+                self.personTitleLabel?.text = person.name
+                self.personLikeButton?.objectID = "\(person.facebookId)"
+
+                
                 self.tableView.reloadData()
             }
         }
@@ -32,7 +47,7 @@ class PersonViewController : UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0:
-            return 2
+            return 1
         case 1:
             return person != nil ? person!.events.count : 0
         default:
@@ -47,25 +62,33 @@ class PersonViewController : UITableViewController {
             
             switch indexPath.row {
             case 0:
-                infoCell?.textLabel?.text = person?.name
-            case 1:
-                infoCell?.textLabel?.text = "\(person?.facebookId)"
+                infoCell?.detailTextLabel?.text = "View on Facebook"
+                infoCell?.textLabel?.text = "facebook"
             default:
                 break
             }
             
             return infoCell!
         case 1:
-            let eventCell = tableView.dequeueReusableCell(withIdentifier: "personEventCell")
+            let eventCell = tableView.dequeueReusableCell(withIdentifier: "personEventCell") as! EventTableViewCell
             
-            eventCell?.textLabel?.text = person?.events[indexPath.row].name
+            let event = person?.events[indexPath.row]
+            eventCell.setEvent(event: event!)
             
-            return eventCell!
+            return eventCell
         default:
             break
         }
         
         return UITableViewCell()
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if indexPath.section == 0 {
+            UIApplication.shared.open(person!.facebookUrl, options: [:], completionHandler: nil)
+        }
+
+        self.tableView.deselectRow(at: indexPath, animated: true)
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -80,5 +103,21 @@ class PersonViewController : UITableViewController {
         default:
             break;
         }
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        if section == 1 {
+            return "Events"
+        }
+        
+        return nil
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.section == 1 {
+            return 86.0
+        }
+        
+        return 44.0
     }
 }

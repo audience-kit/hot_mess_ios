@@ -29,7 +29,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-     
         UserDefaults.standard.register(defaults: ["server_url": AppDelegate.defaultBaseUrl, "facebook_app_id": "713525445368431"])
         
         SDKSettings.appId = UserDefaults.standard.string(forKey: "facebook_app_id")!

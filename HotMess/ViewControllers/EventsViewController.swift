@@ -40,16 +40,30 @@ class EventsViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if events.count == 0 {
+            return 1
+        }
+        
         return events.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if events.count == 0 {
+            let noEventsCell = UITableViewCell()
+            noEventsCell.textLabel?.text = "No Events"
+            return noEventsCell
+        }
+        
         let event = self.events[indexPath.row]
         
         let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell") as! EventTableViewCell
         cell.setEvent(event: event)
         
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return "Upcoming..."
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {

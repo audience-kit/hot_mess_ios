@@ -18,7 +18,7 @@ class EventsService {
     func index(callback: @escaping ([ Event ]) -> Void) {
         guard LocaleService.closest != nil else { return }
         
-        RequestService.sharedInstance.request(relativeUrl: "/locales/\(LocaleService.closest!.id)/events") { (result) in
+        RequestService.shared.request(relativeUrl: "/locales/\(LocaleService.closest!.id)/events") { (result) in
             let events = result["events"] as! [ [ String : Any ] ]
             var results: [ Event ] = []
             
@@ -31,7 +31,7 @@ class EventsService {
     }
     
     func index(venue: Venue, callback: @escaping ([ Event ]) -> Void) {
-        RequestService.sharedInstance.request(relativeUrl: "/venues/\(venue.id)/events") { (result) in
+        RequestService.shared.request(relativeUrl: "/venues/\(venue.id)/events") { (result) in
             let events = result["events"] as! [ [ String : Any ] ]
             var results: [ Event ] = []
 
