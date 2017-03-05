@@ -53,9 +53,20 @@ class RequestService
                     NSLog(error.localizedDescription)
                 }
                 
-                let httpResponse = response as! HTTPURLResponse
+                let httpResponse = response as? HTTPURLResponse
                 
-                if (httpResponse.statusCode == 401)
+                if httpResponse == nil {
+                    let alert = UIAlertController(title: "Error", message: "Unable to reach server. Check network connection.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "Dismiss", style: .default))
+                    
+                    DispatchQueue.main.async {
+                        alert.show(UIApplication.shared.keyWindow!.rootViewController!, sender: self)
+                    }
+                    
+                    return
+                }
+                
+                if (httpResponse!.statusCode == 401)
                 {
                     if (self._isAuthenticating == false) {
                         self._isAuthenticating = true

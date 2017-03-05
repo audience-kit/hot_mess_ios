@@ -121,6 +121,22 @@ class VenueViewController : UITableViewController {
         }
     }
     
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let path = self.tableView.indexPathForSelectedRow!
+        
+        switch segue.identifier! {
+        case "showEvent":
+            let targetViewController = segue.destination as! EventViewController
+            let event = self.events[path.row]
+            
+            targetViewController.event = event
+        default:
+            break;
+        }
+    }
+    
+    
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0:
