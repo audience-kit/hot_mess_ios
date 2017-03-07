@@ -35,9 +35,7 @@ class NowViewController: UITableViewController {
     func handleRefresh(control : UIRefreshControl) {
         NowService.shared.now { (now) in
             if self.now == nil || now != self.now! {
-            
-                self.now = now
-                
+                            
                 do {
                     let data = try Data(contentsOf: now.venue.photoUrl!)
                     let image = UIImage(data: data)
@@ -48,6 +46,7 @@ class NowViewController: UITableViewController {
                 catch {}
                 
                 DispatchQueue.main.async {
+                    self.now = now
                     self.navigationItem.title = now.title
                     self.tableView.reloadData()
                 }
