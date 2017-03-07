@@ -49,7 +49,7 @@ class PersonViewController : UITableViewController {
         case 0:
             return 1
         case 1:
-            return person != nil ? person!.events.count : 0
+            return person != nil && person!.events.count != 0 ? person!.events.count : 1
         default:
             return 0
         }
@@ -70,12 +70,19 @@ class PersonViewController : UITableViewController {
             
             return infoCell!
         case 1:
-            let eventCell = tableView.dequeueReusableCell(withIdentifier: "personEventCell") as! EventTableViewCell
+
+            if person?.events.count != 0 {
+                let eventCell = tableView.dequeueReusableCell(withIdentifier: "personEventCell") as! EventTableViewCell
+                
+                let event = person?.events[indexPath.row]
+                eventCell.setEvent(event: event!)
+                return eventCell
+            }
             
-            let event = person?.events[indexPath.row]
-            eventCell.setEvent(event: event!)
+            let cell = UITableViewCell()
+            cell.textLabel?.text = "No upcoming events"
+            return cell
             
-            return eventCell
         default:
             break
         }
