@@ -111,7 +111,8 @@ class NowViewController: UITableViewController {
         }
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "nowNoEventsCell")!
-        cell.textLabel?.text = "No Events"
+        // Prepare for LOC
+        cell.textLabel?.text = "There are no upcoming events."
         
         return cell
     }
