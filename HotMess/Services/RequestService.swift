@@ -70,6 +70,7 @@ class RequestService
                 {
                     if (self._isAuthenticating == false) {
                         self._isAuthenticating = true
+                        SessionService.logOut()
                         NotificationCenter.default.post(name: SessionService.loginRequired, object: self)
                     }
                     
