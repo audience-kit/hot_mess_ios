@@ -53,7 +53,26 @@ class SessionService {
         
         let deviceToken = UIDevice.current.identifierForVendor?.uuidString
         
-        let parameters = [ "facebook_token" : token, "device" : ["type" : "apple", "identifier" : deviceToken ] ] as [ String : Any ]
+        let info = Bundle.main.infoDictionary!
+        
+        let version = info["CFBundleShortVersionString"] as! String
+        let build = info["CFBundleVersion"] as! String
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        
+        
+        let parameters = [ "facebook_token" : token,
+                           "device" : [
+                            "type" : "apple",
+                            "identifier" : deviceToken,
+                            "version" : version,
+                            "build" : build,
+                            "model" : identifier ] ] as [ String : Any ]
         
         RequestService.shared.request(relativeUrl: "/token", with: parameters, { (result) in
             
