@@ -10,26 +10,25 @@ import UIKit
 import FBSDKLoginKit
 
 class LoginViewController : UIViewController {
+    @IBOutlet var loginButton: FBSDKLoginButton?
+    
     static func registerNotifications() {
         NotificationCenter.default.addObserver(forName: SessionService.loginRequired, object: nil, queue: OperationQueue.main) { (notification) in
             let rootViewController = UIApplication.shared.keyWindow?.rootViewController!
 
             let loginViewController = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
 
-            rootViewController?.present(loginViewController, animated: true, completion: {
-            })
-
+            rootViewController?.present(loginViewController, animated: true, completion: { })
         }
     }
-    
-    @IBOutlet var loginButton: FBSDKLoginButton?
-    
+
     override func viewDidLoad() {
+        self.loginButton!.readPermissions = [ "email", "public_profile", "user_friends" ]
+        
         NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
             self.dismiss()
         }
     }
-
     
     override func viewDidAppear(_ animated: Bool) {
         if FBSDKAccessToken.current() != nil {
