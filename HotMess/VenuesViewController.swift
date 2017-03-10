@@ -7,8 +7,10 @@
 //
 
 import UIKit
+import MapKit
 
 class VenuesViewController: UITableViewController {
+    @IBOutlet var venueMap: MKMapView?
     
     var model: Venues = Venues()
     
@@ -33,8 +35,22 @@ class VenuesViewController: UITableViewController {
     
     func handleRefresh(control: UIRefreshControl) {
         VenuesService.shared.index { (venues) in
+            var overlays = [ MKAnnotation ]()
+            
+            for venue in venues.venues {
+                if let point = venue.coreLocationPoint {
+                    let pointAnnotation = MKPointAnnotation()
+                    pointAnnotation.coordinate = point
+                    pointAnnotation.title = venue.name
+                    
+                    overlays.append(pointAnnotation)
+                }
+            }
+            
             DispatchQueue.main.async {
                 self.model = venues
+                self.venueMap!.addAnnotations(overlays)
+                self.venueMap!.showAnnotations(overlays, animated: true)
                 self.tableView.reloadData()
             }
         }

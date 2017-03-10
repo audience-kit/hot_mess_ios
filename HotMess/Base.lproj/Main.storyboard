@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16E183b" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12113" systemVersion="16E183b" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
     <device id="retina4_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11757"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12078"/>
         <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -197,6 +197,7 @@
                                     <outlet property="distanceLabel" destination="Pgt-WZ-D9t" id="vYK-Bm-3iz"/>
                                     <outlet property="nameLabel" destination="FbZ-pw-az2" id="2Tz-Au-zaz"/>
                                     <outlet property="profilePictureView" destination="PF1-NV-4od" id="jHb-Oh-g8M"/>
+                                    <segue destination="GCi-0P-svg" kind="show" identifier="showVenue" id="ehO-vI-Gr0"/>
                                 </connections>
                             </tableViewCell>
                         </prototypes>
@@ -219,7 +220,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <mapView key="tableHeaderView" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" id="HUI-OI-3wY">
+                        <mapView key="tableHeaderView" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" rotateEnabled="NO" pitchEnabled="NO" showsUserLocation="YES" showsPointsOfInterest="NO" id="HUI-OI-3wY">
                             <rect key="frame" x="0.0" y="0.0" width="375" height="170"/>
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         </mapView>
@@ -293,6 +294,9 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" title="Venues" id="cgN-2j-2o7"/>
+                    <connections>
+                        <outlet property="venueMap" destination="HUI-OI-3wY" id="OG9-ZD-MHY"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="laF-ye-931" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1025,7 +1029,7 @@
     </resources>
     <inferredMetricsTieBreakers>
         <segue reference="CF1-9r-VRb"/>
-        <segue reference="6ii-QQ-Eli"/>
         <segue reference="mR4-Aw-YMM"/>
+        <segue reference="6ii-QQ-Eli"/>
     </inferredMetricsTieBreakers>
 </document>

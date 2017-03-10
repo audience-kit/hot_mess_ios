@@ -70,7 +70,7 @@ class NowViewController: UITableViewController {
             return 86.0
         }
         
-        if self.now?.venue != nil {
+        if self.now?.venues == nil {
             return 60.0
         }
         
@@ -84,7 +84,7 @@ class NowViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         if indexPath.section == 0 {
-            if now != nil && now!.venue != nil {
+            if now != nil && now!.venues == nil {
                 if now == nil || now?.friends.count == 0 {
                     let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell")
                     
@@ -137,7 +137,7 @@ class NowViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            if now != nil && now!.venue != nil && now?.friends.count != 0 {
+            if now != nil && now!.venues == nil && now?.friends.count != 0 {
                 return now!.friends.count
             }
             else if now != nil && now!.venues != nil && now?.venues?.venues.count != 0 {
@@ -158,7 +158,7 @@ class NowViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0:
-            return self.now?.venue != nil ? "Friends Here" : "Venues"
+            return self.now?.venues == nil ? "Friends Here" : "Venues"
         case 1:
             return "Events"
         default:
@@ -176,6 +176,11 @@ class NowViewController: UITableViewController {
             let event = self.now!.events[path.row]
             
             targetViewController.event = event
+        case "showVenue":
+            let targetViewController = segue.destination as! VenueViewController
+            let venue = self.now!.venues!.venues[path.row]
+            
+            targetViewController.venue = venue
         default:
             break;
         }

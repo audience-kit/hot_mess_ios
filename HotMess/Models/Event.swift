@@ -12,6 +12,7 @@ class Event : Model {
     let id: UUID
     let name: String
     let startDate: Date
+    let endDate: Date?
     let facebookId: IntMax
     let venue: Venue?
     let person: Person?
@@ -38,6 +39,13 @@ class Event : Model {
         }
         else {
             self.person = nil
+        }
+        
+        if let endDateString = with["end_at"] as? String {
+            self.endDate = formatter.date(from: endDateString)
+        }
+        else {
+            self.endDate = nil
         }
     }
     

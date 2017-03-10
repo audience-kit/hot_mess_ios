@@ -76,11 +76,15 @@ class SessionService {
         
         RequestService.shared.request(relativeUrl: "/token", with: parameters, { (result) in
             
-            let token = result["token"] as! String
+            if let token = result["token"] as? String {
             
-            let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
+                let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
             
-            callback()
+                callback()
+            }
+            else {
+                SessionService.logOut()
+            }
         })
     }
 

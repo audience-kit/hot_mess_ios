@@ -34,12 +34,12 @@ class EventViewController : UITableViewController {
                 if event.person != nil {
                     self.facebookProfileImage?.profileID = "\(event.person!.facebookId)"
                     self.facebookProfileImage?.setNeedsImageUpdate()
-                    self.subtitleLabel?.text = "\(timeFormatter.string(from: event.startDate)) by \(event.person!.name)"
+                    self.subtitleLabel?.text = "by \(event.person!.name)"
                 }
                 else if event.venue != nil {
                     self.facebookProfileImage?.profileID = event.venue!.facebookId
                     self.facebookProfileImage?.setNeedsImageUpdate()
-                    self.subtitleLabel?.text = "\(timeFormatter.string(from: event.startDate)) at \(event.venue!.name)"
+                    self.subtitleLabel?.text = "at \(event.venue!.name)"
                 }
                 
                 self.tableView.reloadData()
@@ -73,9 +73,25 @@ class EventViewController : UITableViewController {
         if indexPath.section == 0 {
             let infoCell = tableView.dequeueReusableCell(withIdentifier: "eventInfoCell")
             
-            infoCell?.detailTextLabel?.text = "Open in Facebook"
-            infoCell?.textLabel?.text = "facebook"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .medium
+            dateFormatter.timeStyle = .medium
             
+            switch indexPath.row {
+            case 0:
+                infoCell?.detailTextLabel?.text = "Open in Facebook"
+                infoCell?.textLabel?.text = "facebook"
+            case 1:
+                infoCell?.detailTextLabel?.text = dateFormatter.string(from: event!.startDate)
+                infoCell?.textLabel?.text = "start"
+            case 2:
+                infoCell?.detailTextLabel?.text = dateFormatter.string(from: event!.endDate!)
+                infoCell?.textLabel?.text = "end"
+            default:
+                break
+            }
+            
+
             return infoCell!
         }
         
@@ -94,6 +110,14 @@ class EventViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if (section == 0) {
+            if (event?.endDate != nil) {
+                return 3
+            }
+            
+            return 2
+        }
+        
         return 1
     }
     

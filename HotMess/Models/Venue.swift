@@ -8,6 +8,7 @@
 
 import Foundation
 import GeoJSON
+import CoreLocation
 
 class Venue : Model {
     let id: UUID
@@ -59,6 +60,12 @@ class Venue : Model {
     
     var facebookUrl: URL {
         return URL(string: "https://facebook.com/\(self.facebookId!)")!
+    }
+    
+    var coreLocationPoint: CLLocationCoordinate2D? {
+        guard self.point != nil else { return nil }
+        
+        return CLLocationCoordinate2D(latitude: self.point!.coordinate.latitude, longitude: self.point!.coordinate.longitude)
     }
     
     static func ==(rhs: Venue, lhs: Venue) -> Bool {
