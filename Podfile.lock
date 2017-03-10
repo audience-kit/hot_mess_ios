@@ -5,7 +5,7 @@ PODS:
   - Bolts/AppLinks (1.8.4):
     - Bolts/Tasks
   - Bolts/Tasks (1.8.4)
-  - EstimoteSDK (4.13.2)
+  - EstimoteSDK (4.14.0)
   - FacebookCore (0.2.0):
     - Bolts (~> 1.8)
     - FBSDKCoreKit (~> 4.15)
@@ -25,8 +25,9 @@ PODS:
     - FBSDKCoreKit
   - FBSDKShareKit (4.20.0):
     - FBSDKCoreKit
+  - GeoJSON (0.3.0)
   - Locksmith (3.0.0)
-  - NewRelicAgent (5.11.0)
+  - NewRelicAgent (5.12.0)
   - Starscream (2.0.3)
 
 DEPENDENCIES:
@@ -34,23 +35,25 @@ DEPENDENCIES:
   - FacebookCore
   - FacebookLogin
   - FacebookShare
+  - GeoJSON
   - Locksmith
   - NewRelicAgent
   - Starscream
 
 SPEC CHECKSUMS:
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
-  EstimoteSDK: 207cc0d4fa7635023c75a490b2d6ee9a417377cb
+  EstimoteSDK: 8674ac3687fddfb28d1660c0a8361a55e5da28ba
   FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
   FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
   FacebookShare: 8e9ee8ea06505e6a1d3d719b0cc63e840fb8aaeb
   FBSDKCoreKit: 2d16979b28fe28c2b95af0d275ad5f9703c6c8de
   FBSDKLoginKit: a9d9391506c687e2304a590bf9312837fce7f375
   FBSDKShareKit: 1b91af62a603d67f392bc7fde63bc4a0705dde31
+  GeoJSON: 0d83b13db3469496f035c9a62f900479e72f6d38
   Locksmith: 310b4cc5031af5728bf4db5d4de547a5100c6a3b
-  NewRelicAgent: 4634181acfa98817f0f8c35d6383883a20b3e13a
+  NewRelicAgent: 96e6d58112fea8f6e23c072e8499bf6f13c0f34d
   Starscream: 3fdd5c277e57cca6b5c406d274e3f34a7c88f2ce
 
-PODFILE CHECKSUM: bfafba09b6a43c8c4c623a7ed958ba0474786551
+PODFILE CHECKSUM: 89e892dc5a5cbb26f8699fd8bf9668c3a80c1c43
 
 COCOAPODS: 1.2.0

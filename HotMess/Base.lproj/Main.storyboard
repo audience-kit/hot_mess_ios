@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16E175b" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16E183b" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
     <device id="retina4_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
@@ -137,6 +137,67 @@
                                         </label>
                                     </subviews>
                                 </tableViewCellContentView>
+                            </tableViewCell>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" reuseIdentifier="nowVenueCell" rowHeight="100" id="CV5-pi-yLF" customClass="VenueTableViewCell" customModule="HotMess" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="495.5" width="375" height="100"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="CV5-pi-yLF" id="jI5-fj-CSC">
+                                    <rect key="frame" x="0.0" y="0.0" width="342" height="99.5"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Address" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LBf-gm-A39">
+                                            <rect key="frame" x="105" y="68.5" width="229" height="18"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                            <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Distance" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Pgt-WZ-D9t">
+                                            <rect key="frame" x="269" y="39" width="65" height="21"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" constant="65" id="nnY-hC-7vl"/>
+                                            </constraints>
+                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Gzj-M7-O0a">
+                                            <rect key="frame" x="279" y="49" width="240" height="128"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        </imageView>
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PF1-NV-4od" customClass="FBSDKProfilePictureView">
+                                            <rect key="frame" x="10" y="12" width="75" height="75"/>
+                                            <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="PF1-NV-4od" secondAttribute="height" multiplier="1:1" id="2We-ia-jld"/>
+                                                <constraint firstAttribute="width" constant="75" id="aVs-OW-VHz"/>
+                                            </constraints>
+                                        </view>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Venue Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FbZ-pw-az2">
+                                            <rect key="frame" x="105" y="13" width="229" height="21"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <nil key="textColor"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                    </subviews>
+                                    <constraints>
+                                        <constraint firstItem="FbZ-pw-az2" firstAttribute="leading" secondItem="PF1-NV-4od" secondAttribute="trailing" constant="20" id="6eW-En-Yfu"/>
+                                        <constraint firstItem="LBf-gm-A39" firstAttribute="trailing" secondItem="Pgt-WZ-D9t" secondAttribute="trailing" id="AD9-Oi-IP1"/>
+                                        <constraint firstItem="FbZ-pw-az2" firstAttribute="top" secondItem="jI5-fj-CSC" secondAttribute="topMargin" constant="5" id="Ciu-Y0-6uT"/>
+                                        <constraint firstItem="FbZ-pw-az2" firstAttribute="trailing" secondItem="Pgt-WZ-D9t" secondAttribute="trailing" id="GWa-f1-PoR"/>
+                                        <constraint firstItem="Pgt-WZ-D9t" firstAttribute="centerY" secondItem="jI5-fj-CSC" secondAttribute="centerY" id="Gad-2U-xKR"/>
+                                        <constraint firstAttribute="bottomMargin" secondItem="LBf-gm-A39" secondAttribute="bottom" constant="5" id="HBs-uf-2tb"/>
+                                        <constraint firstItem="LBf-gm-A39" firstAttribute="leading" secondItem="PF1-NV-4od" secondAttribute="trailing" constant="20" id="M5I-xd-7i3"/>
+                                        <constraint firstItem="PF1-NV-4od" firstAttribute="leading" secondItem="jI5-fj-CSC" secondAttribute="leadingMargin" constant="2" id="TR0-jR-Pyc"/>
+                                        <constraint firstAttribute="trailingMargin" secondItem="Pgt-WZ-D9t" secondAttribute="trailing" id="XKD-Rr-r3u"/>
+                                        <constraint firstItem="PF1-NV-4od" firstAttribute="centerY" secondItem="jI5-fj-CSC" secondAttribute="centerY" id="yzW-fM-UOU"/>
+                                    </constraints>
+                                </tableViewCellContentView>
+                                <connections>
+                                    <outlet property="addressLabel" destination="LBf-gm-A39" id="SQ7-gY-JfB"/>
+                                    <outlet property="distanceLabel" destination="Pgt-WZ-D9t" id="vYK-Bm-3iz"/>
+                                    <outlet property="nameLabel" destination="FbZ-pw-az2" id="2Tz-Au-zaz"/>
+                                    <outlet property="profilePictureView" destination="PF1-NV-4od" id="jHb-Oh-g8M"/>
+                                </connections>
                             </tableViewCell>
                         </prototypes>
                     </tableView>
@@ -964,7 +1025,7 @@
     </resources>
     <inferredMetricsTieBreakers>
         <segue reference="CF1-9r-VRb"/>
-        <segue reference="B27-64-cxX"/>
         <segue reference="6ii-QQ-Eli"/>
+        <segue reference="mR4-Aw-YMM"/>
     </inferredMetricsTieBreakers>
 </document>

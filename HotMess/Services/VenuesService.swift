@@ -15,7 +15,7 @@ class VenuesService {
         return _sharedInstance
     }
     
-    func index(_ callback: @escaping ([ Venue ]) -> Void) {
+    func index(_ callback: @escaping (Venues) -> Void) {
         var path = "/venues"
         
         if let locale = LocaleService.closest {
@@ -23,14 +23,7 @@ class VenuesService {
         }
 
         RequestService.shared.request(relativeUrl: path) { (result) in
-            let venues = result["venues"] as! [ [ String : Any ] ]
-            var parsed: [ Venue ] = []
-            
-            for venue in venues {
-                parsed.append(Venue(with: venue))
-            }
-            
-            callback(parsed)
+            callback(Venues(result))
         }
     }
     

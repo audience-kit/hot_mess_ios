@@ -17,7 +17,12 @@ class VenueTableViewCell : UITableViewCell {
     
     func setVenue(venue: Venue) {
         nameLabel?.text = venue.name
-        addressLabel?.text = venue.address
+        
+        if venue.description != nil {
+            addressLabel?.text = venue.description!
+        } else {
+            addressLabel?.text = venue.address
+        }
         
         profilePictureView?.profileID = venue.facebookId
         profilePictureView?.setNeedsImageUpdate()

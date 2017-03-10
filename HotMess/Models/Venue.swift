@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import GeoJSON
 
 class Venue : Model {
     let id: UUID
@@ -16,6 +17,8 @@ class Venue : Model {
     let facebookId: String?
     let phone: String?
     let photoUrl: URL?
+    let point: GeoJSONPoint?
+    let description: String?
     
     init(with: [ String: Any]) {
         self.id = UUID(uuidString: with["id"] as! String)!
@@ -36,6 +39,20 @@ class Venue : Model {
         }
         else {
             self.photoUrl = nil
+        }
+        
+        if let point = with["point"] as? [ String : Any ] {
+            self.point = GeoJSONPoint(dictionary: point)
+        }
+        else {
+            self.point = nil
+        }
+        
+        if let descriptionText = with["description"] as? String {
+            self.description = descriptionText
+        }
+        else {
+            self.description = nil
         }
     }
     

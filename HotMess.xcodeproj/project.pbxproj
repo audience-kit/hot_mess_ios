@@ -39,6 +39,7 @@
 		C998EE2C1E5EA7C40017ED96 /* FriendsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */; };
 		C998EE2E1E5EADE70017ED96 /* FriendTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */; };
 		C998EE301E5EB2000017ED96 /* HeroTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2F1E5EB2000017ED96 /* HeroTableViewCell.swift */; };
+		C99B12A51E72D88D002466C7 /* Venues.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99B12A41E72D88D002466C7 /* Venues.swift */; };
 		C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99EFFD91E1C682000720341 /* LoginViewController.swift */; };
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
 		C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D171E516EA600A9A9D6 /* Person.swift */; };
@@ -117,6 +118,7 @@
 		C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FriendsService.swift; path = Services/FriendsService.swift; sourceTree = "<group>"; };
 		C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FriendTableViewCell.swift; path = Views/FriendTableViewCell.swift; sourceTree = "<group>"; };
 		C998EE2F1E5EB2000017ED96 /* HeroTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HeroTableViewCell.swift; path = Views/HeroTableViewCell.swift; sourceTree = "<group>"; };
+		C99B12A41E72D88D002466C7 /* Venues.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Venues.swift; path = Models/Venues.swift; sourceTree = "<group>"; };
 		C99EFFD91E1C682000720341 /* LoginViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LoginViewController.swift; path = ViewControllers/LoginViewController.swift; sourceTree = "<group>"; };
 		C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HotMess.entitlements; sourceTree = "<group>"; };
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
@@ -300,6 +302,7 @@
 				C9A81D171E516EA600A9A9D6 /* Person.swift */,
 				C998EE291E5EA1F30017ED96 /* Friend.swift */,
 				C97E4B491E67A10A0069E965 /* Model.swift */,
+				C99B12A41E72D88D002466C7 /* Venues.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -631,6 +634,7 @@
 				C96779191E26082900BC263D /* VenueViewController.swift in Sources */,
 				C9F34AF31E208BA800C5049B /* UserService.swift in Sources */,
 				C998EE2A1E5EA1F30017ED96 /* Friend.swift in Sources */,
+				C99B12A51E72D88D002466C7 /* Venues.swift in Sources */,
 				C98A26031E25891900F62464 /* VenuesService.swift in Sources */,
 				C9570A2D1E47A71500A94395 /* VenueTableViewCell.swift in Sources */,
 				C998EE2C1E5EA7C40017ED96 /* FriendsService.swift in Sources */,

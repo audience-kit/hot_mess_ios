@@ -35,15 +35,19 @@ class NowViewController: UITableViewController {
     func handleRefresh(control : UIRefreshControl) {
         NowService.shared.now { (now) in
             if self.now == nil || now != self.now! {
-                            
-                do {
-                    let data = try Data(contentsOf: now.venue.photoUrl!)
-                    let image = UIImage(data: data)
-                    DispatchQueue.main.async {
-                        self.heroBanner?.image = image
+                
+                DispatchQueue.global().async {
+                    do {
+                        if now.imageUrl != nil {
+                            let data = try Data(contentsOf: now.imageUrl!)
+                            let image = UIImage(data: data)
+                            DispatchQueue.main.async {
+                                self.heroBanner?.image = image
+                            }
+                        }
                     }
+                    catch {}
                 }
-                catch {}
                 
                 DispatchQueue.main.async {
                     self.now = now
@@ -62,15 +66,15 @@ class NowViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if indexPath.section == 0 {
-            return 60.0
-        }
-        
-        if indexPath.section == 1 && now != nil && now!.events.count != 0 {
+        if indexPath.section == 1 {
             return 86.0
         }
         
-        return 44.0
+        if self.now?.venue != nil {
+            return 60.0
+        }
+        
+        return 100.0
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -80,24 +84,38 @@ class NowViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         if indexPath.section == 0 {
-            
-            
-            if now == nil || now?.friends.count == 0 {
-                let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell")
-                
-                cell!.textLabel?.text = "You're the first to arrive"
-                
-                return cell!
+            if now != nil && now!.venue != nil {
+                if now == nil || now?.friends.count == 0 {
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell")
+                    
+                    cell!.textLabel?.text = "You're the first to arrive"
+                    
+                    return cell!
+                }
+                else {
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendCell") as! FriendTableViewCell
+                    
+                    let friend = self.now!.friends[indexPath.row]
+                    cell.setFriend(friend)
+                    
+                    return cell
+                }
             }
             else {
-                let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendCell") as! FriendTableViewCell
+                if now != nil && now!.venues != nil && now!.venues!.venues.count != 0 {
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "nowVenueCell") as! VenueTableViewCell
+                    
+                    let venue = self.now!.venues!.venues[indexPath.row]
+                    cell.setVenue(venue: venue)
+                    
+                    return cell
+                }
                 
-                cell.textLabel?.text = nil
-                let friend = self.now!.friends[indexPath.row]
+                let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell")
                 
-                cell.setFriend(friend)
+                cell!.textLabel?.text = "You are not near any venues."
                 
-                return cell
+                return cell!
             }
         }
         
@@ -119,11 +137,14 @@ class NowViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            if now == nil || now?.friends.count == 0 {
-                return 1
+            if now != nil && now!.venue != nil && now?.friends.count != 0 {
+                return now!.friends.count
+            }
+            else if now != nil && now!.venues != nil && now?.venues?.venues.count != 0 {
+                return now!.venues!.venues.count
             }
             
-            return now!.friends.count
+            return 1
         }
         
         if now == nil || now?.events.count == 0 {
@@ -137,15 +158,13 @@ class NowViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0:
-            return "Friends Here"
+            return self.now?.venue != nil ? "Friends Here" : "Venues"
         case 1:
             return "Events"
         default:
             return nil
         }
     }
-    
-    
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let path = self.tableView.indexPathForSelectedRow!

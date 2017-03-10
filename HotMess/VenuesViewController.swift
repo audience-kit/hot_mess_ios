@@ -10,10 +10,8 @@ import UIKit
 
 class VenuesViewController: UITableViewController {
     
-    var venues: [ Venue ] = []
+    var model: Venues = Venues()
     
-    var venue: Venue?
-
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -35,9 +33,8 @@ class VenuesViewController: UITableViewController {
     
     func handleRefresh(control: UIRefreshControl) {
         VenuesService.shared.index { (venues) in
-            self.venues = venues
-            
             DispatchQueue.main.async {
+                self.model = venues
                 self.tableView.reloadData()
             }
         }
@@ -53,7 +50,7 @@ class VenuesViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "venueCell", for: indexPath) as! VenueTableViewCell
         
-        let venue = venues[indexPath.row]
+        let venue = self.model.venues[indexPath.row]
         
         cell.setVenue(venue: venue)
         
@@ -61,19 +58,16 @@ class VenuesViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.venues.count
+        return self.model.venues.count
     }
     
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.venue = self.venues[indexPath.row]
-    }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let venueViewController = segue.destination as? VenueViewController {
             if let senderCell = sender as? UITableViewCell {
                 let indexPath = self.tableView.indexPath(for: senderCell)
                 
-                venueViewController.venue = self.venues[indexPath!.row]
+                venueViewController.venue = self.model.venues[indexPath!.row]
             }
         }
     }
