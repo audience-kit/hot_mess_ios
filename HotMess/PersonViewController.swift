@@ -44,7 +44,7 @@ class PersonViewController : UITableViewController {
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
+        return personDetail != nil && personDetail!.tracks.count != 0 ? 3 : 2
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -53,6 +53,8 @@ class PersonViewController : UITableViewController {
             return personDetail == nil ? 0 :  personDetail!.socialLinks.count
         case 1:
             return personDetail != nil && personDetail!.events.count != 0 ? personDetail!.events.count : 1
+        case 2:
+            return personDetail!.tracks.count
         default:
             return 0
         }
@@ -70,6 +72,10 @@ class PersonViewController : UITableViewController {
                 infoCell.imageView?.image = #imageLiteral(resourceName: "Facebook")
             case "soundcloud":
                 infoCell.imageView?.image = #imageLiteral(resourceName: "SoundCloud")
+            case "instagram":
+                infoCell.imageView?.image = #imageLiteral(resourceName: "Instagram")
+            case "twitter":
+                infoCell.imageView?.image = #imageLiteral(resourceName: "Twitter")
             default:
                 break
             }
@@ -88,7 +94,13 @@ class PersonViewController : UITableViewController {
             let cell = UITableViewCell()
             cell.textLabel?.text = "No upcoming events"
             return cell
+        case 2:
+            let trackCell = tableView.dequeueReusableCell(withIdentifier: "personTrackCell")!
+            let track = personDetail!.tracks[indexPath.row]
             
+            trackCell.textLabel?.text = track.title
+            
+            return trackCell
         default:
             break
         }
@@ -100,6 +112,10 @@ class PersonViewController : UITableViewController {
         if indexPath.section == 0 {
             let link = personDetail!.socialLinks[indexPath.row]
             UIApplication.shared.open(link.url, options: [:], completionHandler: nil)
+        }
+        if indexPath.section == 2 {
+            let track = personDetail!.tracks[indexPath.row]
+            UIApplication.shared.open(track.providerUrl, options: [:], completionHandler: nil)
         }
 
         self.tableView.deselectRow(at: indexPath, animated: true)
@@ -120,11 +136,14 @@ class PersonViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if section == 1 {
+        switch section {
+        case 1:
             return "Events"
+        case 2:
+            return "Tracks"
+        default:
+            return nil
         }
-        
-        return nil
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

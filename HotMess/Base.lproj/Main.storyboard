@@ -843,7 +843,7 @@
                         </view>
                         <prototypes>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="personInfoCell" textLabel="NaY-Oh-ih6" imageView="r28-Oi-bVw" style="IBUITableViewCellStyleDefault" id="swi-ys-CAA">
-                                <rect key="frame" x="0.0" y="205.5" width="375" height="44"/>
+                                <rect key="frame" x="0.0" y="206" width="375" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="swi-ys-CAA" id="WIt-M9-Tea">
                                     <rect key="frame" x="0.0" y="0.0" width="375" height="43"/>
@@ -864,7 +864,7 @@
                                 </tableViewCellContentView>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" reuseIdentifier="personEventCell" rowHeight="86" id="w8o-bN-NFN" customClass="EventTableViewCell" customModule="HotMess" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="249.5" width="375" height="86"/>
+                                <rect key="frame" x="0.0" y="250" width="375" height="86"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="w8o-bN-NFN" id="fjE-lj-TKJ">
                                     <rect key="frame" x="0.0" y="0.0" width="342" height="85.5"/>
@@ -907,6 +907,23 @@
                                     <outlet property="titleLabel" destination="OFQ-XC-ij3" id="2fM-e1-v90"/>
                                     <segue destination="k82-OL-fb4" kind="show" identifier="showEvent" id="Yqt-YF-J3g"/>
                                 </connections>
+                            </tableViewCell>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" reuseIdentifier="personTrackCell" textLabel="ShZ-Zb-EGT" rowHeight="86" style="IBUITableViewCellStyleDefault" id="ghZ-DE-Cpq">
+                                <rect key="frame" x="0.0" y="336" width="375" height="86"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="ghZ-DE-Cpq" id="zep-oZ-VeY">
+                                    <rect key="frame" x="0.0" y="0.0" width="342" height="85"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="ShZ-Zb-EGT">
+                                            <rect key="frame" x="15" y="0.0" width="325" height="85"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="0.0"/>
+                                            <nil key="textColor"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                    </subviews>
+                                </tableViewCellContentView>
                             </tableViewCell>
                         </prototypes>
                         <connections>
