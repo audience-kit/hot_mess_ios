@@ -23,7 +23,7 @@ class EventsService {
             var results: [ Event ] = []
             
             for event in events {
-                results.append(Event(with: event))
+                results.append(Event(event))
             }
             
             callback(results)
@@ -36,7 +36,7 @@ class EventsService {
             var results: [ Event ] = []
 
             for event in events {
-                results.append(Event(with: event))
+                results.append(Event(event))
             }
 
             callback(results)
@@ -47,7 +47,7 @@ class EventsService {
         RequestService.shared.request(relativeUrl: "/events/\(event.id)") { (result) in
             let event = result["event"] as! [ String : Any ]
             
-            callback(Event(with: event))
+            callback(Event(event))
         }
     }
 }

@@ -20,7 +20,7 @@ class UserService {
     func me(callback: @escaping (User) -> Void) {
         RequestService.shared.request(relativeUrl: "/me") { (result: [String : Any]) in
             if result["id"] != nil {
-                callback(User(with: result))
+                callback(User(result))
             }
         }
     }

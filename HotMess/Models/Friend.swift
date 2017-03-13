@@ -10,14 +10,14 @@ import Foundation
 
 
 class Friend : Model {
-    var id: UUID
     var name: String
     var facebookId: IntMax
     
-    init(_ data: [ String : Any ]) {
-        self.id = UUID(uuidString: data["id"] as! String)!
+    override init(_ data: [ String : Any ]) {
         self.name = data["name"] as! String
         self.facebookId = data["facebook_id"] as! IntMax
+        
+        super.init(data)
     }
     
     static func ==(rhs: Friend, lhs: Friend) -> Bool {

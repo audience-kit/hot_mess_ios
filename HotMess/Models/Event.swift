@@ -9,7 +9,6 @@
 import Foundation
 
 class Event : Model {
-    let id: UUID
     let name: String
     let startDate: Date
     let endDate: Date?
@@ -17,36 +16,37 @@ class Event : Model {
     let venue: Venue?
     let person: Person?
     
-    init(with: [ String : Any ]) {
+    override init(_ data: [ String : Any ]) {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         
-        self.id = UUID(uuidString: with["id"] as! String)!
-        self.name = with["name"] as! String
-        let startAt = with["start_at"] as! String
+        self.name = data["name"] as! String
+        let startAt = data["start_at"] as! String
         self.startDate = formatter.date(from: startAt)!
-        self.facebookId = with["facebook_id"] as! IntMax
+        self.facebookId = data["facebook_id"] as! IntMax
         
-        if let venue_data = with["venue"] as? [ String : Any ] {
-            self.venue = Venue(with: venue_data)
+        if let venue_data = data["venue"] as? [ String : Any ] {
+            self.venue = Venue(venue_data)
         }
         else {
             self.venue = nil
         }
         
-        if let person_data = with["person"] as? [ String : Any ] {
+        if let person_data = data["person"] as? [ String : Any ] {
             self.person = Person(person_data)
         }
         else {
             self.person = nil
         }
         
-        if let endDateString = with["end_at"] as? String {
+        if let endDateString = data["end_at"] as? String {
             self.endDate = formatter.date(from: endDateString)
         }
         else {
             self.endDate = nil
         }
+        
+        super.init(data)
     }
     
     var facebookUrl : URL {

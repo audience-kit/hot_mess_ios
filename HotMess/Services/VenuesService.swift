@@ -32,7 +32,7 @@ class VenuesService {
         
         RequestService.shared.request(relativeUrl: path) { (result) in
             if let venue = result["venue"] as? [ String : Any ] {
-                callback(Venue(with: venue))
+                callback(Venue(venue))
             }
         }
     }

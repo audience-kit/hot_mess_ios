@@ -17,6 +17,9 @@ class PersonViewController : UITableViewController {
     
     var person: Person? = nil
     
+    var personDetail: PersonDetail? {
+        return person as? PersonDetail
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         guard person != nil else { return }
@@ -26,7 +29,7 @@ class PersonViewController : UITableViewController {
         self.personLikeButton?.objectType = FBSDKLikeObjectType.page
         self.personLikeButton?.likeControlStyle = .boxCount
         
-        PeopleService.shared.get(person!) { (person) in
+        PeopleService.shared.get(person!.id) { (person) in
             DispatchQueue.main.async {
                 self.person = person
                 self.personProfileImage?.profileID = "\(person.facebookId)"
@@ -47,9 +50,9 @@ class PersonViewController : UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0:
-            return 1
+            return personDetail == nil ? 0 :  personDetail!.socialLinks.count
         case 1:
-            return person != nil && person!.events.count != 0 ? person!.events.count : 1
+            return personDetail != nil && personDetail!.events.count != 0 ? personDetail!.events.count : 1
         default:
             return 0
         }
@@ -58,23 +61,26 @@ class PersonViewController : UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         switch indexPath.section {
         case 0:
-            let infoCell = tableView.dequeueReusableCell(withIdentifier: "personInfoCell")
+            let infoCell = tableView.dequeueReusableCell(withIdentifier: "personInfoCell")!
             
-            switch indexPath.row {
-            case 0:
-                infoCell?.detailTextLabel?.text = "View on Facebook"
-                infoCell?.textLabel?.text = "facebook"
+            let link = personDetail!.socialLinks[indexPath.row]
+            infoCell.textLabel?.text = link.handle
+            switch link.provider {
+            case "facebook":
+                infoCell.imageView?.image = #imageLiteral(resourceName: "Facebook")
+            case "soundcloud":
+                infoCell.imageView?.image = #imageLiteral(resourceName: "SoundCloud")
             default:
                 break
             }
-            
-            return infoCell!
+
+            return infoCell
         case 1:
 
-            if person?.events.count != 0 {
+            if personDetail != nil && personDetail!.events.count != 0 {
                 let eventCell = tableView.dequeueReusableCell(withIdentifier: "personEventCell") as! EventTableViewCell
                 
-                let event = person?.events[indexPath.row]
+                let event = personDetail?.events[indexPath.row]
                 eventCell.setEvent(event: event!)
                 return eventCell
             }
@@ -92,7 +98,8 @@ class PersonViewController : UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.section == 0 {
-            UIApplication.shared.open(person!.facebookUrl, options: [:], completionHandler: nil)
+            let link = personDetail!.socialLinks[indexPath.row]
+            UIApplication.shared.open(link.url, options: [:], completionHandler: nil)
         }
 
         self.tableView.deselectRow(at: indexPath, animated: true)
@@ -104,7 +111,7 @@ class PersonViewController : UITableViewController {
         switch segue.identifier! {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
-            let event = self.person?.events[path.row]
+            let event = self.personDetail?.events[path.row]
             
             targetViewController.event = event
         default:
@@ -121,10 +128,13 @@ class PersonViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if indexPath.section == 1 {
+        switch indexPath.section {
+        case 0:
             return 86.0
+        case 1:
+            return 86.0
+        default:
+            return 44.0
         }
-        
-        return 44.0
     }
 }

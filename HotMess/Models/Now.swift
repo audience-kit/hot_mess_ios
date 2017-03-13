@@ -21,7 +21,7 @@ class Now {
         self.title = data["title"] as! String
         
         if let venueData = data["venue"] as? [ String : Any ] {
-            self.venue = Venue(with: venueData)
+            self.venue = Venue(venueData)
         }
         
         if data["venues"] != nil {
@@ -41,7 +41,7 @@ class Now {
         self.friends = friends
         
         for event in data["events"] as! [ [ String : Any ] ] {
-            let event = Event(with: event)
+            let event = Event(event)
             
             events.append(event)
         }

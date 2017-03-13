@@ -11,7 +11,6 @@ import GeoJSON
 import CoreLocation
 
 class Venue : Model {
-    let id: UUID
     let name: String
     let distance: Double?
     let address: String
@@ -21,40 +20,41 @@ class Venue : Model {
     let point: GeoJSONPoint?
     let description: String?
     
-    init(with: [ String: Any]) {
-        self.id = UUID(uuidString: with["id"] as! String)!
-        self.name = with["name"] as! String
-        self.facebookId = with["facebook_id"] as? String
-        self.phone = with["phone"] as? String
-        self.distance = with["distance"] as? Double
+    override init(_ data: [ String: Any]) {
+        self.name = data["name"] as! String
+        self.facebookId = data["facebook_id"] as? String
+        self.phone = data["phone"] as? String
+        self.distance = data["distance"] as? Double
         
-        if let address = with["address"] as? String {
+        if let address = data["address"] as? String {
             self.address = address
         }
         else {
             self.address = "unknown"
         }
         
-        if let photoUrlString = with["photo_url"] as? String {
+        if let photoUrlString = data["photo_url"] as? String {
             self.photoUrl = URL(string: photoUrlString)
         }
         else {
             self.photoUrl = nil
         }
         
-        if let point = with["point"] as? [ String : Any ] {
+        if let point = data["point"] as? [ String : Any ] {
             self.point = GeoJSONPoint(dictionary: point)
         }
         else {
             self.point = nil
         }
         
-        if let descriptionText = with["description"] as? String {
+        if let descriptionText = data["description"] as? String {
             self.description = descriptionText
         }
         else {
             self.description = nil
         }
+        
+        super.init(data)
     }
     
     

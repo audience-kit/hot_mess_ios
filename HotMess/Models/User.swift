@@ -8,14 +8,13 @@
 
 import Foundation
 
-    class User : Model {
-    let id: UUID
+class User : Model {
     let name: String
     
-    init(with: [ String : Any ]) {
+    override init(_ data: [ String : Any ]) {
         // TODO: HORIBLE series of assertions
-        id = UUID(uuidString: with["id"] as! String)!
+        name = data["name"] as! String
         
-        name = with["name"] as! String
+        super.init(data)
     }
 }

@@ -9,5 +9,9 @@
 import Foundation
 
 class Model {
+    let id: UUID
     
+    init(_ data: [ String : Any ]) {
+        self.id = UUID(uuidString: data["id"] as! String)!
+    }
 }

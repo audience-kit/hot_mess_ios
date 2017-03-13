@@ -24,7 +24,7 @@ class Venues {
         var parsed: [ Venue ] = []
         
         for venue in venues {
-            parsed.append(Venue(with: venue))
+            parsed.append(Venue(venue))
         }
         
         self.venues = parsed

@@ -9,16 +9,17 @@
 import Foundation
 
 class Locale : Model {
-    let id: UUID
     let name: String
     
-    init(_ data: [ String : Any ]) {
-        self.id = UUID(uuidString: data["id"] as! String)!
+    override init(_ data: [ String : Any ]) {
         self.name = data["name"] as! String
+        
+        super.init(data)
     }
     
     init(id: UUID, name: String) {
-        self.id = id
         self.name = name
+        
+        super.init([ "id" : id.uuidString ])
     }
 }

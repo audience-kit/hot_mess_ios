@@ -44,6 +44,10 @@
 		C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C99EFFDC1E1CA44700720341 /* PassKit.framework */; };
 		C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D171E516EA600A9A9D6 /* Person.swift */; };
 		C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */; };
+		C9B62C7D1E77470C00F72EC4 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C7C1E77470C00F72EC4 /* Track.swift */; };
+		C9B62C7F1E774BDF00F72EC4 /* PersonDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C7E1E774BDF00F72EC4 /* PersonDetail.swift */; };
+		C9B62C811E774C5C00F72EC4 /* VenueDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */; };
+		C9B62C831E774F1600F72EC4 /* SocialLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C821E774F1600F72EC4 /* SocialLink.swift */; };
 		C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */; };
 		C9CE0C411E4A8FBC00E9A909 /* DistanceFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */; };
 		C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D71E284783005CF7FD /* EventsService.swift */; };
@@ -124,6 +128,10 @@
 		C99EFFDC1E1CA44700720341 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
 		C9A81D171E516EA600A9A9D6 /* Person.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Person.swift; path = Models/Person.swift; sourceTree = "<group>"; };
 		C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PeopleService.swift; path = Services/PeopleService.swift; sourceTree = "<group>"; };
+		C9B62C7C1E77470C00F72EC4 /* Track.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Track.swift; path = Models/Track.swift; sourceTree = "<group>"; };
+		C9B62C7E1E774BDF00F72EC4 /* PersonDetail.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonDetail.swift; path = Models/PersonDetail.swift; sourceTree = "<group>"; };
+		C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueDetail.swift; path = Models/VenueDetail.swift; sourceTree = "<group>"; };
+		C9B62C821E774F1600F72EC4 /* SocialLink.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocialLink.swift; path = Models/SocialLink.swift; sourceTree = "<group>"; };
 		C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsViewController.swift; path = ViewControllers/EventsViewController.swift; sourceTree = "<group>"; };
 		C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DistanceFormatter.swift; path = Views/DistanceFormatter.swift; sourceTree = "<group>"; };
 		C9F1F5D71E284783005CF7FD /* EventsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsService.swift; path = Services/EventsService.swift; sourceTree = "<group>"; };
@@ -294,6 +302,7 @@
 		C9F34AF41E208BE200C5049B /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				C9B62C821E774F1600F72EC4 /* SocialLink.swift */,
 				C93373151E5EEF0000497879 /* Now.swift */,
 				C9F34AF51E208BF100C5049B /* User.swift */,
 				C98A26001E25890500F62464 /* Venue.swift */,
@@ -303,6 +312,9 @@
 				C998EE291E5EA1F30017ED96 /* Friend.swift */,
 				C97E4B491E67A10A0069E965 /* Model.swift */,
 				C99B12A41E72D88D002466C7 /* Venues.swift */,
+				C9B62C7C1E77470C00F72EC4 /* Track.swift */,
+				C9B62C7E1E774BDF00F72EC4 /* PersonDetail.swift */,
+				C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -641,6 +653,7 @@
 				C99EFFDA1E1C682000720341 /* LoginViewController.swift in Sources */,
 				C93373121E5EEB5B00497879 /* NowService.swift in Sources */,
 				C97E4B461E67A0800069E965 /* PersonViewController.swift in Sources */,
+				C9B62C831E774F1600F72EC4 /* SocialLink.swift in Sources */,
 				C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */,
 				C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
@@ -653,7 +666,10 @@
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,
 				C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */,
+				C9B62C7F1E774BDF00F72EC4 /* PersonDetail.swift in Sources */,
+				C9B62C7D1E77470C00F72EC4 /* Track.swift in Sources */,
 				C97E4B481E67A0B80069E965 /* EventViewController.swift in Sources */,
+				C9B62C811E774C5C00F72EC4 /* VenueDetail.swift in Sources */,
 				C998EE2E1E5EADE70017ED96 /* FriendTableViewCell.swift in Sources */,
 				C998EE301E5EB2000017ED96 /* HeroTableViewCell.swift in Sources */,
 				C97F0DE71E54F1C100C615BA /* SettingsViewController.swift in Sources */,

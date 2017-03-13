@@ -30,11 +30,11 @@ class PeopleService {
         }
     }
 
-    func get(_ person: Person, callback: @escaping (Person) -> Void) {
-        RequestService.shared.request(relativeUrl: "/people/\(person.id)") { (result) in
+    func get(_ personId: UUID, callback: @escaping (PersonDetail) -> Void) {
+        RequestService.shared.request(relativeUrl: "/people/\(personId)") { (result) in
             let person = result["person"] as! [ String : Any ]
             
-            callback(Person(person))
+            callback(PersonDetail(person))
         }
     }
 }
