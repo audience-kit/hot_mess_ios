@@ -14,6 +14,10 @@ class VenueViewController : UITableViewController {
     var venue: Venue?
     var events: [ Event ] = []
     
+    override func viewDidLoad() {
+        self.heroImage?.kf.indicatorType = .activity
+    }
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "venueDetailCell")
@@ -82,20 +86,9 @@ class VenueViewController : UITableViewController {
             DispatchQueue.main.async {
                 self.tableView.reloadData()
             }
-        }
-        
-        DispatchQueue.global().async {
-            do {
-                if let photoUrl = self.venue!.photoUrl {
-                    let data = try Data(contentsOf: photoUrl)
-                    let image = UIImage(data: data)
-                    DispatchQueue.main.async {
-                        self.heroImage?.image = image
-                    }
-                }
-            }
-            catch {
-                
+            
+            if let photoUrl = self.venue?.photoUrl {
+                self.heroImage?.kf.setImage(with: photoUrl)
             }
         }
     }

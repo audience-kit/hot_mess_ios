@@ -11,7 +11,7 @@ import FBSDKCoreKit
 import FBSDKShareKit
 
 class PersonViewController : UITableViewController {
-    @IBOutlet var personProfileImage: FBSDKProfilePictureView?
+    @IBOutlet var personProfileImage: UIImageView?
     @IBOutlet var personTitleLabel: UILabel?
     @IBOutlet var personLikeButton: FBSDKLikeControl?
     
@@ -26,14 +26,14 @@ class PersonViewController : UITableViewController {
         
         self.navigationItem.title = person?.name
         
+        self.personProfileImage?.kf.indicatorType = .activity
         self.personLikeButton?.objectType = FBSDKLikeObjectType.page
         self.personLikeButton?.likeControlStyle = .boxCount
         
         PeopleService.shared.get(person!.id) { (person) in
             DispatchQueue.main.async {
                 self.person = person
-                self.personProfileImage?.profileID = "\(person.facebookId)"
-                self.personProfileImage?.setNeedsImageUpdate()
+                self.personProfileImage?.kf.setImage(with: person.pictureUrl)
                 self.personTitleLabel?.text = person.name
                 self.personLikeButton?.objectID = "\(person.facebookId)"
 
@@ -66,7 +66,7 @@ class PersonViewController : UITableViewController {
             let infoCell = tableView.dequeueReusableCell(withIdentifier: "personInfoCell")!
             
             let link = personDetail!.socialLinks[indexPath.row]
-            infoCell.textLabel?.text = link.handle
+            infoCell.textLabel?.text = "/\(link.handle)"
             switch link.provider {
             case "facebook":
                 infoCell.imageView?.image = #imageLiteral(resourceName: "Facebook")
@@ -95,10 +95,10 @@ class PersonViewController : UITableViewController {
             cell.textLabel?.text = "No upcoming events"
             return cell
         case 2:
-            let trackCell = tableView.dequeueReusableCell(withIdentifier: "personTrackCell")!
+            let trackCell = tableView.dequeueReusableCell(withIdentifier: "personTrackCell") as! TrackTableViewCell
             let track = personDetail!.tracks[indexPath.row]
             
-            trackCell.textLabel?.text = track.title
+            trackCell.setTrack(track)
             
             return trackCell
         default:
@@ -139,19 +139,31 @@ class PersonViewController : UITableViewController {
         switch section {
         case 1:
             return "Events"
-        case 2:
-            return "Tracks"
         default:
             return nil
         }
     }
     
+    override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        if section == 2 {
+            let imageView = UIImageView(image: #imageLiteral(resourceName: "PoweredBySoundCloud"))
+            
+            imageView.contentMode = .left
+            
+            return imageView
+        }
+        
+        return super.tableView(tableView, viewForHeaderInSection: section)
+    }
+    
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         switch indexPath.section {
         case 0:
-            return 86.0
+            return 58.0
         case 1:
             return 86.0
+        case 2:
+            return 120.0
         default:
             return 44.0
         }

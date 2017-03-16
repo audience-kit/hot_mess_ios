@@ -43,11 +43,11 @@ class EventsService {
         }
     }
     
-    func get(_ event: Event, callback: @escaping (Event) -> Void) {
+    func get(_ event: Event, callback: @escaping (EventDetail) -> Void) {
         RequestService.shared.request(relativeUrl: "/events/\(event.id)") { (result) in
             let event = result["event"] as! [ String : Any ]
             
-            callback(Event(event))
+            callback(EventDetail(event))
         }
     }
 }

@@ -10,12 +10,12 @@ import UIKit
 import FBSDKLoginKit
 
 class PersonTableViewCell: UITableViewCell {
-    @IBOutlet var pictureView: FBSDKProfilePictureView?
+    @IBOutlet var pictureView: UIImageView?
     @IBOutlet var titleLabelView: UILabel?
     
     func setPerson(_ person: Person) {
-        self.pictureView?.profileID = "\(person.facebookId)"
-        self.pictureView?.setNeedsImageUpdate()
+        self.pictureView?.kf.indicatorType = .activity
+        self.pictureView?.kf.setImage(with: person.pictureUrl)
         self.titleLabelView?.text = person.name
     }
 }

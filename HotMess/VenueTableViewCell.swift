@@ -8,12 +8,13 @@
 
 import UIKit
 import FBSDKCoreKit
+import Kingfisher
 
 class VenueTableViewCell : UITableViewCell {
     @IBOutlet var nameLabel : UILabel?
     @IBOutlet var distanceLabel : UILabel?
     @IBOutlet var addressLabel: UILabel?
-    @IBOutlet var profilePictureView: FBSDKProfilePictureView?
+    @IBOutlet var profilePictureView: UIImageView?
     
     func setVenue(venue: Venue) {
         nameLabel?.text = venue.name
@@ -24,8 +25,7 @@ class VenueTableViewCell : UITableViewCell {
             addressLabel?.text = venue.address
         }
         
-        profilePictureView?.profileID = venue.facebookId
-        profilePictureView?.setNeedsImageUpdate()
+        profilePictureView?.kf.setImage(with: venue.pictureUrl)
         
         if let distance = venue.distance {
             distanceLabel?.text = DistanceFormatter.shared.string(forMeters: distance)

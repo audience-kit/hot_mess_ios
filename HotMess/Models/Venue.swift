@@ -20,6 +20,10 @@ class Venue : Model {
     let point: GeoJSONPoint?
     let description: String?
     
+    var pictureUrl: URL {
+        return URL(string: "/venues/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
+    }
+    
     override init(_ data: [ String: Any]) {
         self.name = data["name"] as! String
         self.facebookId = data["facebook_id"] as? String

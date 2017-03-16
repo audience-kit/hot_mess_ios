@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16E183b" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16E189a" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
     <device id="retina4_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
@@ -10,6 +10,20 @@
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
+    <customFonts key="customFonts">
+        <array key="ProximaNova-Regular.otf">
+            <string>ProximaNova-Regular</string>
+        </array>
+        <array key="ProximaNova-RegularT50.otf">
+            <string>ProximaNova-T50</string>
+        </array>
+        <array key="ProximaNova-SemiBold.otf">
+            <string>ProximaNova-Semibold</string>
+        </array>
+        <array key="ProximaNova-SemiBoldT50.otf">
+            <string>ProximaNova-SemiBoldT50</string>
+        </array>
+    </customFonts>
     <scenes>
         <!--Now-->
         <scene sceneID="hNz-n2-bh7">
@@ -81,14 +95,14 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Event Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Y0u-bY-3Y7">
-                                            <rect key="frame" x="60.5" y="13" width="271.5" height="31"/>
+                                            <rect key="frame" x="59.5" y="13" width="272" height="31"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="23"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Subtitle" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LX7-y8-aLc">
-                                            <rect key="frame" x="60.5" y="50" width="271.5" height="21"/>
+                                            <rect key="frame" x="59.5" y="50" width="272" height="21"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
@@ -146,25 +160,21 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Address" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LBf-gm-A39">
-                                            <rect key="frame" x="105" y="68.5" width="229" height="18"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                            <rect key="frame" x="105" y="69" width="229" height="17.5"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="15"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Distance" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Pgt-WZ-D9t">
-                                            <rect key="frame" x="269" y="39" width="65" height="21"/>
+                                            <rect key="frame" x="269" y="40" width="65" height="20"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="65" id="nnY-hC-7vl"/>
                                             </constraints>
-                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="17"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                             <nil key="highlightedColor"/>
                                         </label>
-                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Gzj-M7-O0a">
-                                            <rect key="frame" x="279" y="49" width="240" height="128"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        </imageView>
-                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PF1-NV-4od" customClass="FBSDKProfilePictureView">
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PF1-NV-4od" customClass="UIImageView">
                                             <rect key="frame" x="10" y="12" width="75" height="75"/>
                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                             <constraints>
@@ -173,8 +183,8 @@
                                             </constraints>
                                         </view>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Venue Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FbZ-pw-az2">
-                                            <rect key="frame" x="105" y="13" width="229" height="21"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <rect key="frame" x="105" y="13" width="229" height="20"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="17"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
@@ -210,7 +220,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="W5J-7L-Pyd" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1832.8" y="-930.58470764617698"/>
+            <point key="canvasLocation" x="3636" y="-903"/>
         </scene>
         <!--Venues-->
         <scene sceneID="DSv-ja-ZXy">
@@ -247,11 +257,7 @@
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                             <nil key="highlightedColor"/>
                                         </label>
-                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iCi-bN-wjq">
-                                            <rect key="frame" x="279" y="49" width="240" height="128"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        </imageView>
-                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4bF-zY-df5" customClass="FBSDKProfilePictureView">
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4bF-zY-df5" customClass="UIImageView">
                                             <rect key="frame" x="10" y="12" width="75" height="75"/>
                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                             <constraints>
@@ -323,7 +329,7 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Superbowl Party" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3sB-Wk-Z23">
-                                            <rect key="frame" x="76.5" y="13" width="238.5" height="31"/>
+                                            <rect key="frame" x="76" y="13" width="238" height="31"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="23"/>
                                             <nil key="textColor"/>
@@ -344,7 +350,7 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="at Industry Bar" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bUH-7Y-T9r">
-                                            <rect key="frame" x="76.5" y="50" width="238.5" height="21"/>
+                                            <rect key="frame" x="76" y="50" width="238" height="21"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
@@ -396,7 +402,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="j60-5J-uQV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1952.8" y="-138.0809595202399"/>
+            <point key="canvasLocation" x="3636" y="-138"/>
         </scene>
         <!--Events-->
         <scene sceneID="qwH-ws-Neu">
@@ -415,32 +421,32 @@
                                     <rect key="frame" x="0.0" y="0.0" width="342" height="85.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="FEB" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WQF-Ny-aMn">
-                                            <rect key="frame" x="13" y="14" width="30" height="21"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="13"/>
-                                            <color key="textColor" red="0.50196081400000003" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="11" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZX0-RU-eoH">
                                             <rect key="frame" x="11" y="34" width="35" height="35"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="25"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-Semibold" family="Proxima Nova" pointSize="17"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Superbowl Party" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Rv8-x6-CUL">
-                                            <rect key="frame" x="62" y="10" width="272" height="31"/>
+                                            <rect key="frame" x="61" y="10" width="273" height="31"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="23"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="22"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="at Industry Bar" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mSu-eA-CFG">
-                                            <rect key="frame" x="62" y="47" width="272" height="21"/>
+                                            <rect key="frame" x="61" y="47" width="273" height="21"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="18"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="FEB" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WQF-Ny-aMn">
+                                            <rect key="frame" x="9" y="15" width="40" height="21"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-Semibold" family="Proxima Nova" pointSize="15"/>
+                                            <color key="textColor" red="0.50196081400000003" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                     </subviews>
@@ -478,14 +484,14 @@
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5ks-t6-g7b">
-                                    <rect key="frame" x="20" y="39" width="345" height="29"/>
-                                    <fontDescription key="fontDescription" type="system" pointSize="24"/>
+                                    <rect key="frame" x="20" y="39" width="345" height="27"/>
+                                    <fontDescription key="fontDescription" name="ProximaNova-SemiBoldT50" family="Proxima Nova" pointSize="23"/>
                                     <nil key="textColor"/>
                                     <nil key="highlightedColor"/>
                                 </label>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pa6-Y3-GWH">
-                                    <rect key="frame" x="20" y="93" width="345" height="21"/>
-                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                    <rect key="frame" x="20" y="91" width="345" height="20"/>
+                                    <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="17"/>
                                     <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                     <nil key="highlightedColor"/>
                                 </label>
@@ -508,7 +514,7 @@
                                     <rect key="frame" x="0.0" y="0.0" width="342" height="119.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="kV0-wH-jYx" customClass="FBSDKProfilePictureView">
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="kV0-wH-jYx" customClass="UIImageView">
                                             <rect key="frame" x="13" y="10" width="100" height="100"/>
                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                             <constraints>
@@ -574,7 +580,7 @@
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
-                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Wug-PJ-Si2" customClass="FBSDKProfilePictureView">
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Wug-PJ-Si2" customClass="UIImageView">
                                             <rect key="frame" x="13" y="10" width="100" height="100"/>
                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                             <constraints>
@@ -620,7 +626,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="CFO-s2-gC3" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3008.8000000000002" y="664.31784107946032"/>
+            <point key="canvasLocation" x="2628" y="681"/>
         </scene>
         <!--Events-->
         <scene sceneID="uBl-mL-uVT">
@@ -628,9 +634,12 @@
                 <navigationController title="Events" id="jD1-Ah-Fbd" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Events" image="Events" selectedImage="Events" id="Vsd-as-FXR"/>
                     <simulatedTabBarMetrics key="simulatedBottomBarMetrics"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="q2N-Wy-XyZ">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="q2N-Wy-XyZ">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
+                        <textAttributes key="titleTextAttributes">
+                            <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="17"/>
+                        </textAttributes>
                     </navigationBar>
                     <connections>
                         <segue destination="uhz-5j-abi" kind="relationship" relationship="rootViewController" id="AaJ-R1-R0A"/>
@@ -654,8 +663,8 @@
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Welcome" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8pP-0D-7oa">
-                                    <rect key="frame" x="0.0" y="196.5" width="375" height="38.5"/>
-                                    <fontDescription key="fontDescription" type="system" pointSize="32"/>
+                                    <rect key="frame" x="0.0" y="200" width="375" height="35"/>
+                                    <fontDescription key="fontDescription" name="ProximaNova-Semibold" family="Proxima Nova" pointSize="30"/>
                                     <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                     <nil key="highlightedColor"/>
                                 </label>
@@ -754,31 +763,30 @@
                                     <rect key="frame" x="0.0" y="0.0" width="342" height="99.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="i8G-8I-njN" customClass="FBSDKProfilePictureView">
-                                            <rect key="frame" x="10" y="12.5" width="75" height="75"/>
-                                            <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                            <constraints>
-                                                <constraint firstAttribute="height" constant="75" id="OZw-Fp-Kzd"/>
-                                                <constraint firstAttribute="width" secondItem="i8G-8I-njN" secondAttribute="height" multiplier="1:1" id="zTQ-QV-Ts0"/>
-                                            </constraints>
-                                        </view>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SpA-Qg-wjj">
-                                            <rect key="frame" x="105" y="23" width="214" height="26.5"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="22"/>
+                                            <rect key="frame" x="108" y="23" width="211" height="24.5"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="20"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
+                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="l70-uN-XVL">
+                                            <rect key="frame" x="18" y="10" width="80" height="80"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="l70-uN-XVL" secondAttribute="height" multiplier="1:1" id="AT2-zU-0Q3"/>
+                                                <constraint firstAttribute="height" constant="80" id="ohH-id-wN8"/>
+                                            </constraints>
+                                        </imageView>
                                     </subviews>
                                     <constraints>
-                                        <constraint firstItem="i8G-8I-njN" firstAttribute="centerY" secondItem="pIt-WT-NG7" secondAttribute="centerY" id="0BN-jT-RWL"/>
-                                        <constraint firstItem="i8G-8I-njN" firstAttribute="leading" secondItem="pIt-WT-NG7" secondAttribute="leadingMargin" constant="2" id="4nN-q2-Pxo"/>
                                         <constraint firstAttribute="trailingMargin" secondItem="SpA-Qg-wjj" secondAttribute="trailing" constant="15" id="5Rj-3C-z89"/>
-                                        <constraint firstItem="SpA-Qg-wjj" firstAttribute="leading" secondItem="i8G-8I-njN" secondAttribute="trailing" constant="20" id="Xjt-Gp-gvt"/>
+                                        <constraint firstItem="l70-uN-XVL" firstAttribute="leading" secondItem="pIt-WT-NG7" secondAttribute="leadingMargin" constant="10" id="Gsy-he-Onq"/>
+                                        <constraint firstItem="l70-uN-XVL" firstAttribute="centerY" secondItem="pIt-WT-NG7" secondAttribute="centerY" id="WyK-q1-NzZ"/>
+                                        <constraint firstItem="SpA-Qg-wjj" firstAttribute="leading" secondItem="l70-uN-XVL" secondAttribute="trailing" constant="10" id="edx-pU-bZc"/>
                                         <constraint firstItem="SpA-Qg-wjj" firstAttribute="top" secondItem="pIt-WT-NG7" secondAttribute="topMargin" constant="15" id="tKa-0E-9xX"/>
                                     </constraints>
                                 </tableViewCellContentView>
                                 <connections>
-                                    <outlet property="pictureView" destination="i8G-8I-njN" id="ufz-EL-ry5"/>
+                                    <outlet property="pictureView" destination="l70-uN-XVL" id="rmK-Wv-x9w"/>
                                     <outlet property="titleLabelView" destination="SpA-Qg-wjj" id="WC1-md-L9n"/>
                                     <segue destination="OUb-dH-DVU" kind="show" identifier="showPerson" id="mw9-ec-8EA"/>
                                 </connections>
@@ -807,43 +815,42 @@
                             <rect key="frame" x="0.0" y="0.0" width="375" height="150"/>
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
-                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ZcS-2h-Sys" customClass="FBSDKProfilePictureView">
-                                    <rect key="frame" x="18" y="25" width="100" height="100"/>
-                                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                    <constraints>
-                                        <constraint firstAttribute="height" constant="100" id="i9y-T4-ieg"/>
-                                        <constraint firstAttribute="width" secondItem="ZcS-2h-Sys" secondAttribute="height" multiplier="1:1" id="yUK-Fb-wU0"/>
-                                    </constraints>
-                                </view>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NSu-os-v1m">
-                                    <rect key="frame" x="138" y="40" width="227" height="24"/>
-                                    <fontDescription key="fontDescription" type="system" pointSize="20"/>
+                                    <rect key="frame" x="140" y="40" width="225" height="23.5"/>
+                                    <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="20"/>
                                     <nil key="textColor"/>
                                     <nil key="highlightedColor"/>
                                 </label>
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="8QQ-Pw-DIG" customClass="FBSDKLikeControl">
-                                    <rect key="frame" x="138" y="100" width="213" height="25"/>
+                                    <rect key="frame" x="138" y="93.5" width="213" height="25"/>
                                     <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="25" id="4EE-Ec-5JV"/>
                                     </constraints>
                                 </view>
+                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="azb-eu-GMo">
+                                    <rect key="frame" x="20" y="25" width="100" height="100"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" secondItem="azb-eu-GMo" secondAttribute="height" multiplier="1:1" id="4JK-ta-LeY"/>
+                                        <constraint firstAttribute="width" constant="100" id="O1f-iW-rU7"/>
+                                    </constraints>
+                                </imageView>
                             </subviews>
                             <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
                             <constraints>
-                                <constraint firstItem="8QQ-Pw-DIG" firstAttribute="bottom" secondItem="ZcS-2h-Sys" secondAttribute="bottom" id="2cx-iS-ZgI"/>
-                                <constraint firstItem="ZcS-2h-Sys" firstAttribute="centerY" secondItem="nqP-2f-W8h" secondAttribute="centerY" id="912-P9-XSJ"/>
-                                <constraint firstItem="8QQ-Pw-DIG" firstAttribute="leading" secondItem="ZcS-2h-Sys" secondAttribute="trailing" constant="20" id="Cad-0q-Iau"/>
+                                <constraint firstItem="8QQ-Pw-DIG" firstAttribute="top" secondItem="NSu-os-v1m" secondAttribute="bottom" constant="30" id="4Nz-Gh-ICh"/>
+                                <constraint firstItem="8QQ-Pw-DIG" firstAttribute="leading" secondItem="azb-eu-GMo" secondAttribute="trailing" constant="18" id="EZv-Xb-rnl"/>
                                 <constraint firstAttribute="trailing" secondItem="8QQ-Pw-DIG" secondAttribute="trailing" constant="24" id="FO0-Mx-5eF"/>
-                                <constraint firstItem="NSu-os-v1m" firstAttribute="leading" secondItem="ZcS-2h-Sys" secondAttribute="trailing" constant="20" id="LSc-6B-k3W"/>
-                                <constraint firstItem="ZcS-2h-Sys" firstAttribute="leading" secondItem="nqP-2f-W8h" secondAttribute="leading" constant="18" id="Wwf-WX-gHR"/>
+                                <constraint firstItem="azb-eu-GMo" firstAttribute="centerY" secondItem="nqP-2f-W8h" secondAttribute="centerY" id="LHv-oP-2pK"/>
                                 <constraint firstAttribute="trailing" secondItem="NSu-os-v1m" secondAttribute="trailing" constant="10" id="aBA-2y-OVi"/>
                                 <constraint firstItem="NSu-os-v1m" firstAttribute="top" secondItem="nqP-2f-W8h" secondAttribute="top" constant="40" id="eVZ-Qz-8if"/>
+                                <constraint firstItem="azb-eu-GMo" firstAttribute="leading" secondItem="nqP-2f-W8h" secondAttribute="leading" constant="20" id="hfU-MY-3M7"/>
+                                <constraint firstItem="NSu-os-v1m" firstAttribute="leading" secondItem="azb-eu-GMo" secondAttribute="trailing" constant="20" id="jb8-zP-Iao"/>
                             </constraints>
                         </view>
                         <prototypes>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="personInfoCell" textLabel="NaY-Oh-ih6" imageView="r28-Oi-bVw" style="IBUITableViewCellStyleDefault" id="swi-ys-CAA">
-                                <rect key="frame" x="0.0" y="206" width="375" height="44"/>
+                                <rect key="frame" x="0.0" y="205.5" width="375" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="swi-ys-CAA" id="WIt-M9-Tea">
                                     <rect key="frame" x="0.0" y="0.0" width="375" height="43"/>
@@ -852,7 +859,7 @@
                                         <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="NaY-Oh-ih6">
                                             <rect key="frame" x="73" y="0.0" width="287" height="43"/>
                                             <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="0.0"/>
+                                            <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="17"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                             <nil key="highlightedColor"/>
                                         </label>
@@ -864,7 +871,7 @@
                                 </tableViewCellContentView>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" reuseIdentifier="personEventCell" rowHeight="86" id="w8o-bN-NFN" customClass="EventTableViewCell" customModule="HotMess" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="250" width="375" height="86"/>
+                                <rect key="frame" x="0.0" y="249.5" width="375" height="86"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="w8o-bN-NFN" id="fjE-lj-TKJ">
                                     <rect key="frame" x="0.0" y="0.0" width="342" height="85.5"/>
@@ -885,14 +892,14 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Superbowl Party" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="OFQ-XC-ij3">
-                                            <rect key="frame" x="76.5" y="13" width="238.5" height="31"/>
+                                            <rect key="frame" x="75.5" y="13" width="239" height="31"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="23"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="at Industry Bar" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VUN-7M-KCR">
-                                            <rect key="frame" x="76.5" y="50" width="238.5" height="21"/>
+                                            <rect key="frame" x="75.5" y="50" width="239" height="21"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
@@ -908,22 +915,36 @@
                                     <segue destination="k82-OL-fb4" kind="show" identifier="showEvent" id="Yqt-YF-J3g"/>
                                 </connections>
                             </tableViewCell>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" reuseIdentifier="personTrackCell" textLabel="ShZ-Zb-EGT" rowHeight="86" style="IBUITableViewCellStyleDefault" id="ghZ-DE-Cpq">
-                                <rect key="frame" x="0.0" y="336" width="375" height="86"/>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="personTrackCell" rowHeight="120" id="ghZ-DE-Cpq" customClass="TrackTableViewCell" customModule="HotMess" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="335.5" width="375" height="120"/>
                                 <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="ghZ-DE-Cpq" id="zep-oZ-VeY">
-                                    <rect key="frame" x="0.0" y="0.0" width="342" height="85"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" tableViewCell="ghZ-DE-Cpq" id="zep-oZ-VeY">
+                                    <rect key="frame" x="0.0" y="0.0" width="375" height="119.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="ShZ-Zb-EGT">
-                                            <rect key="frame" x="15" y="0.0" width="325" height="85"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="0.0"/>
-                                            <nil key="textColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
+                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="7If-Hi-dic">
+                                            <rect key="frame" x="8" y="8" width="359" height="103.5"/>
+                                        </imageView>
+                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="kgP-2D-Dbx">
+                                            <rect key="frame" x="8" y="8" width="359" height="103.5"/>
+                                        </imageView>
                                     </subviews>
+                                    <constraints>
+                                        <constraint firstAttribute="trailingMargin" secondItem="7If-Hi-dic" secondAttribute="trailing" id="3NR-QA-kgE"/>
+                                        <constraint firstItem="kgP-2D-Dbx" firstAttribute="top" secondItem="7If-Hi-dic" secondAttribute="top" id="9HH-Bn-pj5"/>
+                                        <constraint firstItem="7If-Hi-dic" firstAttribute="leading" secondItem="zep-oZ-VeY" secondAttribute="leadingMargin" id="Fqu-WN-meV"/>
+                                        <constraint firstAttribute="bottomMargin" secondItem="7If-Hi-dic" secondAttribute="bottom" id="S8G-gY-wBE"/>
+                                        <constraint firstItem="kgP-2D-Dbx" firstAttribute="bottom" secondItem="7If-Hi-dic" secondAttribute="bottom" id="YeA-Zj-imL"/>
+                                        <constraint firstItem="kgP-2D-Dbx" firstAttribute="width" secondItem="7If-Hi-dic" secondAttribute="width" id="bc0-H9-NRT"/>
+                                        <constraint firstItem="7If-Hi-dic" firstAttribute="top" secondItem="zep-oZ-VeY" secondAttribute="topMargin" id="d5l-8e-bKn"/>
+                                        <constraint firstItem="kgP-2D-Dbx" firstAttribute="centerX" secondItem="7If-Hi-dic" secondAttribute="centerX" id="z6h-Tg-WVj"/>
+                                    </constraints>
                                 </tableViewCellContentView>
+                                <inset key="separatorInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
+                                <connections>
+                                    <outlet property="artworkImage" destination="7If-Hi-dic" id="JQ4-bF-H1g"/>
+                                    <outlet property="waveformImage" destination="kgP-2D-Dbx" id="2e4-gg-utt"/>
+                                </connections>
                             </tableViewCell>
                         </prototypes>
                         <connections>
@@ -933,22 +954,25 @@
                     </tableView>
                     <connections>
                         <outlet property="personLikeButton" destination="8QQ-Pw-DIG" id="YIy-ha-OCB"/>
-                        <outlet property="personProfileImage" destination="ZcS-2h-Sys" id="1Xm-cj-Zmz"/>
+                        <outlet property="personProfileImage" destination="azb-eu-GMo" id="qJE-cV-9YN"/>
                         <outlet property="personTitleLabel" destination="NSu-os-v1m" id="hOu-FK-eRp"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="vGF-ei-SNi" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1973.5999999999999" y="1414.5427286356824"/>
+            <point key="canvasLocation" x="1848.8" y="1428.9355322338831"/>
         </scene>
         <!--People-->
         <scene sceneID="GDK-DD-Wr5">
             <objects>
                 <navigationController id="36q-uE-gMx" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="People" image="People" selectedImage="People" id="dax-cz-rvE"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="9fE-PY-inX">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="9fE-PY-inX">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
+                        <textAttributes key="titleTextAttributes">
+                            <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="17"/>
+                        </textAttributes>
                     </navigationBar>
                     <connections>
                         <segue destination="Ay4-EC-n6d" kind="relationship" relationship="rootViewController" id="nkO-58-GIj"/>
@@ -963,9 +987,12 @@
             <objects>
                 <navigationController id="SQL-k3-poP" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Me" image="Me" selectedImage="Me" id="Nqe-d1-eHY"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="Q6l-hQ-u72">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="Q6l-hQ-u72">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
+                        <textAttributes key="titleTextAttributes">
+                            <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="17"/>
+                        </textAttributes>
                     </navigationBar>
                     <connections>
                         <segue destination="5r4-bp-BxZ" kind="relationship" relationship="rootViewController" id="WY8-5P-hHF"/>
@@ -980,9 +1007,12 @@
             <objects>
                 <navigationController id="xD5-11-8IJ" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Now" selectedImage="Now" id="wkt-a3-dr6"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="Kq5-yF-U49">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="Kq5-yF-U49">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
+                        <textAttributes key="titleTextAttributes">
+                            <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="17"/>
+                        </textAttributes>
                     </navigationBar>
                     <connections>
                         <segue destination="9pv-A4-QxB" kind="relationship" relationship="rootViewController" id="Pgq-Eo-Eq5"/>
@@ -998,9 +1028,12 @@
                 <navigationController title="Venues" id="tcR-sU-DGn" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Venues" image="Venues" id="vEH-PZ-N3I"/>
                     <simulatedTabBarMetrics key="simulatedBottomBarMetrics"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="QVA-xf-BUJ">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="QVA-xf-BUJ">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
+                        <textAttributes key="titleTextAttributes">
+                            <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="17"/>
+                        </textAttributes>
                     </navigationBar>
                     <connections>
                         <segue destination="vkh-f0-yiH" kind="relationship" relationship="rootViewController" id="dLd-w5-9UM"/>
@@ -1035,7 +1068,7 @@
     </scenes>
     <resources>
         <image name="Events" width="30" height="30"/>
-        <image name="Facebook" width="72" height="72"/>
+        <image name="Facebook" width="48" height="48"/>
         <image name="LoginBackground" width="414" height="736"/>
         <image name="Me" width="30" height="30"/>
         <image name="Now" width="30" height="30"/>
@@ -1043,8 +1076,8 @@
         <image name="Venues" width="30" height="30"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="mR4-Aw-YMM"/>
-        <segue reference="Yqt-YF-J3g"/>
         <segue reference="6ii-QQ-Eli"/>
+        <segue reference="Yqt-YF-J3g"/>
+        <segue reference="B27-64-cxX"/>
     </inferredMetricsTieBreakers>
 </document>

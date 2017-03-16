@@ -16,6 +16,7 @@ target 'HotMess' do
   pod 'NewRelicAgent'
   pod 'Starscream'
   pod 'GeoJSON'
+  pod 'Kingfisher'
   
   target 'HotMessTests' do
     inherit! :search_paths

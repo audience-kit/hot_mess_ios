@@ -22,6 +22,7 @@
 		C9570A2D1E47A71500A94395 /* VenueTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9570A2C1E47A71500A94395 /* VenueTableViewCell.swift */; };
 		C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */; };
 		C96779191E26082900BC263D /* VenueViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96779181E26082900BC263D /* VenueViewController.swift */; };
+		C96BB1001E78457A008F061E /* EventDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96BB0FF1E78457A008F061E /* EventDetail.swift */; };
 		C96F09821E4307DE009B3911 /* Locale.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09811E4307DE009B3911 /* Locale.swift */; };
 		C96F09841E430822009B3911 /* LocaleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09831E430822009B3911 /* LocaleService.swift */; };
 		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
@@ -30,11 +31,18 @@
 		C97E4B4A1E67A10A0069E965 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97E4B491E67A10A0069E965 /* Model.swift */; };
 		C97F0DE71E54F1C100C615BA /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */; };
 		C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0DE81E552FCD00C615BA /* PersonTableViewCell.swift */; };
+		C986C1FB1E781C7C003A4795 /* ProximaNova-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F51E781C7C003A4795 /* ProximaNova-Regular.otf */; };
+		C986C1FC1E781C7C003A4795 /* ProximaNova-RegularT50.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F61E781C7C003A4795 /* ProximaNova-RegularT50.otf */; };
+		C986C1FD1E781C7C003A4795 /* ProximaNova-RegularT100.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F71E781C7C003A4795 /* ProximaNova-RegularT100.otf */; };
+		C986C1FE1E781C7C003A4795 /* ProximaNova-SemiBold.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F81E781C7C003A4795 /* ProximaNova-SemiBold.otf */; };
+		C986C1FF1E781C7C003A4795 /* ProximaNova-SemiBoldT50.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F91E781C7C003A4795 /* ProximaNova-SemiBoldT50.otf */; };
+		C986C2001E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1FA1E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf */; };
 		C98A26011E25890500F62464 /* Venue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26001E25890500F62464 /* Venue.swift */; };
 		C98A26031E25891900F62464 /* VenuesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26021E25891900F62464 /* VenuesService.swift */; };
 		C98A26051E25BB9000F62464 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C98A26041E25BB9000F62464 /* Settings.bundle */; };
 		C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
+		C9968DA61E7B1B6F0001AA92 /* TrackTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9968DA51E7B1B6F0001AA92 /* TrackTableViewCell.swift */; };
 		C998EE2A1E5EA1F30017ED96 /* Friend.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE291E5EA1F30017ED96 /* Friend.swift */; };
 		C998EE2C1E5EA7C40017ED96 /* FriendsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */; };
 		C998EE2E1E5EADE70017ED96 /* FriendTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */; };
@@ -105,6 +113,7 @@
 		C9570A2C1E47A71500A94395 /* VenueTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueTableViewCell.swift; sourceTree = "<group>"; };
 		C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeopleViewController.swift; sourceTree = "<group>"; };
 		C96779181E26082900BC263D /* VenueViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueViewController.swift; sourceTree = "<group>"; };
+		C96BB0FF1E78457A008F061E /* EventDetail.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventDetail.swift; path = Models/EventDetail.swift; sourceTree = "<group>"; };
 		C96F09811E4307DE009B3911 /* Locale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Locale.swift; path = Models/Locale.swift; sourceTree = "<group>"; };
 		C96F09831E430822009B3911 /* LocaleService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocaleService.swift; path = Services/LocaleService.swift; sourceTree = "<group>"; };
 		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -113,11 +122,18 @@
 		C97E4B491E67A10A0069E965 /* Model.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Model.swift; path = Models/Model.swift; sourceTree = "<group>"; };
 		C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SettingsViewController.swift; path = ViewControllers/SettingsViewController.swift; sourceTree = "<group>"; };
 		C97F0DE81E552FCD00C615BA /* PersonTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonTableViewCell.swift; path = Views/PersonTableViewCell.swift; sourceTree = "<group>"; };
+		C986C1F51E781C7C003A4795 /* ProximaNova-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ProximaNova-Regular.otf"; path = "Resources/ProximaNova-Regular.otf"; sourceTree = "<group>"; };
+		C986C1F61E781C7C003A4795 /* ProximaNova-RegularT50.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ProximaNova-RegularT50.otf"; path = "Resources/ProximaNova-RegularT50.otf"; sourceTree = "<group>"; };
+		C986C1F71E781C7C003A4795 /* ProximaNova-RegularT100.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ProximaNova-RegularT100.otf"; path = "Resources/ProximaNova-RegularT100.otf"; sourceTree = "<group>"; };
+		C986C1F81E781C7C003A4795 /* ProximaNova-SemiBold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ProximaNova-SemiBold.otf"; path = "Resources/ProximaNova-SemiBold.otf"; sourceTree = "<group>"; };
+		C986C1F91E781C7C003A4795 /* ProximaNova-SemiBoldT50.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ProximaNova-SemiBoldT50.otf"; path = "Resources/ProximaNova-SemiBoldT50.otf"; sourceTree = "<group>"; };
+		C986C1FA1E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ProximaNova-SemiBoldT100.otf"; path = "Resources/ProximaNova-SemiBoldT100.otf"; sourceTree = "<group>"; };
 		C98A26001E25890500F62464 /* Venue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Venue.swift; path = Models/Venue.swift; sourceTree = "<group>"; };
 		C98A26021E25891900F62464 /* VenuesService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenuesService.swift; path = Services/VenuesService.swift; sourceTree = "<group>"; };
 		C98A26041E25BB9000F62464 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		C98BEDC81E1CB5F2008F48AB /* SessionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionService.swift; path = Services/SessionService.swift; sourceTree = "<group>"; };
 		C98BEDCA1E1CC420008F48AB /* RequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RequestService.swift; path = Services/RequestService.swift; sourceTree = "<group>"; };
+		C9968DA51E7B1B6F0001AA92 /* TrackTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TrackTableViewCell.swift; sourceTree = "<group>"; };
 		C998EE291E5EA1F30017ED96 /* Friend.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Friend.swift; path = Models/Friend.swift; sourceTree = "<group>"; };
 		C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FriendsService.swift; path = Services/FriendsService.swift; sourceTree = "<group>"; };
 		C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FriendTableViewCell.swift; path = Views/FriendTableViewCell.swift; sourceTree = "<group>"; };
@@ -210,6 +226,7 @@
 		C94A5AB21E1B7B2B004601AA /* HotMess */ = {
 			isa = PBXGroup;
 			children = (
+				C986C1F41E781C71003A4795 /* Resources */,
 				C9F34AF41E208BE200C5049B /* Models */,
 				C9F34AEF1E2089C100C5049B /* Views */,
 				C98BEDC51E1CB00A008F48AB /* Support Files */,
@@ -236,6 +253,19 @@
 				C94A5AD71E1B7B2B004601AA /* Info.plist */,
 			);
 			path = HotMessUITests;
+			sourceTree = "<group>";
+		};
+		C986C1F41E781C71003A4795 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C986C1F51E781C7C003A4795 /* ProximaNova-Regular.otf */,
+				C986C1F61E781C7C003A4795 /* ProximaNova-RegularT50.otf */,
+				C986C1F71E781C7C003A4795 /* ProximaNova-RegularT100.otf */,
+				C986C1F81E781C7C003A4795 /* ProximaNova-SemiBold.otf */,
+				C986C1F91E781C7C003A4795 /* ProximaNova-SemiBoldT50.otf */,
+				C986C1FA1E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf */,
+			);
+			name = Resources;
 			sourceTree = "<group>";
 		};
 		C98BEDC41E1CB001008F48AB /* Services */ = {
@@ -295,6 +325,7 @@
 				C97F0DE81E552FCD00C615BA /* PersonTableViewCell.swift */,
 				C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */,
 				C998EE2F1E5EB2000017ED96 /* HeroTableViewCell.swift */,
+				C9968DA51E7B1B6F0001AA92 /* TrackTableViewCell.swift */,
 			);
 			name = Views;
 			sourceTree = "<group>";
@@ -315,6 +346,7 @@
 				C9B62C7C1E77470C00F72EC4 /* Track.swift */,
 				C9B62C7E1E774BDF00F72EC4 /* PersonDetail.swift */,
 				C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */,
+				C96BB0FF1E78457A008F061E /* EventDetail.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -462,9 +494,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				C94A5AC01E1B7B2B004601AA /* LaunchScreen.storyboard in Resources */,
+				C986C1FB1E781C7C003A4795 /* ProximaNova-Regular.otf in Resources */,
+				C986C1FD1E781C7C003A4795 /* ProximaNova-RegularT100.otf in Resources */,
+				C986C1FF1E781C7C003A4795 /* ProximaNova-SemiBoldT50.otf in Resources */,
 				C94A5ABD1E1B7B2B004601AA /* Assets.xcassets in Resources */,
 				C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */,
+				C986C1FE1E781C7C003A4795 /* ProximaNova-SemiBold.otf in Resources */,
 				C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */,
+				C986C2001E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf in Resources */,
+				C986C1FC1E781C7C003A4795 /* ProximaNova-RegularT50.otf in Resources */,
 				C98A26051E25BB9000F62464 /* Settings.bundle in Resources */,
 				C94A5ABB1E1B7B2B004601AA /* Main.storyboard in Resources */,
 			);
@@ -657,6 +695,7 @@
 				C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */,
 				C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
+				C96BB1001E78457A008F061E /* EventDetail.swift in Sources */,
 				C96F09821E4307DE009B3911 /* Locale.swift in Sources */,
 				C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */,
 				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
@@ -677,6 +716,7 @@
 				C9CE0C411E4A8FBC00E9A909 /* DistanceFormatter.swift in Sources */,
 				C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* NowViewController.swift in Sources */,
+				C9968DA61E7B1B6F0001AA92 /* TrackTableViewCell.swift in Sources */,
 				C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */,
 				C97E4B4A1E67A10A0069E965 /* Model.swift in Sources */,
 				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,

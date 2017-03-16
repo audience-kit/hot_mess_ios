@@ -15,6 +15,7 @@ class NowViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.heroBanner?.kf.indicatorType = .activity
         // Do any additional setup after loading the view, typically from a nib.
     }
     
@@ -36,17 +37,8 @@ class NowViewController: UITableViewController {
         NowService.shared.now { (now) in
             if self.now == nil || now != self.now! {
                 
-                DispatchQueue.global().async {
-                    do {
-                        if now.imageUrl != nil {
-                            let data = try Data(contentsOf: now.imageUrl!)
-                            let image = UIImage(data: data)
-                            DispatchQueue.main.async {
-                                self.heroBanner?.image = image
-                            }
-                        }
-                    }
-                    catch {}
+                if now.imageUrl != nil {
+                    self.heroBanner?.kf.setImage(with: now.imageUrl!)
                 }
                 
                 DispatchQueue.main.async {
