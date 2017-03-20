@@ -24,11 +24,15 @@ class RequestService
     }
     
     func request(relativeUrl: String, _ callback : @escaping ([String: Any]) -> Void) {
-        return self.request(relativeUrl: relativeUrl, with: nil, callback)
+        return self.request(DataRequest(relativeUrl, parameters: nil, callback: callback))
     }
     
     func request(relativeUrl: String, with: [String: Any]?, _ callback : @escaping ([String: Any]) -> Void) {
-        let url = URL(string: relativeUrl, relativeTo: AppDelegate.baseUrl)
+        return self.request(DataRequest(relativeUrl, parameters: with, callback: callback))
+    }
+    
+    func request(_ dataRequest: DataRequest) {
+        let url = URL(string: dataRequest.path, relativeTo: AppDelegate.baseUrl)
         
         var request = URLRequest(url: url!)
         
@@ -37,10 +41,10 @@ class RequestService
                 request.addValue("Bearer \(account)", forHTTPHeaderField: "Authorization")
             }
             
-            if (with != nil) {
+            if (dataRequest.parameters != nil) {
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.httpBody = try JSONSerialization.data(withJSONObject: with!, options: .prettyPrinted)
+                request.httpBody = try JSONSerialization.data(withJSONObject: dataRequest.parameters!, options: .prettyPrinted)
             }
             else {
                 request.httpMethod = "GET"
@@ -82,52 +86,17 @@ class RequestService
                 let data = try? JSONSerialization.jsonObject(with: data!, options: .allowFragments) as! [ String: Any]
                 
                 if data != nil {
-                    callback(data!)
+                    dataRequest.callback!(data!)
                 }
             })
             
             task.resume()
         }
         catch {
-            callback([:])
+            dataRequest.callback!([:])
         }
         
     }
 }
 
 
-protocol URLQueryParameterStringConvertible {
-    var queryParameters: String {get}
-}
-
-extension Dictionary : URLQueryParameterStringConvertible {
-    /**
-     This computed property returns a query parameters string from the given NSDictionary. For
-     example, if the input is @{@"day":@"Tuesday", @"month":@"January"}, the output
-     string will be @"day=Tuesday&month=January".
-     @return The computed parameters string.
-     */
-    var queryParameters: String {
-        var parts: [String] = []
-        for (key, value) in self {
-            let part = String(format: "%@=%@",
-                              String(describing: key).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!,
-                              String(describing: value).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)
-            parts.append(part as String)
-        }
-        return parts.joined(separator: "&")
-    }
-    
-}
-
-extension URL {
-    /**
-     Creates a new URL by adding the given query parameters.
-     @param parametersDictionary The query parameter dictionary to add.
-     @return A new URL.
-     */
-    func appendingQueryParameters(_ parametersDictionary : Dictionary<String, String>) -> URL {
-        let URLString : String = String(format: "%@?%@", self.absoluteString, parametersDictionary.queryParameters)
-        return URL(string: URLString)!
-    }
-}

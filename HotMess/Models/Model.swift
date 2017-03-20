@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Model {
+class Model : NSObject {
     let id: UUID
     
     init(_ data: [ String : Any ]) {

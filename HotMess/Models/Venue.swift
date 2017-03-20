@@ -18,7 +18,7 @@ class Venue : Model {
     let phone: String?
     let photoUrl: URL?
     let point: GeoJSONPoint?
-    let description: String?
+    let subtitle: String?
     
     var pictureUrl: URL {
         return URL(string: "/venues/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
@@ -52,10 +52,10 @@ class Venue : Model {
         }
         
         if let descriptionText = data["description"] as? String {
-            self.description = descriptionText
+            self.subtitle = descriptionText
         }
         else {
-            self.description = nil
+            self.subtitle = nil
         }
         
         super.init(data)

@@ -1,4 +1,6 @@
 PODS:
+  - Atlas (1.0.32):
+    - LayerKit (>= 0.25.0)
   - Bolts (1.8.4):
     - Bolts/AppLinks (= 1.8.4)
     - Bolts/Tasks (= 1.8.4)
@@ -19,19 +21,21 @@ PODS:
     - FacebookCore (~> 0.2)
     - FBSDKCoreKit (~> 4.15)
     - FBSDKShareKit (~> 4.15)
-  - FBSDKCoreKit (4.20.1):
+  - FBSDKCoreKit (4.20.2):
     - Bolts (~> 1.7)
-  - FBSDKLoginKit (4.20.1):
+  - FBSDKLoginKit (4.20.2):
     - FBSDKCoreKit
-  - FBSDKShareKit (4.20.1):
+  - FBSDKShareKit (4.20.2):
     - FBSDKCoreKit
   - GeoJSON (0.3.1)
   - Kingfisher (3.5.2)
+  - LayerKit (0.25.2)
   - Locksmith (3.0.0)
   - NewRelicAgent (5.12.0)
   - Starscream (2.0.3)
 
 DEPENDENCIES:
+  - Atlas
   - EstimoteSDK
   - FacebookCore
   - FacebookLogin
@@ -43,20 +47,22 @@ DEPENDENCIES:
   - Starscream
 
 SPEC CHECKSUMS:
+  Atlas: a4052ee9f8eb0f044b0d03ba21c0300742a8332b
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
   EstimoteSDK: 8674ac3687fddfb28d1660c0a8361a55e5da28ba
   FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
   FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
   FacebookShare: 8e9ee8ea06505e6a1d3d719b0cc63e840fb8aaeb
-  FBSDKCoreKit: 39a3569652983bf8666620dd334804c9057ae9b2
-  FBSDKLoginKit: 17092ff61a18c54ca423aebc18c5acc2e5a4a728
-  FBSDKShareKit: 4f37934d9ee9500d2d35752595816dc35f967478
+  FBSDKCoreKit: 82eac696eb6157da5f4266c3a241f00e9bd72471
+  FBSDKLoginKit: 2211bede07c83391349eacc1fd86cf6d9289ce38
+  FBSDKShareKit: ca9b22264ea49a896dafb2467c1a4f72aa41996f
   GeoJSON: 29bd47ba1c91eb8f003b305ff52dac774998804e
   Kingfisher: 9950e382c500b6834ce004c7c4131c444e90c3a1
+  LayerKit: 1915cfca7355c93a5100f77b11fdefb46dad5a38
   Locksmith: 310b4cc5031af5728bf4db5d4de547a5100c6a3b
   NewRelicAgent: 96e6d58112fea8f6e23c072e8499bf6f13c0f34d
   Starscream: 3fdd5c277e57cca6b5c406d274e3f34a7c88f2ce
 
-PODFILE CHECKSUM: de6a977aeff19ddc56ae5dd54ec94fb2ebef5fda
+PODFILE CHECKSUM: cb8c0908efcf82a160dfd02b4425efbcdb82ef6a
 
 COCOAPODS: 1.2.0

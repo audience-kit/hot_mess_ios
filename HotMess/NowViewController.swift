@@ -58,6 +58,10 @@ class NowViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.section == 0 {
+            return 120.0
+        }
+        
         if indexPath.section == 1 {
             return 86.0
         }
@@ -77,21 +81,14 @@ class NowViewController: UITableViewController {
 
         if indexPath.section == 0 {
             if now != nil && now!.venues == nil {
-                if now == nil || now?.friends.count == 0 {
-                    let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell")
-                    
-                    cell!.textLabel?.text = "You're the first to arrive"
-                    
-                    return cell!
-                }
-                else {
-                    let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendCell") as! FriendTableViewCell
-                    
-                    let friend = self.now!.friends[indexPath.row]
-                    cell.setFriend(friend)
-                    
-                    return cell
-                }
+
+                let cell = tableView.dequeueReusableCell(withIdentifier: "nowHereFriendsCell") as! FriendListTableViewCell
+                
+                
+                cell.setFriends(now!.friends)
+                
+                return cell
+
             }
             else {
                 if now != nil && now!.venues != nil && now!.venues!.venues.count != 0 {
@@ -129,13 +126,6 @@ class NowViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            if now != nil && now!.venues == nil && now?.friends.count != 0 {
-                return now!.friends.count
-            }
-            else if now != nil && now!.venues != nil && now?.venues?.venues.count != 0 {
-                return now!.venues!.venues.count
-            }
-            
             return 1
         }
         

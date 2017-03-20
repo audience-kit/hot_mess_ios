@@ -87,6 +87,16 @@ class SessionService {
             }
         })
     }
+    
+    static func getVersionInfo(callback: @escaping (Int) -> Void) {
+        let request = DataRequest("/", parameters: nil) { result in
+            let apple = result["client.mobile.apple"] as! [ String : Any ]
+            
+            callback(apple["minimum_build"] as! Int)
+        }
+        
+        RequestService.shared.request(request)
+    }
 
     let operationQueue = OperationQueue()
 }

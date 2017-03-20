@@ -19,8 +19,8 @@ class VenueTableViewCell : UITableViewCell {
     func setVenue(venue: Venue) {
         nameLabel?.text = venue.name
         
-        if venue.description != nil {
-            addressLabel?.text = venue.description!
+        if venue.subtitle != nil {
+            addressLabel?.text = venue.subtitle!
         } else {
             addressLabel?.text = venue.address
         }

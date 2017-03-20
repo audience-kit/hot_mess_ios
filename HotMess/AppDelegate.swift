@@ -42,6 +42,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         //NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self, userInfo: nil)
         
+        RealtimeService.shared.connect()
+        
         return true
     }
 
