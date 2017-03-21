@@ -19,6 +19,7 @@ class Venue : Model {
     let photoUrl: URL?
     let point: GeoJSONPoint?
     let subtitle: String?
+    let isLiked: Bool
     
     var pictureUrl: URL {
         return URL(string: "/venues/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
@@ -56,6 +57,13 @@ class Venue : Model {
         }
         else {
             self.subtitle = nil
+        }
+        
+        if let isLikedData = data["is_liked"] as? Bool {
+            self.isLiked = isLikedData
+        }
+        else {
+            self.isLiked = false
         }
         
         super.init(data)

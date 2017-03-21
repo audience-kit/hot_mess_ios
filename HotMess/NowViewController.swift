@@ -35,18 +35,17 @@ class NowViewController: UITableViewController {
     
     func handleRefresh(control : UIRefreshControl) {
         NowService.shared.now { (now) in
-            if self.now == nil || now != self.now! {
-                
-                if now.imageUrl != nil {
-                    self.heroBanner?.kf.setImage(with: now.imageUrl!)
-                }
-                
-                DispatchQueue.main.async {
-                    self.now = now
-                    self.navigationItem.title = now.title
-                    self.tableView.reloadData()
-                }
+
+            if now.imageUrl != nil {
+                self.heroBanner?.kf.setImage(with: now.imageUrl!)
             }
+            
+            DispatchQueue.main.async {
+                self.now = now
+                self.navigationItem.title = now.title
+                self.tableView.reloadData()
+            }
+
         }
         
         control.endRefreshing()
@@ -58,8 +57,11 @@ class NowViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if indexPath.section == 0 {
-            return 120.0
+        if indexPath.section == 0 && now?.venues == nil {
+            return indexPath.row == 0 ? 120.0 : 150.0
+        }
+        else if indexPath.section == 0 {
+            return 86.0
         }
         
         if indexPath.section == 1 {
@@ -81,14 +83,15 @@ class NowViewController: UITableViewController {
 
         if indexPath.section == 0 {
             if now != nil && now!.venues == nil {
-
-                let cell = tableView.dequeueReusableCell(withIdentifier: "nowHereFriendsCell") as! FriendListTableViewCell
+                if indexPath.row == 0 {
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "nowHereFriendsCell") as! FriendListTableViewCell
+                    cell.setFriends(now!.friends)
+                    return cell
+                }
                 
-                
-                cell.setFriends(now!.friends)
-                
+                let cell = tableView.dequeueReusableCell(withIdentifier: "nowConversationCell", for: indexPath) as! ConversationTableViewCell
+                cell.setConversation(VenueConversation())
                 return cell
-
             }
             else {
                 if now != nil && now!.venues != nil && now!.venues!.venues.count != 0 {
@@ -126,7 +129,7 @@ class NowViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            return 1
+            return 2
         }
         
         if now == nil || now?.events.count == 0 {
@@ -140,7 +143,7 @@ class NowViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0:
-            return self.now?.venues == nil ? "Friends Here" : "Venues"
+            return self.now?.venues == nil ? "People" : "Venues"
         case 1:
             return "Events"
         default:

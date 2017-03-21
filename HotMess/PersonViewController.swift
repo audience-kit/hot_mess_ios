@@ -12,8 +12,10 @@ import FBSDKShareKit
 
 class PersonViewController : UITableViewController {
     @IBOutlet var personProfileImage: UIImageView?
+    @IBOutlet var personCoverImage: UIImageView?
     @IBOutlet var personTitleLabel: UILabel?
     @IBOutlet var personLikeButton: FBSDKLikeControl?
+    @IBOutlet var personLikedImage: UIImageView?
     
     var person: Person? = nil
     
@@ -30,13 +32,20 @@ class PersonViewController : UITableViewController {
         self.personLikeButton?.objectType = FBSDKLikeObjectType.page
         self.personLikeButton?.likeControlStyle = .boxCount
         
+        self.personProfileImage?.layer.borderColor = UIColor.white.cgColor
+        self.personProfileImage?.layer.borderWidth = 5.0
+        self.personProfileImage?.kf.setImage(with: person?.pictureUrl)
+        self.personCoverImage?.kf.setImage(with: person?.coverUrl)
+        
         PeopleService.shared.get(person!.id) { (person) in
             DispatchQueue.main.async {
                 self.person = person
-                self.personProfileImage?.kf.setImage(with: person.pictureUrl)
                 self.personTitleLabel?.text = person.name
                 self.personLikeButton?.objectID = "\(person.facebookId)"
 
+                if self.person?.isLiked == true {
+                    self.personLikedImage?.isHidden = false
+                }
                 
                 self.tableView.reloadData()
             }

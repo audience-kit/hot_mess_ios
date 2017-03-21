@@ -12,9 +12,14 @@ class Person : Model {
     let name: String
     let facebookId: IntMax
     let role: String?
+    let isLiked: Bool
     
     var pictureUrl: URL {
         return URL(string: "/people/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
+    }
+    
+    var coverUrl: URL {
+        return URL(string: "/people/\(self.id)/cover", relativeTo: RequestService.shared.baseUrl)!
     }
     
     override init(_ data: [ String : Any]) {
@@ -22,6 +27,14 @@ class Person : Model {
         self.facebookId = data["facebook_id"] as! IntMax
  
         role = data["role"] as? String
+        
+        if let isLikedData = data["is_liked"] as? Bool {
+            self.isLiked = isLikedData
+        }
+        else {
+            self.isLiked = false
+        }
+        
         
         super.init(data)
     }

@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreImage
 
 class PersonCell : UICollectionViewCell {
     @IBOutlet var imageView: UIImageView?
@@ -18,7 +19,7 @@ class PersonCell : UICollectionViewCell {
         mask.fillColor = UIColor.black.cgColor
         mask.path = UIBezierPath(ovalIn: CGRect(origin: CGPoint.zero, size: imageView!.frame.size)).cgPath
         
-        imageView?.layer.mask = mask
+        imageView!.layer.mask = mask
         
         imageView?.kf.setImage(with: friend.profileImageUrl)
         nameLabel?.text = friend.firstName

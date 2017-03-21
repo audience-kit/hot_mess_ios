@@ -11,6 +11,7 @@ import FacebookCore
 import FacebookLogin
 import FBSDKLoginKit
 import MessageUI
+import Kingfisher
 
 
 class SettingsViewController : UITableViewController, MFMailComposeViewControllerDelegate {
@@ -88,6 +89,8 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
                     UserDefaults.standard.removePersistentDomain(forName: bundle)
                 }
                 UserDefaults.standard.synchronize()
+                ImageCache.default.clearDiskCache()
+                ImageCache.default.clearMemoryCache()
             case 1:
                 SessionService.logOut()
             default:

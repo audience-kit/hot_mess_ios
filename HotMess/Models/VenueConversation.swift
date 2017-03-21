@@ -7,8 +7,14 @@
 //
 
 import Foundation
-import Atlas
 
-class VenueConversation : ATLConversationDataSource {
+class VenueConversation {
     
+    var messages = [ VenueMessage ]()
+    
+    init() {
+        messages.append(VenueMessage("One"))
+        messages.append(VenueMessage("Two"))
+        messages.append(VenueMessage("Three"))
+    }
 }

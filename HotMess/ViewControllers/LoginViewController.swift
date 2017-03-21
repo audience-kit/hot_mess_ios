@@ -23,7 +23,7 @@ class LoginViewController : UIViewController {
     }
 
     override func viewDidLoad() {
-        self.loginButton!.readPermissions = [ "email", "public_profile", "user_friends" ]
+        self.loginButton!.readPermissions = [ "email", "public_profile", "user_friends", "user_likes" ]
         
         NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
             self.dismiss()

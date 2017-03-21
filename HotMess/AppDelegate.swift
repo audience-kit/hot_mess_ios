@@ -9,6 +9,7 @@
 import UIKit
 import FacebookCore
 import FacebookLogin
+import Kingfisher
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -43,6 +44,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         //NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self, userInfo: nil)
         
         RealtimeService.shared.connect()
+        
+        ImageCache.default.clearDiskCache()
         
         return true
     }

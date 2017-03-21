@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */; };
 		A3BAEA2D97D0C85B06BA5FBD /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */; };
+		C9207A924AEA505100844907 /* PersonInfoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9207A914AEA505100844907 /* PersonInfoCell.swift */; };
 		C93373121E5EEB5B00497879 /* NowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373111E5EEB5B00497879 /* NowService.swift */; };
 		C93373161E5EEF0000497879 /* Now.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373151E5EEF0000497879 /* Now.swift */; };
 		C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */; };
@@ -24,6 +25,7 @@
 		C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */; };
 		C96779191E26082900BC263D /* VenueViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96779181E26082900BC263D /* VenueViewController.swift */; };
 		C96BB1001E78457A008F061E /* EventDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96BB0FF1E78457A008F061E /* EventDetail.swift */; };
+		C96E198B1E80901B00FDE88E /* ConversationMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96E198A1E80901B00FDE88E /* ConversationMessageCell.swift */; };
 		C96F09821E4307DE009B3911 /* Locale.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09811E4307DE009B3911 /* Locale.swift */; };
 		C96F09841E430822009B3911 /* LocaleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09831E430822009B3911 /* LocaleService.swift */; };
 		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
@@ -59,13 +61,13 @@
 		C9B62C811E774C5C00F72EC4 /* VenueDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */; };
 		C9B62C831E774F1600F72EC4 /* SocialLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C821E774F1600F72EC4 /* SocialLink.swift */; };
 		C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */; };
-		C9C4A89B1E7ED59800F3B6C0 /* UserIconView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9C4A89A1E7ED59800F3B6C0 /* UserIconView.xib */; };
-		C9C4A89D1E7ED5BC00F3B6C0 /* UserIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4A89C1E7ED5BC00F3B6C0 /* UserIconView.swift */; };
 		C9C4A89F1E7EE2C000F3B6C0 /* ConversationTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4A89E1E7EE2C000F3B6C0 /* ConversationTableViewCell.swift */; };
 		C9C4A8A11E7F49BC00F3B6C0 /* VenueConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4A8A01E7F49BC00F3B6C0 /* VenueConversation.swift */; };
 		C9CE0C411E4A8FBC00E9A909 /* DistanceFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */; };
 		C9D795DC1E807629007961F7 /* PersonCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D795DB1E807629007961F7 /* PersonCell.swift */; };
 		C9D795DE1E8077C2007961F7 /* FriendListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D795DD1E8077C2007961F7 /* FriendListTableViewCell.swift */; };
+		C9DD61B41E80B9C500947C60 /* VenueMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DD61B31E80B9C500947C60 /* VenueMessage.swift */; };
+		C9DD61B61E80BA9B00947C60 /* VenueMessagesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DD61B51E80BA9B00947C60 /* VenueMessagesController.swift */; };
 		C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D71E284783005CF7FD /* EventsService.swift */; };
 		C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D91E2847A9005CF7FD /* Event.swift */; };
 		C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9F34AF01E2089E100C5049B /* LoginView.xib */; };
@@ -101,6 +103,7 @@
 		8BF8AB7DBAEABF8D94F2DA24 /* Pods-HotMessUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessUITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests.release.xcconfig"; sourceTree = "<group>"; };
 		A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
 		BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"; sourceTree = "<group>"; };
+		C9207A914AEA505100844907 /* PersonInfoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonInfoCell.swift; path = Views/PersonInfoCell.swift; sourceTree = "<group>"; };
 		C93373111E5EEB5B00497879 /* NowService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NowService.swift; path = Services/NowService.swift; sourceTree = "<group>"; };
 		C93373151E5EEF0000497879 /* Now.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Now.swift; path = Models/Now.swift; sourceTree = "<group>"; };
 		C94A5AB01E1B7B2B004601AA /* HotMess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotMess.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -123,6 +126,7 @@
 		C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeopleViewController.swift; sourceTree = "<group>"; };
 		C96779181E26082900BC263D /* VenueViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueViewController.swift; sourceTree = "<group>"; };
 		C96BB0FF1E78457A008F061E /* EventDetail.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventDetail.swift; path = Models/EventDetail.swift; sourceTree = "<group>"; };
+		C96E198A1E80901B00FDE88E /* ConversationMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConversationMessageCell.swift; sourceTree = "<group>"; };
 		C96F09811E4307DE009B3911 /* Locale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Locale.swift; path = Models/Locale.swift; sourceTree = "<group>"; };
 		C96F09831E430822009B3911 /* LocaleService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocaleService.swift; path = Services/LocaleService.swift; sourceTree = "<group>"; };
 		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -159,13 +163,13 @@
 		C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueDetail.swift; path = Models/VenueDetail.swift; sourceTree = "<group>"; };
 		C9B62C821E774F1600F72EC4 /* SocialLink.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocialLink.swift; path = Models/SocialLink.swift; sourceTree = "<group>"; };
 		C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsViewController.swift; path = ViewControllers/EventsViewController.swift; sourceTree = "<group>"; };
-		C9C4A89A1E7ED59800F3B6C0 /* UserIconView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = UserIconView.xib; sourceTree = "<group>"; };
-		C9C4A89C1E7ED5BC00F3B6C0 /* UserIconView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = UserIconView.swift; path = Views/UserIconView.swift; sourceTree = "<group>"; };
 		C9C4A89E1E7EE2C000F3B6C0 /* ConversationTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ConversationTableViewCell.swift; path = Views/ConversationTableViewCell.swift; sourceTree = "<group>"; };
 		C9C4A8A01E7F49BC00F3B6C0 /* VenueConversation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueConversation.swift; path = Models/VenueConversation.swift; sourceTree = "<group>"; };
 		C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DistanceFormatter.swift; path = Views/DistanceFormatter.swift; sourceTree = "<group>"; };
 		C9D795DB1E807629007961F7 /* PersonCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PersonCell.swift; sourceTree = "<group>"; };
 		C9D795DD1E8077C2007961F7 /* FriendListTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FriendListTableViewCell.swift; sourceTree = "<group>"; };
+		C9DD61B31E80B9C500947C60 /* VenueMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueMessage.swift; path = Models/VenueMessage.swift; sourceTree = "<group>"; };
+		C9DD61B51E80BA9B00947C60 /* VenueMessagesController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueMessagesController.swift; sourceTree = "<group>"; };
 		C9F1F5D71E284783005CF7FD /* EventsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsService.swift; path = Services/EventsService.swift; sourceTree = "<group>"; };
 		C9F1F5D91E2847A9005CF7FD /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Event.swift; path = Models/Event.swift; sourceTree = "<group>"; };
 		C9F34AF01E2089E100C5049B /* LoginView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = LoginView.xib; path = Views/LoginView.xib; sourceTree = "<group>"; };
@@ -327,6 +331,7 @@
 				C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */,
 				C97E4B451E67A0800069E965 /* PersonViewController.swift */,
 				C97E4B471E67A0B80069E965 /* EventViewController.swift */,
+				C9DD61B51E80BA9B00947C60 /* VenueMessagesController.swift */,
 			);
 			name = "View Controllers";
 			sourceTree = "<group>";
@@ -344,11 +349,11 @@
 				C998EE2D1E5EADE70017ED96 /* FriendTableViewCell.swift */,
 				C998EE2F1E5EB2000017ED96 /* HeroTableViewCell.swift */,
 				C9968DA51E7B1B6F0001AA92 /* TrackTableViewCell.swift */,
-				C9C4A89A1E7ED59800F3B6C0 /* UserIconView.xib */,
-				C9C4A89C1E7ED5BC00F3B6C0 /* UserIconView.swift */,
 				C9C4A89E1E7EE2C000F3B6C0 /* ConversationTableViewCell.swift */,
 				C9D795DB1E807629007961F7 /* PersonCell.swift */,
 				C9D795DD1E8077C2007961F7 /* FriendListTableViewCell.swift */,
+				C96E198A1E80901B00FDE88E /* ConversationMessageCell.swift */,
+				C9207A914AEA505100844907 /* PersonInfoCell.swift */,
 			);
 			name = Views;
 			sourceTree = "<group>";
@@ -371,6 +376,7 @@
 				C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */,
 				C96BB0FF1E78457A008F061E /* EventDetail.swift */,
 				C9C4A8A01E7F49BC00F3B6C0 /* VenueConversation.swift */,
+				C9DD61B31E80B9C500947C60 /* VenueMessage.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -523,7 +529,6 @@
 				C986C1FF1E781C7C003A4795 /* ProximaNova-SemiBoldT50.otf in Resources */,
 				C94A5ABD1E1B7B2B004601AA /* Assets.xcassets in Resources */,
 				C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */,
-				C9C4A89B1E7ED59800F3B6C0 /* UserIconView.xib in Resources */,
 				C986C1FE1E781C7C003A4795 /* ProximaNova-SemiBold.otf in Resources */,
 				C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */,
 				C986C2001E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf in Resources */,
@@ -707,6 +712,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C96779191E26082900BC263D /* VenueViewController.swift in Sources */,
+				C9DD61B61E80BA9B00947C60 /* VenueMessagesController.swift in Sources */,
 				C9F34AF31E208BA800C5049B /* UserService.swift in Sources */,
 				C998EE2A1E5EA1F30017ED96 /* Friend.swift in Sources */,
 				C99B12A51E72D88D002466C7 /* Venues.swift in Sources */,
@@ -721,6 +727,7 @@
 				C9C4A89F1E7EE2C000F3B6C0 /* ConversationTableViewCell.swift in Sources */,
 				C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
+				C9DD61B41E80B9C500947C60 /* VenueMessage.swift in Sources */,
 				C96BB1001E78457A008F061E /* EventDetail.swift in Sources */,
 				C96F09821E4307DE009B3911 /* Locale.swift in Sources */,
 				C98D7F301E7C0FAC007BE6A6 /* DataRequest.swift in Sources */,
@@ -730,9 +737,9 @@
 				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
 				C93373161E5EEF0000497879 /* Now.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
+				C96E198B1E80901B00FDE88E /* ConversationMessageCell.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,
 				C9A81D1A1E516F2E00A9A9D6 /* PeopleService.swift in Sources */,
-				C9C4A89D1E7ED5BC00F3B6C0 /* UserIconView.swift in Sources */,
 				C9C4A8A11E7F49BC00F3B6C0 /* VenueConversation.swift in Sources */,
 				C9D795DC1E807629007961F7 /* PersonCell.swift in Sources */,
 				C9D795DE1E8077C2007961F7 /* FriendListTableViewCell.swift in Sources */,
@@ -748,6 +755,7 @@
 				C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */,
 				C94A5AB61E1B7B2B004601AA /* NowViewController.swift in Sources */,
 				C9968DA61E7B1B6F0001AA92 /* TrackTableViewCell.swift in Sources */,
+				C9207A924AEA505100844907 /* PersonInfoCell.swift in Sources */,
 				C9A81D181E516EA600A9A9D6 /* Person.swift in Sources */,
 				C97E4B4A1E67A10A0069E965 /* Model.swift in Sources */,
 				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,

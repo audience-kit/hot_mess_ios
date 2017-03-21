@@ -21,6 +21,14 @@ class FriendListTableViewCell : UITableViewCell, UICollectionViewDataSource, UIC
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if indexPath.row == self.friends.count {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "infoPersonCell", for: indexPath) as! PersonInfoCell
+            
+            cell.setCount(friends.count)
+            
+            return cell
+        }
+        
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "personCell", for: indexPath) as! PersonCell
         
         cell.setPerson(friends[indexPath.row])
@@ -29,10 +37,12 @@ class FriendListTableViewCell : UITableViewCell, UICollectionViewDataSource, UIC
     }
     
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.friends.count
+        return self.friends.count + 1
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard self.friends.count != indexPath.row else { return }
+        
         collectionView.deselectItem(at: indexPath, animated: true)
         
         UIApplication.shared.open(self.friends[indexPath.row].messengerUrl, options: [:], completionHandler: nil)
