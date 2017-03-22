@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Atlas
 
 class NowViewController: UITableViewController {
     @IBOutlet var heroBanner: UIImageView?
@@ -58,7 +59,7 @@ class NowViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if indexPath.section == 0 && now?.venues == nil {
-            return indexPath.row == 0 ? 120.0 : 150.0
+            return indexPath.row == 0 ? 120.0 : 60.0
         }
         else if indexPath.section == 0 {
             return 86.0
@@ -89,8 +90,8 @@ class NowViewController: UITableViewController {
                     return cell
                 }
                 
-                let cell = tableView.dequeueReusableCell(withIdentifier: "nowConversationCell", for: indexPath) as! ConversationTableViewCell
-                cell.setConversation(VenueConversation())
+                let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell", for: indexPath)
+                cell.textLabel?.text = "Join the conversation here"
                 return cell
             }
             else {
@@ -166,6 +167,10 @@ class NowViewController: UITableViewController {
             let venue = self.now!.venues!.venues[path.row]
             
             targetViewController.venue = venue
+            
+        case "showVenueChat":
+            let targetViewController = segue.destination as! VenueConversationViewController
+            
         default:
             break;
         }

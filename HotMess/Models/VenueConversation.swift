@@ -7,14 +7,12 @@
 //
 
 import Foundation
+import Atlas
 
-class VenueConversation {
-    
-    var messages = [ VenueMessage ]()
-    
-    init() {
-        messages.append(VenueMessage("One"))
-        messages.append(VenueMessage("Two"))
-        messages.append(VenueMessage("Three"))
+class VenueConversation : LYRConversation {
+
+
+    override func send(_ message: LYRMessage) throws {
+        NSLog(message.parts.first.debugDescription)
     }
 }
