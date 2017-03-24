@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import FacebookLogin
 import FBSDKLoginKit
 
 class LoginViewController : UIViewController {
@@ -19,6 +20,15 @@ class LoginViewController : UIViewController {
             let loginViewController = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
 
             rootViewController?.present(loginViewController, animated: true, completion: { })
+        }
+        
+
+    
+    }
+    
+    override func awakeFromNib() {
+        NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: self, queue: OperationQueue.main) { notification in
+            self.dismiss()
         }
     }
 
@@ -50,6 +60,10 @@ class LoginViewController : UIViewController {
                 })
             }
         }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
 

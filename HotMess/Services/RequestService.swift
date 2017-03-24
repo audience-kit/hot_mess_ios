@@ -8,6 +8,7 @@
 
 import Foundation
 import Locksmith
+import FacebookLogin
 
 class RequestService
 {
@@ -15,8 +16,19 @@ class RequestService
     
     private var _isAuthenticating = false
     
+    
     var baseUrl: URL {
-        return AppDelegate.baseUrl
+        let appIdString = UserDefaults.standard.string(forKey: "facebook_app_id")
+        let appId: Int? = appIdString != nil ? Int(appIdString!) as Int? : 713525445368431 as Int?
+        
+        switch appId! {
+        case 842337999153841:
+            return URL(string: "http://localhost:3000")!
+        case 915436455177328:
+                return URL(string: "https://next-api.hotmess.social")!
+        default:
+            return URL(string: "https://api.hotmess.social")!
+        }
     }
 
     public static var shared: RequestService {
@@ -32,7 +44,7 @@ class RequestService
     }
     
     func request(_ dataRequest: DataRequest) {
-        let url = URL(string: dataRequest.path, relativeTo: AppDelegate.baseUrl)
+        let url = URL(string: dataRequest.path, relativeTo: self.baseUrl)
         
         var request = URLRequest(url: url!)
         

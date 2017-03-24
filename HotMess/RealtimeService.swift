@@ -17,6 +17,7 @@ class RealtimeService : WebSocketDelegate {
     private static var _shared: RealtimeService?
 
     let socket: WebSocket
+    var conversation: VenueConversation?
 
     static var shared: RealtimeService {
         if _shared == nil {
@@ -46,9 +47,14 @@ class RealtimeService : WebSocketDelegate {
 
     func websocketDidReceiveMessage(socket: WebSocket, text: String) {
         print("websocket received message \(text)")
+        conversation?.messageReceived(message: VenueMessage(message: text))
     }
 
     func websocketDidReceiveData(socket: WebSocket, data: Data) {
         print("websocket receieved data")
+    }
+    
+    func sendMessage(_ message: VenueMessage) {
+        socket.write(string: message.toJson())
     }
 }

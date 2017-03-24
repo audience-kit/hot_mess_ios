@@ -170,7 +170,7 @@ class NowViewController: UITableViewController {
             
         case "showVenueChat":
             let targetViewController = segue.destination as! VenueConversationViewController
-            
+            targetViewController.conversation = VenueConversation(venue: self.now!.venue!)
         default:
             break;
         }

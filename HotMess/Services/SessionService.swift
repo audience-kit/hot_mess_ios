@@ -15,6 +15,8 @@ import Locksmith
 class SessionService {
     private static let sharedInstance = SessionService()
     
+    static let loginSuccess = NSNotification.Name("LoginSuccess")
+    
     static let accountIdentifier = "social.hotmess.account";
     static let loginRequired = Notification.Name("social.hotmess.loginRequired")
     
@@ -22,9 +24,9 @@ class SessionService {
         NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
             if AccessToken.current != nil {
             
-                self.getToken(token: (AccessToken.current?.authenticationToken)!, callback: { 
-                
-                })
+                if let token = AccessToken.current {
+                    self.getToken(token: token.authenticationToken, callback: {})
+                }
             }
         }
         
@@ -34,6 +36,10 @@ class SessionService {
     static func logOut() {
         do {
             try Locksmith.deleteDataForUserAccount(userAccount: accountIdentifier)
+
+            SDKSettings.appId = UserDefaults.standard.string(forKey: "facebook_app_id")!
+            AccessToken.current = nil
+            NotificationCenter.default.post(name: SessionService.loginRequired, object: self)
         }
         catch  {
         }
@@ -75,11 +81,15 @@ class SessionService {
                             "model" : identifier ] ] as [ String : Any ]
         
         RequestService.shared.request(relativeUrl: "/token", with: parameters, { (result) in
+            if let userId = result["user_id"] as? String {
+                UserService.shared.userId = UUID(uuidString: userId)!
+            }
             
             if let token = result["token"] as? String {
             
                 let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
             
+                NotificationCenter.default.post(name: SessionService.loginSuccess, object: self)
                 callback()
             }
             else {

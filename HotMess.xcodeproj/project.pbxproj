@@ -10,8 +10,6 @@
 		46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */; };
 		A3BAEA2D97D0C85B06BA5FBD /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */; };
 		C9207A924AEA505100844907 /* PersonInfoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9207A914AEA505100844907 /* PersonInfoCell.swift */; };
-		C9207A944AEA505100844907 /* VenueConversationBaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9207A934AEA505100844907 /* VenueConversationBaseViewController.swift */; };
-		C9207A964AEA505100844907 /* OldVenueConversationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9207A954AEA505100844907 /* OldVenueConversationViewController.swift */; };
 		C93373121E5EEB5B00497879 /* NowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373111E5EEB5B00497879 /* NowService.swift */; };
 		C93373161E5EEF0000497879 /* Now.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373151E5EEF0000497879 /* Now.swift */; };
 		C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */; };
@@ -44,7 +42,6 @@
 		C986C2001E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1FA1E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf */; };
 		C98A26011E25890500F62464 /* Venue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26001E25890500F62464 /* Venue.swift */; };
 		C98A26031E25891900F62464 /* VenuesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26021E25891900F62464 /* VenuesService.swift */; };
-		C98A26051E25BB9000F62464 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C98A26041E25BB9000F62464 /* Settings.bundle */; };
 		C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
 		C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
 		C98D7F301E7C0FAC007BE6A6 /* DataRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98D7F2F1E7C0FAC007BE6A6 /* DataRequest.swift */; };
@@ -105,8 +102,6 @@
 		A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
 		BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"; sourceTree = "<group>"; };
 		C9207A914AEA505100844907 /* PersonInfoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonInfoCell.swift; path = Views/PersonInfoCell.swift; sourceTree = "<group>"; };
-		C9207A934AEA505100844907 /* VenueConversationBaseViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueConversationBaseViewController.swift; path = ViewControllers/VenueConversationBaseViewController.swift; sourceTree = "<group>"; };
-		C9207A954AEA505100844907 /* OldVenueConversationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = OldVenueConversationViewController.swift; path = ViewControllers/OldVenueConversationViewController.swift; sourceTree = "<group>"; };
 		C93373111E5EEB5B00497879 /* NowService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NowService.swift; path = Services/NowService.swift; sourceTree = "<group>"; };
 		C93373151E5EEF0000497879 /* Now.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Now.swift; path = Models/Now.swift; sourceTree = "<group>"; };
 		C94A5AB01E1B7B2B004601AA /* HotMess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotMess.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -146,7 +141,6 @@
 		C986C1FA1E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ProximaNova-SemiBoldT100.otf"; path = "Resources/ProximaNova-SemiBoldT100.otf"; sourceTree = "<group>"; };
 		C98A26001E25890500F62464 /* Venue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Venue.swift; path = Models/Venue.swift; sourceTree = "<group>"; };
 		C98A26021E25891900F62464 /* VenuesService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenuesService.swift; path = Services/VenuesService.swift; sourceTree = "<group>"; };
-		C98A26041E25BB9000F62464 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		C98BEDC81E1CB5F2008F48AB /* SessionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionService.swift; path = Services/SessionService.swift; sourceTree = "<group>"; };
 		C98BEDCA1E1CC420008F48AB /* RequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RequestService.swift; path = Services/RequestService.swift; sourceTree = "<group>"; };
 		C98D7F2F1E7C0FAC007BE6A6 /* DataRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DataRequest.swift; path = Services/DataRequest.swift; sourceTree = "<group>"; };
@@ -316,7 +310,6 @@
 				C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */,
 				C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */,
 				C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */,
-				C98A26041E25BB9000F62464 /* Settings.bundle */,
 			);
 			name = "Support Files";
 			sourceTree = "<group>";
@@ -333,8 +326,6 @@
 				C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */,
 				C97E4B451E67A0800069E965 /* PersonViewController.swift */,
 				C97E4B471E67A0B80069E965 /* EventViewController.swift */,
-				C9207A934AEA505100844907 /* VenueConversationBaseViewController.swift */,
-				C9207A954AEA505100844907 /* OldVenueConversationViewController.swift */,
 				C9EA337D1E821CCB000A7D76 /* VenueConversationViewController.swift */,
 			);
 			name = "View Controllers";
@@ -536,7 +527,6 @@
 				C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */,
 				C986C2001E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf in Resources */,
 				C986C1FC1E781C7C003A4795 /* ProximaNova-RegularT50.otf in Resources */,
-				C98A26051E25BB9000F62464 /* Settings.bundle in Resources */,
 				C94A5ABB1E1B7B2B004601AA /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -727,13 +717,11 @@
 				C9B62C831E774F1600F72EC4 /* SocialLink.swift in Sources */,
 				C95F6E4F1E513394009E43A4 /* PeopleViewController.swift in Sources */,
 				C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */,
-				C9207A964AEA505100844907 /* OldVenueConversationViewController.swift in Sources */,
 				C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */,
 				C9DD61B41E80B9C500947C60 /* VenueMessage.swift in Sources */,
 				C96BB1001E78457A008F061E /* EventDetail.swift in Sources */,
 				C96F09821E4307DE009B3911 /* Locale.swift in Sources */,
 				C98D7F301E7C0FAC007BE6A6 /* DataRequest.swift in Sources */,
-				C9207A944AEA505100844907 /* VenueConversationBaseViewController.swift in Sources */,
 				C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */,
 				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
 				C98A26011E25890500F62464 /* Venue.swift in Sources */,

@@ -9,10 +9,36 @@
 import Foundation
 import Atlas
 
-class VenueConversation : LYRConversation {
+protocol VenueConversationDelegate {
+    func messageReceived(message: VenueMessage)
+}
 
-
-    override func send(_ message: LYRMessage) throws {
-        NSLog(message.parts.first.debugDescription)
+class VenueConversation {
+    var messages : [ VenueMessage ]
+    
+    var venue: Venue
+    
+    var delegate: VenueConversationDelegate?
+    
+    init(venue: Venue) {
+        self.venue = venue
+        messages = [ VenueMessage ]()
+        
+        messages.append(VenueMessage(message: "Welcome to \(venue.name)"))
+        
+    }
+    
+    func messageReceived(message: VenueMessage) {
+        // Not thread safe, need to put into local variable (Atomic)
+        guard delegate != nil else { return }
+        
+        messages.append(message)
+        delegate!.messageReceived(message: message)
+    }
+    
+    func sendMessage(_ message: VenueMessage) {
+        self.messageReceived(message: message)
+        
+        RealtimeService.shared.sendMessage(message)
     }
 }

@@ -18,10 +18,16 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
     @IBOutlet var profileImage: FBSDKProfilePictureView?
     @IBOutlet var nameLabel: UILabel?
     
+    var environmentSheet: UIAlertController?
+    
     override func awakeFromNib() {
         if let userProfileImage = self.profileImage {
             userProfileImage.pictureMode = .square
             userProfileImage.setNeedsImageUpdate()
+        }
+        
+        NotificationCenter.default.addObserver(forName: SessionService.loginSuccess, object: self, queue: OperationQueue.main) { _ in
+            self.tableView.reloadData()
         }
     }
     
@@ -82,6 +88,24 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
                 self.present(alertController, animated: true, completion: nil)
             }
         }
+        else if indexPath.section == 1 {
+            self.environmentSheet = UIAlertController(title: "Environment", message: "Which server environment?", preferredStyle: .actionSheet)
+            self.environmentSheet?.addAction(UIAlertAction(title: "Production", style: .default, handler: { _ in
+                self.setEnvironment(appId: 713525445368431)
+            }))
+            self.environmentSheet?.addAction(UIAlertAction(title: "Staging", style: .default, handler: { _ in
+                self.setEnvironment(appId: 915436455177328)
+            }))
+            self.environmentSheet?.addAction(UIAlertAction(title: "Development", style: .default, handler: { _ in
+                self.setEnvironment(appId: 842337999153841)
+            }))
+            
+            self.environmentSheet?.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
+                self.environmentSheet?.dismiss(animated: true, completion: nil)
+            }))
+            
+            self.present(self.environmentSheet!, animated: true, completion: nil)
+        }
         else if indexPath.section == 2 {
             switch indexPath.row {
             case 0:
@@ -93,10 +117,23 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
                 ImageCache.default.clearMemoryCache()
             case 1:
                 SessionService.logOut()
+                FBSDKAccessToken.setCurrent(nil)
+                UserService.shared.me() { _ in 
+                    
+                }
             default:
                 break
             }
         }
+    }
+    
+    func setEnvironment(appId : Int) {
+        UserDefaults.standard.set("\(appId)", forKey: "facebook_app_id")
+        UserDefaults.standard.synchronize()
+        
+        self.environmentSheet?.dismiss(animated: true, completion: nil)
+        
+        SessionService.logOut()
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -169,5 +206,9 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
     
     func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
         controller.dismiss(animated: true, completion: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }

@@ -13,6 +13,8 @@ class UserService {
     private var lastUpdate = Date.distantPast
     private let updateInterval = TimeInterval(exactly: 30.0)!
     
+    var userId: UUID?
+    
     static var shared: UserService {
         return _sharedInstance
     }
@@ -20,7 +22,9 @@ class UserService {
     func me(callback: @escaping (User) -> Void) {
         RequestService.shared.request(relativeUrl: "/me") { (result: [String : Any]) in
             if result["id"] != nil {
-                callback(User(result))
+                let user = User(result)
+                self.userId = user.id
+                callback(user)
             }
         }
     }

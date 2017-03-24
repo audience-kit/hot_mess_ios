@@ -19,18 +19,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     static let newRelicIdentifier = "NewRelicIdentifier"
     static let beaconIdentifier = "social.hotmess.beacon"
     
-    public static let defaultBaseUrl = Bundle.main.infoDictionary?[serverBaseIdentifier] as! String
-    
-    static var baseUrl : URL {
-        if let serverUrl = UserDefaults.standard.string(forKey: "server_url") {
-            return URL(string: serverUrl)!
-        }
-        
-        return URL(string: AppDelegate.defaultBaseUrl)!
-    }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        UserDefaults.standard.register(defaults: ["server_url": AppDelegate.defaultBaseUrl, "facebook_app_id": "713525445368431"])
+        UserDefaults.standard.register(defaults: [ "facebook_app_id": "713525445368431"])
         
         SDKSettings.appId = UserDefaults.standard.string(forKey: "facebook_app_id")!
         
@@ -39,7 +30,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         LocaleService.shared.start()
         
-        SessionService.registerNotifications()
+        SessionService.registerNotifications() 
         
         //NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self, userInfo: nil)
         
