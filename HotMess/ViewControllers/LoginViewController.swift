@@ -34,7 +34,8 @@ class LoginViewController : UIViewController {
 
     override func viewDidLoad() {
         // TODO: user_likes scope when approved
-        self.loginButton!.readPermissions = [ "email", "public_profile", "user_friends" ]
+        self.loginButton!.readPermissions = [ "email", "public_profile", "user_friends", "user_likes", "user_events" ]
+        self.loginButton!.publishPermissions = [ "rsvp_event" ]
         
         NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
             self.dismiss()

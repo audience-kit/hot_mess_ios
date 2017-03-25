@@ -72,14 +72,14 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
             if MFMailComposeViewController.canSendMail() {
                 let composeView = MFMailComposeViewController()
                 
-                composeView.setToRecipients(["rickmark@outlook.com"])
+                composeView.setToRecipients(["feedback@hotmess.social"])
                 composeView.setSubject("Hot Mess: Feedback")
                 composeView.mailComposeDelegate = self
                 
                 self.present(composeView, animated: true, completion: nil)
             }
             else {
-                let alertController = UIAlertController(title: "Feedback", message: "Unable to send feedback email.  Ensure that an account is configured or email rickmark@outlook.com from your computer.", preferredStyle: .alert)
+                let alertController = UIAlertController(title: "Feedback", message: "Unable to send feedback email.  Ensure that an account is configured or email feedback@hotmess.social from your computer.", preferredStyle: .alert)
                 
                 alertController.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.default, handler: { (action) in
                    alertController.dismiss(animated: true, completion: nil)
