@@ -24,8 +24,7 @@ class VenueConversation {
         self.venue = venue
         messages = [ VenueMessage ]()
         
-        messages.append(VenueMessage(message: "Welcome to \(venue.name)"))
-        
+        RealtimeService.shared.subscribe("RealtimeChannel", other: [ "venue_id": "chat_\(venue.id.uuidString)"])
     }
     
     func messageReceived(message: VenueMessage) {
@@ -37,8 +36,6 @@ class VenueConversation {
     }
     
     func sendMessage(_ message: VenueMessage) {
-        self.messageReceived(message: message)
-        
         RealtimeService.shared.sendMessage(message)
     }
 }

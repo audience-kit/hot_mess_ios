@@ -56,13 +56,13 @@ class VenueConversationViewController : UIViewController, UICollectionViewDataSo
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ATLMessageCollectionViewCell
         
         cell.bubbleView.update(withAttributedText: NSAttributedString(string: currentMessage.message))
-        cell.avatarImageView.kf.setImage(with: URL(string: "/users/\(currentMessage.userId)/picture", relativeTo: RequestService.shared.baseUrl))
+        cell.avatarImageView.kf.setImage(with: currentMessage.avatarUrl)
         
         return cell
     }
     
     @IBAction public func sendMessage(_ sender: UIResponder) {
-        let message = VenueMessage(message: self.composeTextView!.text!)
+        let message = VenueMessage(message: self.composeTextView!.text!, conversation: self.conversation!)
         
         self.composeTextView?.text = ""
         

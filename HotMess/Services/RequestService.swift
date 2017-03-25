@@ -18,13 +18,12 @@ class RequestService
     
     
     var baseUrl: URL {
-        let appIdString = UserDefaults.standard.string(forKey: "facebook_app_id")
-        let appId: Int? = appIdString != nil ? Int(appIdString!) as Int? : 713525445368431 as Int?
-        
-        switch appId! {
-        case 842337999153841:
+        let appId = UserDefaults.standard.string(forKey: "facebook_app_id") ?? ""
+
+        switch appId {
+        case "842337999153841":
             return URL(string: "http://localhost:3000")!
-        case 915436455177328:
+        case "915436455177328":
                 return URL(string: "https://next-api.hotmess.social")!
         default:
             return URL(string: "https://api.hotmess.social")!

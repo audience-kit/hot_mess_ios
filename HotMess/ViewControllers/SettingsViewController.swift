@@ -91,13 +91,13 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
         else if indexPath.section == 1 {
             self.environmentSheet = UIAlertController(title: "Environment", message: "Which server environment?", preferredStyle: .actionSheet)
             self.environmentSheet?.addAction(UIAlertAction(title: "Production", style: .default, handler: { _ in
-                self.setEnvironment(appId: 713525445368431)
+                self.setEnvironment(appId: "713525445368431")
             }))
             self.environmentSheet?.addAction(UIAlertAction(title: "Staging", style: .default, handler: { _ in
-                self.setEnvironment(appId: 915436455177328)
+                self.setEnvironment(appId: "915436455177328")
             }))
             self.environmentSheet?.addAction(UIAlertAction(title: "Development", style: .default, handler: { _ in
-                self.setEnvironment(appId: 842337999153841)
+                self.setEnvironment(appId: "842337999153841")
             }))
             
             self.environmentSheet?.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
@@ -127,8 +127,8 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
         }
     }
     
-    func setEnvironment(appId : Int) {
-        UserDefaults.standard.set("\(appId)", forKey: "facebook_app_id")
+    func setEnvironment(appId : String) {
+        UserDefaults.standard.set(appId, forKey: "facebook_app_id")
         UserDefaults.standard.synchronize()
         
         self.environmentSheet?.dismiss(animated: true, completion: nil)

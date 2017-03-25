@@ -81,8 +81,8 @@ class SessionService {
                             "model" : identifier ] ] as [ String : Any ]
         
         RequestService.shared.request(relativeUrl: "/token", with: parameters, { (result) in
-            if let userId = result["user_id"] as? String {
-                UserService.shared.userId = UUID(uuidString: userId)!
+            if let user = result["user"] as? [ String : Any ] {
+                UserService.shared.userId = UUID(uuidString: (user["id"] as! String))!
             }
             
             if let token = result["token"] as? String {

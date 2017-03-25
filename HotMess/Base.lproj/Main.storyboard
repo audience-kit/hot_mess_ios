@@ -39,7 +39,7 @@
                         </imageView>
                         <prototypes>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="nowFriendCell" rowHeight="66" id="7Zz-hM-cuD" customClass="FriendTableViewCell" customModule="HotMess" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="255.33333333333334" width="414" height="66"/>
+                                <rect key="frame" x="0.0" y="256" width="414" height="66"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="7Zz-hM-cuD" id="prG-sN-uOC">
                                     <rect key="frame" x="0.0" y="0.0" width="414" height="65"/>
@@ -74,7 +74,7 @@
                                 </connections>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="nowEventCell" rowHeight="86" id="frU-5x-LBI" customClass="EventTableViewCell" customModule="HotMess" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="321.33333333333337" width="414" height="86"/>
+                                <rect key="frame" x="0.0" y="322" width="414" height="86"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="frU-5x-LBI" id="sDy-Vv-nKC">
                                     <rect key="frame" x="0.0" y="0.0" width="381" height="85"/>
@@ -119,13 +119,13 @@
                                 </connections>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="nowFriendInfoCell" textLabel="Taj-SA-sx5" style="IBUITableViewCellStyleDefault" id="FA7-xn-eCt">
-                                <rect key="frame" x="0.0" y="407.33333333333337" width="414" height="44"/>
+                                <rect key="frame" x="0.0" y="408" width="414" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="FA7-xn-eCt" id="WAD-Em-Hee">
                                     <rect key="frame" x="0.0" y="0.0" width="381" height="43"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Join the conversation here" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Taj-SA-sx5">
+                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Small Talk" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Taj-SA-sx5">
                                             <rect key="frame" x="15" y="0.0" width="364" height="43"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
@@ -139,7 +139,7 @@
                                 </connections>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="nowNoEventsCell" textLabel="Pno-s6-HEF" style="IBUITableViewCellStyleDefault" id="xB9-Sj-gN0">
-                                <rect key="frame" x="0.0" y="451.33333333333337" width="414" height="44"/>
+                                <rect key="frame" x="0.0" y="452" width="414" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="xB9-Sj-gN0" id="sf4-gh-dgA">
                                     <rect key="frame" x="0.0" y="0.0" width="414" height="43"/>
@@ -156,7 +156,7 @@
                                 </tableViewCellContentView>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" reuseIdentifier="nowVenueCell" rowHeight="100" id="CV5-pi-yLF" customClass="VenueTableViewCell" customModule="HotMess" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="495.33333333333337" width="414" height="100"/>
+                                <rect key="frame" x="0.0" y="496" width="414" height="100"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="CV5-pi-yLF" id="jI5-fj-CSC">
                                     <rect key="frame" x="0.0" y="0.0" width="381" height="99"/>
@@ -169,7 +169,7 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Distance" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Pgt-WZ-D9t">
-                                            <rect key="frame" x="308" y="39" width="65" height="21"/>
+                                            <rect key="frame" x="308" y="40" width="65" height="21"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="65" id="nnY-hC-7vl"/>
                                             </constraints>
@@ -214,7 +214,7 @@
                                 </connections>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="nowConversationCell" rowHeight="150" id="dEW-J8-74E" customClass="ConversationTableViewCell" customModule="HotMess" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="595.33333333333337" width="414" height="150"/>
+                                <rect key="frame" x="0.0" y="596" width="414" height="150"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="dEW-J8-74E" id="xQ3-zH-giN">
                                     <rect key="frame" x="0.0" y="0.0" width="414" height="149"/>
@@ -237,7 +237,7 @@
                                 </connections>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="nowHereFriendsCell" rowHeight="120" id="Ad5-9I-bhX" customClass="FriendListTableViewCell" customModule="HotMess" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="745.33333333333337" width="414" height="120"/>
+                                <rect key="frame" x="0.0" y="746" width="414" height="120"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Ad5-9I-bhX" id="eau-rl-BKL">
                                     <rect key="frame" x="0.0" y="0.0" width="414" height="119"/>
@@ -440,7 +440,6 @@
                     </view>
                     <connections>
                         <outlet property="composeTextView" destination="8wY-Va-1Cq" id="FfS-r1-BBX"/>
-                        <outlet property="composeView" destination="hlp-Az-96y" id="7aV-Rc-2u2"/>
                         <outlet property="messageCollectionView" destination="rqk-7f-lHX" id="CB6-bK-Flh"/>
                     </connections>
                 </viewController>
@@ -555,7 +554,7 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Superbowl Party" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3sB-Wk-Z23">
-                                            <rect key="frame" x="75" y="13" width="275" height="31"/>
+                                            <rect key="frame" x="75" y="13" width="274.5" height="31"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="23"/>
                                             <nil key="textColor"/>
@@ -576,7 +575,7 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="at Industry Bar" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bUH-7Y-T9r">
-                                            <rect key="frame" x="75" y="50" width="275" height="21"/>
+                                            <rect key="frame" x="75" y="50" width="274.5" height="21"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
@@ -655,14 +654,14 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Superbowl Party" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Rv8-x6-CUL">
-                                            <rect key="frame" x="59.5" y="10" width="311.5" height="31"/>
+                                            <rect key="frame" x="59.5" y="10" width="311" height="31"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="22"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="at Industry Bar" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mSu-eA-CFG">
-                                            <rect key="frame" x="59.5" y="47" width="311.5" height="21"/>
+                                            <rect key="frame" x="59.5" y="47" width="311" height="21"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="18"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
@@ -1136,14 +1135,14 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Superbowl Party" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="OFQ-XC-ij3">
-                                            <rect key="frame" x="73.5" y="13" width="280" height="31"/>
+                                            <rect key="frame" x="73" y="13" width="280.5" height="31"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="23"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="at Industry Bar" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VUN-7M-KCR">
-                                            <rect key="frame" x="73.5" y="50" width="280" height="21"/>
+                                            <rect key="frame" x="73" y="50" width="280.5" height="21"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>

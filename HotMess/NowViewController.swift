@@ -91,7 +91,7 @@ class NowViewController: UITableViewController {
                 }
                 
                 let cell = tableView.dequeueReusableCell(withIdentifier: "nowFriendInfoCell", for: indexPath)
-                cell.textLabel?.text = "Join the conversation here"
+                cell.textLabel?.text = "Small Talk"
                 return cell
             }
             else {
