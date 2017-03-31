@@ -15,7 +15,6 @@ class PersonViewController : UITableViewController {
     @IBOutlet var personCoverImage: UIImageView?
     @IBOutlet var personTitleLabel: UILabel?
     @IBOutlet var personLikeButton: FBSDKLikeControl?
-    @IBOutlet var personLikedImage: UIImageView?
     
     var person: Person? = nil
     
@@ -43,10 +42,6 @@ class PersonViewController : UITableViewController {
                 self.personTitleLabel?.text = person.name
                 self.personLikeButton?.objectID = "\(person.facebookId)"
 
-                if self.person?.isLiked == true {
-                    self.personLikedImage?.isHidden = false
-                }
-                
                 self.tableView.reloadData()
             }
         }

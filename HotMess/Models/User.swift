@@ -33,7 +33,7 @@ class User : Model, ATLAvatarItem {
     }
     
     public var avatarInitials: String? {
-        return name.components(separatedBy: " ").reduce("") { "\($0)\($1.characters.first)" }
+        return name.components(separatedBy: " ").reduce("") { "\($0 ?? String())\(String(describing: $1.characters.first))" }
     }
     
     public var firstName: String? {

@@ -10,6 +10,7 @@ import UIKit
 import FacebookCore
 import FacebookLogin
 import Kingfisher
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -36,9 +37,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         RealtimeService.shared.connect()
         
-        ImageCache.default.clearDiskCache()
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+            // Enable or disable features based on authorization.
+        }
+
         
         return true
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        SessionService.postDeviceToken(deviceToken)
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error){
+        NSLog(error.localizedDescription)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

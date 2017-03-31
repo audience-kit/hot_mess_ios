@@ -12,13 +12,22 @@ import FacebookCore
 import FacebookLogin
 import Locksmith
 
+
+
 class SessionService {
+    let operationQueue = OperationQueue()
+    
+    static let RSVPEventPermission = "rsvp_event"
+    static let UserEventsPermission = "user_events"
+    
     private static let sharedInstance = SessionService()
     
     static let loginSuccess = NSNotification.Name("LoginSuccess")
     
     static let accountIdentifier = "social.hotmess.account";
     static let loginRequired = Notification.Name("social.hotmess.loginRequired")
+    
+    static let loginManager = LoginManager()
     
     static func registerNotifications() {
         NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
@@ -90,6 +99,9 @@ class SessionService {
                 let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
             
                 NotificationCenter.default.post(name: SessionService.loginSuccess, object: self)
+                
+                UIApplication.shared.registerForRemoteNotifications()
+                
                 callback()
             }
             else {
@@ -107,6 +119,52 @@ class SessionService {
         
         RequestService.shared.request(request)
     }
+    
+    static func postDeviceToken(_ token: Data) {
+        let request = DataRequest("/token/device", parameters: ["device_type": "apple", "vendor_identifier" : UIDevice.current.identifierForVendor!.uuidString, "notification_token" : token.base64EncodedString()]) { result in
+            
+        }
+        
+        RequestService.shared.request(request)
+    }
 
-    let operationQueue = OperationQueue()
+    static func ensureHasPermission(_ permission: String, callback: @escaping () -> Void) {
+        if AccessToken.current?.grantedPermissions?.contains(Permission(name: permission)) == true {
+            callback()
+            
+            return
+        }
+        
+        SessionService.loginManager.logIn([ ReadPermission.custom(permission) ], viewController: nil) { (result) in
+
+            switch result {
+            case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
+                SessionService.getToken(token: accessToken.authenticationToken, callback: {
+                    callback()
+                })
+            default:
+                break;
+            }
+        }
+    }
+    
+    static func ensureHasPublishPermission(_ permission: String, callback: @escaping (Void) -> Void) {
+        if AccessToken.current?.grantedPermissions?.contains(Permission(name: permission)) == true {
+            callback()
+            
+            return
+        }
+        
+        SessionService.loginManager.logIn([ PublishPermission.custom(permission) ], viewController: nil) { (result) in
+            
+            switch result {
+            case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
+                SessionService.getToken(token: accessToken.authenticationToken, callback: {
+                    callback()
+                })
+            default:
+                break;
+            }
+        }
+    }
 }

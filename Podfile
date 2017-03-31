@@ -8,7 +8,6 @@ target 'HotMess' do
   use_frameworks!
 
   # Pods for HotMess
-  pod 'EstimoteSDK'
   pod 'FacebookCore'
   pod 'FacebookLogin'
   pod 'FacebookShare'

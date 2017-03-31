@@ -6,5 +6,4 @@
 //  Copyright © 2017 Hot Mess and Co. All rights reserved.
 //
 
-#import <EstimoteSDK/EstimoteSDK.h>
 #import <NewRelicAgent/NewRelic.h>

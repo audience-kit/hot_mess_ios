@@ -15,6 +15,7 @@ class Event : Model {
     let facebookId: IntMax
     let venue: Venue?
     let person: Person?
+    var rsvp: String = "unsure"
     
     override init(_ data: [ String : Any ]) {
         let formatter = DateFormatter()
@@ -44,6 +45,10 @@ class Event : Model {
         }
         else {
             self.endDate = nil
+        }
+        
+        if let rsvpString = data["rsvp"] as? String {
+            self.rsvp = rsvpString
         }
         
         super.init(data)

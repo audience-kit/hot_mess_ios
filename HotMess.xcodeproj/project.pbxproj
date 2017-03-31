@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */; };
 		A3BAEA2D97D0C85B06BA5FBD /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */; };
+		C916EF211E8DBF1E0030B464 /* EventListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916EF201E8DBF1E0030B464 /* EventListing.swift */; };
+		C916EF231E8DC3340030B464 /* EventSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916EF221E8DC3340030B464 /* EventSection.swift */; };
 		C9207A924AEA505100844907 /* PersonInfoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9207A914AEA505100844907 /* PersonInfoCell.swift */; };
 		C93373121E5EEB5B00497879 /* NowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373111E5EEB5B00497879 /* NowService.swift */; };
 		C93373161E5EEF0000497879 /* Now.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373151E5EEF0000497879 /* Now.swift */; };
@@ -59,6 +61,7 @@
 		C9B62C7F1E774BDF00F72EC4 /* PersonDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C7E1E774BDF00F72EC4 /* PersonDetail.swift */; };
 		C9B62C811E774C5C00F72EC4 /* VenueDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */; };
 		C9B62C831E774F1600F72EC4 /* SocialLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C821E774F1600F72EC4 /* SocialLink.swift */; };
+		C9C36CBF1E871D2C00765B93 /* RSVPTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C36CBE1E871D2C00765B93 /* RSVPTableViewCell.swift */; };
 		C9C460901E2DB51B00EFD119 /* EventsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */; };
 		C9C4A8A11E7F49BC00F3B6C0 /* VenueConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4A8A01E7F49BC00F3B6C0 /* VenueConversation.swift */; };
 		C9CE0C411E4A8FBC00E9A909 /* DistanceFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */; };
@@ -101,6 +104,8 @@
 		8BF8AB7DBAEABF8D94F2DA24 /* Pods-HotMessUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessUITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests.release.xcconfig"; sourceTree = "<group>"; };
 		A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
 		BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"; sourceTree = "<group>"; };
+		C916EF201E8DBF1E0030B464 /* EventListing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventListing.swift; path = Models/EventListing.swift; sourceTree = "<group>"; };
+		C916EF221E8DC3340030B464 /* EventSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventSection.swift; path = Models/EventSection.swift; sourceTree = "<group>"; };
 		C9207A914AEA505100844907 /* PersonInfoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonInfoCell.swift; path = Views/PersonInfoCell.swift; sourceTree = "<group>"; };
 		C93373111E5EEB5B00497879 /* NowService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NowService.swift; path = Services/NowService.swift; sourceTree = "<group>"; };
 		C93373151E5EEF0000497879 /* Now.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Now.swift; path = Models/Now.swift; sourceTree = "<group>"; };
@@ -159,6 +164,7 @@
 		C9B62C7E1E774BDF00F72EC4 /* PersonDetail.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonDetail.swift; path = Models/PersonDetail.swift; sourceTree = "<group>"; };
 		C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueDetail.swift; path = Models/VenueDetail.swift; sourceTree = "<group>"; };
 		C9B62C821E774F1600F72EC4 /* SocialLink.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocialLink.swift; path = Models/SocialLink.swift; sourceTree = "<group>"; };
+		C9C36CBE1E871D2C00765B93 /* RSVPTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RSVPTableViewCell.swift; sourceTree = "<group>"; };
 		C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsViewController.swift; path = ViewControllers/EventsViewController.swift; sourceTree = "<group>"; };
 		C9C4A8A01E7F49BC00F3B6C0 /* VenueConversation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueConversation.swift; path = Models/VenueConversation.swift; sourceTree = "<group>"; };
 		C9CE0C401E4A8FBC00E9A909 /* DistanceFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DistanceFormatter.swift; path = Views/DistanceFormatter.swift; sourceTree = "<group>"; };
@@ -348,6 +354,7 @@
 				C9D795DD1E8077C2007961F7 /* FriendListTableViewCell.swift */,
 				C96E198A1E80901B00FDE88E /* ConversationMessageCell.swift */,
 				C9207A914AEA505100844907 /* PersonInfoCell.swift */,
+				C9C36CBE1E871D2C00765B93 /* RSVPTableViewCell.swift */,
 			);
 			name = Views;
 			sourceTree = "<group>";
@@ -371,6 +378,8 @@
 				C96BB0FF1E78457A008F061E /* EventDetail.swift */,
 				C9C4A8A01E7F49BC00F3B6C0 /* VenueConversation.swift */,
 				C9DD61B31E80B9C500947C60 /* VenueMessage.swift */,
+				C916EF201E8DBF1E0030B464 /* EventListing.swift */,
+				C916EF221E8DC3340030B464 /* EventSection.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -724,9 +733,11 @@
 				C98D7F301E7C0FAC007BE6A6 /* DataRequest.swift in Sources */,
 				C98BEDCB1E1CC420008F48AB /* RequestService.swift in Sources */,
 				C98BEDC91E1CB5F2008F48AB /* SessionService.swift in Sources */,
+				C9C36CBF1E871D2C00765B93 /* RSVPTableViewCell.swift in Sources */,
 				C98A26011E25890500F62464 /* Venue.swift in Sources */,
 				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
 				C93373161E5EEF0000497879 /* Now.swift in Sources */,
+				C916EF211E8DBF1E0030B464 /* EventListing.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C96E198B1E80901B00FDE88E /* ConversationMessageCell.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,
@@ -738,6 +749,7 @@
 				C9B62C7F1E774BDF00F72EC4 /* PersonDetail.swift in Sources */,
 				C9B62C7D1E77470C00F72EC4 /* Track.swift in Sources */,
 				C97E4B481E67A0B80069E965 /* EventViewController.swift in Sources */,
+				C916EF231E8DC3340030B464 /* EventSection.swift in Sources */,
 				C9B62C811E774C5C00F72EC4 /* VenueDetail.swift in Sources */,
 				C998EE2E1E5EADE70017ED96 /* FriendTableViewCell.swift in Sources */,
 				C998EE301E5EB2000017ED96 /* HeroTableViewCell.swift in Sources */,

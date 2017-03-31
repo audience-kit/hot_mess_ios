@@ -7,18 +7,24 @@
 //
 
 import UIKit
+import FBSDKShareKit
 
 class VenueViewController : UITableViewController {
     @IBOutlet var heroImage: UIImageView?
+    @IBOutlet var likeControl: FBSDKLikeControl?
     
     var venue: Venue?
     var events: [ Event ] = []
     
     override func viewDidLoad() {
         self.heroImage?.kf.indicatorType = .activity
+        self.likeControl?.objectType = .page
+        self.likeControl?.objectID = self.venue!.facebookId
+        self.likeControl?.likeControlHorizontalAlignment = .right
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         if indexPath.section == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "venueDetailCell")
             switch indexPath.row {
@@ -67,11 +73,7 @@ class VenueViewController : UITableViewController {
             return 3
         }
         
-        if self.events.count == 0 {
-            return 1
-        }
-        
-        return self.events.count
+        return self.events.count == 0 ? 1 : self.events.count
     }
     
     

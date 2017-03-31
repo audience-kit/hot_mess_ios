@@ -7,8 +7,9 @@
 //
 
 import UIKit
+import CoreLocation
 
-class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDelegate {
+class LocaleService : NSObject, CLLocationManagerDelegate {
     static let LocaleUpdated = Notification.Name(rawValue: "LocaleUpdated")
     static let LocationChanged = Notification.Name(rawValue: "LocationChanged")
     
@@ -118,24 +119,19 @@ class LocaleService : NSObject, CLLocationManagerDelegate, ESTBeaconManagerDeleg
         //self.lastLocation = locations.first
     }
     
-    func beaconManager(_ manager: Any, didEnter region: CLBeaconRegion) {
-        let beaconManager = manager as! ESTBeaconManager
-        
-        beaconManager.startRangingBeacons(in: region)
-    }
     
-    func beaconManager(_ manager: Any, didDetermineState state: CLRegionState, for region: CLBeaconRegion) {
 
-    }
+    //func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLBeaconRegion) {
+    //    manager.startRangingBeacons(in: region)
+    //}
     
-    func beaconManager(_ manager: Any, didExitRegion region: CLBeaconRegion) {
-        let beaconManager = manager as! ESTBeaconManager
-        
-        beaconManager.stopRangingBeacons(in: region)
-        
-    }
+
     
-    func beaconManager(_ manager: Any, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+    //func locationManager(_ manager: CLLocationManager, didExitRegion region: CLBeaconRegion) {
+    //    manager.stopRangingBeacons(in: region)
+    //}
+    
+    func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
         guard beacons.count > 0 else { return }
         
         self.beaconMajor = beacons.first?.major as! Int

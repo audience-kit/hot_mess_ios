@@ -11,7 +11,6 @@ import FBSDKCoreKit
 import FBSDKShareKit
 
 class EventViewController : UITableViewController {
-    @IBOutlet var facebookProfileImage: FBSDKProfilePictureView?
     @IBOutlet var titleLabel: UILabel?
     @IBOutlet var subtitleLabel: UILabel?
     
@@ -32,13 +31,9 @@ class EventViewController : UITableViewController {
                 timeFormatter.dateFormat = "h:mm"
                 
                 if event.person != nil {
-                    self.facebookProfileImage?.profileID = "\(event.person!.facebookId)"
-                    self.facebookProfileImage?.setNeedsImageUpdate()
                     self.subtitleLabel?.text = "by \(event.person!.name)"
                 }
                 else if event.venue != nil {
-                    self.facebookProfileImage?.profileID = event.venue!.facebookId
-                    self.facebookProfileImage?.setNeedsImageUpdate()
                     self.subtitleLabel?.text = "at \(event.venue!.name)"
                 }
                 
@@ -48,11 +43,11 @@ class EventViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if section == 0 {
+        if section == 0 || section == 1 {
             return nil
         }
         
-        if event?.person != nil && section == 1 {
+        if event?.person != nil && section == 2 {
             return "Host"
         }
         
@@ -60,7 +55,7 @@ class EventViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if indexPath.section != 0 {
+        if indexPath.section != 0 && indexPath.section != 1 {
             return 120.0
         }
         
@@ -71,6 +66,13 @@ class EventViewController : UITableViewController {
         guard event != nil else { return UITableViewCell() }
         
         if indexPath.section == 0 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "eventRsvpCell") as! RSVPTableViewCell
+            
+            cell.event = self.event
+            return cell
+        }
+        
+        if indexPath.section == 1 {
             let infoCell = tableView.dequeueReusableCell(withIdentifier: "eventInfoCell")
             
             let dateFormatter = DateFormatter()
@@ -110,7 +112,7 @@ class EventViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if (section == 0) {
+        if (section == 1) {
             if (event?.endDate != nil) {
                 return 3
             }
@@ -124,7 +126,7 @@ class EventViewController : UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        if indexPath.section == 0 {
+        if indexPath.section == 1 {
             switch indexPath.row {
             case 0:
                 UIApplication.shared.open(event!.facebookUrl, options: [:], completionHandler: nil)
@@ -153,7 +155,7 @@ class EventViewController : UITableViewController {
     
     
     override func numberOfSections(in tableView: UITableView) -> Int {
-        var count: Int = 1
+        var count: Int = 2
         
         if event?.person != nil {
             count += 1

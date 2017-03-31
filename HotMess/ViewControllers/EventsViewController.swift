@@ -9,7 +9,7 @@
 import UIKit
 
 class EventsViewController : UITableViewController {
-    var events : [ Event ] = []
+    var listing : EventListing?
     
     var formatter: DateFormatter?
     
@@ -29,7 +29,7 @@ class EventsViewController : UITableViewController {
     
     func handleRefresh(control: UIRefreshControl) {
         EventsService.shared.index { (events) in
-            self.events = events
+            self.listing = events
             
             DispatchQueue.main.async {
                 self.tableView.reloadData()
@@ -39,31 +39,47 @@ class EventsViewController : UITableViewController {
         control.endRefreshing()
     }
     
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if events.count == 0 {
-            return 1
-        }
+    var isAuthorized : Bool {
+        return false
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        guard listing != nil else { return 0 }
         
-        return events.count
+        return listing!.sections.count
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        guard listing != nil else { return 0 }
+        
+        let section = listing?.sections[section]
+        
+        return section!.events.count == 0 ? 1 : section!.events.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if events.count == 0 {
+        let section = listing?.sections[indexPath.section]
+        
+        if section?.events.count == 0 {
             let noEventsCell = UITableViewCell()
             noEventsCell.textLabel?.text = "No Events"
             return noEventsCell
         }
         
-        let event = self.events[indexPath.row]
+        let event = section?.events[indexPath.row]
         
         let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell") as! EventTableViewCell
-        cell.setEvent(event: event)
+        cell.setEvent(event: event!)
         
         return cell
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return "Upcoming..."
+        guard listing != nil else { return nil }
+        
+        let section = listing?.sections[section]
+        
+        return section!.title
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -72,7 +88,7 @@ class EventsViewController : UITableViewController {
         switch segue.identifier! {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
-            let event = self.events[path.row]
+            let event = self.listing?.events[path.row]
             
             targetViewController.event = event
         default:

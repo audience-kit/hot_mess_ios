@@ -42,7 +42,7 @@ class RealtimeService : WebSocketDelegate {
     }
 
     func websocketDidDisconnect(socket: WebSocket, error: NSError?) {
-        print("websocket did disconnect \(error)")
+        print("websocket did disconnect \(error!)")
     }
 
     func websocketDidReceiveMessage(socket: WebSocket, text: String) {
