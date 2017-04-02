@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import FacebookCore
 
 class EventsViewController : UITableViewController {
     var listing : EventListing?
@@ -19,12 +20,25 @@ class EventsViewController : UITableViewController {
         self.formatter?.dateFormat = "EEEE MMMM d h:mm"
     }
     
+    func enableRecomendations(_ sender: UIBarButtonItem) {
+        SessionService.ensureHasPermission("user_likes") { 
+            self.navigationItem.setRightBarButton(nil, animated: true)
+            
+            self.handleRefresh(control: self.tableView.refreshControl!)
+        }
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         self.tableView.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
         
         self.tableView.refreshControl?.addTarget(self, action: #selector(handleRefresh(control:)), for: .valueChanged)
         
         self.handleRefresh(control: self.tableView.refreshControl!)
+        
+        if true || AccessToken.current?.grantedPermissions?.contains("user_likes") == false {
+            let grantLikesButton = UIBarButtonItem(title: "For", style: .plain, target: self, action: #selector(enableRecomendations(_:)))
+            self.navigationItem.setRightBarButton(grantLikesButton, animated: true)
+        }
     }
     
     func handleRefresh(control: UIRefreshControl) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12118" systemVersion="16E195" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12118" systemVersion="16F43c" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
     <device id="retina5_5" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
@@ -169,7 +169,7 @@
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Distance" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Pgt-WZ-D9t">
-                                            <rect key="frame" x="308" y="40.333333333333336" width="65" height="21"/>
+                                            <rect key="frame" x="308" y="39.666666666666664" width="65" height="21"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="65" id="nnY-hC-7vl"/>
                                             </constraints>
@@ -1004,7 +1004,7 @@
                 <navigationController title="Events" id="jD1-Ah-Fbd" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Events" image="Events" selectedImage="Events" id="Vsd-as-FXR"/>
                     <simulatedTabBarMetrics key="simulatedBottomBarMetrics"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="q2N-Wy-XyZ">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="q2N-Wy-XyZ">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <textAttributes key="titleTextAttributes">
@@ -1348,7 +1348,7 @@
             <objects>
                 <navigationController id="36q-uE-gMx" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Hot List" image="People" selectedImage="People" id="dax-cz-rvE"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="9fE-PY-inX">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="9fE-PY-inX">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <textAttributes key="titleTextAttributes">
@@ -1368,7 +1368,7 @@
             <objects>
                 <navigationController id="SQL-k3-poP" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Me" image="Me" selectedImage="Me" id="Nqe-d1-eHY"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="Q6l-hQ-u72">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="Q6l-hQ-u72">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <textAttributes key="titleTextAttributes">
@@ -1388,7 +1388,7 @@
             <objects>
                 <navigationController id="xD5-11-8IJ" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Now" selectedImage="Now" id="wkt-a3-dr6"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="Kq5-yF-U49">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="Kq5-yF-U49">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <textAttributes key="titleTextAttributes">
@@ -1409,7 +1409,7 @@
                 <navigationController title="Venues" id="tcR-sU-DGn" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Venues" image="Venues" id="vEH-PZ-N3I"/>
                     <simulatedTabBarMetrics key="simulatedBottomBarMetrics"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="QVA-xf-BUJ">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="QVA-xf-BUJ">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <textAttributes key="titleTextAttributes">
@@ -1461,7 +1461,7 @@
         <image name="Venues" width="30" height="30"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="Yqt-YF-J3g"/>
+        <segue reference="SM8-j0-S4O"/>
         <segue reference="6ii-QQ-Eli"/>
         <segue reference="B27-64-cxX"/>
     </inferredMetricsTieBreakers>
