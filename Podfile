@@ -12,11 +12,9 @@ target 'HotMess' do
   pod 'FacebookLogin'
   pod 'FacebookShare'
   pod 'Locksmith'
-  pod 'NewRelicAgent'
   pod 'Starscream'
   pod 'GeoJSON'
   pod 'Kingfisher'
-  pod 'Atlas'
   
   target 'HotMessTests' do
     inherit! :search_paths
