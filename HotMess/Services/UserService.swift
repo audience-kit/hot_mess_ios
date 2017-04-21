@@ -21,7 +21,7 @@ class UserService {
     }
     
     func me(callback: @escaping (User) -> Void) {
-        RequestService.shared.request(relativeUrl: "/me") { (result: [String : Any]) in
+        RequestService.shared.request(relativeUrl: "/v1/me") { (result: [String : Any]) in
             if result["id"] != nil {
                 let user = User(result)
                 self.userId = user.id
@@ -33,7 +33,7 @@ class UserService {
     func location(_ location: CLLocation, beaconMajor: Int = 0, beaconMinor: Int = 0) {
         let location = [ "coordinates": [ "latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude], "beacon": [ "major": beaconMajor, "minor": beaconMinor] ] as [String : Any]
         
-        RequestService.shared.request(relativeUrl: "/me/location", with: location) { result in
+        RequestService.shared.request(relativeUrl: "/v1/me/location", with: location) { result in
             
         }
     }

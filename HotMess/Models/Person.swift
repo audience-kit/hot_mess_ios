@@ -13,14 +13,8 @@ class Person : Model {
     let facebookId: IntMax
     let role: String?
     let isLiked: Bool
-    
-    var pictureUrl: URL {
-        return URL(string: "/people/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
-    }
-    
-    var coverUrl: URL {
-        return URL(string: "/people/\(self.id)/cover", relativeTo: RequestService.shared.baseUrl)!
-    }
+    let pictureUrl: URL
+    let coverUrl: URL?
     
     override init(_ data: [ String : Any]) {
         self.name = data["name"] as! String
@@ -35,6 +29,14 @@ class Person : Model {
             self.isLiked = false
         }
         
+        self.pictureUrl = URL(string: data["photo_url"] as! String)!
+        
+        if let coverUrl = data["hero_url"] as? String {
+            self.coverUrl = URL(string: coverUrl)!
+        }
+        else {
+            self.coverUrl = nil
+        }
         
         super.init(data)
     }

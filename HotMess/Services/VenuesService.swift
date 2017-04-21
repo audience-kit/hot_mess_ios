@@ -16,10 +16,10 @@ class VenuesService {
     }
     
     func index(_ callback: @escaping (Venues) -> Void) {
-        var path = "/venues"
+        var path = "/v1/venues"
         
         if let locale = LocaleService.closest {
-            path = "/locales/\(locale.id)/venues?\(LocaleService.shared.coordinates.queryParameters)"
+            path = "/v1/locales/\(locale.id)/venues?\(LocaleService.shared.coordinates.queryParameters)"
         }
 
         RequestService.shared.request(relativeUrl: path) { (result) in
@@ -28,7 +28,7 @@ class VenuesService {
     }
     
     func closest(_ callback: @escaping (Venue) -> Void) {
-        let path = "/venues/closest?\(LocaleService.shared.coordinates.queryParameters)"
+        let path = "/v1/venues/closest?\(LocaleService.shared.coordinates.queryParameters)"
         
         RequestService.shared.request(relativeUrl: path) { (result) in
             if let venue = result["venue"] as? [ String : Any ] {

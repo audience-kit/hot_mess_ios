@@ -18,7 +18,7 @@ class PeopleService {
     func index(callback: @escaping ([ Person ]) -> Void) {
         guard LocaleService.closest != nil else { return }
         
-        RequestService.shared.request(relativeUrl: "/locales/\(LocaleService.closest!.id)/people") { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/locales/\(LocaleService.closest!.id)/people") { (result) in
             let people = result["people"] as! [ [ String : Any ] ]
             var results: [ Person ] = []
             
@@ -31,7 +31,7 @@ class PeopleService {
     }
 
     func get(_ personId: UUID, callback: @escaping (PersonDetail) -> Void) {
-        RequestService.shared.request(relativeUrl: "/people/\(personId)") { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/people/\(personId)") { (result) in
             let person = result["person"] as! [ String : Any ]
             
             callback(PersonDetail(person))

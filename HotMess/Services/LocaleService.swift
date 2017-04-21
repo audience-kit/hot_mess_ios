@@ -82,7 +82,7 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
     func closest(callback: @escaping (Locale) -> Void) {
         let params = self.coordinates
         
-        let path = "/locales/closest?\(params.queryParameters)"
+        let path = "/v1/locales/closest?\(params.queryParameters)"
         
         RequestService.shared.request(relativeUrl: path) { result in
             let locale = Locale(result)

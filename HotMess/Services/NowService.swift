@@ -19,7 +19,7 @@ class NowService {
     }
     
     func now(callback: @escaping (Now) -> Void) -> Void {
-        RequestService.shared.request(relativeUrl: "/now?\(LocaleService.shared.coordinates.queryParameters)") { (data) in
+        RequestService.shared.request(relativeUrl: "/v1/now?\(LocaleService.shared.coordinates.queryParameters)") { (data) in
             callback(Now(data))
         }
     }

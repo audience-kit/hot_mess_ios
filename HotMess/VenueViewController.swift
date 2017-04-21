@@ -89,8 +89,8 @@ class VenueViewController : UITableViewController {
                 self.tableView.reloadData()
             }
             
-            if let photoUrl = self.venue?.photoUrl {
-                self.heroImage?.kf.setImage(with: photoUrl)
+            if let heroUrl = self.venue?.heroUrl {
+                self.heroImage?.kf.setImage(with: heroUrl)
             }
         }
     }

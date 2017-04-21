@@ -16,33 +16,31 @@ class Venue : Model {
     let address: String
     let facebookId: String?
     let phone: String?
-    let photoUrl: URL?
+    let photoUrl: URL
     let point: GeoJSONPoint?
     let subtitle: String?
     let isLiked: Bool
-    
-    var pictureUrl: URL {
-        return URL(string: "/venues/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
-    }
+    let heroUrl: URL?
     
     override init(_ data: [ String: Any]) {
         self.name = data["name"] as! String
         self.facebookId = data["facebook_id"] as? String
         self.phone = data["phone"] as? String
         self.distance = data["distance"] as? Double
+        self.photoUrl = URL(string: data["photo_url"] as! String)!
+        
+        if let pictureUrl = data["hero_url"] as? String {
+            self.heroUrl = URL(string: pictureUrl)!
+        }
+        else {
+            self.heroUrl = nil
+        }
         
         if let address = data["address"] as? String {
             self.address = address
         }
         else {
             self.address = "unknown"
-        }
-        
-        if let photoUrlString = data["photo_url"] as? String {
-            self.photoUrl = URL(string: photoUrlString)
-        }
-        else {
-            self.photoUrl = nil
         }
         
         if let point = data["point"] as? [ String : Any ] {

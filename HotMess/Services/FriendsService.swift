@@ -16,7 +16,7 @@ class FriendsService {
     }
     
     func venue(_ venue: Venue, callback: @escaping ([ Friend ]) -> Void) {
-        RequestService.shared.request(relativeUrl: "/venues/\(venue.id)/friends") { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/venues/\(venue.id)/friends") { (result) in
             let friends = result["friends"] as! [ [ String : Any ] ]
             var parsed: [ Friend ] = []
             

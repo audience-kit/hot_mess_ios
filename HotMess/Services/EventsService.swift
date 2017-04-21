@@ -18,13 +18,13 @@ class EventsService {
     func index(callback: @escaping (EventListing) -> Void) {
         guard LocaleService.closest != nil else { return }
         
-        RequestService.shared.request(relativeUrl: "/locales/\(LocaleService.closest!.id)/events") { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/locales/\(LocaleService.closest!.id)/events") { (result) in
             callback(EventListing(result))
         }
     }
     
     func index(venue: Venue, callback: @escaping ([ Event ]) -> Void) {
-        RequestService.shared.request(relativeUrl: "/venues/\(venue.id)/events") { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/venues/\(venue.id)/events") { (result) in
             let events = result["events"] as! [ [ String : Any ] ]
             var results: [ Event ] = []
             
@@ -36,7 +36,7 @@ class EventsService {
     }
         
     func get(_ event: Event, callback: @escaping (EventDetail) -> Void) {
-        RequestService.shared.request(relativeUrl: "/events/\(event.id)") { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/events/\(event.id)") { (result) in
             let event = result["event"] as! [ String : Any ]
             
             callback(EventDetail(event))
@@ -44,7 +44,7 @@ class EventsService {
     }
     
     func rsvp(_ event: Event) {
-        RequestService.shared.request(relativeUrl: "/events/\(event.id)/rsvp", with: [ "state": event.rsvp ]) { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/events/\(event.id)/rsvp", with: [ "state": event.rsvp ]) { (result) in
 
         }
     }

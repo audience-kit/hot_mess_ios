@@ -25,7 +25,7 @@ class VenueTableViewCell : UITableViewCell {
             addressLabel?.text = venue.address
         }
         
-        profilePictureView?.kf.setImage(with: venue.pictureUrl)
+        profilePictureView?.kf.setImage(with: venue.photoUrl)
         
         if let distance = venue.distance {
             distanceLabel?.text = DistanceFormatter.shared.string(forMeters: distance)
