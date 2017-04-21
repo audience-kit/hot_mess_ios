@@ -121,7 +121,7 @@ class SessionService {
     }
     
     static func postDeviceToken(_ token: Data) {
-        let request = DataRequest("/token/device", parameters: ["device_type": "apple", "vendor_identifier" : UIDevice.current.identifierForVendor!.uuidString, "notification_token" : token.base64EncodedString()]) { result in
+        let request = DataRequest("/v1/devices/", parameters: ["device_type": "apple", "vendor_identifier" : UIDevice.current.identifierForVendor!.uuidString, "notification_token" : token.base64EncodedString()]) { result in
             
         }
         

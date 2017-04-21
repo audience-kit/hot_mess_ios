@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import Atlas
 
 class VenueConversationViewController : UIViewController, UICollectionViewDataSource, VenueConversationDelegate {
     internal func messageReceived(message: VenueMessage) {
@@ -23,16 +22,16 @@ class VenueConversationViewController : UIViewController, UICollectionViewDataSo
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        messageCollectionView?.register(ATLIncomingMessageCollectionViewCell.self, forCellWithReuseIdentifier: ATLIncomingMessageCellIdentifier)
-        messageCollectionView?.register(ATLOutgoingMessageCollectionViewCell.self, forCellWithReuseIdentifier: ATLOutgoingMessageCellIdentifier)
+        //messageCollectionView?.register(ATLIncomingMessageCollectionViewCell.self, forCellWithReuseIdentifier: ATLIncomingMessageCellIdentifier)
+        //messageCollectionView?.register(ATLOutgoingMessageCollectionViewCell.self, forCellWithReuseIdentifier: ATLOutgoingMessageCellIdentifier)
         
-        messageCollectionView?.register(ATLConversationCollectionViewMoreMessagesHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: ATLMoreMessagesHeaderIdentifier)
-        messageCollectionView?.register(ATLConversationCollectionViewHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: ATLConversationViewHeaderIdentifier)
-        messageCollectionView?.register(ATLConversationCollectionViewFooter.self, forSupplementaryViewOfKind: UICollectionElementKindSectionFooter, withReuseIdentifier: ATLConversationViewFooterIdentifier)
+        //messageCollectionView?.register(ATLConversationCollectionViewMoreMessagesHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: ATLMoreMessagesHeaderIdentifier)
+        //messageCollectionView?.register(ATLConversationCollectionViewHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: ATLConversationViewHeaderIdentifier)
+        //messageCollectionView?.register(ATLConversationCollectionViewFooter.self, forSupplementaryViewOfKind: UICollectionElementKindSectionFooter, withReuseIdentifier: ATLConversationViewFooterIdentifier)
         
         let flowLayout = messageCollectionView?.collectionViewLayout as! UICollectionViewFlowLayout
         
-        flowLayout.estimatedItemSize = CGSize(width: view.frame.width, height: ATLMessageBubbleDefaultHeight)
+        //flowLayout.estimatedItemSize = CGSize(width: view.frame.width, height: ATLMessageBubbleDefaultHeight)
         flowLayout.sectionInset.top = 10
         
         conversation?.delegate = self
@@ -47,16 +46,16 @@ class VenueConversationViewController : UIViewController, UICollectionViewDataSo
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let currentMessage = conversation!.messages[indexPath.section]
         
-        var reuseIdentifier: String = ATLIncomingMessageCellIdentifier
+        //var reuseIdentifier: String = ATLIncomingMessageCellIdentifier
         
-        if currentMessage.direction == .outgoing {
-            reuseIdentifier = ATLOutgoingMessageCellIdentifier
-        }
+        //if currentMessage.direction == .outgoing {
+        //    reuseIdentifier = ATLOutgoingMessageCellIdentifier
+        //}
         
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ATLMessageCollectionViewCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "", for: indexPath)
         
-        cell.bubbleView.update(withAttributedText: NSAttributedString(string: currentMessage.message))
-        cell.avatarImageView.kf.setImage(with: currentMessage.avatarUrl)
+        //cell.bubbleView.update(withAttributedText: NSAttributedString(string: currentMessage.message))
+        //cell.avatarImageView.kf.setImage(with: currentMessage.avatarUrl)
         
         return cell
     }

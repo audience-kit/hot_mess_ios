@@ -7,10 +7,9 @@
 //
 
 import Foundation
-import Atlas
 import Kingfisher
 
-class User : Model, ATLAvatarItem {
+class User : Model {
 
     public let name: String
     

@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import Atlas
 
 class NowViewController: UITableViewController {
     @IBOutlet var heroBanner: UIImageView?

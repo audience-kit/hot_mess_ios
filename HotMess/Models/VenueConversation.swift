@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Atlas
 
 protocol VenueConversationDelegate {
     func messageReceived(message: VenueMessage)

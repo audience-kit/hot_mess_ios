@@ -7,13 +7,13 @@
 //
 
 import UIKit
-import Atlas
 
 class ConversationMessageCell : UICollectionViewCell {
-    @IBOutlet var messageLabel: ATLMessageBubbleView?
+    @IBOutlet var messageLabel: UILabel?
     
     func setMessage(_ message: VenueMessage) {
-        messageLabel?.prepareForReuse()
-        messageLabel?.update(withAttributedText: NSAttributedString(string: message.message))
+        //messageLabel?.prepareForReuse()
+        //messageLabel?.update(withAttributedText: NSAttributedString(string: message.message))
+        messageLabel?.text = message.message
     }
 }

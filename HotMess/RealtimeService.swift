@@ -5,7 +5,6 @@
 
 import Foundation
 import Starscream
-import Atlas
 
 extension Notification.Name {
     static let inboundMessage = Notification.Name("InboundMessage")
