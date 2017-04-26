@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)$(BUNDLE_SUFFIX)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -30,15 +30,15 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>846</string>
+	<string>903</string>
 	<key>FacebookAppID</key>
-	<string>842337999153841</string>
+	<string>$(FACEBOOK_APP_ID)</string>
 	<key>FacebookDisplayName</key>
 	<string>Hot Mess</string>
 	<key>HotMessBeaconID</key>
 	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>HotMessServerBase</key>
-	<string>https://api.hotmess.social</string>
+	<string>$(SERVER_SCHEME)://$(SERVER_BASE)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>

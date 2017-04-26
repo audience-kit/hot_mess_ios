@@ -38,16 +38,11 @@ class SessionService {
                 }
             }
         }
-        
-        LoginViewController.registerNotifications()
     }
     
     static func logOut() {
         do {
             try Locksmith.deleteDataForUserAccount(userAccount: accountIdentifier)
-
-            SDKSettings.appId = UserDefaults.standard.string(forKey: "facebook_app_id")!
-            AccessToken.current = nil
             NotificationCenter.default.post(name: SessionService.loginRequired, object: self)
         }
         catch  {

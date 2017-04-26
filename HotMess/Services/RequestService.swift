@@ -14,20 +14,14 @@ class RequestService
 {
     private static let sharedInstance = RequestService()
     
+    static let serverBaseIdentifier = "HotMessServerBase"
+    
     private var _isAuthenticating = false
     
     
     var baseUrl: URL {
-        let appId = UserDefaults.standard.string(forKey: "facebook_app_id") ?? ""
-
-        switch appId {
-        case "842337999153841":
-            return URL(string: "http://localhost:3000")!
-        case "915436455177328":
-                return URL(string: "https://next-api.hotmess.social")!
-        default:
-            return URL(string: "https://api.hotmess.social")!
-        }
+        let serverString = Bundle.main.infoDictionary![RequestService.serverBaseIdentifier] as! String
+        return URL(string: serverString)!
     }
 
     public static var shared: RequestService {

@@ -10,6 +10,8 @@ import UIKit
 import CoreLocation
 
 class LocaleService : NSObject, CLLocationManagerDelegate {
+    static let beaconIdentifier = "social.hotmess.beacon"
+    
     static let LocaleUpdated = Notification.Name(rawValue: "LocaleUpdated")
     static let LocationChanged = Notification.Name(rawValue: "LocationChanged")
     
@@ -36,7 +38,7 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
     override init() {
         
         let beaconId = UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!
-        self.beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: AppDelegate.beaconIdentifier)
+        self.beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: LocaleService.beaconIdentifier)
         
         super.init()
         

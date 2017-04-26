@@ -1,4 +1,5 @@
 PODS:
+  - Alamofire (4.4.0)
   - Bolts (1.8.4):
     - Bolts/AppLinks (= 1.8.4)
     - Bolts/Tasks (= 1.8.4)
@@ -28,8 +29,10 @@ PODS:
   - Kingfisher (3.6.2)
   - Locksmith (3.0.0)
   - Starscream (2.0.4)
+  - SwiftyJSON (3.1.4)
 
 DEPENDENCIES:
+  - Alamofire
   - FacebookCore
   - FacebookLogin
   - FacebookShare
@@ -37,8 +40,10 @@ DEPENDENCIES:
   - Kingfisher
   - Locksmith
   - Starscream
+  - SwiftyJSON
 
 SPEC CHECKSUMS:
+  Alamofire: dc44b1600b800eb63da6a19039a0083d62a6a62d
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
   FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
   FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
@@ -50,7 +55,8 @@ SPEC CHECKSUMS:
   Kingfisher: 2c94e72c6830622c71d06adf4ea024c37d316830
   Locksmith: 310b4cc5031af5728bf4db5d4de547a5100c6a3b
   Starscream: df5974ee928b157c8eda8af8de7c620276b7dfcc
+  SwiftyJSON: c2842d878f95482ffceec5709abc3d05680c0220
 
-PODFILE CHECKSUM: ced8608e447f86b985445df4efad95cebfb2e7fb
+PODFILE CHECKSUM: b74e326be31ee959bff44389db95a013bb79deac
 
 COCOAPODS: 1.2.0

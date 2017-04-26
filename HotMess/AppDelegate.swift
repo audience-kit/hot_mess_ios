@@ -16,15 +16,13 @@ import UserNotifications
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    static let serverBaseIdentifier = "HotMessServerBase"
-    static let newRelicIdentifier = "NewRelicIdentifier"
-    static let beaconIdentifier = "social.hotmess.beacon"
+    
+    static let facebookAppIdIdentifier = "FacebookAppID"
+    
     
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        UserDefaults.standard.register(defaults: [ "facebook_app_id": "713525445368431"])
-        
-        SDKSettings.appId = UserDefaults.standard.string(forKey: "facebook_app_id")!
+        SDKSettings.appId = Bundle.main.infoDictionary![AppDelegate.facebookAppIdIdentifier] as! String
         
         // Override point for customization after application launch.
         SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -41,6 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // Enable or disable features based on authorization.
         }
 
+        LoginViewController.registerNotifications()
         
         return true
     }

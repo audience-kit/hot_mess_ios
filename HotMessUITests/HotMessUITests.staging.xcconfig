@@ -1,0 +1,9 @@
+//
+//  HotMessUITests.staging.xcconfig
+//  HotMess
+//
+//  Created by Rick Mark on 4/25/17.
+//  Copyright © 2017 Hot Mess and Co. All rights reserved.
+//
+
+#include "Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests.staging.xcconfig"

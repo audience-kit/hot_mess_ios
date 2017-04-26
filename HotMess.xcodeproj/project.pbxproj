@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 48;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -69,6 +69,35 @@
 		C9D795DE1E8077C2007961F7 /* FriendListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D795DD1E8077C2007961F7 /* FriendListTableViewCell.swift */; };
 		C9DD61B41E80B9C500947C60 /* VenueMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DD61B31E80B9C500947C60 /* VenueMessage.swift */; };
 		C9EA337E1E821CCB000A7D76 /* VenueConversationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EA337D1E821CCB000A7D76 /* VenueConversationViewController.swift */; };
+		C9F1CBE01EB04F3000B1D2EA /* SocialLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C821E774F1600F72EC4 /* SocialLink.swift */; };
+		C9F1CBE11EB04F3000B1D2EA /* Now.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373151E5EEF0000497879 /* Now.swift */; };
+		C9F1CBE21EB04F3000B1D2EA /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F34AF51E208BF100C5049B /* User.swift */; };
+		C9F1CBE31EB04F3000B1D2EA /* Venue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26001E25890500F62464 /* Venue.swift */; };
+		C9F1CBE41EB04F3000B1D2EA /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D91E2847A9005CF7FD /* Event.swift */; };
+		C9F1CBE51EB04F3000B1D2EA /* Locale.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09811E4307DE009B3911 /* Locale.swift */; };
+		C9F1CBE61EB04F3000B1D2EA /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D171E516EA600A9A9D6 /* Person.swift */; };
+		C9F1CBE71EB04F3000B1D2EA /* Friend.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE291E5EA1F30017ED96 /* Friend.swift */; };
+		C9F1CBE81EB04F3000B1D2EA /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97E4B491E67A10A0069E965 /* Model.swift */; };
+		C9F1CBE91EB04F3000B1D2EA /* Venues.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99B12A41E72D88D002466C7 /* Venues.swift */; };
+		C9F1CBEA1EB04F3000B1D2EA /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C7C1E77470C00F72EC4 /* Track.swift */; };
+		C9F1CBEB1EB04F3000B1D2EA /* PersonDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C7E1E774BDF00F72EC4 /* PersonDetail.swift */; };
+		C9F1CBEC1EB04F3000B1D2EA /* VenueDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */; };
+		C9F1CBED1EB04F3000B1D2EA /* EventDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96BB0FF1E78457A008F061E /* EventDetail.swift */; };
+		C9F1CBEE1EB04F3000B1D2EA /* VenueConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C4A8A01E7F49BC00F3B6C0 /* VenueConversation.swift */; };
+		C9F1CBEF1EB04F3000B1D2EA /* VenueMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DD61B31E80B9C500947C60 /* VenueMessage.swift */; };
+		C9F1CBF01EB04F3000B1D2EA /* EventListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916EF201E8DBF1E0030B464 /* EventListing.swift */; };
+		C9F1CBF11EB04F3000B1D2EA /* EventSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916EF221E8DC3340030B464 /* EventSection.swift */; };
+		C9F1CBF21EB04F3B00B1D2EA /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDC81E1CB5F2008F48AB /* SessionService.swift */; };
+		C9F1CBF31EB04F3B00B1D2EA /* RequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BEDCA1E1CC420008F48AB /* RequestService.swift */; };
+		C9F1CBF41EB04F3B00B1D2EA /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F34AF21E208BA800C5049B /* UserService.swift */; };
+		C9F1CBF51EB04F3B00B1D2EA /* VenuesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98A26021E25891900F62464 /* VenuesService.swift */; };
+		C9F1CBF61EB04F3B00B1D2EA /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D71E284783005CF7FD /* EventsService.swift */; };
+		C9F1CBF71EB04F3B00B1D2EA /* LocaleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09831E430822009B3911 /* LocaleService.swift */; };
+		C9F1CBF81EB04F3B00B1D2EA /* PeopleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A81D191E516F2E00A9A9D6 /* PeopleService.swift */; };
+		C9F1CBF91EB04F3B00B1D2EA /* FriendsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C998EE2B1E5EA7C40017ED96 /* FriendsService.swift */; };
+		C9F1CBFA1EB04F3B00B1D2EA /* NowService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373111E5EEB5B00497879 /* NowService.swift */; };
+		C9F1CBFB1EB04F3B00B1D2EA /* DataRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98D7F2F1E7C0FAC007BE6A6 /* DataRequest.swift */; };
+		C9F1CBFC1EB04F3B00B1D2EA /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */; };
 		C9F1F5D81E284783005CF7FD /* EventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D71E284783005CF7FD /* EventsService.swift */; };
 		C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D91E2847A9005CF7FD /* Event.swift */; };
 		C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9F34AF01E2089E100C5049B /* LoginView.xib */; };
@@ -172,6 +201,15 @@
 		C9D795DD1E8077C2007961F7 /* FriendListTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FriendListTableViewCell.swift; sourceTree = "<group>"; };
 		C9DD61B31E80B9C500947C60 /* VenueMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueMessage.swift; path = Models/VenueMessage.swift; sourceTree = "<group>"; };
 		C9EA337D1E821CCB000A7D76 /* VenueConversationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VenueConversationViewController.swift; path = ViewControllers/VenueConversationViewController.swift; sourceTree = "<group>"; };
+		C9F1CBD11EB03FE800B1D2EA /* HotMess.staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = HotMess.staging.xcconfig; path = Support/HotMess.staging.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD21EB042C100B1D2EA /* HotMess.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = HotMess.release.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD31EB042D000B1D2EA /* HotMess.debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = HotMess.debug.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD41EB0430400B1D2EA /* HotMessTests.debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = HotMessTests.debug.xcconfig; path = Support/HotMessTests.debug.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD51EB0431A00B1D2EA /* HotMessTests.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = HotMessTests.release.xcconfig; path = Support/HotMessTests.release.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD61EB0432D00B1D2EA /* HotMessTests.staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = HotMessTests.staging.xcconfig; path = Support/HotMessTests.staging.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD71EB0439100B1D2EA /* HotMessUITests.debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = HotMessUITests.debug.xcconfig; path = Support/HotMessUITests.debug.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD81EB0439F00B1D2EA /* HotMessUITests.staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = HotMessUITests.staging.xcconfig; sourceTree = "<group>"; };
+		C9F1CBD91EB043B100B1D2EA /* HotMessUITests.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = HotMessUITests.release.xcconfig; path = Support/HotMessUITests.release.xcconfig; sourceTree = "<group>"; };
 		C9F1F5D71E284783005CF7FD /* EventsService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventsService.swift; path = Services/EventsService.swift; sourceTree = "<group>"; };
 		C9F1F5D91E2847A9005CF7FD /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Event.swift; path = Models/Event.swift; sourceTree = "<group>"; };
 		C9F34AF01E2089E100C5049B /* LoginView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = LoginView.xib; path = Views/LoginView.xib; sourceTree = "<group>"; };
@@ -264,6 +302,9 @@
 			children = (
 				C94A5ACA1E1B7B2B004601AA /* HotMessTests.swift */,
 				C94A5ACC1E1B7B2B004601AA /* Info.plist */,
+				C9F1CBD41EB0430400B1D2EA /* HotMessTests.debug.xcconfig */,
+				C9F1CBD51EB0431A00B1D2EA /* HotMessTests.release.xcconfig */,
+				C9F1CBD61EB0432D00B1D2EA /* HotMessTests.staging.xcconfig */,
 			);
 			path = HotMessTests;
 			sourceTree = "<group>";
@@ -273,6 +314,9 @@
 			children = (
 				C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */,
 				C94A5AD71E1B7B2B004601AA /* Info.plist */,
+				C9F1CBD71EB0439100B1D2EA /* HotMessUITests.debug.xcconfig */,
+				C9F1CBD81EB0439F00B1D2EA /* HotMessUITests.staging.xcconfig */,
+				C9F1CBD91EB043B100B1D2EA /* HotMessUITests.release.xcconfig */,
 			);
 			path = HotMessUITests;
 			sourceTree = "<group>";
@@ -316,6 +360,9 @@
 				C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */,
 				C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */,
 				C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */,
+				C9F1CBD11EB03FE800B1D2EA /* HotMess.staging.xcconfig */,
+				C9F1CBD21EB042C100B1D2EA /* HotMess.release.xcconfig */,
+				C9F1CBD31EB042D000B1D2EA /* HotMess.debug.xcconfig */,
 			);
 			name = "Support Files";
 			sourceTree = "<group>";
@@ -467,8 +514,9 @@
 		C94A5AA81E1B7B2A004601AA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				CLASSPREFIX = HM;
 				LastSwiftUpdateCheck = 0820;
-				LastUpgradeCheck = 0820;
+				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = "Hot Mess and Co.";
 				TargetAttributes = {
 					C94A5AAF1E1B7B2A004601AA = {
@@ -502,7 +550,7 @@
 				};
 			};
 			buildConfigurationList = C94A5AAB1E1B7B2A004601AA /* Build configuration list for PBXProject "HotMess" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -772,7 +820,36 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C9F1CBFA1EB04F3B00B1D2EA /* NowService.swift in Sources */,
+				C9F1CBEE1EB04F3000B1D2EA /* VenueConversation.swift in Sources */,
+				C9F1CBE21EB04F3000B1D2EA /* User.swift in Sources */,
+				C9F1CBE51EB04F3000B1D2EA /* Locale.swift in Sources */,
+				C9F1CBE31EB04F3000B1D2EA /* Venue.swift in Sources */,
+				C9F1CBF81EB04F3B00B1D2EA /* PeopleService.swift in Sources */,
+				C9F1CBF61EB04F3B00B1D2EA /* EventsService.swift in Sources */,
+				C9F1CBE01EB04F3000B1D2EA /* SocialLink.swift in Sources */,
+				C9F1CBF91EB04F3B00B1D2EA /* FriendsService.swift in Sources */,
+				C9F1CBE11EB04F3000B1D2EA /* Now.swift in Sources */,
+				C9F1CBF71EB04F3B00B1D2EA /* LocaleService.swift in Sources */,
+				C9F1CBF41EB04F3B00B1D2EA /* UserService.swift in Sources */,
+				C9F1CBE81EB04F3000B1D2EA /* Model.swift in Sources */,
+				C9F1CBF31EB04F3B00B1D2EA /* RequestService.swift in Sources */,
+				C9F1CBE41EB04F3000B1D2EA /* Event.swift in Sources */,
+				C9F1CBFB1EB04F3B00B1D2EA /* DataRequest.swift in Sources */,
+				C9F1CBEB1EB04F3000B1D2EA /* PersonDetail.swift in Sources */,
+				C9F1CBEF1EB04F3000B1D2EA /* VenueMessage.swift in Sources */,
+				C9F1CBED1EB04F3000B1D2EA /* EventDetail.swift in Sources */,
+				C9F1CBE91EB04F3000B1D2EA /* Venues.swift in Sources */,
+				C9F1CBE71EB04F3000B1D2EA /* Friend.swift in Sources */,
+				C9F1CBEC1EB04F3000B1D2EA /* VenueDetail.swift in Sources */,
+				C9F1CBE61EB04F3000B1D2EA /* Person.swift in Sources */,
+				C9F1CBF11EB04F3000B1D2EA /* EventSection.swift in Sources */,
+				C9F1CBF21EB04F3B00B1D2EA /* SessionService.swift in Sources */,
+				C9F1CBF01EB04F3000B1D2EA /* EventListing.swift in Sources */,
 				C94A5ACB1E1B7B2B004601AA /* HotMessTests.swift in Sources */,
+				C9F1CBEA1EB04F3000B1D2EA /* Track.swift in Sources */,
+				C9F1CBFC1EB04F3B00B1D2EA /* RealtimeService.swift in Sources */,
+				C9F1CBF51EB04F3B00B1D2EA /* VenuesService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -916,6 +993,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 10.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = RELEASE;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -924,10 +1002,10 @@
 		};
 		C94A5ADB1E1B7B2B004601AA /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D7697D8D67C5BCFBC5E60BD2 /* Pods-HotMess.debug.xcconfig */;
+			baseConfigurationReference = C9F1CBD31EB042D000B1D2EA /* HotMess.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDevelopment;
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
 				INFOPLIST_FILE = HotMess/Info.plist;
@@ -936,12 +1014,13 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
 				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
 		C94A5ADC1E1B7B2B004601AA /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D8453045752088229BA3E7B5 /* Pods-HotMess.release.xcconfig */;
+			baseConfigurationReference = C9F1CBD21EB042C100B1D2EA /* HotMess.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -953,12 +1032,13 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
 				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
 		C94A5ADE1E1B7B2B004601AA /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2C5F96E2CC35181398D83382 /* Pods-HotMessTests.debug.xcconfig */;
+			baseConfigurationReference = C9F1CBD41EB0430400B1D2EA /* HotMessTests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -974,7 +1054,7 @@
 		};
 		C94A5ADF1E1B7B2B004601AA /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */;
+			baseConfigurationReference = C9F1CBD51EB0431A00B1D2EA /* HotMessTests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -990,7 +1070,7 @@
 		};
 		C94A5AE11E1B7B2B004601AA /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3107986BD80C0B8495B565BC /* Pods-HotMessUITests.debug.xcconfig */;
+			baseConfigurationReference = C9F1CBD71EB0439100B1D2EA /* HotMessUITests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
@@ -1005,7 +1085,7 @@
 		};
 		C94A5AE21E1B7B2B004601AA /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8BF8AB7DBAEABF8D94F2DA24 /* Pods-HotMessUITests.release.xcconfig */;
+			baseConfigurationReference = C9F1CBD91EB043B100B1D2EA /* HotMessUITests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
@@ -1018,6 +1098,106 @@
 			};
 			name = Release;
 		};
+		C9F1CBCD1EB03E8700B1D2EA /* Staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.2;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG STAGING";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Staging;
+		};
+		C9F1CBCE1EB03E8700B1D2EA /* Staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9F1CBD11EB03FE800B1D2EA /* HotMess.staging.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconStaging;
+				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
+				DEVELOPMENT_TEAM = DWVXMLB45Y;
+				INFOPLIST_FILE = HotMess/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMess;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
+				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Staging;
+		};
+		C9F1CBCF1EB03E8700B1D2EA /* Staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9F1CBD61EB0432D00B1D2EA /* HotMessTests.staging.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = DWVXMLB45Y;
+				INFOPLIST_FILE = HotMessTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HotMess.app/HotMess";
+			};
+			name = Staging;
+		};
+		C9F1CBD01EB03E8700B1D2EA /* Staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9F1CBD81EB0439F00B1D2EA /* HotMessUITests.staging.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				DEVELOPMENT_TEAM = DWVXMLB45Y;
+				INFOPLIST_FILE = HotMessUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
+				TEST_TARGET_NAME = HotMess;
+			};
+			name = Staging;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1025,6 +1205,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5AD81E1B7B2B004601AA /* Debug */,
+				C9F1CBCD1EB03E8700B1D2EA /* Staging */,
 				C94A5AD91E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1034,6 +1215,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5ADB1E1B7B2B004601AA /* Debug */,
+				C9F1CBCE1EB03E8700B1D2EA /* Staging */,
 				C94A5ADC1E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1043,6 +1225,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5ADE1E1B7B2B004601AA /* Debug */,
+				C9F1CBCF1EB03E8700B1D2EA /* Staging */,
 				C94A5ADF1E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1052,6 +1235,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5AE11E1B7B2B004601AA /* Debug */,
+				C9F1CBD01EB03E8700B1D2EA /* Staging */,
 				C94A5AE21E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;

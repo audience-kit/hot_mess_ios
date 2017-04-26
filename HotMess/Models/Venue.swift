@@ -16,7 +16,7 @@ class Venue : Model {
     let address: String
     let facebookId: String?
     let phone: String?
-    let photoUrl: URL
+    let photoUrl: URL?
     let point: GeoJSONPoint?
     let subtitle: String?
     let isLiked: Bool
@@ -27,7 +27,12 @@ class Venue : Model {
         self.facebookId = data["facebook_id"] as? String
         self.phone = data["phone"] as? String
         self.distance = data["distance"] as? Double
-        self.photoUrl = URL(string: data["photo_url"] as! String)!
+        
+        if let photoUrl = data["photo_url"] as? String {
+            self.photoUrl = URL(string: photoUrl)!
+        } else {
+            self.photoUrl = nil
+        }
         
         if let pictureUrl = data["hero_url"] as? String {
             self.heroUrl = URL(string: pictureUrl)!

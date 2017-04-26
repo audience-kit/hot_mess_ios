@@ -52,7 +52,9 @@ class VenueConversationViewController : UIViewController, UICollectionViewDataSo
         //    reuseIdentifier = ATLOutgoingMessageCellIdentifier
         //}
         
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "", for: indexPath)
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "", for: indexPath) as! ConversationMessageCell
+        
+        cell.messageLabel!.text = currentMessage.message
         
         //cell.bubbleView.update(withAttributedText: NSAttributedString(string: currentMessage.message))
         //cell.avatarImageView.kf.setImage(with: currentMessage.avatarUrl)
