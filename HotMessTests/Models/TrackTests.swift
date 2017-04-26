@@ -1,15 +1,15 @@
 //
-//  HotMessTests.swift
-//  HotMessTests
+//  TrackTests.swift
+//  HotMess
 //
-//  Created by Rick Mark on 1/2/17.
+//  Created by Rick Mark on 4/26/17.
 //  Copyright © 2017 Hot Mess and Co. All rights reserved.
 //
 
 import XCTest
 @testable import HotMess
 
-class HotMessTests: XCTestCase {
+class TrackTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
@@ -24,6 +24,7 @@ class HotMessTests: XCTestCase {
     func testExample() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.
+        
     }
     
     func testPerformanceExample() {

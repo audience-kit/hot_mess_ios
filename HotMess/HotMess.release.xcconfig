@@ -9,6 +9,6 @@
 #include "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.release.xcconfig"
 
 SERVER_SCHEME=https
-SERVER_BASE=next-api.hotmess.social
+SERVER_BASE=api.hotmess.social
 FACEBOOK_APP_ID=915436455177328
 BUNDLE_SUFFIX=
