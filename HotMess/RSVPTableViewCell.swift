@@ -37,7 +37,7 @@ class RSVPTableViewCell : UITableViewCell {
         
         SessionService.ensureHasPublishPermission(SessionService.RSVPEventPermission) {
             SessionService.ensureHasPermission(SessionService.UserEventsPermission) {
-                EventsService.shared.rsvp(self.event!)
+                DataService.shared.rsvp(self.event!)
                 
                 self.highlightButton()
             }

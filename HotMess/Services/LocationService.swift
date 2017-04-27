@@ -9,13 +9,13 @@
 import UIKit
 import CoreLocation
 
-class LocaleService : NSObject, CLLocationManagerDelegate {
+class LocationService : NSObject, CLLocationManagerDelegate {
     static let beaconIdentifier = "social.hotmess.beacon"
     
     static let LocaleUpdated = Notification.Name(rawValue: "LocaleUpdated")
     static let LocationChanged = Notification.Name(rawValue: "LocationChanged")
     
-    private static let _shared = LocaleService()
+    private static let _shared = LocationService()
     
     private var _closest : Locale? = nil
     private let _locationManager = CLLocationManager()
@@ -27,7 +27,7 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
     private let tolerance = 0.0001
 
     
-    static var shared : LocaleService {
+    static var shared : LocationService {
         return _shared
     }
     
@@ -38,7 +38,7 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
     override init() {
         
         let beaconId = UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!
-        self.beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: LocaleService.beaconIdentifier)
+        self.beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: LocationService.beaconIdentifier)
         
         super.init()
         
@@ -96,7 +96,7 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
             
             callback(locale)
             
-            NotificationCenter.default.post(name: LocaleService.LocaleUpdated, object: nil)
+            NotificationCenter.default.post(name: LocationService.LocaleUpdated, object: nil)
         }
     }
     
@@ -112,15 +112,22 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
         //    let deltaY = abs((currentLocation?.coordinate.longitude)! - location.coordinate.longitude)
             
         //     if deltaX > tolerance || deltaY > tolerance {
-                UserService.shared.location(locations.first!)
+                LocationService.shared.location(locations.first!)
                 
-                NotificationCenter.default.post(name: LocaleService.LocationChanged, object: self)
+                NotificationCenter.default.post(name: LocationService.LocationChanged, object: self)
         //    }
         //}
         
         //self.lastLocation = locations.first
     }
     
+    func location(_ location: CLLocation, beaconMajor: Int = 0, beaconMinor: Int = 0) {
+        let location = [ "coordinates": [ "latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude], "beacon": [ "major": beaconMajor, "minor": beaconMinor] ] as [String : Any]
+        
+        RequestService.shared.request(relativeUrl: "/v1/me/location", with: location) { result in
+            
+        }
+    }
     
 
     //func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLBeaconRegion) {
@@ -139,6 +146,6 @@ class LocaleService : NSObject, CLLocationManagerDelegate {
         self.beaconMajor = beacons.first?.major as! Int
         self.beaconMajor = beacons.first?.minor as! Int
         
-        UserService.shared.location(_locationManager.location!, beaconMajor: self.beaconMajor, beaconMinor: self.beaconMinor)
+        LocationService.shared.location(_locationManager.location!, beaconMajor: self.beaconMajor, beaconMinor: self.beaconMinor)
     }
 }

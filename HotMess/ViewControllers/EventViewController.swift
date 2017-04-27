@@ -22,7 +22,7 @@ class EventViewController : UITableViewController {
         self.navigationItem.title = event?.name
         self.titleLabel?.text = event?.name
 
-        EventsService.shared.get(event!) { (event) in
+        DataService.shared.event(event!) { (event) in
             self.event = event
         
             DispatchQueue.main.async {

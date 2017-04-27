@@ -20,7 +20,7 @@ class VenueMessage {
     let conversation: VenueConversation
     
     var direction : Direction {
-        if userId == UserService.shared.userId! {
+        if userId == SessionService.userId! {
             return .outgoing
         }
         
@@ -29,9 +29,9 @@ class VenueMessage {
     
     init(message : String, conversation: VenueConversation) {
         self.message = message
-        self.avatarUrl = URL(string: "/users/\(UserService.shared.userId!.uuidString)/picture", relativeTo: RequestService.shared.baseUrl)!
+        self.avatarUrl = URL(string: "/users/\(SessionService.userId!.uuidString)/picture", relativeTo: RequestService.shared.baseUrl)!
         self.conversation = conversation
-        self.userId = UserService.shared.userId!
+        self.userId = SessionService.userId!
     }
     
     init(data : [ String : Any ], conversation: VenueConversation) {
@@ -43,7 +43,7 @@ class VenueMessage {
     
     // Ugly
     func toJson() -> String {
-        let dictionary = [ "type" : "outgoing", "message" : self.message, "user_id" : UserService.shared.userId!.uuidString, "avatar_url" : avatarUrl.absoluteString ] as [String : Any]
+        let dictionary = [ "type" : "outgoing", "message" : self.message, "user_id" : SessionService.userId!.uuidString, "avatar_url" : avatarUrl.absoluteString ] as [String : Any]
         
         do {
             let data = try JSONSerialization.data(withJSONObject: dictionary, options: .prettyPrinted)

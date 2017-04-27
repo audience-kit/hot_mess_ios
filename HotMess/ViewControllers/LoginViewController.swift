@@ -52,7 +52,7 @@ class LoginViewController : UIViewController {
         if FBSDKAccessToken.current() != nil {
             DispatchQueue.global().async {
                 SessionService.getToken(token: FBSDKAccessToken.current().tokenString!, callback: {
-                    LocaleService.shared.closest(callback: { (locale) in
+                    LocationService.shared.closest(callback: { (locale) in
                         DispatchQueue.main.async {
                             self.dismiss(animated: true, completion: {
                                 NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self)

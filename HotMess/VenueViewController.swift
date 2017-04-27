@@ -82,7 +82,7 @@ class VenueViewController : UITableViewController {
         
         self.navigationItem.title = venue?.name
         
-        EventsService.shared.index(venue: self.venue!) { (events) in
+        DataService.shared.events(venue: self.venue!) { (events) in
             self.events = events
             
             DispatchQueue.main.async {

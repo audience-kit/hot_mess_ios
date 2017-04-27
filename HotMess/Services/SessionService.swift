@@ -12,8 +12,6 @@ import FacebookCore
 import FacebookLogin
 import Locksmith
 
-
-
 class SessionService {
     let operationQueue = OperationQueue()
     
@@ -28,6 +26,12 @@ class SessionService {
     static let loginRequired = Notification.Name("social.hotmess.loginRequired")
     
     static let loginManager = LoginManager()
+    
+    static var userId: UUID? {
+        return sharedInstance.userId
+    }
+    
+    var userId: UUID?
     
     static func registerNotifications() {
         NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
@@ -61,32 +65,17 @@ class SessionService {
     
     static func getToken(token: String, callback: @escaping () -> Void) {
         
-        let deviceToken = UIDevice.current.identifierForVendor?.uuidString
-        
-        let info = Bundle.main.infoDictionary!
-        
-        let version = info["CFBundleShortVersionString"] as! String
-        let build = info["CFBundleVersion"] as! String
-        var systemInfo = utsname()
-        uname(&systemInfo)
-        let machineMirror = Mirror(reflecting: systemInfo.machine)
-        let identifier = machineMirror.children.reduce("") { identifier, element in
-            guard let value = element.value as? Int8, value != 0 else { return identifier }
-            return identifier + String(UnicodeScalar(UInt8(value)))
-        }
-        
-        
         let parameters = [ "facebook_token" : token,
                            "device" : [
                             "type" : "apple",
-                            "identifier" : deviceToken,
-                            "version" : version,
-                            "build" : build,
-                            "model" : identifier ] ] as [ String : Any ]
+                            "identifier" : DeviceService.deviceToken,
+                            "version" : DeviceService.applicationVersion,
+                            "build" : DeviceService.applicationBuild,
+                            "model" : DeviceService.deviceModel] ] as [ String : Any ]
         
-        RequestService.shared.request(relativeUrl: "/token", with: parameters, { (result) in
+        RequestService.shared.request(relativeUrl: "/v1/token", with: parameters, { (result) in
             if let user = result["user"] as? [ String : Any ] {
-                UserService.shared.userId = UUID(uuidString: (user["id"] as! String))!
+                sharedInstance.userId = UUID(uuidString: (user["id"] as! String))!
             }
             
             if let token = result["token"] as? String {
@@ -159,6 +148,16 @@ class SessionService {
                 })
             default:
                 break;
+            }
+        }
+    }
+    
+    static func me(callback: @escaping (User) -> Void) {
+        RequestService.shared.request(relativeUrl: "/v1/me") { (result: [String : Any]) in
+            if result["id"] != nil {
+                let user = User(result)
+                sharedInstance.userId = user.id
+                callback(user)
             }
         }
     }

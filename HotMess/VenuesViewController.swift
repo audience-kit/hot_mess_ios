@@ -21,12 +21,12 @@ class VenuesViewController: UITableViewController {
         self.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
         self.refreshControl?.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
         
-        NotificationCenter.default.addObserver(forName: LocaleService.LocaleUpdated, object: self, queue: OperationQueue.main) { (notification) in
-            self.navigationItem.title = LocaleService.closest?.name
+        NotificationCenter.default.addObserver(forName: LocationService.LocaleUpdated, object: self, queue: OperationQueue.main) { (notification) in
+            self.navigationItem.title = LocationService.closest?.name
             self.tableView.reloadData()
         }
         
-        if let locale = LocaleService.closest {
+        if let locale = LocationService.closest {
             self.navigationItem.title = locale.name
         }
         
@@ -34,7 +34,7 @@ class VenuesViewController: UITableViewController {
     }
     
     func handleRefresh(control: UIRefreshControl) {
-        VenuesService.shared.index { (venues) in
+        DataService.shared.venues { (venues) in
             var overlays = [ MKAnnotation ]()
             
             for venue in venues.venues {

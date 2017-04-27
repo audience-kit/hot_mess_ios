@@ -36,7 +36,7 @@ class PersonViewController : UITableViewController {
         self.personProfileImage?.kf.setImage(with: person?.pictureUrl)
         self.personCoverImage?.kf.setImage(with: person?.coverUrl)
         
-        PeopleService.shared.get(person!.id) { (person) in
+        DataService.shared.person(person!.id) { (person) in
             DispatchQueue.main.async {
                 self.person = person
                 self.personTitleLabel?.text = person.name

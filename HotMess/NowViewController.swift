@@ -26,7 +26,7 @@ class NowViewController: UITableViewController {
         
         self.handleRefresh(control: self.tableView.refreshControl!)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(backgrondRefresh), name: LocaleService.LocationChanged, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(backgrondRefresh), name: LocationService.LocationChanged, object: nil)
     }
     
     func backgrondRefresh() -> Void {
@@ -34,7 +34,7 @@ class NowViewController: UITableViewController {
     }
     
     func handleRefresh(control : UIRefreshControl) {
-        NowService.shared.now { (now) in
+        DataService.shared.now { (now) in
 
             if now.imageUrl != nil {
                 self.heroBanner?.kf.setImage(with: now.imageUrl!)

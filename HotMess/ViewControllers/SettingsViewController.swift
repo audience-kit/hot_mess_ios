@@ -32,7 +32,7 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        UserService.shared.me { (user) in
+        SessionService.me { (user) in
             DispatchQueue.main.async {
                 self.nameLabel?.text = user.name
             }
@@ -100,7 +100,7 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
             case 1:
                 SessionService.logOut()
                 FBSDKAccessToken.setCurrent(nil)
-                UserService.shared.me() { _ in 
+                SessionService.me() { _ in
                     
                 }
             default:

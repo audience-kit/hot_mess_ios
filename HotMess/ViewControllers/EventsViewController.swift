@@ -42,7 +42,7 @@ class EventsViewController : UITableViewController {
     }
     
     func handleRefresh(control: UIRefreshControl) {
-        EventsService.shared.index { (events) in
+        DataService.shared.events { (events) in
             self.listing = events
             
             DispatchQueue.main.async {

@@ -21,7 +21,7 @@ class PeopleViewController : UITableViewController {
     }
     
     func handleRefresh(control: UIRefreshControl) {
-        PeopleService.shared.index { (people) in
+        DataService.shared.people { (people) in
             self.people = people
             
             DispatchQueue.main.async {
