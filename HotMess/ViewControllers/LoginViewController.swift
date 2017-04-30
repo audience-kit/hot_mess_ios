@@ -8,9 +8,12 @@
 
 import UIKit
 import FacebookLogin
+import FacebookCore
 import FBSDKLoginKit
 
-class LoginViewController : UIViewController {
+class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
+
+
     private static var _window : UIWindow?
     private static let _sharedInstance = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
     
@@ -19,7 +22,7 @@ class LoginViewController : UIViewController {
     }
     
     public static func present() {
-        if _sharedInstance.isBeingPresented == false {
+        if _sharedInstance.isBeingPresented == false && AccessToken.current == nil {
             _window!.rootViewController!.present(_sharedInstance, animated: true, completion: nil)
         }
     }
@@ -51,9 +54,28 @@ class LoginViewController : UIViewController {
         NotificationCenter.default.removeObserver(self)
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        loginButton?.publishPermissions = [ "rsvp_event" ]
+        loginButton?.readPermissions = SessionService.ReadPermissions
+        
+        loginButton?.delegate = self
+    }
+    
+    public func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
+        if result.token != nil {
+            SessionService.ensureSession()
+        }
+    }
+    
+    func loginButtonDidLogOut(_ loginButton: FBSDKLoginButton!) {
+        
+    }
+    
     private func registerLoginSuccess() {
-        NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: self, queue: OperationQueue.main) { (notification) in
-            if self.isBeingPresented {
+        NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
+            DispatchQueue.main.async {
                 self.dismiss(animated: true, completion: nil)
             }
         }

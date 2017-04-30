@@ -22,6 +22,7 @@ class SessionService {
     
     static let RSVPEventPermission = "event_rsvp"
     static let UserEventsPermission = "user_events"
+    static let ReadPermissions = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
     
     static let loginManager = LoginManager()
     
@@ -91,6 +92,7 @@ class SessionService {
                 let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
             
                 NotificationCenter.default.post(name: SessionService.LoginSuccess, object: nil)
+
                 
                 UIApplication.shared.registerForRemoteNotifications()
                 
@@ -108,11 +110,11 @@ class SessionService {
         RequestService.shared.request(request)
     }
     
-    static func getVersionInfo(callback: @escaping (Int) -> Void) {
+    static func getVersionInfo(callback: @escaping (VersionInfo) -> Void) {
         let request = DataRequest("/", parameters: nil) { result in
-            let apple = result["client.mobile.apple"] as! [ String : Any ]
+            let apple = ((result["client"] as! [ String : Any ])["mobile"] as! [ String : Any ])["apple"] as! [ String : Any ]
             
-            callback(apple["minimum_build"] as! Int)
+            callback(VersionInfo(apple))
         }
         
         RequestService.shared.request(request)
@@ -125,15 +127,22 @@ class SessionService {
         
         RequestService.shared.request(request)
     }
-
+    
     static func ensureHasPermission(_ permission: String, callback: @escaping () -> Void) {
-        if AccessToken.current?.grantedPermissions?.contains(Permission(name: permission)) == true {
+        SessionService.ensureHasPermission([ permission ], callback: callback)
+    }
+
+    static func ensureHasPermission(_ permissions: [ String ], callback: @escaping () -> Void) {
+        let havePermissions = permissions.map { permisison -> Bool in
+            return (AccessToken.current?.grantedPermissions?.contains(Permission(name: permisison)))!
+        }.contains(false)
+        
+        if havePermissions {
             callback()
-            
             return
         }
         
-        SessionService.loginManager.logIn([ ReadPermission.custom(permission) ], viewController: nil) { (result) in
+        SessionService.loginManager.logIn(permissions.map { permission in ReadPermission.custom(permission) }, viewController: nil) { (result) in
 
             switch result {
             case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):

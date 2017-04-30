@@ -28,7 +28,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         LoginViewController.registerForLogin(window!)
         LocationService.shared.start()
         
-        SessionService.ensureSession()
+        SessionService.getVersionInfo { versionInfo in
+            let build = Int(Bundle.main.infoDictionary!["CFBundleVersion"] as! String)
+            
+            if build! < versionInfo.minimumBuild {
+                DispatchQueue.main.async {
+                    let source = VersionInfo.isTestFlight ? "TestFlight" : "the App Store"
+                    let updateAlert = UIAlertController(title: "Update Required", message: "You must update to version \(versionInfo.minimumVersion) in \(source) before you can continue to use this app.", preferredStyle: .alert)
+                    updateAlert.addAction(UIAlertAction(title: "Dismiss", style: .default, handler: { action in
+                        
+                    }))
+                    
+                    self.window!.rootViewController!.present(updateAlert, animated: true, completion: nil)
+                }
+            }
+            else {
+                SessionService.ensureSession()
+            }
+        }
         
         return true
     }
@@ -54,11 +71,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+        LocationService.shared.start()
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        NotificationCenter.default.post(name: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -66,7 +83,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
-        return SDKApplicationDelegate.shared.application(app, open: url, options: options)
+        let handled = SDKApplicationDelegate.shared.application(app, open: url, options: options)
+        
+        return handled
     }
 }
 

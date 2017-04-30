@@ -15,6 +15,7 @@
 		C9271C0B1EB27D0F00C58469 /* SessionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9271C0A1EB27D0F00C58469 /* SessionServiceTests.swift */; };
 		C9271C0D1EB27D5800C58469 /* DeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9271C0C1EB27D5800C58469 /* DeviceService.swift */; };
 		C93373161E5EEF0000497879 /* Now.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373151E5EEF0000497879 /* Now.swift */; };
+		C936AC301EB66E9300083B00 /* VersionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936AC2F1EB66E9300083B00 /* VersionInfo.swift */; };
 		C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */; };
 		C94A5AB61E1B7B2B004601AA /* NowViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB51E1B7B2B004601AA /* NowViewController.swift */; };
 		C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */; };
@@ -123,6 +124,7 @@
 		C9271C0A1EB27D0F00C58469 /* SessionServiceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SessionServiceTests.swift; path = Services/SessionServiceTests.swift; sourceTree = "<group>"; };
 		C9271C0C1EB27D5800C58469 /* DeviceService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeviceService.swift; path = Services/DeviceService.swift; sourceTree = "<group>"; };
 		C93373151E5EEF0000497879 /* Now.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Now.swift; path = Models/Now.swift; sourceTree = "<group>"; };
+		C936AC2F1EB66E9300083B00 /* VersionInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VersionInfo.swift; path = Models/VersionInfo.swift; sourceTree = "<group>"; };
 		C94A5AB01E1B7B2B004601AA /* HotMess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotMess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C94A5AB51E1B7B2B004601AA /* NowViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowViewController.swift; sourceTree = "<group>"; };
@@ -461,6 +463,7 @@
 				C9B62C801E774C5C00F72EC4 /* VenueDetail.swift */,
 				C9DD61B31E80B9C500947C60 /* VenueMessage.swift */,
 				C99B12A41E72D88D002466C7 /* Venues.swift */,
+				C936AC2F1EB66E9300083B00 /* VersionInfo.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -821,6 +824,7 @@
 				C9F34AF61E208BF100C5049B /* User.swift in Sources */,
 				C93373161E5EEF0000497879 /* Now.swift in Sources */,
 				C916EF211E8DBF1E0030B464 /* EventListing.swift in Sources */,
+				C936AC301EB66E9300083B00 /* VersionInfo.swift in Sources */,
 				C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */,
 				C96E198B1E80901B00FDE88E /* ConversationMessageCell.swift in Sources */,
 				C9570A2B1E479F7A00A94395 /* EventTableViewCell.swift in Sources */,

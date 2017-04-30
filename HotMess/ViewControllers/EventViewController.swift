@@ -13,6 +13,7 @@ import FBSDKShareKit
 class EventViewController : UITableViewController {
     @IBOutlet var titleLabel: UILabel?
     @IBOutlet var subtitleLabel: UILabel?
+    @IBOutlet var heroImage: UIImageView?
     
     var event: Event? = nil
     
@@ -26,6 +27,7 @@ class EventViewController : UITableViewController {
             self.event = event
         
             DispatchQueue.main.async {
+                self.heroImage?.kf.setImage(with: event.coverUrl)
                 
                 let timeFormatter = DateFormatter()
                 timeFormatter.dateFormat = "h:mm"
@@ -43,7 +45,11 @@ class EventViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if section == 0 || section == 1 {
+        if section == 0 {
+            return "Event RSVP"
+        }
+        
+        if section == 1 {
             return nil
         }
         

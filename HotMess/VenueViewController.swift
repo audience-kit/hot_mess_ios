@@ -29,14 +29,9 @@ class VenueViewController : UITableViewController {
             let cell = tableView.dequeueReusableCell(withIdentifier: "venueDetailCell")
             switch indexPath.row {
             case 0:
-                cell?.textLabel?.text = "address"
-                cell?.detailTextLabel?.text = venue!.address
-            case 1:
-                cell?.textLabel?.text = "phone"
-                cell?.detailTextLabel?.text = venue!.phone
-            case 2:
                 cell?.textLabel?.text = "facebook"
                 cell?.detailTextLabel?.text = "View on Facebook"
+                cell?.accessoryType = .disclosureIndicator
             default:
                 cell?.textLabel?.text = "invalid"
             }
@@ -70,7 +65,7 @@ class VenueViewController : UITableViewController {
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
-            return 3
+            return 1
         }
         
         return self.events.count == 0 ? 1 : self.events.count

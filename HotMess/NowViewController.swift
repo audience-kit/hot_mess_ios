@@ -72,6 +72,7 @@ class NowViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let now = self.now
 
         if indexPath.section == 0 {
             if now != nil && now!.venues == nil {
@@ -89,7 +90,7 @@ class NowViewController: UITableViewController {
                 if now != nil && now!.venues != nil && now!.venues!.venues.count != 0 {
                     let cell = tableView.dequeueReusableCell(withIdentifier: "nowVenueCell") as! VenueTableViewCell
                     
-                    let venue = self.now!.venues!.venues[indexPath.row]
+                    let venue = now!.venues!.venues[indexPath.row]
                     cell.setVenue(venue: venue)
                     
                     return cell
@@ -120,8 +121,11 @@ class NowViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if section == 0 {
-            return 2
+        if section == 0 && self.now?.venues != nil {
+            return min(3, now!.venues!.venues.count)
+        }
+        else if section == 0 {
+            return 1
         }
         
         if now == nil || now?.events.count == 0 {
