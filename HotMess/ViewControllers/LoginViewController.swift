@@ -11,61 +11,52 @@ import FacebookLogin
 import FBSDKLoginKit
 
 class LoginViewController : UIViewController {
-    @IBOutlet var loginButton: FBSDKLoginButton?
+    private static var _window : UIWindow?
+    private static let _sharedInstance = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
     
-    static func registerNotifications() {
-        NotificationCenter.default.addObserver(forName: SessionService.loginRequired, object: nil, queue: OperationQueue.main) { (notification) in
-            let rootViewController = UIApplication.shared.keyWindow?.rootViewController!
-
-            let loginViewController = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
-
-            rootViewController?.present(loginViewController, animated: true, completion: { })
-        }
-        
-
-    
+    public static var shared : LoginViewController {
+        return _sharedInstance
     }
     
-    override func awakeFromNib() {
-        NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: self, queue: OperationQueue.main) { notification in
-            self.dismiss()
-        }
-    }
-
-    override func viewDidLoad() {
-        // TODO: user_likes scope when approved
-        self.loginButton!.readPermissions = [ "email", "public_profile", "user_friends", "user_likes", "user_events" ]
-        self.loginButton!.publishPermissions = [ "rsvp_event" ]
-        
-        NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
-            self.dismiss()
+    public static func present() {
+        if _sharedInstance.isBeingPresented == false {
+            _window!.rootViewController!.present(_sharedInstance, animated: true, completion: nil)
         }
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        if FBSDKAccessToken.current() != nil {
-            self.dismiss()
-        }
-    }
-    
-    func dismiss() {
-        if FBSDKAccessToken.current() != nil {
-            DispatchQueue.global().async {
-                SessionService.getToken(token: FBSDKAccessToken.current().tokenString!, callback: {
-                    LocationService.shared.closest(callback: { (locale) in
-                        DispatchQueue.main.async {
-                            self.dismiss(animated: true, completion: {
-                                NotificationCenter.default.post(name: Notification.Name.FBSDKAccessTokenDidChange, object: self)
-                            })
-                        }
-                    })
-                })
+    public static func registerForLogin(_ window: UIWindow) {
+        _window = window
+        NotificationCenter.default.addObserver(forName: SessionService.LoginRequired, object: nil, queue: OperationQueue.main) { (notification) in
+            DispatchQueue.main.async {
+                LoginViewController.present()
             }
         }
     }
     
+    @IBOutlet var loginButton: FBSDKLoginButton?
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.registerLoginSuccess()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.registerLoginSuccess()
+    }
+    
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func registerLoginSuccess() {
+        NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: self, queue: OperationQueue.main) { (notification) in
+            if self.isBeingPresented {
+                self.dismiss(animated: true, completion: nil)
+            }
+        }
     }
 }
 

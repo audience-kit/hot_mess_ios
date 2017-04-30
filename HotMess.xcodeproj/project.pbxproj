@@ -31,6 +31,7 @@
 		C96F09821E4307DE009B3911 /* Locale.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09811E4307DE009B3911 /* Locale.swift */; };
 		C96F09841E430822009B3911 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F09831E430822009B3911 /* LocationService.swift */; };
 		C96FD7C21EB2849900035B91 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96FD7C11EB2849900035B91 /* DataService.swift */; };
+		C96FD7C41EB288BF00035B91 /* DataServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96FD7C31EB288BF00035B91 /* DataServiceTests.swift */; };
 		C9782C9D1E1E02D5005FB286 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */; };
 		C97B6DC11EB108AB0014DDB6 /* SocialLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97B6DC01EB108AB0014DDB6 /* SocialLinkTests.swift */; };
 		C97B6DC31EB108C30014DDB6 /* EventTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97B6DC21EB108C30014DDB6 /* EventTests.swift */; };
@@ -145,6 +146,7 @@
 		C96F09811E4307DE009B3911 /* Locale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Locale.swift; path = Models/Locale.swift; sourceTree = "<group>"; };
 		C96F09831E430822009B3911 /* LocationService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocationService.swift; path = Services/LocationService.swift; sourceTree = "<group>"; };
 		C96FD7C11EB2849900035B91 /* DataService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DataService.swift; path = Services/DataService.swift; sourceTree = "<group>"; };
+		C96FD7C31EB288BF00035B91 /* DataServiceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DataServiceTests.swift; path = Services/DataServiceTests.swift; sourceTree = "<group>"; };
 		C9782C9C1E1E02D5005FB286 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C97B6DC01EB108AB0014DDB6 /* SocialLinkTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocialLinkTests.swift; path = Models/SocialLinkTests.swift; sourceTree = "<group>"; };
 		C97B6DC21EB108C30014DDB6 /* EventTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventTests.swift; path = Models/EventTests.swift; sourceTree = "<group>"; };
@@ -341,6 +343,7 @@
 			isa = PBXGroup;
 			children = (
 				C9271C0A1EB27D0F00C58469 /* SessionServiceTests.swift */,
+				C96FD7C31EB288BF00035B91 /* DataServiceTests.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -401,16 +404,16 @@
 		C99EFFD81E1C67EB00720341 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
-				C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */,
-				C94A5AB51E1B7B2B004601AA /* NowViewController.swift */,
-				C99EFFD91E1C682000720341 /* LoginViewController.swift */,
-				C96779181E26082900BC263D /* VenueViewController.swift */,
 				C9C4608F1E2DB51B00EFD119 /* EventsViewController.swift */,
-				C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */,
-				C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */,
-				C97E4B451E67A0800069E965 /* PersonViewController.swift */,
 				C97E4B471E67A0B80069E965 /* EventViewController.swift */,
+				C99EFFD91E1C682000720341 /* LoginViewController.swift */,
+				C94A5AB51E1B7B2B004601AA /* NowViewController.swift */,
+				C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */,
+				C97E4B451E67A0800069E965 /* PersonViewController.swift */,
+				C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */,
 				C9EA337D1E821CCB000A7D76 /* VenueConversationViewController.swift */,
+				C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */,
+				C96779181E26082900BC263D /* VenueViewController.swift */,
 			);
 			name = "View Controllers";
 			sourceTree = "<group>";
@@ -555,10 +558,16 @@
 						DevelopmentTeam = DWVXMLB45Y;
 						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
 							com.apple.BackgroundModes = {
 								enabled = 1;
 							};
 							com.apple.Push = {
+								enabled = 1;
+							};
+							com.apple.SafariKeychain = {
 								enabled = 1;
 							};
 							com.apple.Wallet = {
@@ -850,6 +859,7 @@
 				C97B6DCD1EB1093C0014DDB6 /* ModelTests.swift in Sources */,
 				C97B6DC31EB108C30014DDB6 /* EventTests.swift in Sources */,
 				C97B6DD91EB10A780014DDB6 /* VenueDetailTests.swift in Sources */,
+				C96FD7C41EB288BF00035B91 /* DataServiceTests.swift in Sources */,
 				C97B6DDF1EB117DA0014DDB6 /* TrackTests.swift in Sources */,
 				C97B6DC51EB108D50014DDB6 /* EventDetailTests.swift in Sources */,
 				C97B6DDB1EB10BE30014DDB6 /* VenuesTests.swift in Sources */,

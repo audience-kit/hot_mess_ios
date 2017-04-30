@@ -14,6 +14,7 @@ class EventTableViewCell : UITableViewCell {
     @IBOutlet var subtitleLabel: UILabel?
     @IBOutlet var monthLabel: UILabel?
     @IBOutlet var dayLabel: UILabel?
+    @IBOutlet var coverPhotoImage: UIImageView?
     
     func setEvent(event: Event) {
         let monthFormatter = DateFormatter()
@@ -27,5 +28,9 @@ class EventTableViewCell : UITableViewCell {
         subtitleLabel?.text = "\(timeFormatter.string(for: event.startDate)!) at \(event.venue!.name)"
         monthLabel?.text = monthFormatter.string(from: event.startDate).uppercased()
         dayLabel?.text = dayFormatter.string(for: event.startDate)
+        
+        if coverPhotoImage != nil {
+            coverPhotoImage!.kf.setImage(with: event.coverUrl!)
+        }
     }
 }

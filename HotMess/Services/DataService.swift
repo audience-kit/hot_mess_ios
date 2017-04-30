@@ -9,14 +9,11 @@
 import UIKit
 
 class DataService {
-    
     static var _shared = DataService()
-    
     
     static var shared : DataService{
         return _shared
     }
-    
     
     func now(callback: @escaping (Now) -> Void) -> Void {
         RequestService.shared.request(relativeUrl: "/v1/now?\(LocationService.shared.coordinates.queryParameters)") { (data) in
@@ -59,6 +56,19 @@ class DataService {
         }
     }
     
+    func venue(_ venue: Venue, callback: @escaping ([ Friend ]) -> Void) {
+        RequestService.shared.request(relativeUrl: "/v1/venues/\(venue.id)/friends") { (result) in
+            let friends = result["friends"] as! [ [ String : Any ] ]
+            var parsed: [ Friend ] = []
+            
+            for friend in friends {
+                parsed.append(Friend(friend))
+            }
+            
+            callback(parsed)
+        }
+    }
+    
     func events(callback: @escaping (EventListing) -> Void) {
         guard LocationService.closest != nil else { return }
         
@@ -92,18 +102,4 @@ class DataService {
             
         }
     }
-    
-    func venue(_ venue: Venue, callback: @escaping ([ Friend ]) -> Void) {
-        RequestService.shared.request(relativeUrl: "/v1/venues/\(venue.id)/friends") { (result) in
-            let friends = result["friends"] as! [ [ String : Any ] ]
-            var parsed: [ Friend ] = []
-            
-            for friend in friends {
-                parsed.append(Friend(friend))
-            }
-            
-            callback(parsed)
-        }
-    }
-
 }

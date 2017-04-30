@@ -31,7 +31,7 @@ class Person : Model {
         
         self.pictureUrl = URL(string: data["photo_url"] as! String)!
         
-        if let coverUrl = data["hero_url"] as? String {
+        if let coverUrl = data["cover_url"] as? String {
             self.coverUrl = URL(string: coverUrl)!
         }
         else {

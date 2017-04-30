@@ -20,20 +20,12 @@ class NowViewController: UITableViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        self.tableView.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
-        
-        self.tableView.refreshControl?.addTarget(self, action: #selector(handleRefresh(control:)), for: .valueChanged)
-        
-        self.handleRefresh(control: self.tableView.refreshControl!)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(backgrondRefresh), name: LocationService.LocationChanged, object: nil)
+        NotificationCenter.default.addObserver(forName: LocationService.LocationChanged, object: nil, queue: OperationQueue.main) { notification in
+            self.handleRefresh(control: self.refreshControl!)
+        }
     }
     
-    func backgrondRefresh() -> Void {
-        self.handleRefresh(control: self.tableView.refreshControl!)
-    }
-    
-    func handleRefresh(control : UIRefreshControl) {
+    @IBAction func handleRefresh(control : UIRefreshControl) {
         DataService.shared.now { (now) in
 
             if now.imageUrl != nil {

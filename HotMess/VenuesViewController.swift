@@ -18,9 +18,6 @@ class VenuesViewController: UITableViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        self.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
-        self.refreshControl?.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
-        
         NotificationCenter.default.addObserver(forName: LocationService.LocaleUpdated, object: self, queue: OperationQueue.main) { (notification) in
             self.navigationItem.title = LocationService.closest?.name
             self.tableView.reloadData()
@@ -33,7 +30,7 @@ class VenuesViewController: UITableViewController {
         self.handleRefresh(control: self.tableView.refreshControl!)
     }
     
-    func handleRefresh(control: UIRefreshControl) {
+    @IBAction func handleRefresh(control: UIRefreshControl) {
         DataService.shared.venues { (venues) in
             var overlays = [ MKAnnotation ]()
             

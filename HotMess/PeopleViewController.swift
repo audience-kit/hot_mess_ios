@@ -13,22 +13,21 @@ class PeopleViewController : UITableViewController {
     var people = [ Person ]()
     
     override func viewDidLoad() {
-        self.tableView.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        NotificationCenter.default.addObserver(forName: LocationService.LocaleUpdated, object: self, queue: OperationQueue.main) { (notification) in
+            self.handleRefresh(control: self.refreshControl!)
+        }
         
-        self.tableView.refreshControl?.addTarget(self, action: #selector(handleRefresh(control:)), for: .valueChanged)
-        
-        self.handleRefresh(control: self.tableView.refreshControl!)
+        self.handleRefresh(control: self.refreshControl!)
     }
     
-    func handleRefresh(control: UIRefreshControl) {
+    @IBAction func handleRefresh(control: UIRefreshControl) {
         DataService.shared.people { (people) in
             self.people = people
             
             DispatchQueue.main.async {
                 self.tableView.reloadData()
+                control.endRefreshing()
             }
-            
-            control.endRefreshing()
         }
     }
     

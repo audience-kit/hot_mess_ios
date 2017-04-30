@@ -34,13 +34,14 @@ class PersonViewController : UITableViewController {
         self.personProfileImage?.layer.borderColor = UIColor.white.cgColor
         self.personProfileImage?.layer.borderWidth = 5.0
         self.personProfileImage?.kf.setImage(with: person?.pictureUrl)
-        self.personCoverImage?.kf.setImage(with: person?.coverUrl)
+
         
         DataService.shared.person(person!.id) { (person) in
             DispatchQueue.main.async {
                 self.person = person
                 self.personTitleLabel?.text = person.name
                 self.personLikeButton?.objectID = "\(person.facebookId)"
+                self.personCoverImage?.kf.setImage(with: person.coverUrl)
 
                 self.tableView.reloadData()
             }

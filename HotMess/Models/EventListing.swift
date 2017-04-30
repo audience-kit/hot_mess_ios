@@ -10,15 +10,9 @@ import Foundation
 
 class EventListing {
     let sections : [ EventSection ]
-    let events : [ Event ]
     
     init(_ data: [ String : Any ]) {
         var sections = [ EventSection ]()
-        var events: [ Event ]?
-        
-        events = (data["events"] as! [ [ String : Any ] ]).map { item in
-            Event(item)
-        }
         
         if let sectionData = data["sections"] as? [ String : Any ] {
             for (name, value) in sectionData {
@@ -26,9 +20,6 @@ class EventListing {
             }
         }
         
-        sections.append(EventSection(events: events!))
-        
         self.sections = sections
-        self.events = events!
     }
 }

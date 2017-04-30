@@ -15,6 +15,8 @@ class Event : Model {
     let facebookId: IntMax
     let venue: Venue?
     let person: Person?
+    let coverUrl: URL?
+    let featured: Bool
     var rsvp: String = "unsure"
     
     override init(_ data: [ String : Any ]) {
@@ -38,6 +40,20 @@ class Event : Model {
         }
         else {
             self.person = nil
+        }
+        
+        if let coverPhotoUrl = data["cover_photo_url"] as? String {
+            self.coverUrl = URL(string: coverPhotoUrl)!
+        }
+        else {
+            self.coverUrl = nil
+        }
+        
+        if let isFeatured = data["is_featured"] as? Bool {
+            self.featured = isFeatured
+        }
+        else {
+            self.featured = false
         }
         
         if let endDateString = data["end_at"] as? String {

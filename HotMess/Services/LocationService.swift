@@ -55,14 +55,19 @@ class LocationService : NSObject, CLLocationManagerDelegate {
         
     }
     
+    
     func start() {
-        _locationManager.requestAlwaysAuthorization()
-        _locationManager.startMonitoringSignificantLocationChanges()
-        _locationManager.startMonitoring(for: beaconRegion)
-
-        closest { (locale) in
-            
+        NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
+            self._locationManager.requestAlwaysAuthorization()
+            self._locationManager.startMonitoringSignificantLocationChanges()
+            //_locationManager.startMonitoring(for: beaconRegion)
+            self.update()
         }
+    }
+    
+    func stop() {
+        _locationManager.stopMonitoringSignificantLocationChanges()
+        
     }
     
     var coordinates: [ String : Any ] {
@@ -81,44 +86,32 @@ class LocationService : NSObject, CLLocationManagerDelegate {
         return parameters
     }
     
-    func closest(callback: @escaping (Locale) -> Void) {
+    func update() {
         let params = self.coordinates
         
         let path = "/v1/locales/closest?\(params.queryParameters)"
         
         RequestService.shared.request(relativeUrl: path) { result in
             let locale = Locale(result)
-            self._closest = locale
             
             UserDefaults.standard.set(locale.name, forKey: "localeName")
             UserDefaults.standard.set(locale.id.uuidString, forKey: "localeId")
             UserDefaults.standard.synchronize()
             
-            callback(locale)
-            
-            NotificationCenter.default.post(name: LocationService.LocaleUpdated, object: nil)
+            if self._closest == nil || self._closest!.id != locale.id {
+                self._closest = locale
+                NotificationCenter.default.post(name: LocationService.LocaleUpdated, object: nil)
+                NotificationCenter.default.post(name: LocationService.LocationChanged, object: nil)
+            }
         }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        closest { locale in
+        update()
+
+        LocationService.shared.location(locations.first!)
         
-        }
-        
-        //if let location = lastLocation {
-        //    let currentLocation = locations.first
-            
-        //    let deltaX = abs((currentLocation?.coordinate.latitude)! - location.coordinate.latitude)
-        //    let deltaY = abs((currentLocation?.coordinate.longitude)! - location.coordinate.longitude)
-            
-        //     if deltaX > tolerance || deltaY > tolerance {
-                LocationService.shared.location(locations.first!)
-                
-                NotificationCenter.default.post(name: LocationService.LocationChanged, object: self)
-        //    }
-        //}
-        
-        //self.lastLocation = locations.first
+        NotificationCenter.default.post(name: LocationService.LocationChanged, object: self)
     }
     
     func location(_ location: CLLocation, beaconMajor: Int = 0, beaconMinor: Int = 0) {

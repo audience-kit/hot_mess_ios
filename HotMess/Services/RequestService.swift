@@ -18,7 +18,6 @@ class RequestService
     
     private var _isAuthenticating = false
     
-    
     var baseUrl: URL {
         let serverString = Bundle.main.infoDictionary![RequestService.serverBaseIdentifier] as! String
         return URL(string: serverString)!
@@ -37,70 +36,63 @@ class RequestService
     }
     
     func request(_ dataRequest: DataRequest) {
-        let url = URL(string: dataRequest.path, relativeTo: self.baseUrl)
-        
-        var request = URLRequest(url: url!)
-        
-        do {
-            if let account = SessionService.token {
-                request.addValue("Bearer \(account)", forHTTPHeaderField: "Authorization")
-            }
+        dataRequest.operationQueue?.async {
+            let url = URL(string: dataRequest.path, relativeTo: self.baseUrl)
             
-            if (dataRequest.parameters != nil) {
-                request.httpMethod = "POST"
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.httpBody = try JSONSerialization.data(withJSONObject: dataRequest.parameters!, options: .prettyPrinted)
-            }
-            else {
-                request.httpMethod = "GET"
-            }
+            var request = URLRequest(url: url!)
             
-            NSLog("\(request.httpMethod!): \(request.url!)")
-            
-            let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) in
-                if let error = error {
-                    NSLog(error.localizedDescription)
+            do {
+                if let account = SessionService.token {
+                    request.addValue("Bearer \(account)", forHTTPHeaderField: "Authorization")
                 }
                 
-                let httpResponse = response as? HTTPURLResponse
+                if (dataRequest.parameters != nil) {
+                    request.httpMethod = "POST"
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.httpBody = try JSONSerialization.data(withJSONObject: dataRequest.parameters!, options: .prettyPrinted)
+                }
+                else {
+                    request.httpMethod = "GET"
+                }
                 
-                if httpResponse == nil {
-                    let alert = UIAlertController(title: "Error", message: "Unable to reach server. Check network connection.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "Dismiss", style: .default))
-                    
-                    DispatchQueue.main.async {
-                        alert.show(UIApplication.shared.keyWindow!.rootViewController!, sender: self)
+                NSLog("\(request.httpMethod!): \(request.url!)")
+                
+                let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) in
+                    if let error = error {
+                        NSLog(error.localizedDescription)
                     }
                     
-                    return
-                }
-                
-                if (httpResponse!.statusCode == 401)
-                {
-                    if (self._isAuthenticating == false) {
-                        self._isAuthenticating = true
-                        SessionService.logOut()
-                        NotificationCenter.default.post(name: SessionService.loginRequired, object: self)
+                    let httpResponse = response as? HTTPURLResponse
+                    
+                    if httpResponse == nil {
+                        let alert = UIAlertController(title: "Error", message: "Unable to reach server. Check network connection.", preferredStyle: .alert)
+                        alert.addAction(UIAlertAction(title: "Dismiss", style: .default))
+                        
+                        DispatchQueue.main.async {
+                            alert.show(UIApplication.shared.keyWindow!.rootViewController!, sender: self)
+                        }
+                        
+                        return
                     }
                     
-                    return
-                }
+                    if (httpResponse!.statusCode == 401)
+                    {
+                        return
+                    }
+                    
+                    let data = try? JSONSerialization.jsonObject(with: data!, options: .allowFragments) as! [ String: Any]
+                    
+                    if data != nil {
+                        dataRequest.callback!(data!)
+                    }
+                })
                 
-                self._isAuthenticating = false
-                
-                let data = try? JSONSerialization.jsonObject(with: data!, options: .allowFragments) as! [ String: Any]
-                
-                if data != nil {
-                    dataRequest.callback!(data!)
-                }
-            })
-            
-            task.resume()
+                task.resume()
+            }
+            catch {
+                dataRequest.callback!([:])
+            }
         }
-        catch {
-            dataRequest.callback!([:])
-        }
-        
     }
 }
 

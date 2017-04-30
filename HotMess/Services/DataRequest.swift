@@ -13,17 +13,20 @@ class DataRequest {
     let parameters: [ String : Any ]?
     let callback: (([ String : Any ]) -> Void)?
     var skipAuthentication = false
+    var operationQueue: DispatchQueue?
     
     init(_ path: String, parameters: [ String : Any ]?, callback: @escaping ([ String : Any ]) -> Void) {
         self.path = path
         self.parameters = parameters
         self.callback = callback
+        self.operationQueue = DispatchQueue.global()
     }
     
     init(_ path: String, parameters: [ String : Any ]?) {
         self.path = path
         self.parameters = parameters
         self.callback = nil
+        self.operationQueue = DispatchQueue.global()
     }
 }
 

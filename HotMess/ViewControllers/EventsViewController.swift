@@ -14,34 +14,25 @@ class EventsViewController : UITableViewController {
     
     var formatter: DateFormatter?
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     override func awakeFromNib() {
         self.formatter = DateFormatter()
         
         self.formatter?.dateFormat = "EEEE MMMM d h:mm"
-    }
-    
-    func enableRecomendations(_ sender: UIBarButtonItem) {
-        SessionService.ensureHasPermission("user_likes") { 
-            self.navigationItem.setRightBarButton(nil, animated: true)
-            
-            self.handleRefresh(control: self.tableView.refreshControl!)
+        
+        NotificationCenter.default.addObserver(forName: LocationService.LocaleUpdated, object: self, queue: OperationQueue.main) { (notification) in
+            self.handleRefresh(control: self.refreshControl!)
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        self.tableView.refreshControl = UIRefreshControl(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
-        
-        self.tableView.refreshControl?.addTarget(self, action: #selector(handleRefresh(control:)), for: .valueChanged)
-        
         self.handleRefresh(control: self.tableView.refreshControl!)
-        
-        if true || AccessToken.current?.grantedPermissions?.contains("user_likes") == false {
-            let grantLikesButton = UIBarButtonItem(title: "For", style: .plain, target: self, action: #selector(enableRecomendations(_:)))
-            self.navigationItem.setRightBarButton(grantLikesButton, animated: true)
-        }
     }
     
-    func handleRefresh(control: UIRefreshControl) {
+    @IBAction func handleRefresh(control: UIRefreshControl) {
         DataService.shared.events { (events) in
             self.listing = events
             
@@ -51,10 +42,6 @@ class EventsViewController : UITableViewController {
         }
         
         control.endRefreshing()
-    }
-    
-    var isAuthorized : Bool {
-        return false
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -71,6 +58,21 @@ class EventsViewController : UITableViewController {
         return section!.events.count == 0 ? 1 : section!.events.count
     }
     
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard listing != nil else { return 100 }
+        
+        if listing!.sections[indexPath.section].events.count == 0 {
+            return 100
+        }
+        
+        if listing!.sections[indexPath.section].events[indexPath.row].featured == true {
+            return 130
+        }
+        else {
+            return 100
+        }
+    }
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let section = listing?.sections[indexPath.section]
         
@@ -82,10 +84,18 @@ class EventsViewController : UITableViewController {
         
         let event = section?.events[indexPath.row]
         
-        let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell") as! EventTableViewCell
-        cell.setEvent(event: event!)
-        
-        return cell
+        if event?.featured == true {
+            let cell = self.tableView.dequeueReusableCell(withIdentifier: "featuredEventCell") as! EventTableViewCell
+            cell.setEvent(event: event!)
+            
+            return cell
+        }
+        else {
+            let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell") as! EventTableViewCell
+            cell.setEvent(event: event!)
+            
+            return cell
+        }
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -102,7 +112,7 @@ class EventsViewController : UITableViewController {
         switch segue.identifier! {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
-            let event = self.listing?.events[path.row]
+            let event = self.listing?.sections[path.section].events[path.row]
             
             targetViewController.event = event
         default:

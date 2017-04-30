@@ -22,10 +22,4 @@ class EventSection {
             Event(event)
         }
     }
-    
-    init(events: [ Event ]) {
-        self.name = "events"
-        self.title = "Upcoming"
-        self.events = events
-    }
 }

@@ -26,7 +26,7 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
             userProfileImage.setNeedsImageUpdate()
         }
         
-        NotificationCenter.default.addObserver(forName: SessionService.loginSuccess, object: self, queue: OperationQueue.main) { _ in
+        NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: self, queue: OperationQueue.main) { _ in
             self.tableView.reloadData()
         }
     }
@@ -174,7 +174,7 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
     }
     
     private var facebookEnvironment : String {
-        switch UserDefaults.standard.string(forKey: "facebook_app_id")! {
+        switch Bundle.main.infoDictionary!["FacebookAppID"] as! String {
         case "713525445368431":
             return "production"
         case "915436455177328":

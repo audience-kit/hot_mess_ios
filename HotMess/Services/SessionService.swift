@@ -13,41 +13,49 @@ import FacebookLogin
 import Locksmith
 
 class SessionService {
-    let operationQueue = OperationQueue()
+    private static let _sharedInstance = SessionService()
     
-    static let RSVPEventPermission = "rsvp_event"
-    static let UserEventsPermission = "user_events"
-    
-    private static let sharedInstance = SessionService()
-    
-    static let loginSuccess = NSNotification.Name("LoginSuccess")
+    static let LoginSuccess = NSNotification.Name("social.hotmess.loginSuccess")
+    static let LoginRequired = Notification.Name("social.hotmess.loginRequired")
     
     static let accountIdentifier = "social.hotmess.account";
-    static let loginRequired = Notification.Name("social.hotmess.loginRequired")
+    
+    static let RSVPEventPermission = "event_rsvp"
+    static let UserEventsPermission = "user_events"
     
     static let loginManager = LoginManager()
     
     static var userId: UUID? {
-        return sharedInstance.userId
+        return _sharedInstance.userId
     }
     
     var userId: UUID?
     
-    static func registerNotifications() {
-        NotificationCenter.default.addObserver(forName: NSNotification.Name.FBSDKAccessTokenDidChange, object: nil, queue: self.sharedInstance.operationQueue) { (notification) in
-            if AccessToken.current != nil {
-            
-                if let token = AccessToken.current {
-                    self.getToken(token: token.authenticationToken, callback: {})
-                }
+    init() {
+        NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
+            DispatchQueue.global().async {
+                SessionService.ensureSession()
             }
+        }
+    }
+    
+    static func ensureSession() {
+        if let credential = AccessToken.current {
+            self.getToken(token: credential.authenticationToken, callback: { (result) in
+                if result {
+                    NotificationCenter.default.post(name: SessionService.LoginSuccess, object: nil)
+                }
+            })
+        }
+        else {
+            NotificationCenter.default.post(name: SessionService.LoginRequired, object: nil)
         }
     }
     
     static func logOut() {
         do {
             try Locksmith.deleteDataForUserAccount(userAccount: accountIdentifier)
-            NotificationCenter.default.post(name: SessionService.loginRequired, object: self)
+            NotificationCenter.default.post(name: SessionService.LoginRequired, object: nil)
         }
         catch  {
         }
@@ -63,7 +71,7 @@ class SessionService {
         return nil
     }
     
-    static func getToken(token: String, callback: @escaping () -> Void) {
+    static func getToken(token: String, callback: @escaping (Bool) -> Void) {
         
         let parameters = [ "facebook_token" : token,
                            "device" : [
@@ -73,25 +81,31 @@ class SessionService {
                             "build" : DeviceService.applicationBuild,
                             "model" : DeviceService.deviceModel] ] as [ String : Any ]
         
-        RequestService.shared.request(relativeUrl: "/v1/token", with: parameters, { (result) in
+        let request = DataRequest("/v1/token", parameters: parameters) { (result) in
             if let user = result["user"] as? [ String : Any ] {
-                sharedInstance.userId = UUID(uuidString: (user["id"] as! String))!
+                _sharedInstance.userId = UUID(uuidString: (user["id"] as! String))!
             }
             
             if let token = result["token"] as? String {
             
                 let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
             
-                NotificationCenter.default.post(name: SessionService.loginSuccess, object: self)
+                NotificationCenter.default.post(name: SessionService.LoginSuccess, object: nil)
                 
                 UIApplication.shared.registerForRemoteNotifications()
                 
-                callback()
+                callback(true)
+                return
             }
             else {
                 SessionService.logOut()
             }
-        })
+            callback(false)
+        }
+        
+        request.operationQueue = DispatchQueue.global()
+        
+        RequestService.shared.request(request)
     }
     
     static func getVersionInfo(callback: @escaping (Int) -> Void) {
@@ -123,7 +137,7 @@ class SessionService {
 
             switch result {
             case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
-                SessionService.getToken(token: accessToken.authenticationToken, callback: {
+                SessionService.getToken(token: accessToken.authenticationToken, callback: { (result) in
                     callback()
                 })
             default:
@@ -143,7 +157,7 @@ class SessionService {
             
             switch result {
             case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
-                SessionService.getToken(token: accessToken.authenticationToken, callback: {
+                SessionService.getToken(token: accessToken.authenticationToken, callback: { (result) in
                     callback()
                 })
             default:
@@ -156,7 +170,7 @@ class SessionService {
         RequestService.shared.request(relativeUrl: "/v1/me") { (result: [String : Any]) in
             if result["id"] != nil {
                 let user = User(result)
-                sharedInstance.userId = user.id
+                _sharedInstance.userId = user.id
                 callback(user)
             }
         }
