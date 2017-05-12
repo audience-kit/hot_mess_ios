@@ -11,11 +11,11 @@ import Foundation
 class DataRequest {
     let path: String
     let parameters: [ String : Any ]?
-    let callback: (([ String : Any ]) -> Void)?
+    let callback: ((DataResult) -> Void)?
     var skipAuthentication = false
     var operationQueue: DispatchQueue?
     
-    init(_ path: String, parameters: [ String : Any ]?, callback: @escaping ([ String : Any ]) -> Void) {
+    init(_ path: String, parameters: [ String : Any ]?, callback: @escaping (DataResult) -> Void) {
         self.path = path
         self.parameters = parameters
         self.callback = callback

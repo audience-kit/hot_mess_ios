@@ -15,8 +15,9 @@ import Locksmith
 class SessionService {
     private static let _sharedInstance = SessionService()
     
-    static let LoginSuccess = NSNotification.Name("social.hotmess.loginSuccess")
+    static let LoginSuccess = Notification.Name("social.hotmess.loginSuccess")
     static let LoginRequired = Notification.Name("social.hotmess.loginRequired")
+    static let LoginFailed = Notification.Name("social.hotmess.loginFailed")
     
     static let accountIdentifier = "social.hotmess.account";
     
@@ -45,6 +46,9 @@ class SessionService {
             self.getToken(token: credential.authenticationToken, callback: { (result) in
                 if result {
                     NotificationCenter.default.post(name: SessionService.LoginSuccess, object: nil)
+                }
+                else {
+                    NotificationCenter.default.post(name: SessionService.LoginFailed, object: nil)
                 }
             })
         }
@@ -83,11 +87,16 @@ class SessionService {
                             "model" : DeviceService.deviceModel] ] as [ String : Any ]
         
         let request = DataRequest("/v1/token", parameters: parameters) { (result) in
-            if let user = result["user"] as? [ String : Any ] {
+            if result.success == false {
+                callback(false)
+                return
+            }
+            
+            if let user = result.data["user"] as? [ String : Any ] {
                 _sharedInstance.userId = UUID(uuidString: (user["id"] as! String))!
             }
             
-            if let token = result["token"] as? String {
+            if let token = result.data["token"] as? String {
             
                 let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
             
@@ -106,13 +115,14 @@ class SessionService {
         }
         
         request.operationQueue = DispatchQueue.global()
+        request.skipAuthentication = true
         
         RequestService.shared.request(request)
     }
     
     static func getVersionInfo(callback: @escaping (VersionInfo) -> Void) {
         let request = DataRequest("/", parameters: nil) { result in
-            let apple = ((result["client"] as! [ String : Any ])["mobile"] as! [ String : Any ])["apple"] as! [ String : Any ]
+            let apple = ((result.data["client"] as! [ String : Any ])["mobile"] as! [ String : Any ])["apple"] as! [ String : Any ]
             
             callback(VersionInfo(apple))
         }
@@ -133,8 +143,8 @@ class SessionService {
     }
 
     static func ensureHasPermission(_ permissions: [ String ], callback: @escaping () -> Void) {
-        let havePermissions = permissions.map { permisison -> Bool in
-            return (AccessToken.current?.grantedPermissions?.contains(Permission(name: permisison)))!
+        let havePermissions = permissions.map { permission -> Bool in
+            return (AccessToken.current?.grantedPermissions?.contains(Permission(name: permission)))!
         }.contains(false)
         
         if havePermissions {
@@ -176,9 +186,9 @@ class SessionService {
     }
     
     static func me(callback: @escaping (User) -> Void) {
-        RequestService.shared.request(relativeUrl: "/v1/me") { (result: [String : Any]) in
-            if result["id"] != nil {
-                let user = User(result)
+        RequestService.shared.request(relativeUrl: "/v1/me") { result in
+            if result.data["id"] != nil {
+                let user = User(result.data)
                 _sharedInstance.userId = user.id
                 callback(user)
             }

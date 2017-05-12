@@ -9,11 +9,12 @@
 import Foundation
 import Locksmith
 import FacebookLogin
+import SystemConfiguration
 
 class RequestService
 {
     private static let sharedInstance = RequestService()
-    
+
     static let serverBaseIdentifier = "HotMessServerBase"
     
     private var _isAuthenticating = false
@@ -27,11 +28,11 @@ class RequestService
         return RequestService.sharedInstance
     }
     
-    func request(relativeUrl: String, _ callback : @escaping ([String: Any]) -> Void) {
+    func request(relativeUrl: String, _ callback : @escaping (DataResult) -> Void) {
         return self.request(DataRequest(relativeUrl, parameters: nil, callback: callback))
     }
     
-    func request(relativeUrl: String, with: [String: Any]?, _ callback : @escaping ([String: Any]) -> Void) {
+    func request(relativeUrl: String, with: [String: Any]?, _ callback : @escaping (DataResult) -> Void) {
         return self.request(DataRequest(relativeUrl, parameters: with, callback: callback))
     }
     
@@ -75,22 +76,26 @@ class RequestService
                         return
                     }
                     
-                    if (httpResponse!.statusCode == 401)
+                    if (httpResponse!.statusCode != 200)
                     {
+                        if let callback = dataRequest.callback {
+                            callback(DataResult(dataRequest, error: nil))
+                        }
+                        
                         return
                     }
                     
                     let data = try? JSONSerialization.jsonObject(with: data!, options: .allowFragments) as! [ String: Any]
                     
                     if data != nil {
-                        dataRequest.callback!(data!)
+                        dataRequest.callback!(DataResult(dataRequest, data: data!))
                     }
                 })
                 
                 task.resume()
             }
             catch {
-                dataRequest.callback!([:])
+                dataRequest.callback!(DataResult(dataRequest, error: error))
             }
         }
     }

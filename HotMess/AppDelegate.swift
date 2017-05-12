@@ -25,7 +25,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-        LoginViewController.registerForLogin(window!)
+        LoginViewController.registerForLogin()
         LocationService.shared.start()
         
         SessionService.getVersionInfo { versionInfo in

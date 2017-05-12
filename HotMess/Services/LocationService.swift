@@ -92,7 +92,7 @@ class LocationService : NSObject, CLLocationManagerDelegate {
         let path = "/v1/locales/closest?\(params.queryParameters)"
         
         RequestService.shared.request(relativeUrl: path) { result in
-            let locale = Locale(result)
+            let locale = Locale(result.data)
             
             UserDefaults.standard.set(locale.name, forKey: "localeName")
             UserDefaults.standard.set(locale.id.uuidString, forKey: "localeId")

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */; };
+		A3BAE410F1A8EB163C9A952A /* DataResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAEF768E8BECB8ABFBD9A4 /* DataResult.swift */; };
 		A3BAEA2D97D0C85B06BA5FBD /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */; };
 		C916EF211E8DBF1E0030B464 /* EventListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916EF201E8DBF1E0030B464 /* EventListing.swift */; };
 		C916EF231E8DC3340030B464 /* EventSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916EF221E8DC3340030B464 /* EventSection.swift */; };
@@ -117,6 +118,7 @@
 		79CB199A43A3B1C7B5801D8C /* Pods_HotMessUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_HotMessUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BF8AB7DBAEABF8D94F2DA24 /* Pods-HotMessUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessUITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests.release.xcconfig"; sourceTree = "<group>"; };
 		A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
+		A3BAEF768E8BECB8ABFBD9A4 /* DataResult.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataResult.swift; sourceTree = "<group>"; };
 		BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"; sourceTree = "<group>"; };
 		C916EF201E8DBF1E0030B464 /* EventListing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventListing.swift; path = Models/EventListing.swift; sourceTree = "<group>"; };
 		C916EF221E8DC3340030B464 /* EventSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventSection.swift; path = Models/EventSection.swift; sourceTree = "<group>"; };
@@ -384,6 +386,7 @@
 				C98D7F2F1E7C0FAC007BE6A6 /* DataRequest.swift */,
 				A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */,
 				C9271C0C1EB27D5800C58469 /* DeviceService.swift */,
+				A3BAEF768E8BECB8ABFBD9A4 /* DataResult.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -853,6 +856,7 @@
 				C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */,
 				C96F09841E430822009B3911 /* LocationService.swift in Sources */,
 				A3BAEA2D97D0C85B06BA5FBD /* RealtimeService.swift in Sources */,
+				A3BAE410F1A8EB163C9A952A /* DataResult.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

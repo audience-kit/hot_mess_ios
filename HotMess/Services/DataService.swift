@@ -16,8 +16,8 @@ class DataService {
     }
     
     func now(callback: @escaping (Now) -> Void) -> Void {
-        RequestService.shared.request(relativeUrl: "/v1/now?\(LocationService.shared.coordinates.queryParameters)") { (data) in
-            callback(Now(data))
+        RequestService.shared.request(relativeUrl: "/v1/now?\(LocationService.shared.coordinates.queryParameters)") { (result) in
+            callback(Now(result.data))
         }
     }
     
@@ -25,7 +25,7 @@ class DataService {
         guard LocationService.closest != nil else { return }
         
         RequestService.shared.request(relativeUrl: "/v1/locales/\(LocationService.closest!.id)/people") { (result) in
-            let people = result["people"] as! [ [ String : Any ] ]
+            let people = result.data["people"] as! [ [ String : Any ] ]
             var results: [ Person ] = []
             
             for person in people {
@@ -38,7 +38,7 @@ class DataService {
     
     func person(_ personId: UUID, callback: @escaping (PersonDetail) -> Void) {
         RequestService.shared.request(relativeUrl: "/v1/people/\(personId)") { (result) in
-            let person = result["person"] as! [ String : Any ]
+            let person = result.data["person"] as! [ String : Any ]
             
             callback(PersonDetail(person))
         }
@@ -52,13 +52,13 @@ class DataService {
         }
         
         RequestService.shared.request(relativeUrl: path) { (result) in
-            callback(Venues(result))
+            callback(Venues(result.data))
         }
     }
     
     func venue(_ venue: Venue, callback: @escaping ([ Friend ]) -> Void) {
         RequestService.shared.request(relativeUrl: "/v1/venues/\(venue.id)/friends") { (result) in
-            let friends = result["friends"] as! [ [ String : Any ] ]
+            let friends = result.data["friends"] as! [ [ String : Any ] ]
             var parsed: [ Friend ] = []
             
             for friend in friends {
@@ -73,13 +73,13 @@ class DataService {
         guard LocationService.closest != nil else { return }
         
         RequestService.shared.request(relativeUrl: "/v1/locales/\(LocationService.closest!.id)/events") { (result) in
-            callback(EventListing(result))
+            callback(EventListing(result.data))
         }
     }
     
     func events(venue: Venue, callback: @escaping ([ Event ]) -> Void) {
         RequestService.shared.request(relativeUrl: "/v1/venues/\(venue.id)/events") { (result) in
-            let events = result["events"] as! [ [ String : Any ] ]
+            let events = result.data["events"] as! [ [ String : Any ] ]
             var results: [ Event ] = []
             
             for event in events {
@@ -91,7 +91,7 @@ class DataService {
     
     func event(_ event: Event, callback: @escaping (EventDetail) -> Void) {
         RequestService.shared.request(relativeUrl: "/v1/events/\(event.id)") { (result) in
-            let event = result["event"] as! [ String : Any ]
+            let event = result.data["event"] as! [ String : Any ]
             
             callback(EventDetail(event))
         }
