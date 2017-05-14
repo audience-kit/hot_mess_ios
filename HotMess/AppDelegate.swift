@@ -43,7 +43,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 }
             }
             else {
-                //SessionService.ensureSession()
+                SessionService.ensureSession()
             }
         }
         

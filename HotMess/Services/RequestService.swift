@@ -44,7 +44,7 @@ class RequestService
             
             do {
                 if let account = SessionService.token {
-                    request.addValue("Bearer \(account)", forHTTPHeaderField: "Authorization")
+                    request.addValue("JWT \(account)", forHTTPHeaderField: "Authorization")
                 }
                 
                 if (dataRequest.parameters != nil) {

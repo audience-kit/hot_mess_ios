@@ -14,6 +14,7 @@ import FBSDKLoginKit
 class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
     private static let shared = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
     
+    private static let requiredRead: Set<String> = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
     
     public static func present(completion callback: (() -> Void)? = nil) {
         DispatchQueue.main.async {
@@ -41,6 +42,7 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
         NotificationCenter.default.addObserver(forName: SessionService.LoginFailed, object: nil, queue: OperationQueue.main) { notification in
             SessionService.logOut()
             AccessToken.current = nil
+            shared.loginButton?.readPermissions = Array<String>(requiredRead)
             
             LoginViewController.present() {
                 if shared.alertController.presentingViewController == nil {
@@ -58,7 +60,7 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
     @IBOutlet var loginButton: FBSDKLoginButton?
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {        
-        self.alertController = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in.", preferredStyle: .alert)
+        self.alertController = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in. Ensure you granted the required Facebook permissions.", preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "Retry", style: .default, handler: { action in
             AccessToken.current = nil
             
@@ -71,7 +73,7 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
     }
     
     required init?(coder aDecoder: NSCoder) {
-        self.alertController = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in.", preferredStyle: .alert)
+        self.alertController = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in. Ensure you granted the required Facebook permissions.", preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "Retry", style: .default, handler: { action in
             AccessToken.current = nil
             
@@ -86,14 +88,27 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        loginButton?.publishPermissions = [ "rsvp_event" ]
-        loginButton?.readPermissions = SessionService.ReadPermissions
+        loginButton!.readPermissions = Array<String>(LoginViewController.requiredRead)
         
-        loginButton?.delegate = self
+        loginButton!.delegate = self
     }
     
     public func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
-        if result.token != nil {
+        if result == nil || result.token == nil {
+            NotificationCenter.default.post(name: SessionService.LoginFailed, object: nil)
+            return
+        }
+        
+        let granted = Set<String>(result.grantedPermissions.map { item -> String in
+            item as! String
+        })
+        
+        if granted != LoginViewController.requiredRead {
+            SessionService.ensureHasPermission([String](LoginViewController.requiredRead)) {
+                SessionService.ensureSession()
+            }
+        }
+        else {
             SessionService.ensureSession()
         }
     }
