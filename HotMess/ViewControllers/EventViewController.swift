@@ -61,6 +61,10 @@ class EventViewController : UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.section == 0 {
+            return 80
+        }
+        
         if indexPath.section != 0 && indexPath.section != 1 {
             return 120.0
         }

@@ -21,9 +21,11 @@ class SessionService {
     
     static let accountIdentifier = "social.hotmess.account";
     
-    static let RSVPEventPermission = "event_rsvp"
+    static let RSVPEventPermission = "rsvp_event"
     static let UserEventsPermission = "user_events"
-    static let ReadPermissions = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
+    static let ReadPermissions = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ].map { name -> ReadPermission in
+        ReadPermission.custom(name)
+    }
     
     static let loginManager = LoginManager()
     
@@ -77,6 +79,7 @@ class SessionService {
     }
     
     static func getToken(token: String, callback: @escaping (Bool) -> Void) {
+        
         
         let parameters = [ "facebook_token" : token,
                            "device" : [
@@ -156,6 +159,7 @@ class SessionService {
 
             switch result {
             case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
+                AccessToken.current = accessToken
                 SessionService.getToken(token: accessToken.authenticationToken, callback: { (result) in
                     callback()
                 })
@@ -166,7 +170,9 @@ class SessionService {
     }
     
     static func ensureHasPublishPermission(_ permission: String, callback: @escaping (Void) -> Void) {
-        if AccessToken.current?.grantedPermissions?.contains(Permission(name: permission)) == true {
+        let permissionObject = Permission.init(name: permission)
+        
+        if AccessToken.current?.grantedPermissions?.contains(permissionObject) == true {
             callback()
             
             return
@@ -176,6 +182,7 @@ class SessionService {
             
             switch result {
             case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
+                AccessToken.current = accessToken
                 SessionService.getToken(token: accessToken.authenticationToken, callback: { (result) in
                     callback()
                 })
@@ -187,7 +194,7 @@ class SessionService {
     
     static func me(callback: @escaping (User) -> Void) {
         RequestService.shared.request(relativeUrl: "/v1/me") { result in
-            if result.data["id"] != nil {
+            if result.success {
                 let user = User(result.data)
                 _sharedInstance.userId = user.id
                 callback(user)

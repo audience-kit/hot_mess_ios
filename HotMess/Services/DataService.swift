@@ -17,7 +17,9 @@ class DataService {
     
     func now(callback: @escaping (Now) -> Void) -> Void {
         RequestService.shared.request(relativeUrl: "/v1/now?\(LocationService.shared.coordinates.queryParameters)") { (result) in
-            callback(Now(result.data))
+            if result.success {
+                callback(Now(result.data))
+            }
         }
     }
     

@@ -12,72 +12,77 @@ import FacebookCore
 import FBSDKLoginKit
 
 class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
-    private static let _sharedInstance = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
+    private static let shared = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
     
-    public static var shared : LoginViewController {
-        return _sharedInstance
+    
+    public static func present(completion callback: (() -> Void)? = nil) {
+        DispatchQueue.main.async {
+            if shared.presentingViewController == nil  {
+                UIApplication.shared.keyWindow!.rootViewController!.present(shared, animated: true, completion: callback)
+            }
+            else {
+                if callback != nil { callback!() }
+            }
+        }
     }
     
-    public static func present() {
-        if _sharedInstance.isBeingPresented == false && AccessToken.current == nil {
-            UIApplication.shared.keyWindow!.rootViewController!.present(_sharedInstance, animated: true, completion: nil)
+    public static func dismiss(callback: (() -> Void)? = nil) {
+        DispatchQueue.main.async {
+            if shared.presentingViewController != nil {
+                shared.dismiss(animated: true, completion: callback)
+            }
         }
     }
     
     public static func registerForLogin() {
         NotificationCenter.default.addObserver(forName: SessionService.LoginRequired, object: nil, queue: OperationQueue.main) { (notification) in
-            DispatchQueue.main.async {
-                LoginViewController.present()
-            }
+            LoginViewController.present()
         }
         NotificationCenter.default.addObserver(forName: SessionService.LoginFailed, object: nil, queue: OperationQueue.main) { notification in
             SessionService.logOut()
+            AccessToken.current = nil
             
-            DispatchQueue.main.async {
-                if shared.parent != nil && shared.alertController.parent == nil {
-                    shared.present(shared.alertController, animated: true)
-                }
-                else {
-                    UIApplication.shared.keyWindow!.rootViewController!.present(shared, animated: true, completion: {
-                        DispatchQueue.main.async {
-                            if shared.alertController.parent == nil {
-                                shared.present(shared.alertController, animated: true)
-                            }
-                        }
-                    })
+            LoginViewController.present() {
+                if shared.alertController.presentingViewController == nil {
+                    shared.present(shared.alertController, animated: true, completion: nil)
                 }
             }
         }
-
+        NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
+            LoginViewController.dismiss()
+        }
     }
     
+    let alertController: UIAlertController
+    
     @IBOutlet var loginButton: FBSDKLoginButton?
-    private let alertController: UIAlertController = {
-        let controller = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in.", preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: "Retry", style: .default, handler: { action in
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {        
+        self.alertController = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in.", preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Retry", style: .default, handler: { action in
+            AccessToken.current = nil
+            
             DispatchQueue.global().async {
                 SessionService.ensureSession()
             }
         }))
-        return controller
-    }()
-    
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        
-        self.registerLogin()
     }
     
     required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
+        self.alertController = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in.", preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Retry", style: .default, handler: { action in
+            AccessToken.current = nil
+            
+            DispatchQueue.global().async {
+                SessionService.ensureSession()
+            }
+        }))
         
-        self.registerLogin()
+        super.init(coder: aDecoder)
     }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -85,10 +90,6 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
         loginButton?.readPermissions = SessionService.ReadPermissions
         
         loginButton?.delegate = self
-
-        DispatchQueue.global().async {
-            SessionService.ensureSession()
-        }
     }
     
     public func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
@@ -101,12 +102,5 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
         
     }
     
-    private func registerLogin() {
-        NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
-            DispatchQueue.main.async {
-                self.dismiss(animated: true, completion: nil)
-            }
-        }
-    }
 }
 

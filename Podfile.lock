@@ -19,14 +19,14 @@ PODS:
     - FacebookCore (~> 0.2)
     - FBSDKCoreKit (~> 4.15)
     - FBSDKShareKit (~> 4.15)
-  - FBSDKCoreKit (4.22.0):
+  - FBSDKCoreKit (4.22.1):
     - Bolts (~> 1.7)
-  - FBSDKLoginKit (4.22.0):
+  - FBSDKLoginKit (4.22.1):
     - FBSDKCoreKit
-  - FBSDKShareKit (4.22.0):
+  - FBSDKShareKit (4.22.1):
     - FBSDKCoreKit
   - GeoJSON (0.3.1)
-  - Kingfisher (3.6.2)
+  - Kingfisher (3.9.1)
   - Locksmith (3.0.0)
   - Starscream (2.0.4)
   - SwiftyJSON (3.1.4)
@@ -48,11 +48,11 @@ SPEC CHECKSUMS:
   FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
   FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
   FacebookShare: 8e9ee8ea06505e6a1d3d719b0cc63e840fb8aaeb
-  FBSDKCoreKit: c693bad19feb225469eeff14452ba364522ee48b
-  FBSDKLoginKit: 1fa529fc622d7b32ebeaffbecd377180833c6d30
-  FBSDKShareKit: 21ab3c8d173f4fa20c47c1061f3a9fac5950b5fa
+  FBSDKCoreKit: 9c2daf0162214d6d2e21cf8208a9c6c2a2e42b9c
+  FBSDKLoginKit: 00cf28916b9f0169763a3d61985d745b579fe304
+  FBSDKShareKit: 1cbd0fdc2bb3277dd3522512855dcf1f4088f734
   GeoJSON: 29bd47ba1c91eb8f003b305ff52dac774998804e
-  Kingfisher: 2c94e72c6830622c71d06adf4ea024c37d316830
+  Kingfisher: 6729a0baaa458245bfb8cd5a1296c71c10d6eb6c
   Locksmith: 310b4cc5031af5728bf4db5d4de547a5100c6a3b
   Starscream: df5974ee928b157c8eda8af8de7c620276b7dfcc
   SwiftyJSON: c2842d878f95482ffceec5709abc3d05680c0220
