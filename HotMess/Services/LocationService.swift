@@ -52,7 +52,6 @@ class LocationService : NSObject, CLLocationManagerDelegate {
             
             self._closest = Locale(id: localeId!, name: localeName!)
         }
-        
     }
     
     
@@ -60,7 +59,9 @@ class LocationService : NSObject, CLLocationManagerDelegate {
         NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
             self._locationManager.requestAlwaysAuthorization()
             self._locationManager.startMonitoringSignificantLocationChanges()
-            //_locationManager.startMonitoring(for: beaconRegion)
+            
+            self._locationManager.startMonitoring(for: self.beaconRegion)
+
             self.update()
         }
     }
@@ -125,16 +126,11 @@ class LocationService : NSObject, CLLocationManagerDelegate {
     }
     
 
-    //func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLBeaconRegion) {
-    //    manager.startRangingBeacons(in: region)
-    //}
+    private func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLBeaconRegion) {
+        update()
+    }
     
 
-    
-    //func locationManager(_ manager: CLLocationManager, didExitRegion region: CLBeaconRegion) {
-    //    manager.stopRangingBeacons(in: region)
-    //}
-    
     func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
         guard beacons.count > 0 else { return }
         

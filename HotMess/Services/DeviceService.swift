@@ -10,8 +10,8 @@ import UIKit
 
 class DeviceService {
 
-    static var deviceToken : String? {
-        return UIDevice.current.identifierForVendor?.uuidString
+    static var deviceToken : String {
+        return UIDevice.current.identifierForVendor!.uuidString
     }
     
     static var applicationVersion : String {

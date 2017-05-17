@@ -11,15 +11,22 @@ import Foundation
 class EventSection {
     let title : String
     let name : String
-    let events : [ Event ]
+    let items : [ ListingItem ]
     
     init(name: String, data : [ String : Any ]) {
         self.name = name
         
         self.title = data["title"] as! String
         
-        self.events = (data["events"] as! [ [ String : Any ] ]).map { (event) in
-            Event(event)
+        self.items = (data["items"] as! [ [ String : Any ] ]).map { item in
+            let type = item["type"] as! String
+            
+            switch type {
+            case "link":
+                return LinkItem(data)
+            default:
+                return Event(data)
+            }
         }
     }
 }

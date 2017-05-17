@@ -124,7 +124,7 @@ class SessionService {
     }
     
     static func getVersionInfo(callback: @escaping (VersionInfo) -> Void) {
-        let request = DataRequest("/", parameters: nil) { result in
+        let request = DataRequest("/?type=apple&device_id=\(DeviceService.deviceToken)", parameters: nil) { result in
             let apple = ((result.data["client"] as! [ String : Any ])["mobile"] as! [ String : Any ])["apple"] as! [ String : Any ]
             
             callback(VersionInfo(apple))

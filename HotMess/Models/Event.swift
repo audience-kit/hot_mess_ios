@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Event : Model {
+class Event : Model, ListingItem {
     let name: String
     let startDate: Date
     let endDate: Date?
@@ -17,9 +17,13 @@ class Event : Model {
     let person: Person?
     let coverUrl: URL?
     let featured: Bool
+    let linkUrl: URL?
     var rsvp: String = "unsure"
     
+    var cellType: String { get { return featured ? "featuredEventCell" : "eventCell" } }
+    
     override init(_ data: [ String : Any ]) {
+        
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         
@@ -27,6 +31,13 @@ class Event : Model {
         let startAt = data["start_at"] as! String
         self.startDate = formatter.date(from: startAt)!
         self.facebookId = data["facebook_id"] as! IntMax
+        
+        if let link = data["link"] as? String {
+            self.linkUrl = URL(string: link)!
+        }
+        else {
+            self.linkUrl = nil
+        }
         
         if let venue_data = data["venue"] as? [ String : Any ] {
             self.venue = Venue(venue_data)
