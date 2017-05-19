@@ -31,4 +31,12 @@ class DeviceService {
             return identifier + String(UnicodeScalar(UInt8(value)))
         }
     }
+    
+    static var parameters: [ String : Any ] {
+        return [ "type" : "apple",
+           "identifier" : DeviceService.deviceToken,
+              "version" : DeviceService.applicationVersion,
+                "build" : DeviceService.applicationBuild,
+                "model" : DeviceService.deviceModel ]
+    }
 }

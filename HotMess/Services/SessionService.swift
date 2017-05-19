@@ -82,12 +82,7 @@ class SessionService {
         
         
         let parameters = [ "facebook_token" : token,
-                           "device" : [
-                            "type" : "apple",
-                            "identifier" : DeviceService.deviceToken,
-                            "version" : DeviceService.applicationVersion,
-                            "build" : DeviceService.applicationBuild,
-                            "model" : DeviceService.deviceModel] ] as [ String : Any ]
+                           "device" : DeviceService.parameters ] as [ String : Any ]
         
         let request = DataRequest("/v1/token", parameters: parameters) { (result) in
             if result.success == false {
@@ -124,7 +119,7 @@ class SessionService {
     }
     
     static func getVersionInfo(callback: @escaping (VersionInfo) -> Void) {
-        let request = DataRequest("/?type=apple&device_id=\(DeviceService.deviceToken)", parameters: nil) { result in
+        let request = DataRequest("/", parameters: [ "device" : DeviceService.parameters ]) { result in
             let apple = ((result.data["client"] as! [ String : Any ])["mobile"] as! [ String : Any ])["apple"] as! [ String : Any ]
             
             callback(VersionInfo(apple))

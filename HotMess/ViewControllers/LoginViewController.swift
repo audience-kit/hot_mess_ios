@@ -11,10 +11,11 @@ import FacebookLogin
 import FacebookCore
 import FBSDKLoginKit
 
-class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
+class LoginViewController : UIViewController {
     private static let shared = LoginViewController(nibName: "LoginView", bundle: Bundle.main)
     
     private static let requiredRead: Set<String> = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
+    private static let requiredReadPermission: Set<Permission> = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
     
     public static func present(completion callback: (() -> Void)? = nil) {
         DispatchQueue.main.async {
@@ -53,6 +54,21 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
         NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
             LoginViewController.dismiss()
         }
+        NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { notification in
+            if AccessToken.current == nil {
+                NotificationCenter.default.post(name: SessionService.LoginFailed, object: nil)
+                return
+            }
+            
+            if AccessToken.current!.grantedPermissions?.isSuperset(of: LoginViewController.requiredReadPermission) == false {
+                SessionService.ensureHasPermission([String](LoginViewController.requiredRead)) {
+                    SessionService.ensureSession()
+                }
+            }
+            else {
+                SessionService.ensureSession()
+            }
+        }
     }
     
     let alertController: UIAlertController
@@ -89,33 +105,6 @@ class LoginViewController : UIViewController, FBSDKLoginButtonDelegate {
         super.viewWillAppear(animated)
         
         loginButton!.readPermissions = Array<String>(LoginViewController.requiredRead)
-        
-        loginButton!.delegate = self
     }
-    
-    public func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
-        if result == nil || result.token == nil {
-            NotificationCenter.default.post(name: SessionService.LoginFailed, object: nil)
-            return
-        }
-        
-        let granted = Set<String>(result.grantedPermissions.map { item -> String in
-            item as! String
-        })
-        
-        if granted != LoginViewController.requiredRead {
-            SessionService.ensureHasPermission([String](LoginViewController.requiredRead)) {
-                SessionService.ensureSession()
-            }
-        }
-        else {
-            SessionService.ensureSession()
-        }
-    }
-    
-    func loginButtonDidLogOut(_ loginButton: FBSDKLoginButton!) {
-        
-    }
-    
 }
 

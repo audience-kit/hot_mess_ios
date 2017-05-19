@@ -11,16 +11,27 @@ import FacebookCore
 import FacebookLogin
 import Kingfisher
 import UserNotifications
+import Mixpanel
+import Fabric
+import Crashlytics
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    var mixpanel: Mixpanel?
     
     static let facebookAppIdIdentifier = "FacebookAppID"
+    static let mixpanelAPIKey = "MixpanelAPIKey"
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        Fabric.with([Crashlytics.self])
+
         SDKSettings.appId = Bundle.main.infoDictionary![AppDelegate.facebookAppIdIdentifier] as! String
+        
+        AppEventsLogger.activate()
+        
+        self.mixpanel = Mixpanel.sharedInstance(withToken: Bundle.main.infoDictionary![AppDelegate.mixpanelAPIKey] as! String)
         
         // Override point for customization after application launch.
         SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)

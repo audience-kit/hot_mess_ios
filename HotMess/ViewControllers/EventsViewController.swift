@@ -111,9 +111,11 @@ class EventsViewController : UITableViewController {
         switch segue.identifier! {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
-            let event = self.listing?.sections[path.section].items[path.row]
+            let event = self.listing?.sections[path.section].items[path.row] as! Event
             
-            targetViewController.event = event as? Event
+            AppEventsLogger.log("show_event", parameters: [ "id" : event.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
+            
+            targetViewController.event = event
         default:
             break;
         }

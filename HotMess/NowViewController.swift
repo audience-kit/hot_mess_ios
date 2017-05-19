@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import FacebookCore
 
 class NowViewController: UITableViewController {
     @IBOutlet var heroBanner: UIImageView?
@@ -36,6 +37,7 @@ class NowViewController: UITableViewController {
                 self.now = now
                 self.navigationItem.title = now.title
                 self.tableView.reloadData()
+                AppEventsLogger.log("show_now", parameters: [ : ], valueToSum: 1, accessToken: AccessToken.current)
             }
 
         }

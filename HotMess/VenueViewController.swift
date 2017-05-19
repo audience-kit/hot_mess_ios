@@ -8,6 +8,7 @@
 
 import UIKit
 import FBSDKShareKit
+import FacebookCore
 
 class VenueViewController : UITableViewController {
     @IBOutlet var heroImage: UIImageView?
@@ -100,10 +101,6 @@ class VenueViewController : UITableViewController {
         if indexPath.section == 0 {
             switch indexPath.row {
             case 0:
-                break
-            case 1:
-                break
-            case 2:
                 UIApplication.shared.open(venue!.facebookUrl, options: [:], completionHandler: nil)
             default:
                 break
@@ -119,6 +116,8 @@ class VenueViewController : UITableViewController {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
             let event = self.events[path.row]
+            
+            AppEventsLogger.log("show_event", parameters: [ "id" : event.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.event = event
         default:

@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreLocation
+import FacebookCore
 
 class LocationService : NSObject, CLLocationManagerDelegate {
     static let beaconIdentifier = "social.hotmess.beacon"
@@ -95,6 +96,8 @@ class LocationService : NSObject, CLLocationManagerDelegate {
         RequestService.shared.request(relativeUrl: path) { result in
             if result.success {
                 let locale = Locale(result.data)
+                
+                AppEventsLogger.log("set_locale", parameters: [ "id" : locale.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
                 
                 UserDefaults.standard.set(locale.name, forKey: "localeName")
                 UserDefaults.standard.set(locale.id.uuidString, forKey: "localeId")
