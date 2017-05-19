@@ -55,17 +55,17 @@ class EventsViewController : UITableViewController {
         
         let section = listing?.sections[section]
         
-        return section!.items.count == 0 ? 1 : section!.items.count
+        return section!.events.count == 0 ? 1 : section!.events.count
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         guard listing != nil else { return 100 }
         
-        if listing!.sections[indexPath.section].items.count == 0 {
+        if listing!.sections[indexPath.section].events.count == 0 {
             return 100
         }
         
-        if listing!.sections[indexPath.section].items[indexPath.row].cellType == "featuredEventCell" {
+        if listing!.sections[indexPath.section].events[indexPath.row].featured == true {
             return 130
         }
         else {
@@ -76,23 +76,21 @@ class EventsViewController : UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let section = listing?.sections[indexPath.section]
         
-        if section?.items.count == 0 {
+        if section?.events.count == 0 {
             let noEventsCell = UITableViewCell()
             noEventsCell.textLabel?.text = "No Events"
             return noEventsCell
         }
         
-        let item = section?.items[indexPath.row]
+        let item = section?.events[indexPath.row]
         
 
-        let cell = self.tableView.dequeueReusableCell(withIdentifier: item!.cellType)
+        let cell = self.tableView.dequeueReusableCell(withIdentifier: item!.featured ? "featuredEventCell" : "eventCell")
         
         if let eventCell = cell as? EventTableViewCell {
-            eventCell.setEvent(event: item as! Event)
+            eventCell.setEvent(event: item!)
         }
-        else if let linkCell = cell as? LinkItemTableViewCell {
-            linkCell.setLink(item as! LinkItem)
-        }
+
         
         return cell!
     }
@@ -111,9 +109,9 @@ class EventsViewController : UITableViewController {
         switch segue.identifier! {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
-            let event = self.listing?.sections[path.section].items[path.row] as! Event
+            let event = self.listing?.sections[path.section].events[path.row]
             
-            AppEventsLogger.log("show_event", parameters: [ "id" : event.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
+            AppEventsLogger.log("show_event", parameters: [ "id" : event!.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.event = event
         default:
