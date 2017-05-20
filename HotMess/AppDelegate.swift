@@ -117,6 +117,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 DispatchQueue.main.async {
                     let venueViewController = venueListController.storyboard!.instantiateViewController(withIdentifier: "venue") as! VenueViewController
                     venueViewController.venue = venue
+                    venueListController.popToRootViewController(animated: false)
                     tabController.selectedViewController = venueListController
                     venueListController.pushViewController(venueViewController, animated: true)
                 }
@@ -129,6 +130,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 DispatchQueue.main.async {
                     let eventViewController = eventListController.storyboard!.instantiateViewController(withIdentifier: "event") as! EventViewController
                     eventViewController.event = event
+                    eventListController.popToRootViewController(animated: false)
                     tabController.selectedViewController = eventListController
                     eventListController.pushViewController(eventViewController, animated: true)
                 }
