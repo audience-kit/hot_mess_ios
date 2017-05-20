@@ -8,6 +8,7 @@
 
 import UIKit
 import FBSDKShareKit
+import FacebookCore
 
 class VenueViewController : UITableViewController {
     @IBOutlet var heroImage: UIImageView?
@@ -17,10 +18,18 @@ class VenueViewController : UITableViewController {
     var events: [ Event ] = []
     
     override func viewDidLoad() {
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.action, target: self, action: #selector(EventViewController.actionButton))
+        
         self.heroImage?.kf.indicatorType = .activity
         self.likeControl?.objectType = .page
         self.likeControl?.objectID = self.venue!.facebookId
         self.likeControl?.likeControlHorizontalAlignment = .right
+    }
+    
+    func actionButton(_ sender: UIBarButtonItem) {
+        let activity = UIActivityViewController(activityItems: [ "https://hotmess.social/venues/\(venue!.id)" ], applicationActivities: nil)
+        
+        self.present(activity, animated: true, completion: nil)
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -100,10 +109,6 @@ class VenueViewController : UITableViewController {
         if indexPath.section == 0 {
             switch indexPath.row {
             case 0:
-                break
-            case 1:
-                break
-            case 2:
                 UIApplication.shared.open(venue!.facebookUrl, options: [:], completionHandler: nil)
             default:
                 break
@@ -119,6 +124,8 @@ class VenueViewController : UITableViewController {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
             let event = self.events[path.row]
+            
+            AppEventsLogger.log("show_event", parameters: [ "id" : event.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.event = event
         default:

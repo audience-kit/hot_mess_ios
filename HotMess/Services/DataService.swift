@@ -58,8 +58,14 @@ class DataService {
         }
     }
     
-    func venue(_ venue: Venue, callback: @escaping ([ Friend ]) -> Void) {
-        RequestService.shared.request(relativeUrl: "/v1/venues/\(venue.id)/friends") { (result) in
+    func venue(_ id: UUID, callback: @escaping (VenueDetail) -> Void) {
+        RequestService.shared.request(relativeUrl: "/v1/venues/\(id)") { (result) in
+            callback(VenueDetail(result.data["venue"] as! [String : Any]))
+        }
+    }
+    
+    func venueFriends(_ id: UUID, callback: @escaping ([ Friend ]) -> Void) {
+        RequestService.shared.request(relativeUrl: "/v1/venues/\(id)/friends") { (result) in
             let friends = result.data["friends"] as! [ [ String : Any ] ]
             var parsed: [ Friend ] = []
             
@@ -92,7 +98,11 @@ class DataService {
     }
     
     func event(_ event: Event, callback: @escaping (EventDetail) -> Void) {
-        RequestService.shared.request(relativeUrl: "/v1/events/\(event.id)") { (result) in
+        self.event(event.id, callback: callback)
+    }
+    
+    func event(_ id: UUID, callback: @escaping (EventDetail) -> Void) {
+        RequestService.shared.request(relativeUrl: "/v1/events/\(id)") { (result) in
             let event = result.data["event"] as! [ String : Any ]
             
             callback(EventDetail(event))

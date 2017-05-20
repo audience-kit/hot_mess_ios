@@ -9,6 +9,7 @@
 import UIKit
 import FBSDKCoreKit
 import FBSDKShareKit
+import FacebookCore
 
 class EventViewController : UITableViewController {
     @IBOutlet var titleLabel: UILabel?
@@ -17,10 +18,17 @@ class EventViewController : UITableViewController {
     
     var event: Event? = nil
     
+    func actionButton(_ sender: UIBarButtonItem) {
+        let activity = UIActivityViewController(activityItems: [ "https://hotmess.social/events/\(event!.id)" ], applicationActivities: nil)
+        
+        self.present(activity, animated: true, completion: nil)
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         guard event != nil else { return }
         
         self.navigationItem.title = event?.name
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.action, target: self, action: #selector(EventViewController.actionButton))
         self.titleLabel?.text = event?.name
 
         DataService.shared.event(event!) { (event) in
@@ -150,12 +158,16 @@ class EventViewController : UITableViewController {
         switch segue.identifier! {
         case "showPerson":
             let targetViewController = segue.destination as! PersonViewController
-            let person = self.event?.person
+            let person = self.event!.person!
+            
+            AppEventsLogger.log("show_person_from_event", parameters: [ "id" : event!.id.uuidString, "person_id" : person.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.person = person
         case "showVenue":
             let targetViewController = segue.destination as! VenueViewController
-            let venue = self.event?.venue
+            let venue = self.event!.venue!
+            
+            AppEventsLogger.log("show_venue_from_event", parameters: [ "id" : event!.id.uuidString, "venue_id" : venue.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.venue = venue
         default:

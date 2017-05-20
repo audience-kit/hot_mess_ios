@@ -8,6 +8,7 @@
 
 import UIKit
 import MapKit
+import FacebookCore
 
 class VenuesViewController: UITableViewController {
     @IBOutlet var venueMap: MKMapView?
@@ -80,7 +81,11 @@ class VenuesViewController: UITableViewController {
             if let senderCell = sender as? UITableViewCell {
                 let indexPath = self.tableView.indexPath(for: senderCell)
                 
-                venueViewController.venue = self.model.venues[indexPath!.row]
+                let venue = self.model.venues[indexPath!.row]
+                
+                AppEventsLogger.log("show_venue", parameters: [ "id" : venue.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
+                
+                venueViewController.venue = venue
             }
         }
     }

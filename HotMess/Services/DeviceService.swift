@@ -10,8 +10,8 @@ import UIKit
 
 class DeviceService {
 
-    static var deviceToken : String? {
-        return UIDevice.current.identifierForVendor?.uuidString
+    static var deviceToken : String {
+        return UIDevice.current.identifierForVendor!.uuidString
     }
     
     static var applicationVersion : String {
@@ -30,5 +30,13 @@ class DeviceService {
             guard let value = element.value as? Int8, value != 0 else { return identifier }
             return identifier + String(UnicodeScalar(UInt8(value)))
         }
+    }
+    
+    static var parameters: [ String : Any ] {
+        return [ "type" : "apple",
+           "identifier" : DeviceService.deviceToken,
+              "version" : DeviceService.applicationVersion,
+                "build" : DeviceService.applicationBuild,
+                "model" : DeviceService.deviceModel ]
     }
 }

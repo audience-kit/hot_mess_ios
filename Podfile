@@ -21,6 +21,11 @@ target 'HotMess' do
   pod 'GeoJSON'
   pod 'SwiftyJSON'
   pod 'Kingfisher'
+  pod 'Firebase/AdMob'
+  pod 'Google/Analytics'
+  pod 'Mixpanel'
+  pod 'Fabric'
+  pod 'Crashlytics'
   
   target 'HotMessTests' do
     inherit! :search_paths

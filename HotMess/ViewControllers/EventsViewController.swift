@@ -82,20 +82,17 @@ class EventsViewController : UITableViewController {
             return noEventsCell
         }
         
-        let event = section?.events[indexPath.row]
+        let item = section?.events[indexPath.row]
         
-        if event?.featured == true {
-            let cell = self.tableView.dequeueReusableCell(withIdentifier: "featuredEventCell") as! EventTableViewCell
-            cell.setEvent(event: event!)
-            
-            return cell
+
+        let cell = self.tableView.dequeueReusableCell(withIdentifier: item!.featured ? "featuredEventCell" : "eventCell")
+        
+        if let eventCell = cell as? EventTableViewCell {
+            eventCell.setEvent(event: item!)
         }
-        else {
-            let cell = self.tableView.dequeueReusableCell(withIdentifier: "eventCell") as! EventTableViewCell
-            cell.setEvent(event: event!)
-            
-            return cell
-        }
+
+        
+        return cell!
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -113,6 +110,8 @@ class EventsViewController : UITableViewController {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
             let event = self.listing?.sections[path.section].events[path.row]
+            
+            AppEventsLogger.log("show_event", parameters: [ "id" : event!.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.event = event
         default:

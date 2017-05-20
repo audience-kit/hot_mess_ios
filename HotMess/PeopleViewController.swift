@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+import FacebookCore
 
 class PeopleViewController : UITableViewController {
     var people = [ Person ]()
@@ -51,6 +51,8 @@ class PeopleViewController : UITableViewController {
         case "showPerson":
             let targetViewController = segue.destination as! PersonViewController
             let person = self.people[path.row]
+            
+            AppEventsLogger.log("show_person", parameters: [ "id" : person.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.person = person
         default:

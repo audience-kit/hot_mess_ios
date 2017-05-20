@@ -1,0 +1,13 @@
+//
+//  ListingItem.swift
+//  HotMess
+//
+//  Created by Rick Mark on 5/16/17.
+//  Copyright © 2017 Hot Mess and Co. All rights reserved.
+//
+
+import Foundation
+
+protocol ListingItem {
+    var cellType: String { get }
+}
