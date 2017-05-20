@@ -23,12 +23,18 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>hotmess</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
 				<string>fb$(FACEBOOK_APP_ID)</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1232</string>
+	<string>1235</string>
 	<key>Fabric</key>
 	<dict>
 		<key>APIKey</key>
