@@ -92,11 +92,51 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
+    
+    func application(_ application: UIApplication,
+                     continue userActivity: NSUserActivity,
+                     restorationHandler: @escaping ([Any]?) -> Void) -> Bool{
+        
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb {
+            
+            let tabController = window!.rootViewController as! UITabBarController
+            let id = UUID(uuidString: userActivity.webpageURL!.pathComponents[2])!
+            
+            if userActivity.webpageURL!.pathComponents[1] == "venues" {
+                let venueListController = tabController.viewControllers![2] as! UINavigationController
+                
+                DataService.shared.venue(id, callback: { venue in
+                    DispatchQueue.main.async {
+                        let venueViewController = venueListController.storyboard!.instantiateViewController(withIdentifier: "venue") as! VenueViewController
+                        venueViewController.venue = venue
+                        tabController.selectedViewController = venueListController
+                        venueListController.pushViewController(venueViewController, animated: true)
+                    }
+                })
+                
+                return true
+            }
+            if userActivity.webpageURL!.pathComponents[1] == "events" {
+                let eventListController = tabController.viewControllers![1] as! UINavigationController
+                
+                DataService.shared.event(id, callback: { event in
+                    DispatchQueue.main.async {
+                        let eventViewController = eventListController.storyboard!.instantiateViewController(withIdentifier: "event") as! EventViewController
+                        eventViewController.event = event
+                        tabController.selectedViewController = eventListController
+                        eventListController.pushViewController(eventViewController, animated: true)
+                    }
+                })
+                
+                return true
+            }
+        }
+        
+        return false
+    }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
-        let handled = SDKApplicationDelegate.shared.application(app, open: url, options: options)
-        
-        return handled
+        return SDKApplicationDelegate.shared.application(app, open: url, options: options)
     }
 }
 

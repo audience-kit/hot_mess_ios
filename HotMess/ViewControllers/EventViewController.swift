@@ -18,10 +18,17 @@ class EventViewController : UITableViewController {
     
     var event: Event? = nil
     
+    func actionButton(_ sender: UIBarButtonItem) {
+        let activity = UIActivityViewController(activityItems: [ "https://hotmess.social/events/\(event!.id)" ], applicationActivities: nil)
+        
+        self.present(activity, animated: true, completion: nil)
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         guard event != nil else { return }
         
         self.navigationItem.title = event?.name
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.action, target: self, action: #selector(EventViewController.actionButton))
         self.titleLabel?.text = event?.name
 
         DataService.shared.event(event!) { (event) in

@@ -18,10 +18,18 @@ class VenueViewController : UITableViewController {
     var events: [ Event ] = []
     
     override func viewDidLoad() {
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.action, target: self, action: #selector(EventViewController.actionButton))
+        
         self.heroImage?.kf.indicatorType = .activity
         self.likeControl?.objectType = .page
         self.likeControl?.objectID = self.venue!.facebookId
         self.likeControl?.likeControlHorizontalAlignment = .right
+    }
+    
+    func actionButton(_ sender: UIBarButtonItem) {
+        let activity = UIActivityViewController(activityItems: [ "https://hotmess.social/venues/\(venue!.id)" ], applicationActivities: nil)
+        
+        self.present(activity, animated: true, completion: nil)
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

@@ -163,13 +163,13 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Address" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LBf-gm-A39">
-                                            <rect key="frame" x="105" y="68.5" width="174" height="17.5"/>
+                                            <rect key="frame" x="105" y="67.5" width="174" height="18.5"/>
                                             <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="15"/>
                                             <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Distance" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Pgt-WZ-D9t">
-                                            <rect key="frame" x="214" y="40.5" width="65" height="20"/>
+                                            <rect key="frame" x="214" y="40" width="65" height="21"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="65" id="nnY-hC-7vl"/>
                                             </constraints>
@@ -186,7 +186,7 @@
                                             </constraints>
                                         </view>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Venue Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FbZ-pw-az2">
-                                            <rect key="frame" x="105" y="13" width="174" height="20"/>
+                                            <rect key="frame" x="105" y="13" width="174" height="21"/>
                                             <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="17"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
@@ -550,7 +550,7 @@
         <!--Venue View Controller-->
         <scene sceneID="ryS-rn-wQx">
             <objects>
-                <tableViewController id="GCi-0P-svg" customClass="VenueViewController" customModule="HotMess" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="venue" id="GCi-0P-svg" customClass="VenueViewController" customModule="HotMess" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="default" rowHeight="44" sectionHeaderHeight="18" sectionFooterHeight="18" id="uK0-dj-g5t">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -658,6 +658,9 @@
                             <outlet property="delegate" destination="GCi-0P-svg" id="tSE-bm-Fcn"/>
                         </connections>
                     </tableView>
+                    <toolbarItems/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="heroImage" destination="n8D-hR-7KS" id="iLE-hQ-rWs"/>
                         <outlet property="likeControl" destination="gOL-sh-Wal" id="zVK-4c-ksS"/>
@@ -786,7 +789,7 @@
         <!--Event View Controller-->
         <scene sceneID="YYC-YG-H7G">
             <objects>
-                <tableViewController id="k82-OL-fb4" customClass="EventViewController" customModule="HotMess" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="event" id="k82-OL-fb4" customClass="EventViewController" customModule="HotMess" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="default" rowHeight="44" sectionHeaderHeight="18" sectionFooterHeight="18" id="WIJ-s6-KCh">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -796,7 +799,7 @@
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pa6-Y3-GWH">
-                                    <rect key="frame" x="10" y="232" width="300" height="20"/>
+                                    <rect key="frame" x="10" y="233.5" width="300" height="21"/>
                                     <fontDescription key="fontDescription" name="ProximaNova-Regular" family="Proxima Nova" pointSize="17"/>
                                     <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                     <nil key="highlightedColor"/>
@@ -808,7 +811,7 @@
                                     </constraints>
                                 </imageView>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5ks-t6-g7b">
-                                    <rect key="frame" x="10" y="195" width="300" height="27"/>
+                                    <rect key="frame" x="10" y="195" width="300" height="28.5"/>
                                     <fontDescription key="fontDescription" name="ProximaNova-SemiBoldT50" family="Proxima Nova" pointSize="23"/>
                                     <nil key="textColor"/>
                                     <nil key="highlightedColor"/>
@@ -1045,7 +1048,7 @@
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Welcome" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8pP-0D-7oa">
-                                    <rect key="frame" x="0.0" y="200" width="320" height="35"/>
+                                    <rect key="frame" x="0.0" y="198" width="320" height="37"/>
                                     <fontDescription key="fontDescription" name="ProximaNova-Semibold" family="Proxima Nova" pointSize="30"/>
                                     <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                     <nil key="highlightedColor"/>
@@ -1146,7 +1149,7 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SpA-Qg-wjj">
-                                            <rect key="frame" x="108" y="23" width="156" height="23.5"/>
+                                            <rect key="frame" x="108" y="23" width="156" height="24.5"/>
                                             <fontDescription key="fontDescription" name="ProximaNova-T50" family="Proxima Nova" pointSize="20"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
@@ -1472,7 +1475,7 @@
         <image name="Me" width="30" height="30"/>
         <image name="MessengerOverlay" width="70" height="70"/>
         <image name="Now" width="30" height="30"/>
-        <image name="Overlay" width="1024" height="707"/>
+        <image name="Overlay" width="414" height="736"/>
         <image name="People" width="30" height="30"/>
         <image name="RSVPDecline" width="76" height="43"/>
         <image name="RSVPDecline_Selected" width="76" height="43"/>
@@ -1483,8 +1486,8 @@
         <image name="Venues" width="30" height="30"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="CF1-9r-VRb"/>
-        <segue reference="ehO-vI-Gr0"/>
+        <segue reference="CwS-FT-Zj6"/>
+        <segue reference="B27-64-cxX"/>
         <segue reference="6ii-QQ-Eli"/>
     </inferredMetricsTieBreakers>
 </document>
