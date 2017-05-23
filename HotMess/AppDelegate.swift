@@ -12,8 +12,7 @@ import FacebookLogin
 import Kingfisher
 import UserNotifications
 import Mixpanel
-import Fabric
-import Crashlytics
+import Firebase
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -25,7 +24,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     static let mixpanelAPIKey = "MixpanelAPIKey"
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        Fabric.with([Crashlytics.self])
+        FirebaseApp.configure()
 
         SDKSettings.appId = Bundle.main.infoDictionary![AppDelegate.facebookAppIdIdentifier] as! String
         
