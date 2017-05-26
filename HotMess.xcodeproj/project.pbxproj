@@ -17,6 +17,7 @@
 		C9271C0D1EB27D5800C58469 /* DeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9271C0C1EB27D5800C58469 /* DeviceService.swift */; };
 		C93373161E5EEF0000497879 /* Now.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93373151E5EEF0000497879 /* Now.swift */; };
 		C936AC301EB66E9300083B00 /* VersionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C936AC2F1EB66E9300083B00 /* VersionInfo.swift */; };
+		C93C42161ED15C3700D7772B /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C93C42151ED15C3700D7772B /* GoogleService-Info.plist */; };
 		C94A5AB41E1B7B2B004601AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */; };
 		C94A5AB61E1B7B2B004601AA /* NowViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB51E1B7B2B004601AA /* NowViewController.swift */; };
 		C94A5AB81E1B7B2B004601AA /* VenuesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94A5AB71E1B7B2B004601AA /* VenuesViewController.swift */; };
@@ -129,6 +130,7 @@
 		C9271C0C1EB27D5800C58469 /* DeviceService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DeviceService.swift; path = Services/DeviceService.swift; sourceTree = "<group>"; };
 		C93373151E5EEF0000497879 /* Now.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Now.swift; path = Models/Now.swift; sourceTree = "<group>"; };
 		C936AC2F1EB66E9300083B00 /* VersionInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VersionInfo.swift; path = Models/VersionInfo.swift; sourceTree = "<group>"; };
+		C93C42151ED15C3700D7772B /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C94A5AB01E1B7B2B004601AA /* HotMess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HotMess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94A5AB31E1B7B2B004601AA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C94A5AB51E1B7B2B004601AA /* NowViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowViewController.swift; sourceTree = "<group>"; };
@@ -398,6 +400,7 @@
 		C98BEDC51E1CB00A008F48AB /* Support Files */ = {
 			isa = PBXGroup;
 			children = (
+				C93C42151ED15C3700D7772B /* GoogleService-Info.plist */,
 				C94A5AC11E1B7B2B004601AA /* Info.plist */,
 				C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */,
 				C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */,
@@ -502,7 +505,6 @@
 				C94A5AAE1E1B7B2A004601AA /* Resources */,
 				5E7AC517CDA13BFF36FA728D /* [CP] Embed Pods Frameworks */,
 				FEFB3998A9D7FF6BF807CCB6 /* [CP] Copy Pods Resources */,
-				C97DD4DA1ECE257F00005A4A /* Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -561,7 +563,7 @@
 		C94A5AA81E1B7B2A004601AA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				CLASSPREFIX = HM;
+				CLASSPREFIX = "";
 				LastSwiftUpdateCheck = 0820;
 				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = "Hot Mess and Co.";
@@ -635,6 +637,7 @@
 				C986C1FE1E781C7C003A4795 /* ProximaNova-SemiBold.otf in Resources */,
 				C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */,
 				C986C2001E781C7C003A4795 /* ProximaNova-SemiBoldT100.otf in Resources */,
+				C93C42161ED15C3700D7772B /* GoogleService-Info.plist in Resources */,
 				C986C1FC1E781C7C003A4795 /* ProximaNova-RegularT50.otf in Resources */,
 				C94A5ABB1E1B7B2B004601AA /* Main.storyboard in Resources */,
 			);
@@ -775,20 +778,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "buildNumber=$(/usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\")\nbuildNumber=$(($buildNumber + 1))\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $buildNumber\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\"";
-		};
-		C97DD4DA1ECE257F00005A4A /* Crashlytics */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = Crashlytics;
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Fabric/run\" ea4f5787798f25f102ca5bda492ce1990b224075 36654ff1934becd44dd071dd9113fb7145698708a3fa069b5a0f4d79e1343646";
 		};
 		CFB0E9D602B3619AE96AA3BB /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -1147,7 +1136,7 @@
 			};
 			name = Release;
 		};
-		C99E0DC11EC8E65E003EBF4D /* Release Debug */ = {
+		C95217811ED3B29F0058C589 /* Production */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
@@ -1172,13 +1161,16 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -1192,16 +1184,15 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = 1;
-				VALIDATE_PRODUCT = NO;
 			};
-			name = "Release Debug";
+			name = Production;
 		};
-		C99E0DC21EC8E65E003EBF4D /* Release Debug */ = {
+		C95217821ED3B29F0058C589 /* Production */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C9F1CBD21EB042C100B1D2EA /* HotMess.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDevelopment;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
@@ -1213,9 +1204,9 @@
 				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
-			name = "Release Debug";
+			name = Production;
 		};
-		C99E0DC31EC8E65E003EBF4D /* Release Debug */ = {
+		C95217831ED3B29F0058C589 /* Production */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C9F1CBD51EB0431A00B1D2EA /* HotMessTests.release.xcconfig */;
 			buildSettings = {
@@ -1229,9 +1220,9 @@
 				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HotMess.app/HotMess";
 			};
-			name = "Release Debug";
+			name = Production;
 		};
-		C99E0DC41EC8E65E003EBF4D /* Release Debug */ = {
+		C95217841ED3B29F0058C589 /* Production */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C9F1CBD91EB043B100B1D2EA /* HotMessUITests.release.xcconfig */;
 			buildSettings = {
@@ -1244,7 +1235,7 @@
 				SWIFT_VERSION = 3.0;
 				TEST_TARGET_NAME = HotMess;
 			};
-			name = "Release Debug";
+			name = Production;
 		};
 		C9F1CBCD1EB03E8700B1D2EA /* Staging */ = {
 			isa = XCBuildConfiguration;
@@ -1354,9 +1345,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5AD81E1B7B2B004601AA /* Debug */,
+				C95217811ED3B29F0058C589 /* Production */,
 				C9F1CBCD1EB03E8700B1D2EA /* Staging */,
 				C94A5AD91E1B7B2B004601AA /* Release */,
-				C99E0DC11EC8E65E003EBF4D /* Release Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1365,9 +1356,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5ADB1E1B7B2B004601AA /* Debug */,
+				C95217821ED3B29F0058C589 /* Production */,
 				C9F1CBCE1EB03E8700B1D2EA /* Staging */,
 				C94A5ADC1E1B7B2B004601AA /* Release */,
-				C99E0DC21EC8E65E003EBF4D /* Release Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1376,9 +1367,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5ADE1E1B7B2B004601AA /* Debug */,
+				C95217831ED3B29F0058C589 /* Production */,
 				C9F1CBCF1EB03E8700B1D2EA /* Staging */,
 				C94A5ADF1E1B7B2B004601AA /* Release */,
-				C99E0DC31EC8E65E003EBF4D /* Release Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1387,9 +1378,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5AE11E1B7B2B004601AA /* Debug */,
+				C95217841ED3B29F0058C589 /* Production */,
 				C9F1CBD01EB03E8700B1D2EA /* Staging */,
 				C94A5AE21E1B7B2B004601AA /* Release */,
-				C99E0DC41EC8E65E003EBF4D /* Release Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
