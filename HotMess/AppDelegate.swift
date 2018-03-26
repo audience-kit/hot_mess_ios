@@ -60,6 +60,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
     
+    static var shared: AppDelegate {
+        return UIApplication.shared.delegate as! AppDelegate
+    }
+    
+    static var rootViewController: UIViewController? {
+        return AppDelegate.shared.window!.rootViewController
+    }
+    
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         SessionService.postDeviceToken(deviceToken)
     }

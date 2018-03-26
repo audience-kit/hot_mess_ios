@@ -100,10 +100,11 @@ class SessionService {
             
                 NotificationCenter.default.post(name: SessionService.LoginSuccess, object: nil)
 
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                    callback(true)
+                }
                 
-                UIApplication.shared.registerForRemoteNotifications()
-                
-                callback(true)
                 return
             }
             else {
@@ -150,7 +151,9 @@ class SessionService {
             return
         }
         
-        SessionService.loginManager.logIn(permissions.map { permission in ReadPermission.custom(permission) }, viewController: nil) { (result) in
+        let readPermissions = permissions.map { permission in ReadPermission.custom(permission) }
+        
+        SessionService.loginManager.logIn(readPermissions: readPermissions, viewController: nil) { (result) in
 
             switch result {
             case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
@@ -164,7 +167,7 @@ class SessionService {
         }
     }
     
-    static func ensureHasPublishPermission(_ permission: String, callback: @escaping (Void) -> Void) {
+    static func ensureHasPublishPermission(_ permission: String, callback: @escaping () -> Void) {
         let permissionObject = Permission.init(name: permission)
         
         if AccessToken.current?.grantedPermissions?.contains(permissionObject) == true {
@@ -173,7 +176,7 @@ class SessionService {
             return
         }
         
-        SessionService.loginManager.logIn([ PublishPermission.custom(permission) ], viewController: nil) { (result) in
+        SessionService.loginManager.logIn(publishPermissions: [ PublishPermission.custom(permission) ], viewController: nil) { (result) in
             
             switch result {
             case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):

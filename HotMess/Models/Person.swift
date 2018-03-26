@@ -10,7 +10,7 @@ import Foundation
 
 class Person : Model {
     let name: String
-    let facebookId: IntMax
+    let facebookId: Int64
     let role: String?
     let isLiked: Bool
     let pictureUrl: URL
@@ -18,7 +18,7 @@ class Person : Model {
     
     override init(_ data: [ String : Any]) {
         self.name = data["name"] as! String
-        self.facebookId = data["facebook_id"] as! IntMax
+        self.facebookId = data["facebook_id"] as! Int64
  
         role = data["role"] as? String
         

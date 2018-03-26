@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2.18</string>
+	<string>1.2.19</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -34,7 +34,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1242</string>
+	<string>1272</string>
 	<key>Fabric</key>
 	<dict>
 		<key>APIKey</key>
@@ -92,6 +92,8 @@
 	<string>Hot Mess communicates with sensors in bars to give accurate details about the venue.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Hot Mess uses your location in the background to esitmate the number of people in a venue and to make recomendations based on other patrons.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Hot Mess  uses your location to recomend venues and events near you</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Hot Mess accesses your photo library to send photographs you select to chatrooms.</string>
 	<key>NewRelicIdentifier</key>
@@ -111,6 +113,8 @@
 		<string>location</string>
 		<string>remote-notification</string>
 	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LoginView</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -129,7 +133,6 @@
 	</dict>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>

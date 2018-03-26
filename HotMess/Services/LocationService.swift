@@ -58,12 +58,31 @@ class LocationService : NSObject, CLLocationManagerDelegate {
     
     func start() {
         NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
-            self._locationManager.requestAlwaysAuthorization()
-            self._locationManager.startMonitoringSignificantLocationChanges()
-            
-            self._locationManager.startMonitoring(for: self.beaconRegion)
-
-            self.update()
+            if CLLocationManager.authorizationStatus() == .authorizedAlways
+                || CLLocationManager.authorizationStatus() == .authorizedWhenInUse
+            {
+                self._locationManager.startMonitoringSignificantLocationChanges()
+                
+                self._locationManager.startMonitoring(for: self.beaconRegion)
+                
+                self.update()
+            }
+            else {
+                if CLLocationManager.authorizationStatus() == .notDetermined {
+                    DispatchQueue.main.async {
+                        self._locationManager.requestWhenInUseAuthorization()
+                    }
+                }
+                else {
+                    let alertController = UIAlertController(title: "Location Service", message: "Location services are required for Hot Mess to provide recomendations.  Please allow location to Hot Mess in the settings app.", preferredStyle: .alert)
+                    
+                    alertController.addAction(UIAlertAction(title: "Dismiss", style: .default, handler: { (sender) in
+                        
+                    }))
+                    
+                    alertController.show(AppDelegate.rootViewController!, sender: self)
+                }
+            }
         }
     }
     
@@ -131,6 +150,18 @@ class LocationService : NSObject, CLLocationManagerDelegate {
 
     private func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLBeaconRegion) {
         update()
+    }
+    
+    internal func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        if status == .authorizedAlways ||
+            status == .authorizedWhenInUse
+        {
+            self._locationManager.startMonitoringSignificantLocationChanges()
+            
+            self._locationManager.startMonitoring(for: self.beaconRegion)
+            
+            self.update()
+        }
     }
     
 

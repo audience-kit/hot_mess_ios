@@ -12,7 +12,6 @@ extension Notification.Name {
 
 class RealtimeService : WebSocketDelegate {
 
-
     private static var _shared: RealtimeService?
 
     let socket: WebSocket
@@ -35,16 +34,16 @@ class RealtimeService : WebSocketDelegate {
     func connect() {
         socket.connect()
     }
-
-    func websocketDidConnect(socket: WebSocket) {
+    
+    func websocketDidConnect(socket: WebSocketClient) {
         print("websocket is connected")
     }
 
-    func websocketDidDisconnect(socket: WebSocket, error: NSError?) {
+    func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
         print("websocket did disconnect \(error!)")
     }
 
-    func websocketDidReceiveMessage(socket: WebSocket, text: String) {
+    func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
         print("websocket received message \(text)")
         do {
             let parsed = try JSONSerialization.jsonObject(with: text.data(using: .utf8)!, options: JSONSerialization.ReadingOptions.allowFragments) as! [ String : Any ]
@@ -62,7 +61,7 @@ class RealtimeService : WebSocketDelegate {
         }
     }
 
-    func websocketDidReceiveData(socket: WebSocket, data: Data) {
+    func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
         print("websocket receieved data \(data.description)")
     }
     

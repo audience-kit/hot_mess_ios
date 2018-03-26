@@ -12,7 +12,7 @@ class Event : Model {
     let name: String
     let startDate: Date
     let endDate: Date?
-    let facebookId: IntMax
+    let facebookId: Int64
     let venue: Venue?
     let person: Person?
     let coverUrl: URL?
@@ -26,7 +26,7 @@ class Event : Model {
         self.name = data["name"] as! String
         let startAt = data["start_at"] as! String
         self.startDate = formatter.date(from: startAt)!
-        self.facebookId = data["facebook_id"] as! IntMax
+        self.facebookId = data["facebook_id"] as! Int64
         
         if let venue_data = data["venue"] as? [ String : Any ] {
             self.venue = Venue(venue_data)

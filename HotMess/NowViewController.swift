@@ -30,7 +30,9 @@ class NowViewController: UITableViewController {
         DataService.shared.now { (now) in
 
             if now.imageUrl != nil {
-                self.heroBanner?.kf.setImage(with: now.imageUrl!)
+                DispatchQueue.main.async {
+                    self.heroBanner?.kf.setImage(with: now.imageUrl!)
+                }
             }
             
             DispatchQueue.main.async {

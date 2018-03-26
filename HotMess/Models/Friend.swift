@@ -11,7 +11,7 @@ import Foundation
 
 class Friend : Model {
     var name: String
-    var facebookId: IntMax
+    var facebookId: Int64
     
     var profileImageUrl: URL {
         return URL(string: "/users/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
@@ -27,7 +27,7 @@ class Friend : Model {
     
     override init(_ data: [ String : Any ]) {
         self.name = data["name"] as! String
-        self.facebookId = data["facebook_id"] as! IntMax
+        self.facebookId = data["facebook_id"] as! Int64
         
         super.init(data)
     }

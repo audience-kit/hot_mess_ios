@@ -18,7 +18,7 @@ class EventViewController : UITableViewController {
     
     var event: Event? = nil
     
-    func actionButton(_ sender: UIBarButtonItem) {
+    @objc func actionButton(_ sender: UIBarButtonItem) {
         let activity = UIActivityViewController(activityItems: [ "https://hotmess.social/events/\(event!.id)" ], applicationActivities: nil)
         
         self.present(activity, animated: true, completion: nil)

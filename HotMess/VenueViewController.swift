@@ -12,7 +12,6 @@ import FacebookCore
 
 class VenueViewController : UITableViewController {
     @IBOutlet var heroImage: UIImageView?
-    @IBOutlet var likeControl: FBSDKLikeControl?
     
     var venue: Venue?
     var events: [ Event ] = []
@@ -21,9 +20,6 @@ class VenueViewController : UITableViewController {
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.action, target: self, action: #selector(EventViewController.actionButton))
         
         self.heroImage?.kf.indicatorType = .activity
-        self.likeControl?.objectType = .page
-        self.likeControl?.objectID = self.venue!.facebookId
-        self.likeControl?.likeControlHorizontalAlignment = .right
     }
     
     func actionButton(_ sender: UIBarButtonItem) {
@@ -91,10 +87,9 @@ class VenueViewController : UITableViewController {
             
             DispatchQueue.main.async {
                 self.tableView.reloadData()
-            }
-            
-            if let heroUrl = self.venue?.heroUrl {
-                self.heroImage?.kf.setImage(with: heroUrl)
+                if let heroUrl = self.venue?.heroUrl {
+                    self.heroImage?.kf.setImage(with: heroUrl)
+                }
             }
         }
     }

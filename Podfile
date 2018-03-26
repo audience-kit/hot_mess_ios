@@ -3,12 +3,10 @@ project 'HotMess.xcodeproj'
 # Uncomment the next line to define a global platform for your project
 
 target 'HotMess' do
-  platform :ios, '10.0'
-  
+  platform :ios, '11.0'
+
   # Comment the next line if you're not using Swift and don't want to use dynamic frameworks
   use_frameworks!
-  
-  inhibit_all_warnings!
 
   # Pods for HotMess
   pod 'FacebookCore'
@@ -17,15 +15,14 @@ target 'HotMess' do
   pod 'Firebase/Core'
   pod 'Firebase/AdMob'
   pod 'Firebase/Crash'
-  
   pod 'Alamofire'
   pod 'Locksmith'
   pod 'Starscream'
-  pod 'GeoJSON'
+  pod 'GeoJSON', git: 'https://github.com/rickmark/GeoJSON.swift.git'
   pod 'SwiftyJSON'
   pod 'Kingfisher'
   pod 'Mixpanel'
-  
+
   target 'HotMessTests' do
     inherit! :search_paths
     # Pods for testing

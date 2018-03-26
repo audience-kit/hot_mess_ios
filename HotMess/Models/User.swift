@@ -32,7 +32,7 @@ class User : Model {
     }
     
     public var avatarInitials: String? {
-        return name.components(separatedBy: " ").reduce("") { "\($0 ?? String())\(String(describing: $1.characters.first))" }
+        return name.components(separatedBy: " ").reduce("") { "\($0 ?? String())\(String(describing: $1.first))" }
     }
     
     public var firstName: String? {

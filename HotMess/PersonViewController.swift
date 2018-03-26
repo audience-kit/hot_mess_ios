@@ -15,7 +15,6 @@ class PersonViewController : UITableViewController {
     @IBOutlet var personProfileImage: UIImageView?
     @IBOutlet var personCoverImage: UIImageView?
     @IBOutlet var personTitleLabel: UILabel?
-    @IBOutlet var personLikeButton: FBSDKLikeControl?
     
     var person: Person? = nil
     
@@ -29,8 +28,6 @@ class PersonViewController : UITableViewController {
         self.navigationItem.title = person?.name
         
         self.personProfileImage?.kf.indicatorType = .activity
-        self.personLikeButton?.objectType = FBSDKLikeObjectType.page
-        self.personLikeButton?.likeControlStyle = .boxCount
         
         self.personProfileImage?.layer.borderColor = UIColor.white.cgColor
         self.personProfileImage?.layer.borderWidth = 5.0
@@ -41,7 +38,6 @@ class PersonViewController : UITableViewController {
             DispatchQueue.main.async {
                 self.person = person
                 self.personTitleLabel?.text = person.name
-                self.personLikeButton?.objectID = "\(person.facebookId)"
                 self.personCoverImage?.kf.setImage(with: person.coverUrl)
 
                 self.tableView.reloadData()
