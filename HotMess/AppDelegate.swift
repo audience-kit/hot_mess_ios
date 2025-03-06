@@ -7,33 +7,25 @@
 //
 
 import UIKit
-import FacebookCore
-import FacebookLogin
-import Kingfisher
 import UserNotifications
-import Mixpanel
-import Firebase
+import FacebookCore
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    var mixpanel: Mixpanel?
     
     static let facebookAppIdIdentifier = "FacebookAppID"
     static let mixpanelAPIKey = "MixpanelAPIKey"
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        FirebaseApp.configure()
 
-        SDKSettings.appId = Bundle.main.infoDictionary![AppDelegate.facebookAppIdIdentifier] as! String
-        
-        AppEventsLogger.activate()
-        
-        self.mixpanel = Mixpanel.sharedInstance(withToken: Bundle.main.infoDictionary![AppDelegate.mixpanelAPIKey] as! String)
-        
-        // Override point for customization after application launch.
-        SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+        ApplicationDelegate.shared.application(
+            application,
+            didFinishLaunchingWithOptions: launchOptions
+        )
 
         LoginViewController.registerForLogin()
         LocationService.shared.start()
@@ -146,7 +138,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
-        var handled = SDKApplicationDelegate.shared.application(app, open: url, options: options)
+        var handled = ApplicationDelegate.shared.application(
+            app,
+            open: url,
+            sourceApplication: options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
+            annotation: options[UIApplication.OpenURLOptionsKey.annotation]
+        )
         
         if handled == false && url.scheme == "hotmess" {
             let id = UUID(uuidString: url.pathComponents[1])!

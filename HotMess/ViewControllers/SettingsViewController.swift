@@ -7,15 +7,13 @@
 //
 
 import UIKit
-import FacebookCore
 import FacebookLogin
-import FBSDKLoginKit
 import MessageUI
 import Kingfisher
 
 
 class SettingsViewController : UITableViewController, MFMailComposeViewControllerDelegate {
-    @IBOutlet var profileImage: FBSDKProfilePictureView?
+    @IBOutlet var profileImage: FBProfilePictureView?
     @IBOutlet var nameLabel: UILabel?
     
     var environmentSheet: UIAlertController?
@@ -99,7 +97,7 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
                 ImageCache.default.clearMemoryCache()
             case 1:
                 SessionService.logOut()
-                FBSDKAccessToken.setCurrent(nil)
+                AccessToken.current = nil
                 SessionService.me() { _ in
                     
                 }

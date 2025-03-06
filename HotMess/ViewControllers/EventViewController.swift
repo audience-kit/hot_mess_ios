@@ -7,9 +7,8 @@
 //
 
 import UIKit
-import FBSDKCoreKit
-import FBSDKShareKit
-import FacebookCore
+import FacebookShare
+import FacebookAEM
 
 class EventViewController : UITableViewController {
     @IBOutlet var titleLabel: UILabel?
@@ -159,15 +158,11 @@ class EventViewController : UITableViewController {
         case "showPerson":
             let targetViewController = segue.destination as! PersonViewController
             let person = self.event!.person!
-            
-            AppEventsLogger.log("show_person_from_event", parameters: [ "id" : event!.id.uuidString, "person_id" : person.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
-            
+
             targetViewController.person = person
         case "showVenue":
             let targetViewController = segue.destination as! VenueViewController
             let venue = self.event!.venue!
-            
-            AppEventsLogger.log("show_venue_from_event", parameters: [ "id" : event!.id.uuidString, "venue_id" : venue.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.venue = venue
         default:

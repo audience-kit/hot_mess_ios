@@ -7,10 +7,10 @@
 //
 
 import UIKit
-import FBSDKLoginKit
+import FacebookLogin
 
 class FriendTableViewCell : UITableViewCell {
-    @IBOutlet var friendImageView: FBSDKProfilePictureView?
+    @IBOutlet var friendImageView: FBProfilePictureView?
     @IBOutlet var friendNameLabel: UILabel?
     
     func setFriend(_ friend: Friend) {

@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import FacebookCore
+
 
 class RSVPTableViewCell : UITableViewCell {
     @IBOutlet var goingImage: UIButton?

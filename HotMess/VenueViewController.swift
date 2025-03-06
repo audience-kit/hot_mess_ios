@@ -7,8 +7,8 @@
 //
 
 import UIKit
-import FBSDKShareKit
-import FacebookCore
+import FacebookShare
+import Kingfisher
 
 class VenueViewController : UITableViewController {
     @IBOutlet var heroImage: UIImageView?
@@ -119,8 +119,7 @@ class VenueViewController : UITableViewController {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
             let event = self.events[path.row]
-            
-            AppEventsLogger.log("show_event", parameters: [ "id" : event.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
+
             
             targetViewController.event = event
         default:

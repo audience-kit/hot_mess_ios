@@ -7,8 +7,8 @@
 //
 
 import Foundation
-import GeoJSON
 import CoreLocation
+import GEOSwift
 
 class Venue : Model {
     let name: String
@@ -17,7 +17,7 @@ class Venue : Model {
     let facebookId: String?
     let phone: String?
     let photoUrl: URL?
-    let point: GeoJSONPoint?
+    let point: Point?
     let subtitle: String?
     let isLiked: Bool
     let heroUrl: URL?
@@ -49,7 +49,9 @@ class Venue : Model {
         }
         
         if let point = data["point"] as? [ String : Any ] {
-            self.point = GeoJSONPoint(dictionary: point)
+            let decoder = JSONDecoder()
+            
+            self.point = Point.init(x: point["x"] as! Double, y: point["y"] as! Double)
         }
         else {
             self.point = nil
@@ -80,7 +82,7 @@ class Venue : Model {
     var coreLocationPoint: CLLocationCoordinate2D? {
         guard self.point != nil else { return nil }
         
-        return CLLocationCoordinate2D(latitude: self.point!.coordinate.latitude, longitude: self.point!.coordinate.longitude)
+        return CLLocationCoordinate2D(latitude: self.point!.x, longitude: self.point!.y)
     }
     
     static func ==(rhs: Venue, lhs: Venue) -> Bool {

@@ -6,8 +6,6 @@
 //  Copyright © 2017 Hot Mess and Co. All rights reserved.
 //
 
-#include "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.release.xcconfig"
-
 SERVER_SCHEME=https
 SERVER_BASE=api.hotmess.social
 FACEBOOK_APP_ID=713525445368431

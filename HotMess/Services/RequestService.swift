@@ -7,9 +7,8 @@
 //
 
 import Foundation
-import Locksmith
-import FacebookLogin
 import SystemConfiguration
+import UIKit
 
 class RequestService
 {

@@ -8,7 +8,6 @@
 
 import UIKit
 import FBSDKCoreKit
-import Kingfisher
 
 class VenueTableViewCell : UITableViewCell {
     @IBOutlet var nameLabel : UILabel?

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 import Kingfisher
 
 class User : Model {
@@ -23,10 +24,7 @@ class User : Model {
         if let memoryImage = ImageCache.default.retrieveImageInMemoryCache(forKey: avatarImageURL!.absoluteString) {
             return memoryImage
         }
-        
-        if let diskIamge = ImageCache.default.retrieveImageInDiskCache(forKey: avatarImageURL!.absoluteString) {
-            return diskIamge
-        }
+    
         
         return nil
     }

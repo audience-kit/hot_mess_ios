@@ -8,9 +8,9 @@
 
 import Foundation
 import UIKit
-import FacebookCore
 import FacebookLogin
-import Locksmith
+import FacebookCore
+import KeychainAccess
 
 class SessionService {
     private static let _sharedInstance = SessionService()
@@ -21,11 +21,12 @@ class SessionService {
     
     static let accountIdentifier = "social.hotmess.account";
     
+    static let keychain = Keychain(service: accountIdentifier)
+    
     static let RSVPEventPermission = "rsvp_event"
     static let UserEventsPermission = "user_events"
-    static let ReadPermissions = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ].map { name -> ReadPermission in
-        ReadPermission.custom(name)
-    }
+    static let ReadPermissions = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
+    
     
     static let loginManager = LoginManager()
     
@@ -36,7 +37,7 @@ class SessionService {
     var userId: UUID?
     
     init() {
-        NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { (notification) in
+        NotificationCenter.default.addObserver(forName: LoginViewController.FBAccessTokenDidChangeNotification, object: nil, queue: OperationQueue.main) { (notification) in
             DispatchQueue.global().async {
                 SessionService.ensureSession()
             }
@@ -45,7 +46,7 @@ class SessionService {
     
     static func ensureSession() {
         if let credential = AccessToken.current {
-            self.getToken(token: credential.authenticationToken, callback: { (result) in
+            self.getToken(token: credential.tokenString, callback: { (result) in
                 if result {
                     NotificationCenter.default.post(name: SessionService.LoginSuccess, object: nil)
                 }
@@ -61,7 +62,7 @@ class SessionService {
     
     static func logOut() {
         do {
-            try Locksmith.deleteDataForUserAccount(userAccount: accountIdentifier)
+            try self.keychain.remove("token")
             NotificationCenter.default.post(name: SessionService.LoginRequired, object: nil)
         }
         catch  {
@@ -69,10 +70,8 @@ class SessionService {
     }
     
     static var token: String? {
-        if let account = Locksmith.loadDataForUserAccount(userAccount: accountIdentifier) {
-            if let token = account["token"] as? String {
-                return token
-            }
+        if let account = self.keychain["token"] {
+            return account
         }
         
         return nil
@@ -96,7 +95,7 @@ class SessionService {
             
             if let token = result.data["token"] as? String {
             
-                let _ = try? Locksmith.saveData(data: [ "token" : token ], forUserAccount: accountIdentifier)
+                let _ = try? self.keychain.set(token, key: "token")
             
                 NotificationCenter.default.post(name: SessionService.LoginSuccess, object: nil)
 
@@ -143,7 +142,7 @@ class SessionService {
 
     static func ensureHasPermission(_ permissions: [ String ], callback: @escaping () -> Void) {
         let havePermissions = permissions.map { permission -> Bool in
-            return (AccessToken.current?.grantedPermissions?.contains(Permission(name: permission)))!
+            return (AccessToken.current?.permissions.contains(Permission(stringLiteral: permission)))!
         }.contains(false)
         
         if havePermissions {
@@ -151,14 +150,14 @@ class SessionService {
             return
         }
         
-        let readPermissions = permissions.map { permission in ReadPermission.custom(permission) }
+        let config = LoginConfiguration(permissions: permissions, tracking: LoginTracking.enabled)
         
-        SessionService.loginManager.logIn(readPermissions: readPermissions, viewController: nil) { (result) in
+        SessionService.loginManager.logIn( viewController: nil, configuration: config) { (result) in
 
             switch result {
-            case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
+            case let .success(granted: _, declined: _, token: accessToken):
                 AccessToken.current = accessToken
-                SessionService.getToken(token: accessToken.authenticationToken, callback: { (result) in
+                SessionService.getToken(token: accessToken!.tokenString, callback: { (result) in
                     callback()
                 })
             default:
@@ -168,20 +167,22 @@ class SessionService {
     }
     
     static func ensureHasPublishPermission(_ permission: String, callback: @escaping () -> Void) {
-        let permissionObject = Permission.init(name: permission)
+        let permissionObject = Permission.init(stringLiteral: permission)
         
-        if AccessToken.current?.grantedPermissions?.contains(permissionObject) == true {
+        if ((AccessToken.current?.hasGranted(permissionObject)) != nil) {
             callback()
             
             return
         }
         
-        SessionService.loginManager.logIn(publishPermissions: [ PublishPermission.custom(permission) ], viewController: nil) { (result) in
+        let config = LoginConfiguration(permissions: [ permission ], tracking: LoginTracking.enabled)
+        
+        SessionService.loginManager.logIn( viewController: nil, configuration: config) { (result) in
             
             switch result {
-            case let .success(grantedPermissions: _, declinedPermissions: _, token: accessToken):
+            case let .success(granted: _, declined: _, token: accessToken):
                 AccessToken.current = accessToken
-                SessionService.getToken(token: accessToken.authenticationToken, callback: { (result) in
+                SessionService.getToken(token: accessToken!.tokenString, callback: { (result) in
                     callback()
                 })
             default:

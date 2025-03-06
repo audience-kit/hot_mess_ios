@@ -11,6 +11,10 @@ extension Notification.Name {
 }
 
 class RealtimeService : WebSocketDelegate {
+    func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
+        
+    }
+    
 
     private static var _shared: RealtimeService?
 
@@ -26,8 +30,8 @@ class RealtimeService : WebSocketDelegate {
     }
 
     init() {
-
-        self.socket = WebSocket(url: URL(string: "/connection", relativeTo: RequestService.shared.baseUrl)!)
+        let request = URLRequest(url: URL(string: "/connection", relativeTo: RequestService.shared.baseUrl)!)
+        self.socket = WebSocket(request: request)
         self.socket.delegate = self
     }
 

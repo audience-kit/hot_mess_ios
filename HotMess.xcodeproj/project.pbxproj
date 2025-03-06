@@ -3,11 +3,10 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */; };
 		A3BAE410F1A8EB163C9A952A /* DataResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAEF768E8BECB8ABFBD9A4 /* DataResult.swift */; };
 		A3BAEA2D97D0C85B06BA5FBD /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */; };
 		C916EF211E8DBF1E0030B464 /* EventListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C916EF201E8DBF1E0030B464 /* EventListing.swift */; };
@@ -56,6 +55,15 @@
 		C97E4B4A1E67A10A0069E965 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97E4B491E67A10A0069E965 /* Model.swift */; };
 		C97F0DE71E54F1C100C615BA /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0DE61E54F1C100C615BA /* SettingsViewController.swift */; };
 		C97F0DE91E552FCD00C615BA /* PersonTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0DE81E552FCD00C615BA /* PersonTableViewCell.swift */; };
+		C981643F2D7A52CB0007846D /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = C981643E2D7A52CB0007846D /* FacebookCore */; };
+		C98164412D7A52CB0007846D /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = C98164402D7A52CB0007846D /* FacebookLogin */; };
+		C98164432D7A52CB0007846D /* FacebookShare in Frameworks */ = {isa = PBXBuildFile; productRef = C98164422D7A52CB0007846D /* FacebookShare */; };
+		C98164462D7A52E30007846D /* GEOSwift in Frameworks */ = {isa = PBXBuildFile; productRef = C98164452D7A52E30007846D /* GEOSwift */; };
+		C981644C2D7A54D10007846D /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = C981644B2D7A54D10007846D /* KeychainAccess */; };
+		C981644E2D7A55320007846D /* FacebookBasics in Frameworks */ = {isa = PBXBuildFile; productRef = C981644D2D7A55320007846D /* FacebookBasics */; };
+		C98164512D7A567C0007846D /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = C98164502D7A567C0007846D /* Kingfisher */; };
+		C98164542D7A58650007846D /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = C98164532D7A58650007846D /* Starscream */; };
+		C98164562D7A58EE0007846D /* FacebookAEM in Frameworks */ = {isa = PBXBuildFile; productRef = C98164552D7A58EE0007846D /* FacebookAEM */; };
 		C986C1FB1E781C7C003A4795 /* ProximaNova-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F51E781C7C003A4795 /* ProximaNova-Regular.otf */; };
 		C986C1FC1E781C7C003A4795 /* ProximaNova-RegularT50.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F61E781C7C003A4795 /* ProximaNova-RegularT50.otf */; };
 		C986C1FD1E781C7C003A4795 /* ProximaNova-RegularT100.otf in Resources */ = {isa = PBXBuildFile; fileRef = C986C1F71E781C7C003A4795 /* ProximaNova-RegularT100.otf */; };
@@ -92,8 +100,6 @@
 		C9F1F5DA1E2847A9005CF7FD /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F1F5D91E2847A9005CF7FD /* Event.swift */; };
 		C9F34AF11E2089E100C5049B /* LoginView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C9F34AF01E2089E100C5049B /* LoginView.xib */; };
 		C9F34AF61E208BF100C5049B /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F34AF51E208BF100C5049B /* User.swift */; };
-		F348DD0B5851CD79CA6F04CD /* Pods_HotMess.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 580A18D82915AD829D2D8A27 /* Pods_HotMess.framework */; };
-		FDDEBA24E515FF2FB977FF26 /* Pods_HotMessUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 79CB199A43A3B1C7B5801D8C /* Pods_HotMessUITests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,15 +120,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		2C5F96E2CC35181398D83382 /* Pods-HotMessTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.debug.xcconfig"; sourceTree = "<group>"; };
-		3107986BD80C0B8495B565BC /* Pods-HotMessUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessUITests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests.debug.xcconfig"; sourceTree = "<group>"; };
-		580A18D82915AD829D2D8A27 /* Pods_HotMess.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_HotMess.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_HotMessTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		79CB199A43A3B1C7B5801D8C /* Pods_HotMessUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_HotMessUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		8BF8AB7DBAEABF8D94F2DA24 /* Pods-HotMessUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessUITests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests.release.xcconfig"; sourceTree = "<group>"; };
 		A3BAE79CC4BE4B3A6B7C7871 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
 		A3BAEF768E8BECB8ABFBD9A4 /* DataResult.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataResult.swift; sourceTree = "<group>"; };
-		BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMessTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"; sourceTree = "<group>"; };
 		C916EF201E8DBF1E0030B464 /* EventListing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventListing.swift; path = Models/EventListing.swift; sourceTree = "<group>"; };
 		C916EF221E8DC3340030B464 /* EventSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = EventSection.swift; path = Models/EventSection.swift; sourceTree = "<group>"; };
 		C9207A914AEA505100844907 /* PersonInfoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PersonInfoCell.swift; path = Views/PersonInfoCell.swift; sourceTree = "<group>"; };
@@ -143,7 +142,6 @@
 		C94A5AD11E1B7B2B004601AA /* HotMessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HotMessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94A5AD51E1B7B2B004601AA /* HotMessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotMessUITests.swift; sourceTree = "<group>"; };
 		C94A5AD71E1B7B2B004601AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BridgeHeader.h; sourceTree = "<group>"; };
 		C9570A2A1E479F7A00A94395 /* EventTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventTableViewCell.swift; sourceTree = "<group>"; };
 		C9570A2C1E47A71500A94395 /* VenueTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueTableViewCell.swift; sourceTree = "<group>"; };
 		C95F6E4E1E513394009E43A4 /* PeopleViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PeopleViewController.swift; sourceTree = "<group>"; };
@@ -222,8 +220,6 @@
 		C9F1F5D91E2847A9005CF7FD /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Event.swift; path = Models/Event.swift; sourceTree = "<group>"; };
 		C9F34AF01E2089E100C5049B /* LoginView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = LoginView.xib; path = Views/LoginView.xib; sourceTree = "<group>"; };
 		C9F34AF51E208BF100C5049B /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = User.swift; path = Models/User.swift; sourceTree = "<group>"; };
-		D7697D8D67C5BCFBC5E60BD2 /* Pods-HotMess.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMess.debug.xcconfig"; path = "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.debug.xcconfig"; sourceTree = "<group>"; };
-		D8453045752088229BA3E7B5 /* Pods-HotMess.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HotMess.release.xcconfig"; path = "Pods/Target Support Files/Pods-HotMess/Pods-HotMess.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -232,7 +228,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				C99EFFDD1E1CA44700720341 /* PassKit.framework in Frameworks */,
-				F348DD0B5851CD79CA6F04CD /* Pods_HotMess.framework in Frameworks */,
+				C981644C2D7A54D10007846D /* KeychainAccess in Frameworks */,
+				C981643F2D7A52CB0007846D /* FacebookCore in Frameworks */,
+				C98164432D7A52CB0007846D /* FacebookShare in Frameworks */,
+				C98164512D7A567C0007846D /* Kingfisher in Frameworks */,
+				C981644E2D7A55320007846D /* FacebookBasics in Frameworks */,
+				C98164562D7A58EE0007846D /* FacebookAEM in Frameworks */,
+				C98164462D7A52E30007846D /* GEOSwift in Frameworks */,
+				C98164412D7A52CB0007846D /* FacebookLogin in Frameworks */,
+				C98164542D7A58650007846D /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,7 +244,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				46DC4F5CC2ECE10C23283E97 /* Pods_HotMessTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,26 +251,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FDDEBA24E515FF2FB977FF26 /* Pods_HotMessUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		960D8E2B450EA3AA5F336CA9 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				D7697D8D67C5BCFBC5E60BD2 /* Pods-HotMess.debug.xcconfig */,
-				D8453045752088229BA3E7B5 /* Pods-HotMess.release.xcconfig */,
-				2C5F96E2CC35181398D83382 /* Pods-HotMessTests.debug.xcconfig */,
-				BE4B30C5ECB95415D3499505 /* Pods-HotMessTests.release.xcconfig */,
-				3107986BD80C0B8495B565BC /* Pods-HotMessUITests.debug.xcconfig */,
-				8BF8AB7DBAEABF8D94F2DA24 /* Pods-HotMessUITests.release.xcconfig */,
-			);
-			name = Pods;
-			sourceTree = "<group>";
-		};
 		C94A5AA71E1B7B2A004601AA = {
 			isa = PBXGroup;
 			children = (
@@ -275,7 +264,6 @@
 				C94A5AC91E1B7B2B004601AA /* HotMessTests */,
 				C94A5AD41E1B7B2B004601AA /* HotMessUITests */,
 				C94A5AB11E1B7B2B004601AA /* Products */,
-				960D8E2B450EA3AA5F336CA9 /* Pods */,
 				EF24620A0379C7B73FF563EA /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -402,7 +390,6 @@
 			children = (
 				C93C42151ED15C3700D7772B /* GoogleService-Info.plist */,
 				C94A5AC11E1B7B2B004601AA /* Info.plist */,
-				C953DB501E1B7F46003FA4E9 /* BridgeHeader.h */,
 				C94A5ABC1E1B7B2B004601AA /* Assets.xcassets */,
 				C99EFFDB1E1CA43B00720341 /* HotMess.entitlements */,
 				C9782C9B1E1E02D5005FB286 /* InfoPlist.strings */,
@@ -484,9 +471,6 @@
 			isa = PBXGroup;
 			children = (
 				C99EFFDC1E1CA44700720341 /* PassKit.framework */,
-				580A18D82915AD829D2D8A27 /* Pods_HotMess.framework */,
-				647341D151A3053245AF1DDC /* Pods_HotMessTests.framework */,
-				79CB199A43A3B1C7B5801D8C /* Pods_HotMessUITests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -498,13 +482,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C94A5ADA1E1B7B2B004601AA /* Build configuration list for PBXNativeTarget "HotMess" */;
 			buildPhases = (
-				C8A0501783B3904970ADBDB7 /* [CP] Check Pods Manifest.lock */,
 				C94A5AAC1E1B7B2A004601AA /* Sources */,
 				C94A5AAD1E1B7B2A004601AA /* Frameworks */,
-				C96396D41E4AAD5C00D70DC1 /* Increment Build Number */,
 				C94A5AAE1E1B7B2A004601AA /* Resources */,
-				5E7AC517CDA13BFF36FA728D /* [CP] Embed Pods Frameworks */,
-				FEFB3998A9D7FF6BF807CCB6 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -519,12 +499,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C94A5ADD1E1B7B2B004601AA /* Build configuration list for PBXNativeTarget "HotMessTests" */;
 			buildPhases = (
-				CFB0E9D602B3619AE96AA3BB /* [CP] Check Pods Manifest.lock */,
 				C94A5AC21E1B7B2B004601AA /* Sources */,
 				C94A5AC31E1B7B2B004601AA /* Frameworks */,
 				C94A5AC41E1B7B2B004601AA /* Resources */,
-				A973F558D81C6DE93305C5C2 /* [CP] Embed Pods Frameworks */,
-				235AA03DD30EA0BCD1524DF0 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -540,12 +517,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C94A5AE01E1B7B2B004601AA /* Build configuration list for PBXNativeTarget "HotMessUITests" */;
 			buildPhases = (
-				5F7D2E8147B8E264D905A23C /* [CP] Check Pods Manifest.lock */,
 				C94A5ACD1E1B7B2B004601AA /* Sources */,
 				C94A5ACE1E1B7B2B004601AA /* Frameworks */,
 				C94A5ACF1E1B7B2B004601AA /* Resources */,
-				6298DD364CCF505C1E3A07DB /* [CP] Embed Pods Frameworks */,
-				38D4E02D4C1A4AFCFD8BF4FB /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -563,9 +537,10 @@
 		C94A5AA81E1B7B2A004601AA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				CLASSPREFIX = "";
 				LastSwiftUpdateCheck = 0820;
-				LastUpgradeCheck = 0900;
+				LastUpgradeCheck = 1620;
 				ORGANIZATIONNAME = "Hot Mess and Co.";
 				TargetAttributes = {
 					C94A5AAF1E1B7B2A004601AA = {
@@ -612,10 +587,18 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
 			mainGroup = C94A5AA71E1B7B2A004601AA;
+			packageReferences = (
+				C981643D2D7A52CB0007846D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
+				C98164442D7A52E30007846D /* XCRemoteSwiftPackageReference "GEOSwift" */,
+				C981644A2D7A54D10007846D /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+				C981644F2D7A567C0007846D /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				C98164522D7A58650007846D /* XCRemoteSwiftPackageReference "Starscream" */,
+			);
 			productRefGroup = C94A5AB11E1B7B2B004601AA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -661,202 +644,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		235AA03DD30EA0BCD1524DF0 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		38D4E02D4C1A4AFCFD8BF4FB /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		5E7AC517CDA13BFF36FA728D /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-HotMess/Pods-HotMess-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
-				"${BUILT_PRODUCTS_DIR}/Bolts/Bolts.framework",
-				"${BUILT_PRODUCTS_DIR}/FBSDKCoreKit/FBSDKCoreKit.framework",
-				"${BUILT_PRODUCTS_DIR}/FBSDKLoginKit/FBSDKLoginKit.framework",
-				"${BUILT_PRODUCTS_DIR}/FBSDKShareKit/FBSDKShareKit.framework",
-				"${BUILT_PRODUCTS_DIR}/FacebookCore/FacebookCore.framework",
-				"${BUILT_PRODUCTS_DIR}/FacebookLogin/FacebookLogin.framework",
-				"${BUILT_PRODUCTS_DIR}/FacebookShare/FacebookShare.framework",
-				"${BUILT_PRODUCTS_DIR}/GeoJSON/GeoJSON.framework",
-				"${BUILT_PRODUCTS_DIR}/GoogleToolboxForMac/GoogleToolboxForMac.framework",
-				"${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework",
-				"${BUILT_PRODUCTS_DIR}/Locksmith/Locksmith.framework",
-				"${BUILT_PRODUCTS_DIR}/Mixpanel/Mixpanel.framework",
-				"${BUILT_PRODUCTS_DIR}/Protobuf/Protobuf.framework",
-				"${BUILT_PRODUCTS_DIR}/Starscream/Starscream.framework",
-				"${BUILT_PRODUCTS_DIR}/SwiftyJSON/SwiftyJSON.framework",
-				"${BUILT_PRODUCTS_DIR}/nanopb/nanopb.framework",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Bolts.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBSDKCoreKit.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBSDKLoginKit.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBSDKShareKit.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FacebookCore.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FacebookLogin.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FacebookShare.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GeoJSON.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleToolboxForMac.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Kingfisher.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Locksmith.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Mixpanel.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Protobuf.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Starscream.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftyJSON.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/nanopb.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HotMess/Pods-HotMess-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		5F7D2E8147B8E264D905A23C /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-HotMessUITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		6298DD364CCF505C1E3A07DB /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HotMessUITests/Pods-HotMessUITests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		A973F558D81C6DE93305C5C2 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		C8A0501783B3904970ADBDB7 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-HotMess-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		C96396D41E4AAD5C00D70DC1 /* Increment Build Number */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Increment Build Number";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "buildNumber=$(/usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\")\nbuildNumber=$(($buildNumber + 1))\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $buildNumber\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\"";
-		};
-		CFB0E9D602B3619AE96AA3BB /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-HotMessTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		FEFB3998A9D7FF6BF807CCB6 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HotMess/Pods-HotMess-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C94A5AAC1E1B7B2A004601AA /* Sources */ = {
@@ -990,8 +777,8 @@
 		C94A5AD81E1B7B2B004601AA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1001,6 +788,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -1008,8 +796,10 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1020,6 +810,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1034,7 +825,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -1047,8 +838,8 @@
 		C94A5AD91E1B7B2B004601AA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1058,6 +849,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -1065,8 +857,10 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1077,6 +871,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1085,11 +880,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = RELEASE;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = 1;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -1103,10 +899,13 @@
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
 				INFOPLIST_FILE = HotMess/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -1120,10 +919,13 @@
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
 				INFOPLIST_FILE = HotMess/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -1133,11 +935,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C9F1CBD41EB0430400B1D2EA /* HotMessTests.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
 				INFOPLIST_FILE = HotMessTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = On;
@@ -1150,11 +955,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C9F1CBD51EB0431A00B1D2EA /* HotMessTests.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
 				INFOPLIST_FILE = HotMessTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = On;
@@ -1167,10 +975,13 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C9F1CBD71EB0439100B1D2EA /* HotMessUITests.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
 				INFOPLIST_FILE = HotMessUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = On;
@@ -1183,10 +994,13 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C9F1CBD91EB043B100B1D2EA /* HotMessUITests.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				DEVELOPMENT_TEAM = DWVXMLB45Y;
 				INFOPLIST_FILE = HotMessUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = On;
@@ -1195,220 +1009,6 @@
 			};
 			name = Release;
 		};
-		C95217811ED3B29F0058C589 /* Production */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Production;
-		};
-		C95217821ED3B29F0058C589 /* Production */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C9F1CBD21EB042C100B1D2EA /* HotMess.release.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDevelopment;
-				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
-				DEVELOPMENT_TEAM = DWVXMLB45Y;
-				INFOPLIST_FILE = HotMess/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMess;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
-				SWIFT_VERSION = 4.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Production;
-		};
-		C95217831ED3B29F0058C589 /* Production */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C9F1CBD51EB0431A00B1D2EA /* HotMessTests.release.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				DEVELOPMENT_TEAM = DWVXMLB45Y;
-				INFOPLIST_FILE = HotMessTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
-				SWIFT_VERSION = 4.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HotMess.app/HotMess";
-			};
-			name = Production;
-		};
-		C95217841ED3B29F0058C589 /* Production */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C9F1CBD91EB043B100B1D2EA /* HotMessUITests.release.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				DEVELOPMENT_TEAM = DWVXMLB45Y;
-				INFOPLIST_FILE = HotMessUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
-				SWIFT_VERSION = 4.0;
-				TEST_TARGET_NAME = HotMess;
-			};
-			name = Production;
-		};
-		C9F1CBCD1EB03E8700B1D2EA /* Staging */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG STAGING";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Staging;
-		};
-		C9F1CBCE1EB03E8700B1D2EA /* Staging */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C9F1CBD11EB03FE800B1D2EA /* HotMess.staging.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconStaging;
-				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
-				DEVELOPMENT_TEAM = DWVXMLB45Y;
-				INFOPLIST_FILE = HotMess/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMess;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = HotMess/BridgeHeader.h;
-				SWIFT_VERSION = 4.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Staging;
-		};
-		C9F1CBCF1EB03E8700B1D2EA /* Staging */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C9F1CBD61EB0432D00B1D2EA /* HotMessTests.staging.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				DEVELOPMENT_TEAM = DWVXMLB45Y;
-				INFOPLIST_FILE = HotMessTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
-				SWIFT_VERSION = 4.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HotMess.app/HotMess";
-			};
-			name = Staging;
-		};
-		C9F1CBD01EB03E8700B1D2EA /* Staging */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C9F1CBD81EB0439F00B1D2EA /* HotMessUITests.staging.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
-				DEVELOPMENT_TEAM = DWVXMLB45Y;
-				INFOPLIST_FILE = HotMessUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = social.hotmess.HotMessUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = On;
-				SWIFT_VERSION = 4.0;
-				TEST_TARGET_NAME = HotMess;
-			};
-			name = Staging;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1416,8 +1016,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5AD81E1B7B2B004601AA /* Debug */,
-				C95217811ED3B29F0058C589 /* Production */,
-				C9F1CBCD1EB03E8700B1D2EA /* Staging */,
 				C94A5AD91E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1427,8 +1025,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5ADB1E1B7B2B004601AA /* Debug */,
-				C95217821ED3B29F0058C589 /* Production */,
-				C9F1CBCE1EB03E8700B1D2EA /* Staging */,
 				C94A5ADC1E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1438,8 +1034,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5ADE1E1B7B2B004601AA /* Debug */,
-				C95217831ED3B29F0058C589 /* Production */,
-				C9F1CBCF1EB03E8700B1D2EA /* Staging */,
 				C94A5ADF1E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -1449,14 +1043,104 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C94A5AE11E1B7B2B004601AA /* Debug */,
-				C95217841ED3B29F0058C589 /* Production */,
-				C9F1CBD01EB03E8700B1D2EA /* Staging */,
 				C94A5AE21E1B7B2B004601AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C981643D2D7A52CB0007846D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.1.0;
+			};
+		};
+		C98164442D7A52E30007846D /* XCRemoteSwiftPackageReference "GEOSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/GEOSwift/GEOSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.1.0;
+			};
+		};
+		C981644A2D7A54D10007846D /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
+			requirement = {
+				kind = versionRange;
+				maximumVersion = 5.0.0;
+				minimumVersion = 4.2.2;
+			};
+		};
+		C981644F2D7A567C0007846D /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		C98164522D7A58650007846D /* XCRemoteSwiftPackageReference "Starscream" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/daltoniam/Starscream.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.8;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C981643E2D7A52CB0007846D /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C981643D2D7A52CB0007846D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
+		};
+		C98164402D7A52CB0007846D /* FacebookLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C981643D2D7A52CB0007846D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookLogin;
+		};
+		C98164422D7A52CB0007846D /* FacebookShare */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C981643D2D7A52CB0007846D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookShare;
+		};
+		C98164452D7A52E30007846D /* GEOSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C98164442D7A52E30007846D /* XCRemoteSwiftPackageReference "GEOSwift" */;
+			productName = GEOSwift;
+		};
+		C981644B2D7A54D10007846D /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C981644A2D7A54D10007846D /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+		C981644D2D7A55320007846D /* FacebookBasics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C981643D2D7A52CB0007846D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookBasics;
+		};
+		C98164502D7A567C0007846D /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C981644F2D7A567C0007846D /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		C98164532D7A58650007846D /* Starscream */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C98164522D7A58650007846D /* XCRemoteSwiftPackageReference "Starscream" */;
+			productName = Starscream;
+		};
+		C98164552D7A58EE0007846D /* FacebookAEM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C981643D2D7A52CB0007846D /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookAEM;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C94A5AA81E1B7B2A004601AA /* Project object */;
 }

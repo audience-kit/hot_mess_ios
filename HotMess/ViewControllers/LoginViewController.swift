@@ -7,8 +7,6 @@
 //
 
 import UIKit
-import FacebookLogin
-import FacebookCore
 import FBSDKLoginKit
 
 class LoginViewController : UIViewController {
@@ -16,6 +14,8 @@ class LoginViewController : UIViewController {
     
     private static let requiredRead: Set<String> = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
     private static let requiredReadPermission: Set<Permission> = [ "user_events", "user_likes", "email", "user_friends", "public_profile" ]
+    
+    static let FBAccessTokenDidChangeNotification = Notification.Name("FBAccessTokenDidChangeNotification")
     
     public static func present(completion callback: (() -> Void)? = nil) {
         DispatchQueue.main.async {
@@ -43,7 +43,7 @@ class LoginViewController : UIViewController {
         NotificationCenter.default.addObserver(forName: SessionService.LoginFailed, object: nil, queue: OperationQueue.main) { notification in
             SessionService.logOut()
             AccessToken.current = nil
-            shared.loginButton?.readPermissions = Array<String>(requiredRead)
+            shared.loginButton?.permissions = Array<String>(requiredRead)
             
             LoginViewController.present() {
                 if shared.alertController.presentingViewController == nil {
@@ -54,26 +54,19 @@ class LoginViewController : UIViewController {
         NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
             LoginViewController.dismiss()
         }
-        NotificationCenter.default.addObserver(forName: Notification.Name.FBSDKAccessTokenDidChange, object: nil, queue: OperationQueue.main) { notification in
+        NotificationCenter.default.addObserver(forName: FBAccessTokenDidChangeNotification, object: nil, queue: OperationQueue.main) { notification in
             if AccessToken.current == nil {
                 NotificationCenter.default.post(name: SessionService.LoginFailed, object: nil)
                 return
             }
             
-            if AccessToken.current!.grantedPermissions?.isSuperset(of: LoginViewController.requiredReadPermission) == false {
-                SessionService.ensureHasPermission([String](LoginViewController.requiredRead)) {
-                    SessionService.ensureSession()
-                }
-            }
-            else {
-                SessionService.ensureSession()
-            }
+    
         }
     }
     
     let alertController: UIAlertController
     
-    @IBOutlet var loginButton: FBSDKLoginButton?
+    @IBOutlet var loginButton: FBLoginButton?
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {        
         self.alertController = UIAlertController(title: "Login Error", message: "Something went wrong while attempting to log you in. Ensure you granted the required Facebook permissions.", preferredStyle: .alert)
@@ -104,7 +97,7 @@ class LoginViewController : UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        loginButton!.readPermissions = Array<String>(LoginViewController.requiredRead)
+        loginButton!.permissions = Array<String>(LoginViewController.requiredRead)
     }
 }
 

@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import FacebookCore
+
 
 class EventsViewController : UITableViewController {
     var listing : EventListing?
@@ -111,7 +111,6 @@ class EventsViewController : UITableViewController {
             let targetViewController = segue.destination as! EventViewController
             let event = self.listing?.sections[path.section].events[path.row]
             
-            AppEventsLogger.log("show_event", parameters: [ "id" : event!.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
             
             targetViewController.event = event
         default:

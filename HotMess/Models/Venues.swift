@@ -7,12 +7,12 @@
 //
 
 import Foundation
-import GeoJSON
 import MapKit
+import GEOSwift
 
 class Venues {
     let venues: [ Venue ]
-    let envelope: GeoJSONPolygon?
+    let envelope: Polygon?
     
     init() {
         self.venues = [ Venue ]()
@@ -30,7 +30,9 @@ class Venues {
         self.venues = parsed
         
         if let envelopeData = data["envelope"] as? [ String : Any ] {
-            self.envelope = GeoJSONPolygon(dictionary: envelopeData)
+            let jsonData = try? JSONSerialization.data(withJSONObject: envelopeData, options: [])
+                    let decoder = JSONDecoder()
+            self.envelope = try? decoder.decode(Polygon.self, from: jsonData!)
         }
         else {
             self.envelope = nil
@@ -40,10 +42,10 @@ class Venues {
     var mapKitEnvelope : MKMapRect? {
         guard envelope != nil else { return nil }
         
-        let origin = MKMapPoint(x: self.envelope!.rings[0][0].latitude, y: self.envelope!.rings[0][0].longitude)
-        let size = MKMapSize(width: (self.envelope!.rings[0][0].latitude - self.envelope!.rings[0][2].latitude),
-                             height: (self.envelope!.rings[0][0].longitude - self.envelope!.rings[0][2].longitude))
+        let origin = (try? MKMapPoint(x: self.envelope!.centroid().x, y: self.envelope!.centroid().y))!
+        let size = try? MKMapSize(width: self.envelope!.minimumWidth().length(),
+                                  height: self.envelope!.geometry.length())
         
-        return MKMapRect(origin: origin, size: size)
+        return MKMapRect(origin: origin, size: size!)
     }
 }

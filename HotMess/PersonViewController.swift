@@ -9,7 +9,6 @@
 import UIKit
 import FBSDKCoreKit
 import FBSDKShareKit
-import FacebookCore
 
 class PersonViewController : UITableViewController {
     @IBOutlet var personProfileImage: UIImageView?
@@ -130,8 +129,7 @@ class PersonViewController : UITableViewController {
         case "showEvent":
             let targetViewController = segue.destination as! EventViewController
             let event = self.personDetail!.events[path.row]
-            
-            AppEventsLogger.log("show_event_from_person", parameters: [ "id" : person!.id.uuidString, "event_id" : event.id.uuidString ], valueToSum: 1, accessToken: AccessToken.current)
+
             
             targetViewController.event = event
         default:

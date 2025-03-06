@@ -6,4 +6,4 @@
 //  Copyright © 2017 Hot Mess and Co. All rights reserved.
 //
 
-#include "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.release.xcconfig"
+#include "Pods/Target Support Files/Pods-HotMessTests/Pods-HotMessTests.production.xcconfig"
