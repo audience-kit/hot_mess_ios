@@ -2,37 +2,36 @@
 //  Friend.swift
 //  HotMess
 //
-//  Created by Rick Mark on 2/22/17.
-//  Copyright © 2017 Hot Mess and Co. All rights reserved.
-//
 
 import Foundation
 
+struct Friend: Codable, Hashable, Sendable, Identifiable {
+    let id: UUID
+    let name: String
+    let facebookID: FacebookID?
 
-class Friend : Model {
-    var name: String
-    var facebookId: Int64
-    
-    var profileImageUrl: URL {
-        return URL(string: "/users/\(self.id)/picture", relativeTo: RequestService.shared.baseUrl)!
+    var firstName: String { name.firstNameForDisplay }
+
+    /// Opens a Messenger thread. `nil` when the friend has no Facebook ID,
+    /// which the UI treats as "not reachable" rather than crashing.
+    var messengerURL: URL? { facebookID?.messengerURL }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case facebookID = "facebook_id"
     }
-    
-    var firstName: String {
-        return name.components(separatedBy: " ").first!
+
+    init(id: UUID, name: String, facebookID: FacebookID? = nil) {
+        self.id = id
+        self.name = name
+        self.facebookID = facebookID
     }
-    
-    var messengerUrl: URL {
-        return URL(string: "fb-messenger://user-thread/\(facebookId)")!
-    }
-    
-    override init(_ data: [ String : Any ]) {
-        self.name = data["name"] as! String
-        self.facebookId = data["facebook_id"] as! Int64
-        
-        super.init(data)
-    }
-    
-    static func ==(rhs: Friend, lhs: Friend) -> Bool {
-        return rhs.id == lhs.id
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
     }
 }

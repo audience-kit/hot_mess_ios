@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Hot Mess</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)$(BUNDLE_SUFFIX)</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -17,40 +17,32 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2.19</string>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleURLName</key>
+			<string>social.hotmess.deeplink</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>hotmess</string>
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleURLName</key>
+			<string>social.hotmess.facebook</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>fb$(FACEBOOK_APP_ID)</string>
 			</array>
 		</dict>
 	</array>
-	<key>CFBundleVersion</key>
-	<string>1272</string>
-	<key>Fabric</key>
-	<dict>
-		<key>APIKey</key>
-		<string>ea4f5787798f25f102ca5bda492ce1990b224075</string>
-		<key>Kits</key>
-		<array>
-			<dict>
-				<key>KitInfo</key>
-				<dict/>
-				<key>KitName</key>
-				<string>Crashlytics</string>
-			</dict>
-		</array>
-	</dict>
 	<key>FacebookAppID</key>
 	<string>$(FACEBOOK_APP_ID)</string>
+	<key>FacebookClientToken</key>
+	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
 	<key>FacebookDisplayName</key>
 	<string>Hot Mess</string>
 	<key>HotMessBeaconID</key>
@@ -65,39 +57,25 @@
 	<array>
 		<string>fbapi</string>
 		<string>fb-messenger-api</string>
+		<string>fb-messenger-share-api</string>
 		<string>fbauth2</string>
 		<string>fbshareextension</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>MixpanelAPIKey</key>
-	<string>8d6f844e9f931b5f62b2941405a0439b</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>gibson.local</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>localhost</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-		</dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 	</dict>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Hot Mess communicates with sensors in bars to give accurate details about the venue.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Hot Mess uses your location in the background to esitmate the number of people in a venue and to make recomendations based on other patrons.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Hot Mess listens for beacons in venues so it can tell which room you are in.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Hot Mess uses your location in the background to estimate how busy a venue is and to recommend places based on who else is out.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Hot Mess  uses your location to recomend venues and events near you</string>
+	<string>Hot Mess uses your location to recommend venues and events near you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Hot Mess accesses your photo library to send photographs you select to chatrooms.</string>
-	<key>NewRelicIdentifier</key>
-	<string>AA5dabc9f850e6c50f0013911941d1e39fc552a037</string>
+	<string>Hot Mess accesses your photo library so you can send photographs to venue chat rooms.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>ProximaNova-Regular.otf</string>
@@ -107,40 +85,30 @@
 		<string>ProximaNova-SemiBoldT50.otf</string>
 		<string>ProximaNova-SemiBoldT100.otf</string>
 	</array>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>fetch</string>
 		<string>location</string>
 		<string>remote-notification</string>
 	</array>
-	<key>UILaunchStoryboardName</key>
-	<string>LoginView</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>armv7</string>
-	</array>
-	<key>UIStatusBarTintParameters</key>
+	<key>UILaunchScreen</key>
 	<dict>
-		<key>UINavigationBar</key>
-		<dict>
-			<key>Style</key>
-			<string>UIBarStyleDefault</string>
-			<key>Translucent</key>
-			<false/>
-		</dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>Overlay</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
 	</dict>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

@@ -2,64 +2,63 @@
 //  Now.swift
 //  HotMess
 //
-//  Created by Rick Mark on 2/23/17.
-//  Copyright © 2017 Hot Mess and Co. All rights reserved.
-//
 
 import Foundation
+import MapKit
 
-class Now {
-    var title: String
-    
-    var events : [ Event ]
-    var venue : Venue? 
-    var friends : [ Friend ]
-    var venues : Venues?
-    var imageUrl : URL?
-    
-    init(_ data : [ String : Any ]) {
-        self.title = data["title"] as! String
-        
-        if let venueData = data["venue"] as? [ String : Any ] {
-            self.venue = Venue(venueData)
-        }
-        
-        if data["venues"] != nil {
-            self.venues = Venues(data)
-        }
-        
-        var friends = [ Friend ]()
-        var events = [ Event ]()
-        
-        if let friendData = data["friends"] as? [ [ String : Any ] ] {
-            for friend in friendData {
-                let friend = Friend(friend)
-                
-                friends.append(friend)
-            }
-        }
+/// `/v1/now` — the home screen payload.
+///
+/// `venues` stays optional on purpose: a missing key means "we don't know where
+/// you are, show your friends", while an empty array means "we do know, and
+/// there is nothing nearby". The two cases render differently.
+struct Now: Decodable, Hashable, Sendable {
+    let title: String
+    let venue: Venue?
+    let venues: [Venue]?
+    let envelope: GeoPolygon?
+    let friends: [Friend]
+    let events: [Event]
+    let imageURL: URL?
+
+    var isNearVenues: Bool { venues != nil }
+
+    var region: MKCoordinateRegion? {
+        if let envelope, let region = envelope.region { return region }
+        return MKCoordinateRegion.containing((venues ?? []).compactMap(\.coordinate))
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, venue, venues, envelope, friends, events
+        case imageURL = "image_url"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? String(localized: "Now")
+        venue = try container.decodeIfPresent(Venue.self, forKey: .venue)
+        venues = try container.decodeIfPresent([Venue].self, forKey: .venues)
+        envelope = try container.decodeIfPresent(GeoPolygon.self, forKey: .envelope)
+        friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
+        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
+        imageURL = try container.decodeURLIfPresent(forKey: .imageURL)
+    }
+
+    init(
+        title: String,
+        venue: Venue? = nil,
+        venues: [Venue]? = nil,
+        envelope: GeoPolygon? = nil,
+        friends: [Friend] = [],
+        events: [Event] = [],
+        imageURL: URL? = nil
+    ) {
+        self.title = title
+        self.venue = venue
+        self.venues = venues
+        self.envelope = envelope
         self.friends = friends
-        
-        for event in data["events"] as! [ [ String : Any ] ] {
-            let event = Event(event)
-            
-            events.append(event)
-        }
-        
         self.events = events
-        
-        if let imageUrl = data["image_url"] as? String {
-            self.imageUrl = URL(string: imageUrl)!
-        }
-    }
-    
-    static func ==(lhs: Now, rhs: Now) -> Bool {
-        return rhs.title == lhs.title &&
-               rhs.friends.elementsEqual(lhs.friends, by: { (flhs, frhs) -> Bool in flhs == frhs }) &&
-               rhs.events.elementsEqual(lhs.events, by: { (elhs, erhs) -> Bool in elhs == erhs })
-    }
-    
-    static func !=(lhs: Now, rhs: Now) -> Bool {
-        return !(lhs == rhs)
+        self.imageURL = imageURL
     }
 }

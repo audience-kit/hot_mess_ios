@@ -1,0 +1,20 @@
+//
+//  HotMess.release.xcconfig
+//  HotMess
+//
+//  Build settings for the Release configuration. Everything here is surfaced
+//  through Info.plist and read back via AppConfiguration.
+//
+
+SERVER_SCHEME = https
+SERVER_BASE = api.hotmess.social
+
+FACEBOOK_APP_ID = 713525445368431
+
+// Required by Facebook SDK 13 and later. Copy the client token from the
+// Facebook app dashboard (Settings -> Advanced -> Client token) for each
+// environment; login reports an error at runtime while this is empty.
+FACEBOOK_CLIENT_TOKEN =
+
+BUNDLE_SUFFIX = 
+APNS_ENVIRONMENT = production
