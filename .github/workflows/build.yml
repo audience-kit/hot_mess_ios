@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: [ next ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build and test
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project HotMess.xcodeproj \
+            -scheme "HotMess Debug" \
+            -destination "generic/platform=iOS Simulator" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            build-for-testing 2>&1 | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)|\*\* " || true
+          grep -q "TEST BUILD SUCCEEDED\|BUILD SUCCEEDED" build.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
