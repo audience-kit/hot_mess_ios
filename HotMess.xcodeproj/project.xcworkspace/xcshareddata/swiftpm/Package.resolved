@@ -2,6 +2,15 @@
   "originHash" : "699db1b6d30e49655d0aad14604910218f90016f08115e4055edccac6ce51405",
   "pins" : [
     {
+      "identity" : "facebook-ios-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/facebook/facebook-ios-sdk",
+      "state" : {
+        "revision" : "80d0ee82f6370d1bace1431a80cb80575f98ee90",
+        "version" : "18.1.1"
+      }
+    },
+    {
       "identity" : "geos",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GEOSwift/geos.git",

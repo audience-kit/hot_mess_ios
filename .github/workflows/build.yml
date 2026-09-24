@@ -27,15 +27,9 @@ jobs:
             build-for-testing 2>&1 | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)|\*\* " || true
           grep -q "TEST BUILD SUCCEEDED\|BUILD SUCCEEDED" build.log
 
-      - name: Show resolved packages
-        if: always()
-        run: cat HotMess.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: build-log
-          path: |
-            build.log
-            HotMess.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          path: build.log
