@@ -32,4 +32,6 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: build-log
-          path: build.log
+          path: |
+            build.log
+            HotMess.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
