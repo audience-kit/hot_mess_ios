@@ -20,7 +20,7 @@ class LoginViewController : UIViewController {
     public static func present(completion callback: (() -> Void)? = nil) {
         DispatchQueue.main.async {
             if shared.presentingViewController == nil  {
-                UIApplication.shared.keyWindow!.rootViewController!.present(shared, animated: true, completion: callback)
+                AppDelegate.rootViewController!.present(shared, animated: true, completion: callback)
             }
             else {
                 if callback != nil { callback!() }

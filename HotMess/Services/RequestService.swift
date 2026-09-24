@@ -69,7 +69,7 @@ class RequestService
                         alert.addAction(UIAlertAction(title: "Dismiss", style: .default))
                         
                         DispatchQueue.main.async {
-                            alert.show(UIApplication.shared.keyWindow!.rootViewController!, sender: self)
+                            AppDelegate.rootViewController?.present(alert, animated: true)
                         }
                         
                         return

@@ -17,7 +17,7 @@ class DataServiceTests: XCTestCase {
         
         let expectation = self.expectation(description: "Data Session Callback")
         
-        SessionService.getToken(token: appAccessToken) {
+        SessionService.getToken(token: appAccessToken) { _ in
             XCTAssert(SessionService.token != nil)
             expectation.fulfill()
         }
@@ -41,7 +41,7 @@ class DataServiceTests: XCTestCase {
     func testGetVenue() {
         let expectation = self.expectation(description: "Venue Callback")
         DataService.shared.venues { (venues) in
-            DataService.shared.venue(venues.venues.first!) { (venue) in
+            DataService.shared.venue(venues.venues.first!.id) { (venue) in
                 expectation.fulfill()
             }
         }
