@@ -79,7 +79,7 @@ class SettingsViewController : UITableViewController, MFMailComposeViewControlle
             else {
                 let alertController = UIAlertController(title: "Feedback", message: "Unable to send feedback email.  Ensure that an account is configured or email feedback@hotmess.social from your computer.", preferredStyle: .alert)
                 
-                alertController.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.default, handler: { (action) in
+                alertController.addAction(UIAlertAction(title: "Dismiss", style: UIAlertAction.Style.default, handler: { (action) in
                    alertController.dismiss(animated: true, completion: nil)
                 }))
                     

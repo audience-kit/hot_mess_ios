@@ -17,12 +17,12 @@ class VenueViewController : UITableViewController {
     var events: [ Event ] = []
     
     override func viewDidLoad() {
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.action, target: self, action: #selector(EventViewController.actionButton))
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.action, target: self, action: #selector(VenueViewController.actionButton))
         
         self.heroImage?.kf.indicatorType = .activity
     }
     
-    func actionButton(_ sender: UIBarButtonItem) {
+    @objc func actionButton(_ sender: UIBarButtonItem) {
         let activity = UIActivityViewController(activityItems: [ "https://hotmess.social/venues/\(venue!.id)" ], applicationActivities: nil)
         
         self.present(activity, animated: true, completion: nil)

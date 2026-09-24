@@ -29,10 +29,9 @@ class Venues {
         
         self.venues = parsed
         
-        if let envelopeData = data["envelope"] as? [ String : Any ] {
-            let jsonData = try? JSONSerialization.data(withJSONObject: envelopeData, options: [])
-                    let decoder = JSONDecoder()
-            self.envelope = try? decoder.decode(Polygon.self, from: jsonData!)
+        if let envelopeData = data["envelope"] as? [ String : Any ],
+           let json = try? JSONSerialization.data(withJSONObject: envelopeData, options: []) {
+            self.envelope = try? JSONDecoder().decode(Polygon.self, from: json)
         }
         else {
             self.envelope = nil
@@ -40,12 +39,12 @@ class Venues {
     }
     
     var mapKitEnvelope : MKMapRect? {
-        guard envelope != nil else { return nil }
+        guard let points = envelope?.exterior.points, !points.isEmpty else { return nil }
         
-        let origin = (try? MKMapPoint(x: self.envelope!.centroid().x, y: self.envelope!.centroid().y))!
-        let size = try? MKMapSize(width: self.envelope!.minimumWidth().length(),
-                                  height: self.envelope!.geometry.length())
-        
-        return MKMapRect(origin: origin, size: size!)
+        // GeoJSON positions are [longitude, latitude]
+        return points.reduce(MKMapRect.null) { rect, point in
+            let mapPoint = MKMapPoint(CLLocationCoordinate2D(latitude: point.y, longitude: point.x))
+            return rect.union(MKMapRect(origin: mapPoint, size: MKMapSize(width: 0, height: 0)))
+        }
     }
 }

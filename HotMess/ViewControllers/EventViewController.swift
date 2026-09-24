@@ -27,7 +27,7 @@ class EventViewController : UITableViewController {
         guard event != nil else { return }
         
         self.navigationItem.title = event?.name
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.action, target: self, action: #selector(EventViewController.actionButton))
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.action, target: self, action: #selector(EventViewController.actionButton))
         self.titleLabel?.text = event?.name
 
         DataService.shared.event(event!) { (event) in

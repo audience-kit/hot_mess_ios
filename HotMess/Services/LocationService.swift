@@ -39,7 +39,7 @@ class LocationService : NSObject, CLLocationManagerDelegate {
     override init() {
         
         let beaconId = UUID(uuidString: Bundle.main.infoDictionary!["HotMessBeaconID"] as! String)!
-        self.beaconRegion = CLBeaconRegion(proximityUUID: beaconId, identifier: LocationService.beaconIdentifier)
+        self.beaconRegion = CLBeaconRegion(uuid: beaconId, identifier: LocationService.beaconIdentifier)
         
         super.init()
         
@@ -58,8 +58,10 @@ class LocationService : NSObject, CLLocationManagerDelegate {
     
     func start() {
         NotificationCenter.default.addObserver(forName: SessionService.LoginSuccess, object: nil, queue: OperationQueue.main) { (notification) in
-            if CLLocationManager.authorizationStatus() == .authorizedAlways
-                || CLLocationManager.authorizationStatus() == .authorizedWhenInUse
+            let status = self._locationManager.authorizationStatus
+            
+            if status == .authorizedAlways
+                || status == .authorizedWhenInUse
             {
                 self._locationManager.startMonitoringSignificantLocationChanges()
                 
@@ -68,7 +70,7 @@ class LocationService : NSObject, CLLocationManagerDelegate {
                 self.update()
             }
             else {
-                if CLLocationManager.authorizationStatus() == .notDetermined {
+                if status == .notDetermined {
                     DispatchQueue.main.async {
                         self._locationManager.requestWhenInUseAuthorization()
                     }
@@ -152,7 +154,9 @@ class LocationService : NSObject, CLLocationManagerDelegate {
         update()
     }
     
-    internal func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        
         if status == .authorizedAlways ||
             status == .authorizedWhenInUse
         {
@@ -168,8 +172,8 @@ class LocationService : NSObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
         guard beacons.count > 0 else { return }
         
-        self.beaconMajor = beacons.first?.major as! Int
-        self.beaconMajor = beacons.first?.minor as! Int
+        self.beaconMajor = beacons.first!.major.intValue
+        self.beaconMinor = beacons.first!.minor.intValue
         
         LocationService.shared.location(_locationManager.location!, beaconMajor: self.beaconMajor, beaconMinor: self.beaconMinor)
     }

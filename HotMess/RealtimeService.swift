@@ -11,10 +11,6 @@ extension Notification.Name {
 }
 
 class RealtimeService : WebSocketDelegate {
-    func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
-        
-    }
-    
 
     private static var _shared: RealtimeService?
 
@@ -39,15 +35,24 @@ class RealtimeService : WebSocketDelegate {
         socket.connect()
     }
     
-    func websocketDidConnect(socket: WebSocketClient) {
-        print("websocket is connected")
+    func didReceive(event: WebSocketEvent, client: WebSocketClient) {
+        switch event {
+        case .connected:
+            print("websocket is connected")
+        case .disconnected(let reason, let code):
+            print("websocket did disconnect \(reason) (\(code))")
+        case .error(let error):
+            print("websocket error \(String(describing: error))")
+        case .text(let text):
+            websocketDidReceiveMessage(text: text)
+        case .binary(let data):
+            print("websocket receieved data \(data.description)")
+        default:
+            break
+        }
     }
 
-    func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
-        print("websocket did disconnect \(error!)")
-    }
-
-    func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+    private func websocketDidReceiveMessage(text: String) {
         print("websocket received message \(text)")
         do {
             let parsed = try JSONSerialization.jsonObject(with: text.data(using: .utf8)!, options: JSONSerialization.ReadingOptions.allowFragments) as! [ String : Any ]
@@ -65,10 +70,6 @@ class RealtimeService : WebSocketDelegate {
         }
     }
 
-    func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
-        print("websocket receieved data \(data.description)")
-    }
-    
     func sendMessage(_ message: VenueMessage) {
         do {
             let identifier = [ "channel": "RealtimeChannel", "venue_id" : "chat_\(message.conversation.venue.id.uuidString)"]
