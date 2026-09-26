@@ -26,7 +26,7 @@ class SessionServiceTests: XCTestCase {
     func testGetToken() {
         let expectation = XCTestExpectation(description: "Callback")
         
-        SessionService.getToken(token: appAccessToken) {
+        SessionService.getToken(token: appAccessToken) { _ in
             XCTAssert(SessionService.token != nil)
             expectation.fulfill()
         }
@@ -37,7 +37,7 @@ class SessionServiceTests: XCTestCase {
     func testLogOut() {
         let expectation = XCTestExpectation(description: "Callback")
         
-        SessionService.getToken(token: appAccessToken) {
+        SessionService.getToken(token: appAccessToken) { _ in
             XCTAssert(SessionService.token != nil)
             expectation.fulfill()
         }

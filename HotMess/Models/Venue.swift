@@ -48,10 +48,9 @@ class Venue : Model {
             self.address = "unknown"
         }
         
-        if let point = data["point"] as? [ String : Any ] {
-            let decoder = JSONDecoder()
-            
-            self.point = Point.init(x: point["x"] as! Double, y: point["y"] as! Double)
+        if let pointData = data["point"] as? [ String : Any ],
+           let json = try? JSONSerialization.data(withJSONObject: pointData, options: []) {
+            self.point = try? JSONDecoder().decode(Point.self, from: json)
         }
         else {
             self.point = nil
@@ -82,7 +81,8 @@ class Venue : Model {
     var coreLocationPoint: CLLocationCoordinate2D? {
         guard self.point != nil else { return nil }
         
-        return CLLocationCoordinate2D(latitude: self.point!.x, longitude: self.point!.y)
+        // GeoJSON positions are [longitude, latitude]
+        return CLLocationCoordinate2D(latitude: self.point!.y, longitude: self.point!.x)
     }
     
     static func ==(rhs: Venue, lhs: Venue) -> Bool {
