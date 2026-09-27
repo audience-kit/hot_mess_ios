@@ -34,13 +34,21 @@ struct VenueDecodingTests {
         #expect(venue.heroURL?.lastPathComponent == "stud-hero.jpg")
     }
 
-    @Test("`point` maps x to latitude and y to longitude")
+    @Test("`point` maps x to longitude and y to latitude")
     func coordinate() throws {
         let venue = try decode(Venue.self, from: Fixtures.venue)
         let coordinate = try #require(venue.coordinate)
 
         #expect(coordinate.latitude == 37.7726)
         #expect(coordinate.longitude == -122.4099)
+    }
+
+    @Test("`point` also decodes as a GeoJSON point")
+    func geoJSONCoordinate() throws {
+        let point = try decode(GeoPoint.self, from: #"{ "type": "Point", "coordinates": [-122.4099, 37.7726] }"#)
+
+        #expect(point.coordinate.latitude == 37.7726)
+        #expect(point.coordinate.longitude == -122.4099)
     }
 
     @Test("Survives a payload with only id and name")

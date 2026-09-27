@@ -23,7 +23,7 @@ enum Fixtures {
       "distance": 412.5,
       "photo_url": "https://cdn.hotmess.social/venues/stud.jpg",
       "hero_url": "https://cdn.hotmess.social/venues/stud-hero.jpg",
-      "point": { "x": 37.7726, "y": -122.4099 },
+      "point": { "x": -122.4099, "y": 37.7726 },
       "is_liked": true
     }
     """

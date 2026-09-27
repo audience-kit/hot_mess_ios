@@ -9,15 +9,51 @@ import MapKit
 
 /// A venue's position.
 ///
-/// The server serialises PostGIS points as `{ "x": …, "y": … }` where `x` is
-/// the latitude and `y` the longitude. That convention is preserved here and
-/// kept in one place so the rest of the app only ever sees a coordinate.
+/// The API builds points with `factory.point(longitude, latitude)`, so `x` is
+/// the longitude and `y` the latitude. Venue lists encode the same point as
+/// GeoJSON (`{ "type": "Point", "coordinates": [longitude, latitude] }`);
+/// both shapes decode here so the rest of the app only ever sees a coordinate.
 struct GeoPoint: Codable, Hashable, Sendable {
     let x: Double
     let y: Double
 
+    init(x: Double, y: Double) {
+        self.x = x
+        self.y = y
+    }
+
     var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: x, longitude: y)
+        CLLocationCoordinate2D(latitude: y, longitude: x)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x, y, coordinates
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if let coordinates = try container.decodeIfPresent([Double].self, forKey: .coordinates) {
+            guard coordinates.count >= 2 else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .coordinates,
+                    in: container,
+                    debugDescription: "A GeoJSON point needs a longitude and a latitude."
+                )
+            }
+            self.init(x: coordinates[0], y: coordinates[1])
+        } else {
+            self.init(
+                x: try container.decode(Double.self, forKey: .x),
+                y: try container.decode(Double.self, forKey: .y)
+            )
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(x, forKey: .x)
+        try container.encode(y, forKey: .y)
     }
 }
 

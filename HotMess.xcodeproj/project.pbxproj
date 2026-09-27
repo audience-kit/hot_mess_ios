@@ -703,7 +703,7 @@
 			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 17.0.0;
+				minimumVersion = 18.0.0;
 			};
 		};
 		AC0000000000000000000081 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
