@@ -38,8 +38,18 @@
 		AC0000000000000000000042 /* HotMess.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = HotMess.release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AC0000000000000000000033 /* Exceptions for "HotMess" folder in "HotMess" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AC0000000000000000000010 /* HotMess */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AC0000000000000000000030 /* HotMess */ = {isa = PBXFileSystemSynchronizedRootGroup; path = HotMess; sourceTree = "<group>"; };
+		AC0000000000000000000030 /* HotMess */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (AC0000000000000000000033 /* Exceptions for "HotMess" folder in "HotMess" target */, ); path = HotMess; sourceTree = "<group>"; };
 		AC0000000000000000000031 /* HotMessTests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = HotMessTests; sourceTree = "<group>"; };
 		AC0000000000000000000032 /* HotMessUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = HotMessUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
