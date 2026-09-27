@@ -18,18 +18,7 @@ struct VenuesScreen: View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { collection in
             List {
                 Section {
-                    Map(position: $camera) {
-                        ForEach(collection.pins) { pin in
-                            Marker(pin.name, coordinate: pin.coordinate)
-                                .tint(.hotMessAccent)
-                        }
-                    }
-                    .frame(height: 220)
-                    .listRowInsets(EdgeInsets())
-                    .onChange(of: collection) { _, updated in
-                        updateCamera(for: updated)
-                    }
-                    .onAppear { updateCamera(for: collection) }
+                    map(for: collection)
                 }
 
                 Section(String(localized: "Nearby")) {
@@ -61,6 +50,21 @@ struct VenuesScreen: View {
                 coordinates: model.location.coordinates
             )
         }
+    }
+
+    private func map(for collection: VenueCollection) -> some View {
+        Map(position: $camera) {
+            ForEach(collection.pins) { pin in
+                Marker(pin.name, coordinate: pin.coordinate)
+                    .tint(Color.hotMessAccent)
+            }
+        }
+        .frame(height: 220)
+        .listRowInsets(EdgeInsets())
+        .onChange(of: collection) { _, updated in
+            updateCamera(for: updated)
+        }
+        .onAppear { updateCamera(for: collection) }
     }
 
     private func updateCamera(for collection: VenueCollection) {
