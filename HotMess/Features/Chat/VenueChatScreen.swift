@@ -75,7 +75,7 @@ struct VenueChatScreen: View {
     private func composer(_ viewModel: VenueChatViewModel) -> some View {
         @Bindable var viewModel = viewModel
 
-        VStack(spacing: 6) {
+        return VStack(spacing: 6) {
             if case let .disconnected(reason) = viewModel.connectionState {
                 Label(
                     reason ?? String(localized: "Disconnected"),
