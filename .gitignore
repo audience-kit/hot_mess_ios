@@ -1,12 +1,14 @@
-Pods/
+## macOS
+.DS_Store
 
-.idea/
-
-## Build generated
+## Xcode
 build/
 DerivedData/
-
-## Various settings
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -15,11 +17,11 @@ DerivedData/
 !default.mode2v3
 *.perspectivev3
 !default.perspectivev3
-xcuserdata/
 
-## Other
-*.moved-aside
-*.xccheckout
-*.xcscmblueprint
+## Swift Package Manager
+.swiftpm/
+.build/
 
-.DS_Store
+## Editors
+.idea/
+.vscode/

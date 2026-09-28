@@ -1,46 +1,21 @@
-    //
+//
 //  User.swift
 //  HotMess
 //
-//  Created by Rick Mark on 1/6/17.
-//  Copyright © 2017 Hot Mess and Co. All rights reserved.
-//
 
 import Foundation
-import UIKit
-import Kingfisher
 
-class User : Model {
+struct User: Codable, Hashable, Sendable, Identifiable {
+    let id: UUID
+    let name: String
 
-    public let name: String
-    
-    public var avatarImageURL: URL? {
-        return RequestService.shared.baseUrl.appendingPathComponent("/users/\(id)/picture")
-    }
-    
-    public var avatarImage: UIImage? {
-        guard avatarImageURL != nil else { return nil }
-        
-        if let memoryImage = ImageCache.default.retrieveImageInMemoryCache(forKey: avatarImageURL!.absoluteString) {
-            return memoryImage
-        }
-    
-        
-        return nil
-    }
-    
-    public var avatarInitials: String? {
-        return name.components(separatedBy: " ").reduce("") { "\($0 ?? String())\(String(describing: $1.first))" }
-    }
-    
-    public var firstName: String? {
-        return name.components(separatedBy: " ").first
-    }
+    var firstName: String { name.firstNameForDisplay }
 
-    override init(_ data: [ String : Any ]) {
-        // TODO: HORIBLE series of assertions
-        name = data["name"] as! String
-        
-        super.init(data)
-    }
+    var initials: String { name.initialsForDisplay }
+}
+
+/// `/v1/token` — the session handed back after a Facebook login.
+struct AuthenticatedSession: Decodable, Sendable {
+    let token: String
+    let user: User?
 }

@@ -2,22 +2,44 @@
 //  SocialLink.swift
 //  HotMess
 //
-//  Created by Rick Mark on 3/13/17.
-//  Copyright © 2017 Hot Mess and Co. All rights reserved.
-//
 
 import Foundation
 
-class SocialLink : Model {
+struct SocialLink: Codable, Hashable, Sendable, Identifiable {
+    let id: UUID
     let handle: String
     let provider: String
-    var url: URL
-    
-    override init(_ data: [ String : Any ]) {
-        self.handle = data["handle"] as! String
-        self.provider = data["provider"] as! String
-        self.url = URL(string: data["url"] as! String)!
-        
-        super.init(data)
+    let url: URL?
+
+    /// The bundled glyph for a known network, or `nil` to fall back to a
+    /// system symbol.
+    var assetName: String? {
+        switch provider.lowercased() {
+        case "facebook": "Facebook"
+        case "soundcloud": "SoundCloud"
+        case "instagram": "Instagram"
+        case "twitter", "x": "Twitter"
+        default: nil
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, handle, provider, url
+    }
+
+    init(id: UUID, handle: String, provider: String, url: URL? = nil) {
+        self.id = id
+        self.handle = handle
+        self.provider = provider
+        self.url = url
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        handle = try container.decodeIfPresent(String.self, forKey: .handle) ?? ""
+        provider = try container.decodeIfPresent(String.self, forKey: .provider) ?? ""
+        url = try container.decodeURLIfPresent(forKey: .url)
     }
 }
