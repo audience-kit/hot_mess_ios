@@ -161,10 +161,8 @@ final class SessionStore {
     }
 
     func registerForPushNotifications(deviceToken: Data) async {
-        let identifier = DeviceInfo.vendorIdentifier
-
         do {
-            try await api.registerForPush(deviceToken: deviceToken, vendorIdentifier: identifier)
+            try await api.registerForPush(deviceToken: deviceToken)
         } catch {
             // Push registration is best-effort; a failure must not block the UI.
             Log.session.error("Push registration failed: \(error.localizedDescription, privacy: .public)")

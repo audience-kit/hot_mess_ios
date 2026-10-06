@@ -111,11 +111,10 @@ struct EventDecodingTests {
         #expect(event.subtitle.isEmpty == false)
     }
 
-    @Test("Writes the corrected RSVP spelling back to the API")
-    func rsvpEncoding() throws {
-        let body = try JSONEncoder().encode(RSVPRequest(state: .declined))
-
-        #expect(String(decoding: body, as: UTF8.self).contains("\"declined\""))
+    @Test("Maps RSVPs onto the GraphQL enum and reads it back")
+    func rsvpGraphQL() throws {
+        #expect(RSVP.declined.state == .declined)
+        #expect(try JSONDecoder().decode(RSVP.self, from: Data(#""MAYBE""#.utf8)) == .maybe)
     }
 }
 

@@ -20,7 +20,8 @@ enum RSVP: String, Codable, Hashable, Sendable {
     static let selectable: [RSVP] = [.attending, .maybe, .declined]
 
     init(from decoder: any Decoder) throws {
-        let raw = try decoder.singleValueContainer().decode(String.self)
+        // GraphQL sends the enum in upper case; REST sent it in lower case.
+        let raw = try decoder.singleValueContainer().decode(String.self).lowercased()
 
         if let value = RSVP(rawValue: raw) {
             self = value

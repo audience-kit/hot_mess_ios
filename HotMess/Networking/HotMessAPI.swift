@@ -8,9 +8,10 @@ import Foundation
 
 /// The typed surface of the Hot Mess API.
 ///
-/// Replaces `DataService`: every call is `async throws` and returns a concrete
-/// model, so a failure is something the caller has to deal with instead of a
-/// callback that silently never fires.
+/// Everything goes through the audience's GraphQL endpoint on the AudienceKit
+/// SDK except the version manifest, which is read before sign-in and isn't
+/// part of any audience. The GraphQL documents alias fields to the snake_case
+/// keys the models already decode, so one set of models serves both.
 struct HotMessAPI: Sendable {
     let client: APIClient
 
@@ -20,144 +21,117 @@ struct HotMessAPI: Sendable {
 
     var baseURL: URL { client.baseURL }
 
+    private var audienceKit: AudienceKitClient { client.audienceKit }
+
     // MARK: - Home
 
+    /// Records where the device is and returns what's happening there. With no
+    /// position there is nothing to look up, so the screen gets an empty "Now".
     func now(near coordinates: Coordinates?) async throws -> Now {
-        try await client.send(Endpoints.now(near: coordinates))
+        guard let coordinates else { return Now(title: String(localized: "Now")) }
+
+        return try await query(
+            Documents.reportLocation,
+            variables: ["position": coordinates.audienceKit.graphQLValue],
+            as: ReportLocationResponse.self
+        ).reportLocation.now
     }
 
     // MARK: - Locales
 
-    func closestLocale(to coordinates: Coordinates?) async throws -> AppLocale {
-        try await client.send(Endpoints.closestLocale(to: coordinates))
+    func closestLocale(to coordinates: Coordinates?) async throws -> AppLocale? {
+        guard let coordinates else { return nil }
+
+        do {
+            guard let locale = try await audienceKit.closestLocale(near: coordinates.audienceKit),
+                  let id = RecordID.uuid(locale.id) else { return nil }
+            return AppLocale(id: id, name: locale.name ?? locale.label ?? "")
+        } catch let error as AudienceKitError {
+            throw APIError(error)
+        }
     }
 
     // MARK: - People
 
-    func people(in localeID: UUID) async throws -> [Person] {
-        try await client.send(Endpoints.people(in: localeID)).people
-    }
-
     func person(_ id: UUID) async throws -> PersonDetail {
-        try await client.send(Endpoints.person(id)).person
+        let response = try await query(Documents.person, variables: ["id": .string(id.uuidString)], as: PersonResponse.self)
+        guard let person = response.person else { throw APIError.notFound }
+        return person
     }
 
     // MARK: - Venues
 
-    func venues(in localeID: UUID?, near coordinates: Coordinates?) async throws -> VenueCollection {
-        try await client.send(Endpoints.venues(in: localeID, near: coordinates))
-    }
-
-    func venue(_ id: UUID) async throws -> Venue {
-        try await client.send(Endpoints.venue(id)).venue
-    }
-
-    func friends(atVenue id: UUID) async throws -> [Friend] {
-        try await client.send(Endpoints.friends(atVenue: id)).friends
+    /// The venue with its upcoming events, in one request.
+    func venue(_ id: UUID) async throws -> VenueOverview {
+        let response = try await query(Documents.venue, variables: ["id": .string(id.uuidString)], as: VenueResponse.self)
+        guard let venue = response.venue else { throw APIError.notFound }
+        return VenueOverview(venue: venue.venue, events: venue.events)
     }
 
     // MARK: - Events
 
     func events(in localeID: UUID) async throws -> EventListing {
-        try await client.send(Endpoints.events(in: localeID))
-    }
-
-    func events(atVenue id: UUID) async throws -> [Event] {
-        try await client.send(Endpoints.events(atVenue: id)).events
+        let response = try await query(
+            Documents.localeEvents,
+            variables: ["id": .string(localeID.uuidString)],
+            as: LocaleEventsResponse.self
+        )
+        guard let locale = response.locale else { throw APIError.notFound }
+        return EventListing(upcoming: locale.events)
     }
 
     func event(_ id: UUID) async throws -> EventDetail {
-        try await client.send(Endpoints.event(id)).event
+        let response = try await query(Documents.event, variables: ["id": .string(id.uuidString)], as: EventResponse.self)
+        guard let event = response.event else { throw APIError.notFound }
+        return event
     }
 
     func setRSVP(_ rsvp: RSVP, forEvent id: UUID) async throws {
-        try await client.send(Endpoints.rsvp(rsvp, forEvent: id))
+        do {
+            try await audienceKit.setRSVP(rsvp.state, forEvent: id.uuidString)
+        } catch let error as AudienceKitError {
+            throw APIError(error)
+        }
     }
 
     // MARK: - Session
-
-    func me() async throws -> User {
-        try await client.send(Endpoints.me)
-    }
 
     func serviceManifest(device: DeviceDescription) async throws -> VersionInfo {
         try await client.send(Endpoints.manifest(device: device)).apple
     }
 
-    func registerForPush(deviceToken: Data, vendorIdentifier: String) async throws {
-        try await client.send(
-            Endpoints.registerDevice(token: deviceToken, vendorIdentifier: vendorIdentifier)
-        )
+    func registerForPush(deviceToken: Data) async throws {
+        do {
+            try await audienceKit.registerDevice(notificationToken: deviceToken.hexEncodedString)
+        } catch let error as AudienceKitError {
+            throw APIError(error)
+        }
     }
 
+    /// Records where the device is, so the API knows which venue the user is in.
     func reportLocation(_ coordinates: Coordinates) async throws {
-        try await client.send(Endpoints.reportLocation(coordinates))
+        _ = try await now(near: coordinates)
+    }
+
+    private func query<Response: Decodable & Sendable>(
+        _ document: String,
+        variables: [String: GraphQLValue],
+        as type: Response.Type
+    ) async throws -> Response {
+        do {
+            return try await audienceKit.graphQL(document, variables: variables, as: type, decoder: .hotMess)
+        } catch let error as AudienceKitError {
+            throw APIError(error)
+        }
     }
 }
 
-// MARK: - Endpoint definitions
+// MARK: - REST
 
 extension HotMessAPI {
     enum Endpoints {
-        static func now(near coordinates: Coordinates?) -> Endpoint<Now> {
-            Endpoint("/v1/now", query: coordinates?.queryItems ?? [])
-        }
-
-        static func closestLocale(to coordinates: Coordinates?) -> Endpoint<AppLocale> {
-            Endpoint("/v1/locales/closest", query: coordinates?.queryItems ?? [])
-        }
-
-        static func people(in localeID: UUID) -> Endpoint<PeopleEnvelope> {
-            Endpoint("/v1/locales/\(localeID.uuidString)/people")
-        }
-
-        static func person(_ id: UUID) -> Endpoint<PersonEnvelope> {
-            Endpoint("/v1/people/\(id.uuidString)")
-        }
-
-        static func venues(in localeID: UUID?, near coordinates: Coordinates?) -> Endpoint<VenueCollection> {
-            guard let localeID else {
-                return Endpoint("/v1/venues", query: coordinates?.queryItems ?? [])
-            }
-
-            return Endpoint(
-                "/v1/locales/\(localeID.uuidString)/venues",
-                query: coordinates?.queryItems ?? []
-            )
-        }
-
-        static func venue(_ id: UUID) -> Endpoint<VenueEnvelope> {
-            Endpoint("/v1/venues/\(id.uuidString)")
-        }
-
-        static func friends(atVenue id: UUID) -> Endpoint<FriendsEnvelope> {
-            Endpoint("/v1/venues/\(id.uuidString)/friends")
-        }
-
-        static func events(in localeID: UUID) -> Endpoint<EventListing> {
-            Endpoint("/v1/locales/\(localeID.uuidString)/events")
-        }
-
-        static func events(atVenue id: UUID) -> Endpoint<EventsEnvelope> {
-            Endpoint("/v1/venues/\(id.uuidString)/events")
-        }
-
-        static func event(_ id: UUID) -> Endpoint<EventEnvelope> {
-            Endpoint("/v1/events/\(id.uuidString)")
-        }
-
-        static func rsvp(_ rsvp: RSVP, forEvent id: UUID) -> Endpoint<EmptyResponse> {
-            Endpoint(
-                "/v1/events/\(id.uuidString)/rsvp",
-                method: .post,
-                body: JSONBody(RSVPRequest(state: rsvp))
-            )
-        }
-
-        static var me: Endpoint<User> {
-            Endpoint("/v1/me")
-        }
-
+        /// The minimum supported build. It's read before sign-in and isn't
+        /// part of any audience, so it stays on REST.
         static func manifest(device: DeviceDescription) -> Endpoint<ServiceManifest> {
             Endpoint(
                 "/",
@@ -166,103 +140,138 @@ extension HotMessAPI {
                 requiresAuthentication: false
             )
         }
-
-        static func registerDevice(token: Data, vendorIdentifier: String) -> Endpoint<EmptyResponse> {
-            Endpoint(
-                "/v1/token/device",
-                method: .post,
-                body: JSONBody(
-                    PushRegistrationRequest(
-                        deviceType: "apple",
-                        vendorIdentifier: vendorIdentifier,
-                        notificationToken: token.base64EncodedString()
-                    )
-                )
-            )
-        }
-
-        static func reportLocation(_ coordinates: Coordinates) -> Endpoint<EmptyResponse> {
-            Endpoint(
-                "/v1/me/location",
-                method: .post,
-                body: JSONBody(LocationReport(coordinates: coordinates))
-            )
-        }
     }
 }
-
-// MARK: - Response envelopes
-
-struct PeopleEnvelope: Decodable, Sendable {
-    let people: [Person]
-}
-
-struct PersonEnvelope: Decodable, Sendable {
-    let person: PersonDetail
-}
-
-struct VenueEnvelope: Decodable, Sendable {
-    let venue: Venue
-}
-
-struct FriendsEnvelope: Decodable, Sendable {
-    let friends: [Friend]
-}
-
-struct EventsEnvelope: Decodable, Sendable {
-    let events: [Event]
-}
-
-struct EventEnvelope: Decodable, Sendable {
-    let event: EventDetail
-}
-
-// MARK: - Request bodies
 
 struct ManifestRequest: Encodable, Sendable {
     let device: DeviceDescription
 }
 
-struct RSVPRequest: Encodable, Sendable {
-    let state: RSVP
-}
+// MARK: - GraphQL
 
-struct PushRegistrationRequest: Encodable, Sendable {
-    let deviceType: String
-    let vendorIdentifier: String
-    let notificationToken: String
+extension HotMessAPI {
+    /// The GraphQL documents, with fields aliased to the keys the models decode.
+    enum Documents {
+        static let venueFields = """
+        id name address phone distance point \
+        facebook_id: facebookId photo_url: photoUrl hero_url: heroUrl is_liked: isLiked
+        """
 
-    enum CodingKeys: String, CodingKey {
-        case deviceType = "device_type"
-        case vendorIdentifier = "vendor_identifier"
-        case notificationToken = "notification_token"
+        static let personFields = """
+        id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl cover_url: coverUrl
+        """
+
+        static let eventFields = """
+        id name start_at: startAt end_at: endAt facebook_id: facebookId \
+        cover_photo_url: coverPhotoUrl is_featured: isFeatured rsvp: viewerRsvp \
+        venue { \(venueFields) }
+        """
+
+        static let reportLocation = """
+        mutation ReportLocation($position: CoordinatesInput!) {
+          reportLocation(input: { position: $position }) {
+            now {
+              title image_url: imageUrl
+              venue { \(venueFields) }
+              venues { \(venueFields) }
+              events { \(eventFields) }
+            }
+          }
+        }
+        """
+
+        static let venue = """
+        query Venue($id: ID!) {
+          venue(id: $id) { \(venueFields) events { \(eventFields) } }
+        }
+        """
+
+        static let localeEvents = """
+        query LocaleEvents($id: ID!) {
+          locale(id: $id) { events { \(eventFields) } }
+        }
+        """
+
+        static let event = """
+        query Event($id: ID!) {
+          event(id: $id) { \(eventFields) people { \(personFields) } }
+        }
+        """
+
+        static let person = """
+        query Person($id: ID!) {
+          person(id: $id) {
+            \(personFields)
+            events { \(eventFields) }
+            social_links: socialLinks { id handle provider url }
+            tracks { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl }
+          }
+        }
+        """
     }
 }
 
-struct LocationReport: Encodable, Sendable {
-    let coordinates: Coordinates
+struct ReportLocationResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let now: Now }
+    let reportLocation: Payload
+}
 
-    private enum CodingKeys: String, CodingKey {
-        case coordinates, beacon
+struct PersonResponse: Decodable, Sendable {
+    let person: PersonDetail?
+}
+
+/// A venue and its events, which GraphQL returns as one object.
+struct VenueWithEvents: Decodable, Sendable {
+    let venue: Venue
+    let events: [Event]
+
+    private enum CodingKeys: String, CodingKey { case events }
+
+    init(from decoder: any Decoder) throws {
+        venue = try Venue(from: decoder)
+        events = try decoder.container(keyedBy: CodingKeys.self).decodeIfPresent([Event].self, forKey: .events) ?? []
     }
+}
 
-    private enum PointKeys: String, CodingKey {
-        case latitude, longitude
+struct VenueResponse: Decodable, Sendable {
+    let venue: VenueWithEvents?
+}
+
+struct LocaleEventsResponse: Decodable, Sendable {
+    struct Locale: Decodable, Sendable { let events: [Event] }
+    let locale: Locale?
+}
+
+struct EventResponse: Decodable, Sendable {
+    let event: EventDetail?
+}
+
+extension Coordinates {
+    /// The position as the SDK's GraphQL `CoordinatesInput`.
+    var audienceKit: AudienceKit.Coordinates {
+        AudienceKit.Coordinates(
+            latitude: latitude,
+            longitude: longitude,
+            beaconMajor: beaconMajor,
+            beaconMinor: beaconMinor
+        )
     }
+}
 
-    private enum BeaconKeys: String, CodingKey {
-        case major, minor
+extension RSVP {
+    var state: RSVPState {
+        switch self {
+        case .attending: .attending
+        case .maybe: .maybe
+        case .declined: .declined
+        case .unsure: .unsure
+        }
     }
+}
 
-    func encode(to encoder: any Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-
-        var point = container.nestedContainer(keyedBy: PointKeys.self, forKey: .coordinates)
-        try point.encode(coordinates.latitude, forKey: .latitude)
-        try point.encode(coordinates.longitude, forKey: .longitude)
-
-        var beacon = container.nestedContainer(keyedBy: BeaconKeys.self, forKey: .beacon)
-        try beacon.encode(coordinates.beaconMajor ?? 0, forKey: .major)
-        try beacon.encode(coordinates.beaconMinor ?? 0, forKey: .minor)
+extension Data {
+    /// APNs device tokens are conventionally sent as lowercase hex.
+    var hexEncodedString: String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }
