@@ -5,12 +5,12 @@
 
 import SwiftUI
 
-/// Replaces `LoginViewController`, a nib-backed singleton that presented and
-/// dismissed itself from four `NotificationCenter` observers. It is now just
-/// what `RootView` shows when there is no session.
+/// What `RootView` shows when there is no session: the Hot Mess silhouette in
+/// the audience's colours, its name and tagline, and Facebook sign-in.
 struct LoginScreen: View {
     @Environment(AppModel.self) private var model
     @State private var isShowingError = false
+    @State private var hasAppeared = false
 
     var body: some View {
         ZStack {
@@ -23,56 +23,28 @@ struct LoginScreen: View {
                         .resizable()
                         .scaledToFill()
                         .ignoresSafeArea()
+                        .accessibilityHidden(true)
                 }
-                .overlay { Color.black.opacity(0.35).ignoresSafeArea() }
+                .background(Color("LaunchBackground").ignoresSafeArea())
 
-            VStack(spacing: 32) {
-                Spacer()
+            VStack(spacing: 0) {
+                header
+                    .padding(.top, 72)
 
-                Image("Overlay")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: 260)
+                Spacer(minLength: 32)
 
-                if let tagline = model.brand.tagline {
-                    Text(tagline)
-                        .font(.hotMess(.title3, semibold: true))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 32)
-                }
-
-                Spacer()
-
-                VStack(spacing: 16) {
-                    Button {
-                        Task { await model.session.signIn() }
-                    } label: {
-                        Label(String(localized: "Continue with Facebook"), systemImage: "person.badge.key")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(isSigningIn)
-                    .accessibilityIdentifier("login.facebook")
-
-                    Text("Hot Mess uses your Facebook profile to find your friends and the events near you.")
-                        .font(.hotMess(.footnote))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 48)
+                signIn
+                    .frame(maxWidth: 420)
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 32)
             }
-            .overlay {
-                if isSigningIn {
-                    ProgressView()
-                        .controlSize(.large)
-                        .tint(.white)
-                }
-            }
+            .opacity(hasAppeared ? 1 : 0)
+            .offset(y: hasAppeared ? 0 : 12)
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.5)) { hasAppeared = true }
+        }
         .onChange(of: model.session.state) { _, state in
             if case .failed = state { isShowingError = true }
         }
@@ -80,6 +52,61 @@ struct LoginScreen: View {
             Button(String(localized: "OK"), role: .cancel) {}
         } message: {
             Text(failureMessage ?? String(localized: "Please try again."))
+        }
+    }
+
+    private var header: some View {
+        VStack(spacing: 10) {
+            Text(model.brand.name)
+                .font(.hotMess(.largeTitle, semibold: true))
+                .scaleEffect(1.3)
+                .padding(.bottom, 6)
+                .foregroundStyle(.white)
+                .accessibilityAddTraits(.isHeader)
+
+            Text(model.brand.tagline ?? String(localized: "Find your people tonight."))
+                .font(.hotMess(.title3))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white.opacity(0.85))
+                .padding(.horizontal, 40)
+        }
+    }
+
+    private var signIn: some View {
+        VStack(spacing: 16) {
+            Button {
+                Task { await model.session.signIn() }
+            } label: {
+                HStack(spacing: 12) {
+                    if isSigningIn {
+                        ProgressView()
+                            .tint(.black)
+                    } else {
+                        Image("Facebook")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 22, height: 22)
+                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    }
+
+                    Text(isSigningIn ? String(localized: "Signing In…") : String(localized: "Continue with Facebook"))
+                        .font(.hotMess(.headline, semibold: true))
+                }
+                .foregroundStyle(.black)
+                .frame(maxWidth: .infinity, minHeight: 54)
+                .background(.white, in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .disabled(isSigningIn)
+            .accessibilityIdentifier("login.facebook")
+            .accessibilityLabel(String(localized: "Continue with Facebook"))
+
+            Text("Hot Mess uses your Facebook profile to find your friends and the events near you.")
+                .font(.hotMess(.footnote))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

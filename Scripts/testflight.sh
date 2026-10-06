@@ -9,10 +9,11 @@
 # to be signed in to an account on that team, with an Apple Distribution certificate in the keychain.
 #
 # The upload uses an App Store Connect API key (Users and Access -> Integrations -> Team Keys,
-# role App Manager or Developer). It's the same key garage-rag uploads with: the login keychain
-# item with service me.rickmark.garage-rag.asc-api-key, whose account is the key ID, comment the
-# issuer ID and password the base64 of AuthKey_<KEY ID>.p8. ASC_KEY_ID, ASC_ISSUER_ID and
-# ASC_KEY_PATH (the .p8 file) override it.
+# role App Manager or Developer), found in the login keychain the way garage-rag finds it:
+# garage-rag's item (service me.rickmark.garage-rag.asc-api-key), else the one the `asc` CLI
+# saves for this Mac (account asc:credential:<LocalHostName>), else one labelled
+# "ASC API Key (<LocalHostName>)". ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH (the .p8 file)
+# override it.
 set -euo pipefail
 
 KEYCHAIN_SERVICE="me.rickmark.garage-rag.asc-api-key"
@@ -45,15 +46,74 @@ if [[ "$mode" == "upload" ]]; then
         [[ -n "$key_id" && -n "$issuer_id" ]] || die "ASC_KEY_PATH needs ASC_KEY_ID and ASC_ISSUER_ID"
         cp "$ASC_KEY_PATH" "$work/private_keys/AuthKey_$key_id.p8"
     else
-        attributes="$(security find-generic-password -s "$KEYCHAIN_SERVICE" 2>/dev/null)" ||
+        # garage-rag's own item, else the one the `asc` App Store Connect CLI saves for this Mac
+        # (account asc:credential:<LocalHostName>), else one labelled "ASC API Key (<name>)".
+        host="$(scutil --get LocalHostName 2>/dev/null || hostname -s)"
+        item=() attributes=""
+        for candidate in "-s|$KEYCHAIN_SERVICE" "-a|asc:credential:$host" "-l|ASC API Key ($host)"; do
+            if attributes="$(security find-generic-password "${candidate%%|*}" "${candidate#*|}" 2>/dev/null)"; then
+                item=("${candidate%%|*}" "${candidate#*|}")
+                break
+            fi
+        done
+        [[ ${#item[@]} -gt 0 ]] ||
             die "no App Store Connect API key in the keychain; store it once with:
   security add-generic-password -U -s $KEYCHAIN_SERVICE -a <KEY ID> -j <ISSUER ID> -w \"\$(base64 < AuthKey_<KEY ID>.p8)\""
-        [[ -n "$key_id" ]] || key_id="$(sed -n 's/^ *"acct"<blob>="\(.*\)"$/\1/p' <<<"$attributes")"
-        [[ -n "$issuer_id" ]] || issuer_id="$(sed -n 's/^ *"icmt"<blob>="\(.*\)"$/\1/p' <<<"$attributes")"
-        [[ -n "$key_id" && -n "$issuer_id" ]] ||
-            die "the keychain item needs the key ID as its account and the issuer ID as its comment"
-        (umask 077 && security find-generic-password -s "$KEYCHAIN_SERVICE" -w | base64 -D \
-            > "$work/private_keys/AuthKey_$key_id.p8") || die "could not read the API key from the keychain"
+        secret="$(security find-generic-password "${item[@]}" -w)" || die "could not read the API key from the keychain"
+        # The password may be the .p8 itself, its base64, the hex `security` prints for multi-line data,
+        # or JSON with the key and its IDs. The IDs come from the environment, that JSON or an
+        # asc:metadata: attribute, then the item's account (key ID) and comment (issuer ID).
+        ids="$(umask 077 && KEY_ID="$key_id" ISSUER_ID="$issuer_id" SECRET="$secret" ATTRIBUTES="$attributes" \
+            /usr/bin/python3 - "$work/private_keys" <<'PY'
+import base64, binascii, json, os, re, sys
+
+secret = os.environ["SECRET"].strip()
+fields = {}
+
+def pem(text):
+    return text if "PRIVATE KEY-----" in text else None
+
+def normalise(items):
+    return {k.lower().replace("_", "").replace("-", ""): v for k, v in items if isinstance(v, str)}
+
+if re.fullmatch(r"[0-9a-fA-F]+", secret) and len(secret) % 2 == 0:
+    secret = binascii.unhexlify(secret).decode("utf-8", "replace").strip()
+key = None
+if secret.startswith("{"):
+    fields = normalise(json.loads(secret).items())
+    key = next((pem(v) for v in fields.values() if pem(v)), None)
+    if key is None:
+        path = next((v for v in fields.values() if v.endswith(".p8") and os.path.isfile(os.path.expanduser(v))), None)
+        key = pem(open(os.path.expanduser(path)).read()) if path else None
+else:
+    key = pem(secret)
+if key is None:
+    try:
+        key = pem(base64.b64decode(secret, validate=True).decode("utf-8"))
+    except (binascii.Error, UnicodeDecodeError):
+        pass
+if key is None:
+    sys.exit("the keychain item holds no recognizable .p8 private key")
+
+attrs = dict(re.findall(r'^\s*"(\w+)"<blob>="(.*)"$', os.environ["ATTRIBUTES"], re.M))
+for value in attrs.values():
+    if value.startswith("asc:metadata:"):
+        fields.update(normalise(json.loads(value.removeprefix("asc:metadata:")).items()))
+uuid = r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+key_id = os.environ["KEY_ID"] or fields.get("keyid") or fields.get("apikey") or ""
+if not key_id and re.fullmatch(r"[A-Z0-9]{4,}", attrs.get("acct", "")):
+    key_id = attrs["acct"]
+issuer = os.environ["ISSUER_ID"] or fields.get("issuerid") or fields.get("issuer") or attrs.get("icmt", "")
+if not issuer:
+    issuer = next((m.group(0) for v in attrs.values() if (m := re.search(uuid, v))), "")
+if not key_id or not issuer:
+    sys.exit("found the key but not its key ID or issuer ID; set ASC_KEY_ID and ASC_ISSUER_ID")
+with open(os.path.join(sys.argv[1], f"AuthKey_{key_id}.p8"), "w") as f:
+    f.write(key.strip() + "\n")
+print(key_id, issuer)
+PY
+        )" || die "could not use the API key in the keychain item ${item[*]}"
+        read -r key_id issuer_id <<<"$ids"
     fi
 fi
 

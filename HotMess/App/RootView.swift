@@ -29,21 +29,20 @@ struct RootView: View {
 }
 
 /// Shown while the stored session is being checked, so the app doesn't flash
-/// the login screen on every cold start.
+/// the login screen on every cold start. It matches the launch screen
+/// (`UILaunchScreen` in Info.plist): the mark centred on `LaunchBackground`,
+/// so the hand-off from the system's launch image doesn't jump.
 struct LaunchView: View {
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color("LaunchBackground").ignoresSafeArea()
 
-            VStack(spacing: 24) {
-                Image("Overlay")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: 240)
+            Image("LaunchMark")
+                .accessibilityHidden(true)
 
-                ProgressView()
-                    .tint(.white)
-            }
+            ProgressView()
+                .tint(.white)
+                .offset(y: 150)
         }
     }
 }
