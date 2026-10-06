@@ -26,23 +26,12 @@ final class VenueViewModel {
         self.venueID = venueID
     }
 
-    /// Fetches the venue, its events and who is there concurrently. The
-    /// original chained three callbacks and reloaded the table three times.
+    /// Fetches the venue and its events in one GraphQL request.
     func load() async {
         if state.value == nil { state = .loading }
 
         do {
-            async let venue = api.venue(venueID)
-            async let events = api.events(atVenue: venueID)
-            async let friends = api.friends(atVenue: venueID)
-
-            state = .loaded(
-                VenueOverview(
-                    venue: try await venue,
-                    events: try await events,
-                    friends: (try? await friends) ?? []
-                )
-            )
+            state = .loaded(try await api.venue(venueID))
         } catch is CancellationError {
         } catch {
             state = LoadState(catching: error)

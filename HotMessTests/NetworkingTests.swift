@@ -15,7 +15,7 @@ struct EndpointTests {
 
     @Test("Joins a rooted path onto the base")
     func simplePath() throws {
-        let url = try HotMessAPI.Endpoints.me.url(relativeTo: base)
+        let url = try Endpoint<EmptyResponse>("/v1/me").url(relativeTo: base)
 
         #expect(url.absoluteString == "https://api.hotmess.social/v1/me")
     }
@@ -23,78 +23,73 @@ struct EndpointTests {
     @Test("Does not double up the separator when the base has a trailing slash")
     func trailingSlashBase() throws {
         let slashed = try #require(URL(string: "https://api.hotmess.social/"))
-        let url = try HotMessAPI.Endpoints.me.url(relativeTo: slashed)
+        let url = try Endpoint<EmptyResponse>("/v1/me").url(relativeTo: slashed)
 
         #expect(url.absoluteString == "https://api.hotmess.social/v1/me")
     }
 
-    @Test("Puts coordinates on the query string")
-    func coordinateQuery() throws {
-        let coordinates = Coordinates(latitude: 37.7726, longitude: -122.4099)
-        let url = try HotMessAPI.Endpoints.now(near: coordinates).url(relativeTo: base)
-        let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
-        let items = try #require(components.queryItems)
+    @Test("Reads the version manifest without a session")
+    func manifestIsPublic() {
+        let manifest = HotMessAPI.Endpoints.manifest(device: DeviceDescription(identifier: "d"))
 
-        #expect(components.path == "/v1/now")
-        #expect(items.contains(URLQueryItem(name: "latitude", value: "37.7726")))
-        #expect(items.contains(URLQueryItem(name: "longitude", value: "-122.4099")))
-        #expect(items.count == 2)
+        #expect(manifest.method == .post)
+        #expect(manifest.requiresAuthentication == false)
+    }
+}
+
+@Suite("GraphQL")
+struct GraphQLTests {
+    @Test("Sends coordinates as a CoordinatesInput, leaving out a zero beacon")
+    func coordinatesInput() {
+        let value = Coordinates(latitude: 1.5, longitude: -2.5, beaconMajor: 0, beaconMinor: 4).audienceKit.graphQLValue
+
+        #expect(value == ["latitude": 1.5, "longitude": -2.5, "beaconMinor": 4])
     }
 
-    @Test("Adds beacon identifiers only when both are present and non-zero")
-    func beaconQuery() {
-        var coordinates = Coordinates(latitude: 1, longitude: 2)
-        #expect(coordinates.queryItems.count == 2)
+    @Test("Decodes reportLocation into Now through the aliased fields")
+    func decodesNow() throws {
+        let json = Data(#"""
+        {"reportLocation":{"now":{
+          "title":"Happening Now in Spokane","image_url":"https://cdn.example/spokane.jpg","venue":null,
+          "venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
+                     "phone":null,"distance":120.5,"point":"POINT (-117.414777 47.6575451)",
+                     "facebook_id":"123","photo_url":null,"hero_url":null,"is_liked":false}],
+          "events":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
+                     "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
+                     "cover_photo_url":null,"is_featured":false,"rsvp":"ATTENDING","venue":null}]
+        }}}
+        """#.utf8)
 
-        coordinates.beaconMajor = 7
-        #expect(coordinates.queryItems.count == 2, "a major on its own is not useful")
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
 
-        coordinates.beaconMinor = 0
-        #expect(coordinates.queryItems.count == 2, "zero means unset")
-
-        coordinates.beaconMinor = 9
-        #expect(coordinates.queryItems.count == 4)
+        #expect(now.title == "Happening Now in Spokane")
+        #expect(now.isNearVenues)
+        let venue = try #require(now.venues?.first)
+        #expect(venue.name == "Nyne")
+        #expect(venue.distance == 120.5)
+        #expect(venue.coordinate?.latitude == 47.6575451)
+        #expect(now.events.first?.rsvp == .attending)
     }
 
-    @Test("Omits the query string entirely when there is no location")
-    func noCoordinates() throws {
-        let url = try HotMessAPI.Endpoints.now(near: nil).url(relativeTo: base)
+    @Test("Features up to two events with a cover photo")
+    func featuredEvents() {
+        let cover = URL(string: "https://cdn.example/cover.jpg")
+        let events = (0 ..< 4).map { index in
+            Event(id: UUID(), name: "Event \(index)", startDate: Date(timeIntervalSince1970: Double(index)),
+                  coverURL: index == 3 ? nil : cover)
+        }
 
-        #expect(url.absoluteString == "https://api.hotmess.social/v1/now")
+        let listing = EventListing(upcoming: events.reversed())
+
+        #expect(listing.sections.map(\.id) == ["recommended", "upcoming"])
+        #expect(listing.sections[0].events.map(\.name) == ["Event 0", "Event 1"])
+        #expect(listing.sections[1].events.count == 4)
+        #expect(EventListing(upcoming: []).isEmpty)
     }
 
-    @Test("Uses the right verb and auth policy per endpoint")
-    func methodsAndAuth() {
-        let id = UUID()
-
-        #expect(HotMessAPI.Endpoints.venue(id).method == .get)
-        #expect(HotMessAPI.Endpoints.venue(id).requiresAuthentication)
-
-        let rsvp = HotMessAPI.Endpoints.rsvp(.attending, forEvent: id)
-        #expect(rsvp.method == .post)
-        #expect(rsvp.body != nil)
-
-        // Push registration goes to the token controller's device action.
-        let push = HotMessAPI.Endpoints.registerDevice(token: Data([1, 2]), vendorIdentifier: "v")
-        #expect(push.path == "/v1/token/device")
-    }
-
-    @Test("Nests the location report the way the API expects")
-    func locationReportShape() throws {
-        let report = LocationReport(
-            coordinates: Coordinates(latitude: 1.5, longitude: -2.5, beaconMajor: 3, beaconMinor: 4)
-        )
-        let data = try JSONEncoder().encode(report)
-        let json = try JSONSerialization.jsonObject(with: data)
-        let object = try #require(json as? [String: Any])
-
-        let point = try #require(object["coordinates"] as? [String: Any])
-        let beacon = try #require(object["beacon"] as? [String: Any])
-
-        #expect(point["latitude"] as? Double == 1.5)
-        #expect(point["longitude"] as? Double == -2.5)
-        #expect(beacon["major"] as? Int == 3)
-        #expect(beacon["minor"] as? Int == 4)
+    @Test("Sends APNs tokens as hex")
+    func pushTokenHex() {
+        #expect(Data([0x0a, 0xff, 0x01]).hexEncodedString == "0aff01")
     }
 }
 
