@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 
 /// The typed surface of the Hot Mess API.
@@ -74,10 +75,6 @@ struct HotMessAPI: Sendable {
     }
 
     // MARK: - Session
-
-    func signIn(facebookToken: String, device: DeviceDescription) async throws -> AuthenticatedSession {
-        try await client.send(Endpoints.token(facebookToken: facebookToken, device: device))
-    }
 
     func me() async throws -> User {
         try await client.send(Endpoints.me)
@@ -157,15 +154,6 @@ extension HotMessAPI {
             )
         }
 
-        static func token(facebookToken: String, device: DeviceDescription) -> Endpoint<AuthenticatedSession> {
-            Endpoint(
-                "/v1/token",
-                method: .post,
-                body: JSONBody(TokenRequest(facebookToken: facebookToken, device: device)),
-                requiresAuthentication: false
-            )
-        }
-
         static var me: Endpoint<User> {
             Endpoint("/v1/me")
         }
@@ -181,7 +169,7 @@ extension HotMessAPI {
 
         static func registerDevice(token: Data, vendorIdentifier: String) -> Endpoint<EmptyResponse> {
             Endpoint(
-                "/v1/devices/",
+                "/v1/token/device",
                 method: .post,
                 body: JSONBody(
                     PushRegistrationRequest(
@@ -230,24 +218,6 @@ struct EventEnvelope: Decodable, Sendable {
 }
 
 // MARK: - Request bodies
-
-struct DeviceDescription: Encodable, Sendable, Hashable {
-    var type = "apple"
-    var identifier: String
-    var version: String
-    var build: String
-    var model: String
-}
-
-struct TokenRequest: Encodable, Sendable {
-    let facebookToken: String
-    let device: DeviceDescription
-
-    enum CodingKeys: String, CodingKey {
-        case facebookToken = "facebook_token"
-        case device
-    }
-}
 
 struct ManifestRequest: Encodable, Sendable {
     let device: DeviceDescription

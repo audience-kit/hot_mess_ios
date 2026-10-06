@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import CoreLocation
 import Foundation
 import MapKit
@@ -31,6 +32,38 @@ extension VenueCollection {
     var region: MKCoordinateRegion? {
         envelope?.region ?? MKCoordinateRegion.containing(pins.map(\.coordinate))
     }
+
+    /// The audience's venues from AudienceKit GraphQL, in the audience's order.
+    /// Venues in `localeID` come first when the device's locale is known.
+    init(audienceVenues: [AudienceKit.Venue], localeID: UUID?, resolve: (String?) -> URL?) {
+        let visible = audienceVenues
+            .filter { !$0.hidden }
+            .sorted { lhs, rhs in
+                let lhsLocal = localeID != nil && RecordID.uuid(lhs.locale.id) == localeID
+                let rhsLocal = localeID != nil && RecordID.uuid(rhs.locale.id) == localeID
+                if lhsLocal != rhsLocal { return lhsLocal }
+                return (lhs.order, lhs.name) < (rhs.order, rhs.name)
+            }
+
+        self.init(venues: visible.compactMap { Venue($0, resolve: resolve) })
+    }
+}
+
+extension Venue {
+    /// A list row's worth of venue from AudienceKit GraphQL. Detail screens
+    /// still load the full venue over REST by its UUID.
+    init?(_ venue: AudienceKit.Venue, resolve: (String?) -> URL?) {
+        guard let id = RecordID.uuid(venue.id) else { return nil }
+
+        self.init(
+            id: id,
+            name: venue.name,
+            subtitle: venue.locale.name ?? venue.locale.label,
+            photoURL: resolve(venue.page.photoUrl ?? venue.photoUrl),
+            heroURL: resolve(venue.page.coverImageUrl ?? venue.coverImageUrl),
+            point: venue.location?.coordinate.map { GeoPoint(x: $0.longitude, y: $0.latitude) }
+        )
+    }
 }
 
 @MainActor
@@ -38,18 +71,21 @@ extension VenueCollection {
 final class VenuesViewModel {
     private(set) var state: LoadState<VenueCollection> = .idle
 
-    private let api: HotMessAPI
+    private let audienceKit: AudienceKitClient
 
-    init(api: HotMessAPI) {
-        self.api = api
+    init(audienceKit: AudienceKitClient) {
+        self.audienceKit = audienceKit
     }
 
-    func load(localeID: UUID?, coordinates: Coordinates?) async {
+    func load(localeID: UUID?) async {
         if state.value == nil { state = .loading }
 
         do {
-            state = .loaded(try await api.venues(in: localeID, near: coordinates))
+            let venues = try await audienceKit.venues()
+            state = .loaded(VenueCollection(audienceVenues: venues, localeID: localeID, resolve: audienceKit.url(for:)))
         } catch is CancellationError {
+        } catch let error as AudienceKitError {
+            state = LoadState(catching: APIError(error))
         } catch {
             state = LoadState(catching: error)
         }

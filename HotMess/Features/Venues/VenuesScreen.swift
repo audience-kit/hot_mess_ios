@@ -21,9 +21,9 @@ struct VenuesScreen: View {
                     map(for: collection)
                 }
 
-                Section(String(localized: "Nearby")) {
+                Section(model.brand.name) {
                     if collection.venues.isEmpty {
-                        Text("No venues found near you.")
+                        Text("No venues yet.")
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(collection.venues) { venue in
@@ -39,16 +39,10 @@ struct VenuesScreen: View {
         .navigationTitle(model.location.locale?.name ?? String(localized: "Venues"))
         .task(id: model.location.locale?.id) {
             ensureViewModel()
-            await viewModel?.load(
-                localeID: model.location.locale?.id,
-                coordinates: model.location.coordinates
-            )
+            await viewModel?.load(localeID: model.location.locale?.id)
         }
         .refreshable {
-            await viewModel?.load(
-                localeID: model.location.locale?.id,
-                coordinates: model.location.coordinates
-            )
+            await viewModel?.load(localeID: model.location.locale?.id)
         }
     }
 
@@ -74,17 +68,14 @@ struct VenuesScreen: View {
 
     private func ensureViewModel() {
         if viewModel == nil {
-            viewModel = VenuesViewModel(api: model.api)
+            viewModel = VenuesViewModel(audienceKit: model.audienceKit)
         }
     }
 
     private func reload() {
         Task {
             ensureViewModel()
-            await viewModel?.load(
-                localeID: model.location.locale?.id,
-                coordinates: model.location.coordinates
-            )
+            await viewModel?.load(localeID: model.location.locale?.id)
         }
     }
 }

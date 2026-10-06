@@ -20,6 +20,9 @@ Dependencies resolve through Swift Package Manager on first open:
 | --- | --- |
 | [facebook-ios-sdk](https://github.com/facebook/facebook-ios-sdk) | Login |
 | [Kingfisher](https://github.com/onevcat/Kingfisher) | Remote image loading and caching |
+| [AudienceKit](https://github.com/audience-kit/audience-kit) (`sdk/swift`) | Sign-in, session, GraphQL and branding against the AudienceKit API |
+
+The app runs on iPhone and iPad.
 
 ## Layout
 
@@ -47,11 +50,20 @@ hierarchy with `.environment(...)`. Each screen owns a small `@Observable`,
 `@MainActor` view model that exposes a single `LoadState` value, so loading,
 empty and failure states are handled the same way everywhere.
 
-- **Networking.** `APIClient` is an actor wrapping `URLSession` with
-  `async`/`await`. Calls are described as `Endpoint<Response>` values and
-  surfaced through `HotMessAPI`, which returns concrete models and throws
-  `APIError`. The client raises an event when the server rejects the bearer
-  token; `SessionStore` listens and signs the user out.
+- **AudienceKit.** Hot Mess is an AudienceKit audience. `AppModel` builds one
+  `AudienceKitClient` from the configuration. `SessionStore` runs Facebook
+  Login and hands the token to `AudienceKitClient.signIn`, which sends
+  `POST /v1/token` with the audience host, the build's Facebook app ID and
+  the device, then keeps the session JWT in the keychain. When the API ends
+  the session (401), the SDK drops the token and `SessionStore` returns to
+  the login screen. The Venues and People tabs read the audience over
+  GraphQL, and `BrandStore` fetches `/v1/branding` and drives
+  `Color.hotMessAccent` and the tint.
+- **REST.** Screens GraphQL doesn't cover yet (now, events, RSVPs, venue and
+  person detail, locales, location reports) describe calls as
+  `Endpoint<Response>` values surfaced through `HotMessAPI`. `APIClient`
+  sends them through the SDK so they share its session handling, and maps
+  failures to `APIError`.
 - **Models.** Every payload is a `Sendable`, `Codable` struct. Dates accept both
   the API's `yyyy-MM-dd'T'HH:mm:ss.SSSZ` format and plain ISO 8601, and IDs that
   Facebook sends as either a string or a number decode from both.
@@ -61,13 +73,35 @@ empty and failure states are handled the same way everywhere.
 ## Environments
 
 `Debug`, `Staging` and `Release` build configurations map to the three
-`.xcconfig` files in `Configurations/`, which set the API host, Facebook app ID,
-bundle suffix and APNs environment. Four shared schemes select between them.
+`.xcconfig` files in `Configurations/`, which set the API host, the
+AudienceKit audience host (`AUDIENCE_HOST`) and optional ID, the Facebook app
+ID, bundle suffix and APNs environment. Four shared schemes select between
+them.
+
+| Configuration | API | Facebook app |
+| --- | --- | --- |
+| Debug | `http://localhost:3000` | development (842337999153841) |
+| Staging | `https://api.audiencekit.com` | staging (915436455177328) |
+| Release | `https://api.audiencekit.com` | production (713525445368431) |
+
+The API only accepts a Facebook app that belongs to the audience named by
+`AUDIENCE_HOST`. `hotmess.admin.audiencekit.com` resolves by subdomain; switch
+to `hotmess.social` once that domain is verified.
 
 `FACEBOOK_CLIENT_TOKEN` is intentionally empty in each configuration: copy the
 client token for each environment out of the Facebook app dashboard
 (Settings → Advanced → Client token). The Facebook SDK reports an error at
 runtime while it is blank.
+
+## App icon
+
+Each build configuration has one 1024×1024 universal icon with light, dark and
+tinted appearances (`AppIcon` for Release, `AppIconStaging`, `AppIconDevelopment`
+with a ribbon naming the build). They're rendered, not drawn by hand:
+`Design/AppIcon/make_app_icon.py` recolours the original Hot Mess silhouette
+(`Design/AppIcon/silhouette-mask.png`) with the AudienceKit `hot_mess` theme
+(accent `#b8236f`, dark accent `#ff7ab6`, ink `#1a1519`). Edit the script and
+run `python3 Design/AppIcon/make_app_icon.py` (needs Pillow) to change them.
 
 ## Tests
 
@@ -76,7 +110,7 @@ endpoint URL construction, deep-link parsing, geometry and formatting. Run them
 with any scheme, or:
 
 ```sh
-xcodebuild test -scheme "HotMess Debug" -destination "platform=iOS Simulator,name=iPhone 16"
+xcodebuild test -scheme "HotMess Debug" -destination "platform=iOS Simulator,name=iPhone 17"
 ```
 
 The previous suite authenticated against Facebook with a token committed to the
@@ -85,8 +119,6 @@ not distinguish a regression from an outage.
 
 ## Known follow-ups
 
-- The 1024×1024 marketing icon in `AppIcon.appiconset` is a JPEG. App Store
-  Connect requires PNG; it needs re-exporting.
 - The bundled Proxima Nova faces are referenced by the PostScript names
   `ProximaNova-Regular` and `ProximaNova-Semibold` in `Theme.swift`. If those
   names do not match the font files, SwiftUI falls back to the system face

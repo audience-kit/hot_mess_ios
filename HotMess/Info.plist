@@ -39,6 +39,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>AudienceKitAudienceID</key>
+	<string>$(AUDIENCE_ID)</string>
+	<key>AudienceKitHost</key>
+	<string>$(AUDIENCE_HOST)</string>
 	<key>FacebookAppID</key>
 	<string>$(FACEBOOK_APP_ID)</string>
 	<key>FacebookClientToken</key>
@@ -106,6 +110,13 @@
 	</dict>
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

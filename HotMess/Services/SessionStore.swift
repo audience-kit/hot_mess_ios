@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import FacebookCore
 import FacebookLogin
 import Foundation
@@ -36,11 +37,11 @@ enum SessionError: Error, LocalizedError {
     }
 }
 
-/// Owns authentication: the Facebook handshake, the bearer token in the
-/// keychain, and the signed-in user.
+/// Owns authentication: the Facebook handshake and the signed-in user.
 ///
-/// Replaces the `SessionService` grab-bag of static methods plus four
-/// `NotificationCenter` names with one observable object the UI can read.
+/// The app runs Facebook Login; the AudienceKit SDK exchanges the Facebook
+/// token for a session, keeps it in the keychain, and reports when the API
+/// ends it (sign-out elsewhere, Facebook deauthorization).
 @MainActor
 @Observable
 final class SessionStore {
@@ -51,31 +52,35 @@ final class SessionStore {
     /// `public_profile` and `email` needs App Review on the Facebook app.
     static let requestedPermissions = ["public_profile", "email", "user_friends"]
 
+    /// Where the session token lives. Same service and account as the app's
+    /// previous keychain wrapper, so existing installs stay signed in.
+    static let tokenStore = KeychainTokenStore(service: "social.hotmess.account", account: "token")
+
     private(set) var state: AuthenticationState = .restoring
     private(set) var user: User?
     private(set) var versionRequirement: VersionInfo?
 
     private let api: HotMessAPI
-    private let keychain: Keychain
+    private let audienceKit: AudienceKitClient
     private let configuration: AppConfiguration
     private let loginManager = LoginManager()
-    private var unauthorizedMonitor: Task<Void, Never>?
+    private var sessionMonitor: Task<Void, Never>?
 
-    init(api: HotMessAPI, configuration: AppConfiguration, keychain: Keychain = .shared) {
+    init(api: HotMessAPI, audienceKit: AudienceKitClient, configuration: AppConfiguration) {
         self.api = api
+        self.audienceKit = audienceKit
         self.configuration = configuration
-        self.keychain = keychain
 
-        watchForRejectedCredentials()
+        watchForEndedSessions()
     }
 
     var isSignedIn: Bool { state == .signedIn }
 
     var userID: UUID? { user?.id }
 
-    /// The bearer token. Needed outside the HTTP layer in exactly one place:
-    /// the chat websocket handshake.
-    var bearerToken: String? { keychain.string(for: .sessionToken) }
+    /// The session token. Needed outside the SDK in exactly one place: the
+    /// chat websocket handshake.
+    var bearerToken: String? { try? Self.tokenStore.loadToken() }
 
     /// True when the API refuses to serve this build any more.
     var requiresUpdate: Bool {
@@ -99,15 +104,15 @@ final class SessionStore {
     }
 
     func restoreSession() async {
-        // A stored bearer token is enough on its own; only fall back to the
+        // A stored session is enough on its own; only fall back to the
         // Facebook handshake when there isn't one.
-        if keychain.string(for: .sessionToken) != nil {
+        if await audienceKit.isSignedIn {
             do {
-                user = try await api.me()
+                user = try await currentUser()
                 state = .signedIn
                 return
-            } catch APIError.unauthorized {
-                keychain.removeValue(for: .sessionToken)
+            } catch AudienceKitError.unauthorized {
+                // The SDK has already dropped the token.
             } catch {
                 // A network blip shouldn't sign the user out; keep the token
                 // and let the screens show their own error state.
@@ -140,11 +145,12 @@ final class SessionStore {
     }
 
     func signOut() {
-        keychain.removeValue(for: .sessionToken)
         loginManager.logOut()
         AccessToken.current = nil
         user = nil
         state = .signedOut
+
+        Task { await audienceKit.signOut() }
     }
 
     /// Wipes cached defaults and images, leaving credentials alone.
@@ -167,27 +173,32 @@ final class SessionStore {
 
     func refreshUser() async {
         guard isSignedIn else { return }
-        user = try? await api.me()
+        if let refreshed = try? await currentUser() { user = refreshed }
     }
 
     // MARK: - Private
+
+    /// The signed-in user, from the audience's GraphQL `me`.
+    private func currentUser() async throws -> User? {
+        guard let me = try await audienceKit.me() else { return nil }
+        return User(me)
+    }
 
     private func exchange(facebookToken: String) async {
         let device = DeviceInfo.description(for: configuration)
 
         do {
-            let session = try await api.signIn(facebookToken: facebookToken, device: device)
-            keychain.set(session.token, for: .sessionToken)
-            user = session.user
+            let session = try await audienceKit.signIn(facebookAccessToken: facebookToken, device: device)
+            user = User(id: session.user.id, name: session.user.name)
             state = .signedIn
 
-            if session.user == nil {
-                user = try? await api.me()
+            if user == nil {
+                user = try? await currentUser()
             }
 
             UIApplication.shared.registerForRemoteNotifications()
         } catch {
-            keychain.removeValue(for: .sessionToken)
+            Log.session.error("Sign-in failed: \(error.localizedDescription, privacy: .public)")
             state = .failed(error.localizedDescription)
         }
     }
@@ -223,23 +234,22 @@ final class SessionStore {
         }
     }
 
-    /// Signs out as soon as the API tells us the token is no longer good,
-    /// wherever in the app that happened.
-    private func watchForRejectedCredentials() {
-        let events = api.client.unauthorizedEvents
+    /// Signs out as soon as the API ends the session, wherever in the app the
+    /// rejected call was made.
+    private func watchForEndedSessions() {
+        let events = audienceKit.sessionEvents
 
-        unauthorizedMonitor = Task { [weak self] in
-            for await _ in events {
+        sessionMonitor = Task { [weak self] in
+            for await event in events where event == .sessionEnded {
                 guard let self else { return }
-                self.handleRejectedCredentials()
+                self.handleEndedSession()
             }
         }
     }
 
-    private func handleRejectedCredentials() {
+    private func handleEndedSession() {
         guard state != .signedOut else { return }
 
-        keychain.removeValue(for: .sessionToken)
         user = nil
         state = .signedOut
     }

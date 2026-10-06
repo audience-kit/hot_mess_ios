@@ -3,34 +3,50 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import Observation
+
+extension Person {
+    /// A list row's worth of person from AudienceKit GraphQL. The detail
+    /// screen still loads the full person over REST by its UUID.
+    init?(_ person: AudienceKit.Person, resolve: (String?) -> URL?) {
+        guard let id = RecordID.uuid(person.id) else { return nil }
+
+        self.init(
+            id: id,
+            name: person.name,
+            pictureURL: resolve(person.page.photoUrl),
+            coverURL: resolve(person.page.coverImageUrl)
+        )
+    }
+}
 
 @MainActor
 @Observable
 final class PeopleViewModel {
     private(set) var state: LoadState<[Person]> = .idle
 
-    private let api: HotMessAPI
+    private let audienceKit: AudienceKitClient
 
-    init(api: HotMessAPI) {
-        self.api = api
+    init(audienceKit: AudienceKitClient) {
+        self.audienceKit = audienceKit
     }
 
-    func load(localeID: UUID?) async {
-        guard let localeID else {
-            state = .failed(
-                message: String(localized: "We need your location to find people near you."),
-                isRetryable: false
-            )
-            return
-        }
-
+    /// The people the audience follows, from AudienceKit GraphQL.
+    func load() async {
         if state.value == nil { state = .loading }
 
         do {
-            state = .loaded(try await api.people(in: localeID))
+            let people = try await audienceKit.people()
+            state = .loaded(
+                people
+                    .sorted { ($0.order, $0.name) < ($1.order, $1.name) }
+                    .compactMap { Person($0, resolve: audienceKit.url(for:)) }
+            )
         } catch is CancellationError {
+        } catch let error as AudienceKitError {
+            state = LoadState(catching: APIError(error))
         } catch {
             state = LoadState(catching: error)
         }

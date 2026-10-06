@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import Observation
 
@@ -13,7 +14,10 @@ import Observation
 final class AppModel {
     let configuration: AppConfiguration
     let api: HotMessAPI
+    let audienceKit: AudienceKitClient
     let session: SessionStore
+    /// The audience's look, from AudienceKit branding.
+    let brand: BrandStore
     let location: LocationProvider
 
     var selectedTab: AppTab = .now
@@ -30,14 +34,24 @@ final class AppModel {
     init(configuration: AppConfiguration = AppConfiguration()) {
         self.configuration = configuration
 
-        let api = HotMessAPI(client: APIClient(configuration: configuration))
+        let audienceKit = AudienceKitClient(
+            configuration: configuration.audienceKit,
+            tokenStore: SessionStore.tokenStore,
+            session: .hotMess
+        )
+        self.audienceKit = audienceKit
+
+        let api = HotMessAPI(client: APIClient(audienceKit: audienceKit))
         self.api = api
 
-        session = SessionStore(api: api, configuration: configuration)
+        brand = BrandStore(audienceKit: audienceKit)
+        session = SessionStore(api: api, audienceKit: audienceKit, configuration: configuration)
         location = LocationProvider(api: api, configuration: configuration)
     }
 
     func start() async {
+        // Branding is public, so the login screen can wear the audience's colours.
+        Task { await brand.load() }
         await session.start()
 
         if session.isSignedIn {

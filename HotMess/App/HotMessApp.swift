@@ -18,7 +18,7 @@ struct HotMessApp: App {
         WindowGroup {
             RootView()
                 .environment(model)
-                .tint(.hotMessAccent)
+                .tint(model.brand.accent)
                 .task { await model.start() }
                 .onOpenURL(perform: handle)
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in

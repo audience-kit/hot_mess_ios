@@ -18,7 +18,7 @@ struct PeopleScreen: View {
                 ContentUnavailableView(
                     String(localized: "No One Yet"),
                     systemImage: "person.2",
-                    description: Text("Nobody is listed near you right now.")
+                    description: Text("Nobody is listed yet.")
                 )
             } else {
                 List(people) { person in
@@ -30,25 +30,25 @@ struct PeopleScreen: View {
             }
         }
         .navigationTitle(String(localized: "People"))
-        .task(id: model.location.locale?.id) {
+        .task {
             ensureViewModel()
-            await viewModel?.load(localeID: model.location.locale?.id)
+            await viewModel?.load()
         }
         .refreshable {
-            await viewModel?.load(localeID: model.location.locale?.id)
+            await viewModel?.load()
         }
     }
 
     private func ensureViewModel() {
         if viewModel == nil {
-            viewModel = PeopleViewModel(api: model.api)
+            viewModel = PeopleViewModel(audienceKit: model.audienceKit)
         }
     }
 
     private func reload() {
         Task {
             ensureViewModel()
-            await viewModel?.load(localeID: model.location.locale?.id)
+            await viewModel?.load()
         }
     }
 }
