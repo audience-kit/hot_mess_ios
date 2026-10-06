@@ -24,6 +24,7 @@ enum SessionError: Error, LocalizedError {
     case cancelled
     case configurationUnavailable
     case missingFacebookToken
+    case facebook(String)
 
     var errorDescription: String? {
         switch self {
@@ -33,6 +34,8 @@ enum SessionError: Error, LocalizedError {
             String(localized: "Facebook login isn't configured for this build.")
         case .missingFacebookToken:
             String(localized: "Facebook didn't return an access token.")
+        case let .facebook(reason):
+            reason
         }
     }
 }
@@ -62,13 +65,15 @@ final class SessionStore {
 
     private let api: HotMessAPI
     private let audienceKit: AudienceKitClient
+    private let brand: BrandStore
     private let configuration: AppConfiguration
     private let loginManager = LoginManager()
     private var sessionMonitor: Task<Void, Never>?
 
-    init(api: HotMessAPI, audienceKit: AudienceKitClient, configuration: AppConfiguration) {
+    init(api: HotMessAPI, audienceKit: AudienceKitClient, brand: BrandStore, configuration: AppConfiguration) {
         self.api = api
         self.audienceKit = audienceKit
+        self.brand = brand
         self.configuration = configuration
 
         watchForEndedSessions()
@@ -135,8 +140,12 @@ final class SessionStore {
         state = .signingIn
 
         do {
-            let facebookToken = try await requestFacebookToken()
-            await exchange(facebookToken: facebookToken)
+            let login = try await facebookWebLogin()
+            let result = try await login.authorize()
+            await exchange { device in
+                try await self.audienceKit.signIn(facebookCode: result.code, redirectURI: result.redirectURI,
+                                                  device: device)
+            }
         } catch SessionError.cancelled {
             state = .signedOut
         } catch {
@@ -183,10 +192,16 @@ final class SessionStore {
     }
 
     private func exchange(facebookToken: String) async {
+        await exchange { device in
+            try await self.audienceKit.signIn(facebookAccessToken: facebookToken, device: device)
+        }
+    }
+
+    private func exchange(_ signIn: (DeviceDescription) async throws -> SignInResult) async {
         let device = DeviceInfo.description(for: configuration)
 
         do {
-            let session = try await audienceKit.signIn(facebookAccessToken: facebookToken, device: device)
+            let session = try await signIn(device)
             user = User(id: session.user.id, name: session.user.name)
             state = .signedIn
 
@@ -206,30 +221,19 @@ final class SessionStore {
         versionRequirement = try? await api.serviceManifest(device: device)
     }
 
-    private func requestFacebookToken() async throws -> String {
-        guard let loginConfiguration = LoginConfiguration(
-            permissions: Self.requestedPermissions,
-            tracking: .enabled
-        ) else {
+    /// Facebook's login dialog for this build's Facebook app. A Business-type
+    /// app needs the Login for Business configuration from the audience's
+    /// branding, so branding is loaded first when it hasn't arrived yet. The
+    /// configuration is only used when it belongs to the same app.
+    private func facebookWebLogin() async throws -> FacebookWebLogin {
+        guard let appID = configuration.facebookAppID, !appID.isEmpty else {
             throw SessionError.configurationUnavailable
         }
+        if brand.branding == nil { await brand.load() }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            loginManager.logIn(viewController: nil, configuration: loginConfiguration) { result in
-                switch result {
-                case let .success(_, _, token):
-                    if let tokenString = token?.tokenString {
-                        continuation.resume(returning: tokenString)
-                    } else {
-                        continuation.resume(throwing: SessionError.missingFacebookToken)
-                    }
-                case .cancelled:
-                    continuation.resume(throwing: SessionError.cancelled)
-                case let .failed(error):
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        let branding = brand.branding
+        let configID = branding?.facebookAppID == appID ? branding?.facebookLoginConfigID : nil
+        return FacebookWebLogin(appID: appID, configID: configID, permissions: Self.requestedPermissions)
     }
 
     /// Signs out as soon as the API ends the session, wherever in the app the
