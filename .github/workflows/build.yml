@@ -15,6 +15,23 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      # The AudienceKit SDK lives in the private audience-kit repository. A read-only deploy key on
+      # that repository, stored here as the AUDIENCE_KIT_DEPLOY_KEY secret, lets SwiftPM clone it.
+      - name: Let SwiftPM read audience-kit
+        env:
+          AUDIENCE_KIT_DEPLOY_KEY: ${{ secrets.AUDIENCE_KIT_DEPLOY_KEY }}
+        run: |
+          if [ -z "$AUDIENCE_KIT_DEPLOY_KEY" ]; then
+            echo "::error::Add the AUDIENCE_KIT_DEPLOY_KEY secret: a read-only deploy key for audience-kit/audience-kit"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$AUDIENCE_KIT_DEPLOY_KEY" > ~/.ssh/audience_kit
+          chmod 600 ~/.ssh/audience_kit
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          git config --global url."git@github.com:audience-kit/audience-kit.git".insteadOf "https://github.com/audience-kit/audience-kit.git"
+          git config --global core.sshCommand "ssh -i ~/.ssh/audience_kit -o IdentitiesOnly=yes"
+
       - name: Build and test
         run: |
           set -o pipefail
@@ -23,6 +40,7 @@ jobs:
             -scheme "HotMess Debug" \
             -destination "generic/platform=iOS Simulator" \
             -skipPackagePluginValidation \
+            -scmProvider system \
             CODE_SIGNING_ALLOWED=NO \
             build-for-testing 2>&1 | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)|\*\* " || true
           grep -q "TEST BUILD SUCCEEDED\|BUILD SUCCEEDED" build.log
