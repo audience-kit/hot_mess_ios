@@ -48,11 +48,10 @@ enum SessionError: Error, LocalizedError {
 @MainActor
 @Observable
 final class SessionStore {
-    /// Permissions requested at sign-in.
+    /// Permissions requested at sign-in, on the Hot Mess Consumer app.
     ///
-    /// The original also asked for `user_events` and `user_likes`; Facebook has
-    /// since removed both from the Graph API. Anything here beyond
-    /// `public_profile` and `email` needs App Review on the Facebook app.
+    /// `user_friends` shows friends who also use the app at the same venue, and
+    /// needs App Review on the Facebook app; `public_profile` and `email` don't.
     static let requestedPermissions = ["public_profile", "email", "user_friends"]
 
     /// Where the session token lives. Same service and account as the app's

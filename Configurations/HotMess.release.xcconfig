@@ -17,7 +17,7 @@ SERVER_BASE = api.audiencekit.com
 AUDIENCE_HOST = hotmess.admin.audiencekit.com
 AUDIENCE_ID = b0f8b66a-e636-495d-9475-0f5317ea08e0
 
-FACEBOOK_APP_ID = 713525445368431
+FACEBOOK_APP_ID = 1168782378316790
 
 // Required by Facebook SDK 13 and later. Copy the client token from the
 // Facebook app dashboard (Settings -> Advanced -> Client token) for each
