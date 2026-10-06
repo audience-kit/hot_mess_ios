@@ -50,6 +50,11 @@ final class AppModel {
     }
 
     func start() async {
+        // UI tests start from the login screen.
+        if ProcessInfo.processInfo.arguments.contains("-HotMessUITestSignedOut") {
+            session.signOut()
+        }
+
         // Branding is public, so the login screen can wear the audience's colours.
         Task { await brand.load() }
         await session.start()

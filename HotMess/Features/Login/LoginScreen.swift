@@ -54,6 +54,7 @@ struct LoginScreen: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .disabled(isSigningIn)
+                    .accessibilityIdentifier("login.facebook")
 
                     Text("Hot Mess uses your Facebook profile to find your friends and the events near you.")
                         .font(.hotMess(.footnote))
