@@ -32,7 +32,10 @@ jobs:
             chmod 600 ~/.ssh/audience_kit
             ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
             git config --global url."git@github.com:audience-kit/audience-kit.git".insteadOf "$url"
-            git config --global core.sshCommand "ssh -i ~/.ssh/audience_kit -o IdentitiesOnly=yes"
+            # xcodebuild runs git with its own SSH command, so core.sshCommand is ignored; ssh's
+            # config file still applies.
+            printf 'Host github.com\n  IdentityFile ~/.ssh/audience_kit\n  IdentitiesOnly yes\n' >> ~/.ssh/config
+            chmod 600 ~/.ssh/config
           else
             echo "::error::Add an AUDIENCE_KIT_TOKEN (read access to audience-kit/audience-kit) or AUDIENCE_KIT_DEPLOY_KEY repository secret."
             exit 1
