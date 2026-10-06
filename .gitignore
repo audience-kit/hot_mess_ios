@@ -25,3 +25,4 @@ xcuserdata/
 ## Editors
 .idea/
 .vscode/
+Configurations/Local.*.xcconfig

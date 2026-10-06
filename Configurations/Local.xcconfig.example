@@ -1,0 +1,13 @@
+//
+//  Local.<environment>.xcconfig
+//  HotMess
+//
+//  Values that must not be committed. HotMess.<environment>.xcconfig includes
+//  Local.<environment>.xcconfig last, so a value there overrides its own. Copy
+//  this file to Local.debug.xcconfig, Local.staging.xcconfig or
+//  Local.release.xcconfig. git ignores them.
+//
+
+// Facebook app dashboard -> Settings -> Advanced -> Client token, for the app
+// the configuration uses (FACEBOOK_APP_ID). Facebook Login fails without it.
+FACEBOOK_CLIENT_TOKEN =

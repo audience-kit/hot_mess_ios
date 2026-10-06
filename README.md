@@ -121,6 +121,26 @@ The previous suite authenticated against Facebook with a token committed to the
 repository and then called the live API, so it could not run offline and could
 not distinguish a regression from an outage.
 
+## TestFlight
+
+`Scripts/testflight.sh` archives the "HotMess Release" scheme, exports it for
+App Store Connect with `Configurations/ExportOptions-AppStore.plist`, and
+uploads it with `xcrun altool`:
+
+```sh
+Scripts/testflight.sh                 # archive, export, validate and upload
+Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.ipa
+```
+
+- **Signing:** automatic, with team `DWVXMLB45Y` and an Apple Distribution
+  certificate.
+- **Build number:** the UTC time (`yyyymmddHHMM`) unless `BUILD_NUMBER` is
+  set.
+- **API key:** the upload uses the App Store Connect API key garage-rag
+  uses. That's the login keychain item with service
+  `me.rickmark.garage-rag.asc-api-key`, or `ASC_KEY_ID`, `ASC_ISSUER_ID` and
+  `ASC_KEY_PATH`.
+
 ## Known follow-ups
 
 - The bundled Proxima Nova faces are referenced by the PostScript names
