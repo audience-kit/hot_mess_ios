@@ -134,8 +134,8 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
 
 - **Signing:** automatic, with team `DWVXMLB45Y` and an Apple Distribution
   certificate.
-- **Build number:** the UTC time (`yyyymmddHHMM`) unless `BUILD_NUMBER` is
-  set.
+- **Build number:** the minutes since 2026-01-01 UTC unless `BUILD_NUMBER`
+  is set. Keep it under 2,147,483,647: the API stores it in a 32-bit column.
 - **API key:** the upload uses the App Store Connect API key garage-rag
   uses. That's the login keychain item with service
   `me.rickmark.garage-rag.asc-api-key`, or `ASC_KEY_ID`, `ASC_ISSUER_ID` and
