@@ -220,15 +220,20 @@ struct VenueMessageTests {
     func inbound() throws {
         let payload = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
         {
+          "type": "incoming",
           "message": "who's here",
-          "user_id": "6C4D2E80-3A19-4B7F-9E5C-1D0A8B2F3E44",
-          "avatar_url": "https://api.hotmess.social/users/x/picture"
+          "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44",
+          "name": "Rick",
+          "avatar_url": "https://cdn.hotmess.social/rick",
+          "sent_at": "2026-10-06T22:10:00Z"
         }
         """.utf8))
 
         let message = VenueMessage(payload: payload)
 
         #expect(message.body == "who's here")
+        #expect(message.name == "Rick")
+        #expect(message.sentAt == Date(timeIntervalSince1970: 1_791_324_600))
         #expect(message.isOutgoing(for: payload.userID))
         #expect(message.isOutgoing(for: UUID()) == false)
         #expect(message.isOutgoing(for: nil) == false)
