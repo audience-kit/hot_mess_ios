@@ -12,8 +12,15 @@ final class VenueChatViewModel {
     enum ConnectionState: Equatable, Sendable {
         case connecting
         case connected
+        /// The room is only for people at the venue, and the API doesn't have
+        /// the user there. Reconnecting won't help until they are; "Try again" does.
+        case notPresent
         case disconnected(String?)
     }
+
+    /// How often to tell the API the user is still here while the room is open.
+    /// The API counts a position as present for 15 minutes.
+    static let presenceInterval: Duration = .seconds(240)
 
     private(set) var messages: [VenueMessage] = []
     private(set) var connectionState: ConnectionState = .connecting
@@ -21,20 +28,27 @@ final class VenueChatViewModel {
 
     let venue: Venue
 
-    private let connection: VenueChatConnection?
+    private let url: URL?
+    private let token: String?
     private let userID: UUID?
-    private let avatarURL: URL?
+    private let reportPresence: @MainActor () async -> Void
+    private var connection: VenueChatConnection?
+    private var presenceTask: Task<Void, Never>?
 
-    init(venue: Venue, configuration: AppConfiguration, userID: UUID?, token: String?) {
+    /// - Parameter reportPresence: reports the device's position, so the API
+    ///   lets the user into the room and keeps them in it.
+    init(
+        venue: Venue,
+        configuration: AppConfiguration,
+        userID: UUID?,
+        token: String?,
+        reportPresence: @escaping @MainActor () async -> Void = {}
+    ) {
         self.venue = venue
         self.userID = userID
-        avatarURL = userID.map(configuration.avatarURL(forUserID:))
-
-        if let url = configuration.realtimeURL {
-            connection = VenueChatConnection(venueID: venue.id, url: url, token: token)
-        } else {
-            connection = nil
-        }
+        self.token = token
+        self.reportPresence = reportPresence
+        url = configuration.realtimeURL
     }
 
     var canSend: Bool {
@@ -47,13 +61,21 @@ final class VenueChatViewModel {
         message.isOutgoing(for: userID)
     }
 
-    /// Connects and streams messages until the surrounding task is cancelled.
+    /// Reports the position, connects, and streams messages until the room
+    /// closes or the server says the user isn't at the venue. While it's open,
+    /// the position is reported again every few minutes.
     func run() async {
-        guard let connection else {
+        guard let url else {
             connectionState = .disconnected(String(localized: "Chat isn't available for this build."))
             return
         }
 
+        connectionState = .connecting
+        await reportPresence()
+        startReportingPresence()
+
+        let connection = VenueChatConnection(venueID: venue.id, url: url, token: token)
+        self.connection = connection
         await connection.connect()
 
         for await event in connection.events {
@@ -62,21 +84,30 @@ final class VenueChatViewModel {
                 connectionState = .connected
             case let .received(message):
                 messages.append(message)
+            case .notPresent:
+                connectionState = .notPresent
+                await stop()
             case let .disconnected(reason):
                 connectionState = .disconnected(reason)
             }
         }
     }
 
+    /// After "only for people at …": report the position again and reconnect.
+    func retry() async {
+        await stop()
+        await run()
+    }
+
     func send() async {
         let body = draft.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard !body.isEmpty, let connection, let userID else { return }
+        guard !body.isEmpty, let connection, userID != nil else { return }
 
         draft = ""
 
         do {
-            try await connection.send(body, from: userID, avatarURL: avatarURL)
+            try await connection.send(body)
         } catch {
             // Put the text back so the user doesn't lose what they typed.
             draft = body
@@ -85,6 +116,20 @@ final class VenueChatViewModel {
     }
 
     func stop() async {
+        presenceTask?.cancel()
+        presenceTask = nil
         await connection?.disconnect()
+        connection = nil
+    }
+
+    private func startReportingPresence() {
+        presenceTask?.cancel()
+        presenceTask = Task { [reportPresence] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.presenceInterval)
+                guard !Task.isCancelled else { return }
+                await reportPresence()
+            }
+        }
     }
 }

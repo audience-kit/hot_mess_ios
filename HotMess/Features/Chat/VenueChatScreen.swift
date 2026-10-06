@@ -19,7 +19,9 @@ struct VenueChatScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if let viewModel {
+            if let viewModel, viewModel.connectionState == .notPresent {
+                notPresent(viewModel)
+            } else if let viewModel {
                 transcript(viewModel)
                 Divider()
                 composer(viewModel)
@@ -42,6 +44,21 @@ struct VenueChatScreen: View {
     }
 
     // MARK: - Pieces
+
+    /// The server only lets people at the venue into its room.
+    private func notPresent(_ viewModel: VenueChatViewModel) -> some View {
+        ContentUnavailableView {
+            Label(String(localized: "Only for people at \(venue.name)"), systemImage: "location.slash")
+        } description: {
+            Text("Chat opens when Hot Mess sees you're at the venue.")
+        } actions: {
+            Button(String(localized: "Try again")) {
+                Task { await viewModel.retry() }
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
     private func transcript(_ viewModel: VenueChatViewModel) -> some View {
         ScrollViewReader { proxy in
@@ -113,7 +130,8 @@ struct VenueChatScreen: View {
             venue: venue,
             configuration: model.configuration,
             userID: model.session.userID,
-            token: model.session.bearerToken
+            token: model.session.bearerToken,
+            reportPresence: { [location = model.location] in await location.reportCurrentPosition() }
         )
     }
 }

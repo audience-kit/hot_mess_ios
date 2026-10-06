@@ -8,6 +8,11 @@ import os
 
 /// A live connection to one venue's chat room.
 ///
+/// The room is only open to people at the venue: the server rejects the
+/// subscription otherwise, and sends `{"type":"left"}` when someone's presence
+/// lapses. Either way the connection reports `.notPresent` instead of retrying.
+/// The server adds the sender's ID, name, avatar and time to each line itself.
+///
 /// Speaks the Action Cable protocol over `URLSessionWebSocketTask`, replacing
 /// the Starscream dependency and the `RealtimeService` singleton whose
 /// `didReceive(event:client:)` was an empty stub — meaning no message had
@@ -16,6 +21,9 @@ actor VenueChatConnection {
     enum Event: Sendable {
         case connected
         case received(VenueMessage)
+        /// The server turned the subscription away, or ended it, because the
+        /// user isn't at the venue (by the last position they reported).
+        case notPresent
         case disconnected(String?)
     }
 
@@ -74,9 +82,8 @@ actor VenueChatConnection {
 
     /// Sends a line to the room. The message is echoed back by the server, so
     /// the caller does not append it locally.
-    func send(_ body: String, from userID: UUID, avatarURL: URL?) async throws {
-        let payload = OutgoingMessage(message: body, userID: userID, avatarURL: avatarURL)
-        let data = try encoder.encode(payload)
+    func send(_ body: String) async throws {
+        let data = try encoder.encode(OutgoingMessage(message: body))
 
         try await write(
             OutgoingFrame(
@@ -91,7 +98,7 @@ actor VenueChatConnection {
 
     /// Action Cable identifies a subscription by a JSON *string*, not an object.
     private var identifier: String {
-        let subscription = ["channel": Self.channelName, "venue_id": "chat_\(venueID.uuidString)"]
+        let subscription = ["channel": Self.channelName, "venue_id": venueID.uuidString.lowercased()]
 
         guard let data = try? JSONSerialization.data(withJSONObject: subscription) else {
             return "{}"
@@ -147,13 +154,18 @@ actor VenueChatConnection {
         switch frame.type {
         case "welcome", "confirm_subscription":
             continuation.yield(.connected)
+        case "reject_subscription":
+            continuation.yield(.notPresent)
         case "disconnect":
             continuation.yield(.disconnected(nil))
         case "ping":
             break
         case .none:
-            // A frame with no `type` and a `message` object is a chat line.
-            if let payload = frame.message {
+            // A frame with no `type` carries what the channel sent in `message`:
+            // a chat line, or `{"type":"left"}` once the user's presence lapses.
+            if frame.messageType == "left" {
+                continuation.yield(.notPresent)
+            } else if let payload = frame.message {
                 continuation.yield(.received(VenueMessage(payload: payload)))
             }
         default:
@@ -164,17 +176,9 @@ actor VenueChatConnection {
     // MARK: - Wire format
 
     /// The chat line itself, nested inside a frame's `data` field as a string.
+    /// The server fills in who sent it.
     private struct OutgoingMessage: Encodable {
-        let type = "outgoing"
         let message: String
-        let userID: UUID
-        let avatarURL: URL?
-
-        enum CodingKeys: String, CodingKey {
-            case type, message
-            case userID = "user_id"
-            case avatarURL = "avatar_url"
-        }
     }
 
     private struct OutgoingFrame: Encodable {
@@ -189,9 +193,15 @@ actor VenueChatConnection {
         let type: String?
         let identifier: String?
         let message: VenueMessage.Payload?
+        /// The `type` inside `message`, e.g. `left`.
+        let messageType: String?
 
         enum CodingKeys: String, CodingKey {
             case type, identifier, message
+        }
+
+        private struct Typed: Decodable {
+            let type: String?
         }
 
         init(from decoder: any Decoder) throws {
@@ -200,6 +210,7 @@ actor VenueChatConnection {
             type = try? container.decodeIfPresent(String.self, forKey: .type)
             identifier = try? container.decodeIfPresent(String.self, forKey: .identifier)
             message = try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .message)
+            messageType = (try? container.decodeIfPresent(Typed.self, forKey: .message))??.type
         }
     }
 }

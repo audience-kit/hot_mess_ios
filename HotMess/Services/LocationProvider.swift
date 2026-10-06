@@ -170,6 +170,12 @@ final class LocationProvider {
         Task { await reportPosition() }
     }
 
+    /// Reports the current position now. Venue chat calls this so the API
+    /// knows the user is still at the venue.
+    func reportCurrentPosition() async {
+        await reportPosition()
+    }
+
     private func reportPosition() async {
         guard let coordinates else { return }
 
