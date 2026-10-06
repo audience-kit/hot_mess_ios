@@ -732,7 +732,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/audience-kit/audience-kit.git";
 			requirement = {
-				branch = "claude/project-thread-oweitu";
+				branch = master;
 				kind = branch;
 			};
 		};
