@@ -7,7 +7,15 @@
 //
 
 SERVER_SCHEME = https
-SERVER_BASE = next-api.hotmess.social
+SERVER_BASE = api.audiencekit.com
+
+// The AudienceKit audience this build talks to. AUDIENCE_HOST goes with
+// sign-in (so the API checks the Facebook token against Hot Mess's apps and
+// binds the session to the audience) and with the branding lookup.
+// hotmess.admin.audiencekit.com resolves by subdomain today; switch to
+// hotmess.social once that domain is verified. AUDIENCE_ID is optional.
+AUDIENCE_HOST = hotmess.admin.audiencekit.com
+AUDIENCE_ID = 
 
 FACEBOOK_APP_ID = 915436455177328
 

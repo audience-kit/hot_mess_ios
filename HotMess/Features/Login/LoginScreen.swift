@@ -14,11 +14,17 @@ struct LoginScreen: View {
 
     var body: some View {
         ZStack {
-            Image("LoginBackground")
-                .resizable()
-                .scaledToFill()
+            // In a background so a fill-scaled image can't size the ZStack
+            // past the screen, which pushed the button off an iPad's display.
+            Color.clear
                 .ignoresSafeArea()
-                .overlay(.black.opacity(0.35))
+                .background {
+                    Image("LoginBackground")
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+                }
+                .overlay { Color.black.opacity(0.35).ignoresSafeArea() }
 
             VStack(spacing: 32) {
                 Spacer()
@@ -27,6 +33,14 @@ struct LoginScreen: View {
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: 260)
+
+                if let tagline = model.brand.tagline {
+                    Text(tagline)
+                        .font(.hotMess(.title3, semibold: true))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 32)
+                }
 
                 Spacer()
 

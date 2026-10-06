@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import AudienceKit
 import Testing
 
 @testable import HotMess
@@ -73,12 +74,9 @@ struct EndpointTests {
         #expect(rsvp.method == .post)
         #expect(rsvp.body != nil)
 
-        // Minting a token cannot require the token it is about to mint.
-        let token = HotMessAPI.Endpoints.token(
-            facebookToken: "fb",
-            device: DeviceDescription(identifier: "d", version: "1", build: "1", model: "iPhone")
-        )
-        #expect(token.requiresAuthentication == false)
+        // Push registration goes to the token controller's device action.
+        let push = HotMessAPI.Endpoints.registerDevice(token: Data([1, 2]), vendorIdentifier: "v")
+        #expect(push.path == "/v1/token/device")
     }
 
     @Test("Nests the location report the way the API expects")
@@ -142,6 +140,39 @@ struct AppConfigurationTests {
         )
 
         #expect(staging.facebookEnvironment == "staging")
+    }
+}
+
+@Suite("AudienceKit")
+struct AudienceKitMappingTests {
+    @Test("Builds the SDK configuration from the app's")
+    func sdkConfiguration() {
+        let configuration = AppConfiguration(
+            baseURL: URL(string: "https://api.audiencekit.com")!,
+            facebookAppID: "842337999153841"
+        )
+
+        #expect(configuration.audienceKit.host == "hotmess.admin.audiencekit.com")
+        #expect(configuration.audienceKit.facebookAppID == "842337999153841")
+        #expect(configuration.audienceKit.baseURL == configuration.baseURL)
+    }
+
+    @Test("Maps SDK errors onto the app's")
+    func errorMapping() {
+        #expect(APIError(AudienceKitError.unauthorized) == .unauthorized)
+        #expect(APIError(AudienceKitError.notFound) == .notFound)
+        #expect(APIError(AudienceKitError.http(status: 502)) == .server(status: 502))
+        #expect(APIError(AudienceKitError.network(URLError(.notConnectedToInternet))) == .offline)
+    }
+
+    @Test("Reads record UUIDs from plain and global IDs")
+    func recordIDs() throws {
+        let uuid = try #require(UUID(uuidString: "7B4E0C6A-1D2F-4E8A-9C3B-5F6A7B8C9D0E"))
+        #expect(RecordID.uuid(uuid.uuidString.lowercased()) == uuid)
+
+        let global = Data("gid://hot-mess/Venue/\(uuid.uuidString.lowercased())".utf8).base64EncodedString()
+        #expect(RecordID.uuid(global) == uuid)
+        #expect(RecordID.uuid("nope") == nil)
     }
 }
 

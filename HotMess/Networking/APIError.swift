@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 
 enum APIError: Error, Equatable, Sendable, LocalizedError {
@@ -40,6 +41,26 @@ enum APIError: Error, Equatable, Sendable, LocalizedError {
         switch self {
         case .offline, .server, .transport: true
         case .unauthorized, .notFound, .decoding, .invalidURL: false
+        }
+    }
+
+    /// Maps the SDK's errors onto the ones the screens know how to show.
+    init(_ error: AudienceKitError) {
+        switch error {
+        case .notSignedIn, .unauthorized, .signInRejected:
+            self = .unauthorized
+        case .forbidden:
+            self = .transport(error.localizedDescription)
+        case .notFound:
+            self = .notFound
+        case let .http(status):
+            self = .server(status: status)
+        case let .network(urlError):
+            self = APIError(urlError: urlError)
+        case let .decoding(detail):
+            self = .decoding(detail)
+        case .signInFailed, .graphQL, .missingConfiguration, .tokenStorage:
+            self = .transport(error.localizedDescription)
         }
     }
 

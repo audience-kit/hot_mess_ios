@@ -10,6 +10,7 @@
 		AC00000000000000000000A0 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000090 /* FacebookCore */; };
 		AC00000000000000000000A1 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000091 /* FacebookLogin */; };
 		AC00000000000000000000A2 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000092 /* Kingfisher */; };
+		AC00000000000000000000A3 /* AudienceKit in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000093 /* AudienceKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +63,7 @@
 				AC00000000000000000000A0 /* FacebookCore in Frameworks */,
 				AC00000000000000000000A1 /* FacebookLogin in Frameworks */,
 				AC00000000000000000000A2 /* Kingfisher in Frameworks */,
+				AC00000000000000000000A3 /* AudienceKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,6 +138,7 @@
 				AC0000000000000000000090 /* FacebookCore */,
 				AC0000000000000000000091 /* FacebookLogin */,
 				AC0000000000000000000092 /* Kingfisher */,
+				AC0000000000000000000093 /* AudienceKit */,
 			);
 			productName = HotMess;
 			productReference = AC0000000000000000000020 /* HotMess.app */;
@@ -219,6 +222,7 @@
 			packageReferences = (
 				AC0000000000000000000080 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 				AC0000000000000000000081 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AC0000000000000000000003 /* Products */;
@@ -356,7 +360,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -417,7 +421,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Staging;
@@ -477,7 +481,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -724,6 +728,14 @@
 				minimumVersion = 8.0.0;
 			};
 		};
+		AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/audience-kit/audience-kit.git";
+			requirement = {
+				branch = "feat/swift-sdk";
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -741,6 +753,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AC0000000000000000000081 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		AC0000000000000000000093 /* AudienceKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */;
+			productName = AudienceKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

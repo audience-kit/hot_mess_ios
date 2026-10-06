@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import UIKit
 
@@ -27,9 +28,9 @@ enum DeviceInfo {
     static func description(for configuration: AppConfiguration) -> DeviceDescription {
         DeviceDescription(
             identifier: vendorIdentifier,
+            model: model,
             version: configuration.version,
-            build: String(configuration.build),
-            model: model
+            build: String(configuration.build)
         )
     }
 }

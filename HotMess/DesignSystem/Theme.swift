@@ -4,10 +4,16 @@
 //
 
 import SwiftUI
+import UIKit
 
 extension Color {
-    /// The brand red the old PaintCode `StyleKit` drew by hand.
-    static let hotMessAccent = Color(red: 0.649, green: 0.002, blue: 0.002)
+    /// The audience's accent: the AudienceKit branding `accent` token, falling
+    /// back to the `hot_mess` preset. Resolves light and dark per trait.
+    static var hotMessAccent: Color {
+        Color(uiColor: UIColor { traits in
+            UIColor(BrandPalette.shared.accent(dark: traits.userInterfaceStyle == .dark))
+        })
+    }
 }
 
 extension Font {
