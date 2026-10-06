@@ -45,11 +45,16 @@ final class AppModel {
         self.api = api
 
         brand = BrandStore(audienceKit: audienceKit)
-        session = SessionStore(api: api, audienceKit: audienceKit, configuration: configuration)
+        session = SessionStore(api: api, audienceKit: audienceKit, brand: brand, configuration: configuration)
         location = LocationProvider(api: api, configuration: configuration)
     }
 
     func start() async {
+        // UI tests start from the login screen.
+        if ProcessInfo.processInfo.arguments.contains("-HotMessUITestSignedOut") {
+            session.signOut()
+        }
+
         // Branding is public, so the login screen can wear the audience's colours.
         Task { await brand.load() }
         await session.start()
