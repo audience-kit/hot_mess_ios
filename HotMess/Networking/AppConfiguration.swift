@@ -73,7 +73,8 @@ struct AppConfiguration: Sendable, Hashable {
     /// Which Facebook app the build is pointed at, for the settings screen.
     var facebookEnvironment: String {
         switch facebookAppID ?? "" {
-        case "713525445368431": String(localized: "production")
+        case "1168782378316790": String(localized: "production")
+        case "713525445368431": String(localized: "AudienceKit platform")
         case "915436455177328": String(localized: "staging")
         case "842337999153841": String(localized: "development")
         default: String(localized: "unknown")
