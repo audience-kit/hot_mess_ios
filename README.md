@@ -59,11 +59,15 @@ empty and failure states are handled the same way everywhere.
   the login screen. The Venues and People tabs read the audience over
   GraphQL, and `BrandStore` fetches `/v1/branding` and drives
   `Color.hotMessAccent` and the tint.
-- **REST.** Screens GraphQL doesn't cover yet (now, events, RSVPs, venue and
-  person detail, locales, location reports) describe calls as
-  `Endpoint<Response>` values surfaced through `HotMessAPI`. `APIClient`
-  sends them through the SDK so they share its session handling, and maps
-  failures to `APIError`.
+- **GraphQL.** Every other screen also goes through the audience's GraphQL
+  endpoint on the SDK. `HotMessAPI` holds the documents: location reports and
+  "Now" (`reportLocation`), the closest locale, venue, event and person
+  detail, a locale's events, RSVPs (`rsvpEvent`) and push registration
+  (`registerDevice`). The documents alias fields to the snake_case keys the
+  models decode, and failures map to `APIError`.
+- **REST.** Only the version manifest (`POST /`) is still REST, because it's
+  read before sign-in and isn't part of any audience. `APIClient` sends it
+  through the SDK.
 - **Models.** Every payload is a `Sendable`, `Codable` struct. Dates accept both
   the API's `yyyy-MM-dd'T'HH:mm:ss.SSSZ` format and plain ISO 8601, and IDs that
   Facebook sends as either a string or a number decode from both.

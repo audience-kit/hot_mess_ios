@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import CoreLocation
 import Foundation
 import MapKit
@@ -11,8 +12,8 @@ import MapKit
 ///
 /// The API builds points with `factory.point(longitude, latitude)`, so `x` is
 /// the longitude and `y` the latitude. Venue lists encode the same point as
-/// GeoJSON (`{ "type": "Point", "coordinates": [longitude, latitude] }`);
-/// both shapes decode here so the rest of the app only ever sees a coordinate.
+/// GeoJSON (`{ "type": "Point", "coordinates": [longitude, latitude] }`) and
+/// GraphQL as WKT (`"POINT (longitude latitude)"`); every shape decodes here so the rest of the app only ever sees a coordinate.
 struct GeoPoint: Codable, Hashable, Sendable {
     let x: Double
     let y: Double
@@ -31,6 +32,17 @@ struct GeoPoint: Codable, Hashable, Sendable {
     }
 
     init(from decoder: any Decoder) throws {
+        // GraphQL sends the point as WKT, e.g. "POINT (-117.41 47.65)".
+        if let text = try? decoder.singleValueContainer().decode(String.self) {
+            guard let coordinate = AudienceKit.Coordinate(wkt: text) else {
+                throw DecodingError.dataCorrupted(
+                    DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Not a WKT point: \(text)")
+                )
+            }
+            self.init(x: coordinate.longitude, y: coordinate.latitude)
+            return
+        }
+
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         if let coordinates = try container.decodeIfPresent([Double].self, forKey: .coordinates) {

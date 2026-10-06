@@ -68,24 +68,10 @@ struct Endpoint<Response: Decodable & Sendable>: Sendable {
     }
 }
 
-/// Where the device is, as the API wants it on the query string.
+/// Where the device is, and the iBeacon it can see when it can see one.
 struct Coordinates: Hashable, Sendable {
     var latitude: Double
     var longitude: Double
     var beaconMajor: Int?
     var beaconMinor: Int?
-
-    var queryItems: [URLQueryItem] {
-        var items = [
-            URLQueryItem(name: "latitude", value: String(latitude)),
-            URLQueryItem(name: "longitude", value: String(longitude)),
-        ]
-
-        if let beaconMajor, let beaconMinor, beaconMajor != 0, beaconMinor != 0 {
-            items.append(URLQueryItem(name: "major", value: String(beaconMajor)))
-            items.append(URLQueryItem(name: "minor", value: String(beaconMinor)))
-        }
-
-        return items
-    }
 }

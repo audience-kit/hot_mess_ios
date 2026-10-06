@@ -96,9 +96,8 @@ final class LocationProvider {
     /// Asks the API which locale the current position belongs to.
     func refreshLocale() async {
         do {
-            let resolved = try await api.closestLocale(to: coordinates)
-
-            guard resolved.id != locale?.id else { return }
+            guard let resolved = try await api.closestLocale(to: coordinates),
+                  resolved.id != locale?.id else { return }
 
             locale = resolved
             Self.persist(resolved)
