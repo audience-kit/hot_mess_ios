@@ -4,8 +4,8 @@
 #   Scripts/testflight.sh                 # archive, export and upload
 #   Scripts/testflight.sh --export-only   # stop after exporting build/testflight/export/HotMess.ipa
 #
-# The build number defaults to the UTC time (yyyymmddHHMM), so every upload is newer than the
-# last; set BUILD_NUMBER to choose one. Signing is automatic with team DWVXMLB45Y, so Xcode needs
+# The build number defaults to the minutes since 2026-01-01 UTC, so every upload is newer than
+# the last; set BUILD_NUMBER to choose one. Signing is automatic with team DWVXMLB45Y, so Xcode needs
 # to be signed in to an account on that team, with an Apple Distribution certificate in the keychain.
 #
 # The upload uses an App Store Connect API key (Users and Access -> Integrations -> Team Keys,
@@ -33,7 +33,9 @@ esac
 
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
 out="$root/build/testflight"
-build_number="${BUILD_NUMBER:-$(date -u +%Y%m%d%H%M)}"
+# Minutes since 2026-01-01 UTC: always increasing, and small enough for the API's 32-bit
+# sessions.build column. (A yyyymmddHHMM stamp overflowed it and failed every sign-in.)
+build_number="${BUILD_NUMBER:-$(( ($(date -u +%s) - 1767225600) / 60 ))}"
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/hotmess-testflight.XXXXXX")"
 trap 'rm -rf "$work"' EXIT

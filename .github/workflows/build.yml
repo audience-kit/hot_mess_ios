@@ -15,6 +15,29 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      # The AudienceKit SDK lives in the private audience-kit repository. SwiftPM clones it with
+      # AUDIENCE_KIT_TOKEN (a token with read access to it, the same secret hot_mess_android uses),
+      # or else AUDIENCE_KIT_DEPLOY_KEY (a read-only deploy key on audience-kit).
+      - name: Let SwiftPM read audience-kit
+        env:
+          AUDIENCE_KIT_TOKEN: ${{ secrets.AUDIENCE_KIT_TOKEN }}
+          AUDIENCE_KIT_DEPLOY_KEY: ${{ secrets.AUDIENCE_KIT_DEPLOY_KEY }}
+        run: |
+          url="https://github.com/audience-kit/audience-kit.git"
+          if [ -n "$AUDIENCE_KIT_TOKEN" ]; then
+            git config --global url."https://x-access-token:${AUDIENCE_KIT_TOKEN}@github.com/audience-kit/audience-kit.git".insteadOf "$url"
+          elif [ -n "$AUDIENCE_KIT_DEPLOY_KEY" ]; then
+            mkdir -p ~/.ssh
+            printf '%s\n' "$AUDIENCE_KIT_DEPLOY_KEY" > ~/.ssh/audience_kit
+            chmod 600 ~/.ssh/audience_kit
+            ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+            git config --global url."git@github.com:audience-kit/audience-kit.git".insteadOf "$url"
+            git config --global core.sshCommand "ssh -i ~/.ssh/audience_kit -o IdentitiesOnly=yes"
+          else
+            echo "::error::Add an AUDIENCE_KIT_TOKEN (read access to audience-kit/audience-kit) or AUDIENCE_KIT_DEPLOY_KEY repository secret."
+            exit 1
+          fi
+
       - name: Build and test
         run: |
           set -o pipefail
@@ -23,6 +46,7 @@ jobs:
             -scheme "HotMess Debug" \
             -destination "generic/platform=iOS Simulator" \
             -skipPackagePluginValidation \
+            -scmProvider system \
             CODE_SIGNING_ALLOWED=NO \
             build-for-testing 2>&1 | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)|\*\* " || true
           grep -q "TEST BUILD SUCCEEDED\|BUILD SUCCEEDED" build.log
