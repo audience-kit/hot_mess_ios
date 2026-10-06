@@ -79,6 +79,9 @@ final class FacebookSignInUITests: XCTestCase {
             ("permission", springboard.alerts.buttons["Continue"]),
             ("permission", app.alerts.buttons["Continue"]),
             ("sheet", app.webViews.buttons.matching(continuing).firstMatch),
+            // Login for Business follows "Continue as …" with a review of the access asked for.
+            ("sheet review", app.webViews.buttons["Save"]),
+            ("sheet connected", app.webViews.buttons["Got it"]),
         ]
         // Asking an app in the background for its elements fails the test, so only ask the one in front.
         if facebook.state == .runningForeground {
@@ -110,17 +113,58 @@ final class FacebookSignInUITests: XCTestCase {
 
         let emailField = page.textFields.firstMatch
         XCTAssertTrue(emailField.waitForExistence(timeout: 10))
-        emailField.tap()
+        focus(emailField)
         emailField.typeText(email)
 
         let passwordField = page.secureTextFields.firstMatch
-        passwordField.tap()
+        // The keyboard's arrival can swallow a tap on the next field, so tab to it too.
+        emailField.typeText("\t")
+        focus(passwordField)
         passwordField.typeText(password + "\n")
+        // Return doesn't always submit Facebook's mobile form.
+        let logIn = page.buttons["Log in"]
+        if logIn.waitForExistence(timeout: 2), logIn.isHittable { logIn.tap() }
+        sleep(5)
+        snapshot("After submitting Facebook's login")
+        try failOnFacebookError(in: app)
 
-        let proceed = page.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] 'Continue'")).firstMatch
-        if proceed.waitForExistence(timeout: 15) {
-            snapshot("Facebook consent")
-            proceed.tap()
+        // After the password: iOS offers to save it and Facebook offers to remember the login, both
+        // declined; then Facebook asks to continue to Hot Mess, to save the access it grants, and
+        // confirms the connection.
+        let tabs = app.descendants(matching: .any)["main.tabs"]
+        let consentDeadline = Date().addingTimeInterval(60)
+        while !tabs.exists, Date() < consentDeadline {
+            let decline = [springboard, app].lazy
+                .map { $0.buttons.matching(NSPredicate(format: "label ==[c] 'Not now'")).firstMatch }
+                .first { $0.exists && $0.isHittable }
+            let accept = app.webViews.buttons
+                .matching(NSPredicate(format: "label BEGINSWITH[c] 'Continue' OR label ==[c] 'Save' OR label ==[c] 'Got it'")).firstMatch
+            if let button = decline ?? (accept.exists && accept.isHittable ? accept : nil) {
+                snapshot("Before tapping \(button.label)")
+                button.tap()
+                sleep(2)
+            } else {
+                sleep(1)
+            }
+        }
+    }
+
+    /// Taps a web form field until it takes the keyboard. A tap that lands while the keyboard is
+    /// still animating in after the previous field leaves focus where it was.
+    @MainActor
+    private func focus(_ field: XCUIElement) {
+        for attempt in 0..<5 {
+            if (field.value(forKey: "hasKeyboardFocus") as? Bool) == true { return }
+            if attempt.isMultiple(of: 2) {
+                field.tap()
+            } else {
+                field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            let deadline = Date().addingTimeInterval(2)
+            while Date() < deadline {
+                if (field.value(forKey: "hasKeyboardFocus") as? Bool) == true { return }
+                usleep(200_000)
+            }
         }
     }
 
