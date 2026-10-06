@@ -26,3 +26,7 @@ FACEBOOK_CLIENT_TOKEN =
 
 BUNDLE_SUFFIX = 
 APNS_ENVIRONMENT = production
+
+// Secrets that stay out of git, such as FACEBOOK_CLIENT_TOKEN. Copy
+// Local.xcconfig.example to Local.release.xcconfig and fill it in.
+#include? "Local.release.xcconfig"
