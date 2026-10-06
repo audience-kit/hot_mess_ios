@@ -147,8 +147,10 @@ final class SessionStore {
                                                   device: device)
             }
         } catch SessionError.cancelled {
+            Log.session.info("Facebook sign-in cancelled")
             state = .signedOut
         } catch {
+            Log.session.error("Facebook sign-in failed: \(String(describing: error), privacy: .public)")
             state = .failed(error.localizedDescription)
         }
     }

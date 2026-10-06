@@ -32,49 +32,72 @@ final class FacebookSignInUITests: XCTestCase {
         XCTAssertTrue(button.waitForExistence(timeout: 15), "The login screen didn't appear")
         snapshot("Login screen")
         button.tap()
+        sleep(2)
+        snapshot("After tapping Continue with Facebook")
 
-        // iOS asks before an app opens Facebook's login in a web sheet.
-        let allow = springboard.buttons["Continue"]
-        if allow.waitForExistence(timeout: 5) {
-            snapshot("Permission to use facebook.com")
-            allow.tap()
-        }
-
-        if facebook.wait(for: .runningForeground, timeout: 10) {
-            try continueInFacebookApp()
-        } else {
-            try continueInWebSheet(app)
-        }
-
-        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), "Facebook didn't return to Hot Mess")
-
+        // Walk whatever Facebook shows until Hot Mess is signed in or says why it isn't: iOS's
+        // permission to use facebook.com, the Facebook app, or the web sheet's "Continue as …".
         let failure = app.alerts["Sign In Failed"]
         let tabs = app.descendants(matching: .any)["main.tabs"]
-        if failure.waitForExistence(timeout: 20) {
-            snapshot("Sign-in failed")
-            XCTFail("Sign in failed: \(failure.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " "))")
+        var tapped = Set<String>()
+        let deadline = Date().addingTimeInterval(120)
+
+        while Date() < deadline {
+            if tabs.exists {
+                snapshot("Signed in")
+                return
+            }
+            if failure.exists {
+                snapshot("Sign-in failed")
+                XCTFail("Sign in failed: \(failure.label)")
+                return
+            }
+            for container in [facebook, app] where container.state == .runningForeground {
+                try failOnFacebookError(in: container)
+            }
+            if let (name, button) = nextContinueButton(app), !tapped.contains(name) || name == "sheet" {
+                snapshot("Before tapping \(name) Continue")
+                button.tap()
+                tapped.insert(name)
+                sleep(2)
+                continue
+            }
+            sleep(1)
         }
-        XCTAssertTrue(tabs.waitForExistence(timeout: 20), "Hot Mess didn't reach its tabs after Facebook")
-        snapshot("Signed in")
+
+        snapshot("Timed out")
+        try continueInWebSheet(app)
+        XCTAssertTrue(tabs.waitForExistence(timeout: 30), "Hot Mess didn't reach its tabs after Facebook")
     }
 
-    /// The Facebook app asks to continue as its signed-in account.
+    /// The next "Continue" to tap: iOS's permission alert, the Facebook app, or Facebook's page in the
+    /// web sheet, which runs in SafariViewService.
     @MainActor
-    private func continueInFacebookApp() throws {
-        sleep(3)
-        snapshot("Facebook app")
-        try failOnFacebookError(in: facebook)
-
-        let proceed = facebook.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] 'Continue'")).firstMatch
-        XCTAssertTrue(proceed.waitForExistence(timeout: 15), "The Facebook app didn't offer to continue")
-        proceed.tap()
+    private func nextContinueButton(_ app: XCUIApplication) -> (String, XCUIElement)? {
+        let continuing = NSPredicate(format: "label BEGINSWITH[c] 'Continue'")
+        var candidates: [(String, XCUIElement)] = [
+            ("permission", springboard.alerts.buttons["Continue"]),
+            ("permission", app.alerts.buttons["Continue"]),
+            ("sheet", app.webViews.buttons.matching(continuing).firstMatch),
+        ]
+        // Asking an app in the background for its elements fails the test, so only ask the one in front.
+        if facebook.state == .runningForeground {
+            candidates.append(("Facebook app", facebook.buttons.matching(continuing).firstMatch))
+        }
+        return candidates.first { $0.1.exists && $0.1.isHittable }
     }
 
-    /// Facebook's web login, in a sheet over Hot Mess.
     @MainActor
     private func continueInWebSheet(_ app: XCUIApplication) throws {
-        let page = app.webViews.firstMatch
-        XCTAssertTrue(page.waitForExistence(timeout: 20), "Facebook's login page didn't open")
+        let candidates = [app.webViews.firstMatch]
+        let deadline = Date().addingTimeInterval(20)
+        var found: XCUIElement?
+        while found == nil, Date() < deadline {
+            found = candidates.first { $0.exists }
+            if found == nil { sleep(1) }
+        }
+        snapshot("Waiting for Facebook's login page")
+        let page = try XCTUnwrap(found, "Facebook's login page didn't open")
         sleep(3)
         snapshot("Facebook login page")
         try failOnFacebookError(in: app)
@@ -101,14 +124,16 @@ final class FacebookSignInUITests: XCTestCase {
         }
     }
 
-    /// Facebook shows "Something went wrong" (and the reason beneath it) as page text.
+    /// Facebook shows its refusals ("Something went wrong", "Given URL is not allowed by the Application
+    /// configuration", "App not active") as page text.
     @MainActor
     private func failOnFacebookError(in container: XCUIApplication) throws {
-        let error = container.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'went wrong'")).firstMatch
+        let error = container.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'went wrong' OR label CONTAINS[c] 'not allowed by the Application configuration' OR label CONTAINS[c] 'app not active'")).firstMatch
         guard error.exists else { return }
 
-        let page = container.staticTexts.allElementsBoundByIndex.map(\.label).filter { !$0.isEmpty }
-        XCTFail("Facebook refused the login: \(page.joined(separator: " | "))")
+        snapshot("Facebook error")
+        // The page's text is in the screenshot; its elements can vanish while it reloads.
+        XCTFail("Facebook refused the login: \(error.label)")
     }
 
     @MainActor
