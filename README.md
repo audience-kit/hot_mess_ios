@@ -69,6 +69,16 @@ client token for each environment out of the Facebook app dashboard
 (Settings → Advanced → Client token). The Facebook SDK reports an error at
 runtime while it is blank.
 
+## App icon
+
+Each build configuration has one 1024×1024 universal icon with light, dark and
+tinted appearances (`AppIcon` for Release, `AppIconStaging`, `AppIconDevelopment`
+with a ribbon naming the build). They're rendered, not drawn by hand:
+`Design/AppIcon/make_app_icon.py` recolours the original Hot Mess silhouette
+(`Design/AppIcon/silhouette-mask.png`) with the AudienceKit `hot_mess` theme
+(accent `#b8236f`, dark accent `#ff7ab6`, ink `#1a1519`). Edit the script and
+run `python3 Design/AppIcon/make_app_icon.py` (needs Pillow) to change them.
+
 ## Tests
 
 `HotMessTests` runs entirely offline: model decoding against inline fixtures,
@@ -85,8 +95,6 @@ not distinguish a regression from an outage.
 
 ## Known follow-ups
 
-- The 1024×1024 marketing icon in `AppIcon.appiconset` is a JPEG. App Store
-  Connect requires PNG; it needs re-exporting.
 - The bundled Proxima Nova faces are referenced by the PostScript names
   `ProximaNova-Regular` and `ProximaNova-Semibold` in `Theme.swift`. If those
   names do not match the font files, SwiftUI falls back to the system face
