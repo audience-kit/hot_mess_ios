@@ -339,12 +339,7 @@ struct EventCard: View {
             }
             .accessibilityLabel(event.startDate.formatted(date: .abbreviated, time: .omitted))
         } trailing: {
-            if event.rsvp == .attending || event.rsvp == .maybe {
-                GlassPill {
-                    Label(event.rsvp.title, systemImage: event.rsvp.systemImage)
-                        .font(.hotMess(.footnote, semibold: true))
-                }
-            }
+            RSVPBadge(rsvp: event.rsvp)
         }
     }
 }

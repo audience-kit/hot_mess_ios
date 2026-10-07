@@ -16,24 +16,47 @@ extension Color {
     }
 }
 
+/// The Figtree faces bundled in Resources (listed under `UIAppFonts`), the
+/// design system's one typeface on web, Android and iOS. Each weight is its own
+/// static file because a custom font's weight can't be picked by `.weight(_:)`.
+enum HotMessFontWeight {
+    case regular
+    case semibold
+    case bold
+    case extraBold
+
+    var postScriptName: String {
+        switch self {
+        case .regular: "Figtree-Regular"
+        case .semibold: "Figtree-SemiBold"
+        case .bold: "Figtree-Bold"
+        case .extraBold: "Figtree-ExtraBold"
+        }
+    }
+}
+
 extension Font {
-    /// Proxima Nova, sized relative to a Dynamic Type style so the app scales
-    /// with the user's text-size setting — the storyboards used fixed points.
+    /// Figtree, sized relative to a Dynamic Type style so the app scales with
+    /// the user's text-size setting — the storyboards used fixed points.
     ///
     /// If the bundled font fails to register, SwiftUI falls back to the system
     /// face rather than failing to draw.
-    static func hotMess(_ style: Font.TextStyle, semibold: Bool = false) -> Font {
-        .custom(
-            semibold ? "ProximaNova-Semibold" : "ProximaNova-Regular",
-            size: baseSize(for: style),
-            relativeTo: style
-        )
+    static func hotMess(_ style: Font.TextStyle, weight: HotMessFontWeight) -> Font {
+        .custom(weight.postScriptName, size: baseSize(for: style), relativeTo: style)
     }
 
-    /// Proxima Nova at a fixed size that ignores Dynamic Type, for text that
-    /// must fit a fixed shape, like an avatar's initials.
+    static func hotMess(_ style: Font.TextStyle, semibold: Bool = false) -> Font {
+        hotMess(style, weight: semibold ? .semibold : .regular)
+    }
+
+    /// Figtree at a fixed size that ignores Dynamic Type, for text that must
+    /// fit a fixed shape, like an avatar's initials.
+    static func hotMess(fixedSize size: CGFloat, weight: HotMessFontWeight) -> Font {
+        .custom(weight.postScriptName, fixedSize: size)
+    }
+
     static func hotMess(fixedSize size: CGFloat, semibold: Bool = false) -> Font {
-        .custom(semibold ? "ProximaNova-Semibold" : "ProximaNova-Regular", fixedSize: size)
+        hotMess(fixedSize: size, weight: semibold ? .semibold : .regular)
     }
 
     private static func baseSize(for style: Font.TextStyle) -> CGFloat {

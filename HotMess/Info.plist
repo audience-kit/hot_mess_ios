@@ -90,12 +90,10 @@
 	<string>Hot Mess accesses your photo library so you can send photographs to venue chat rooms.</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>ProximaNova-Regular.otf</string>
-		<string>ProximaNova-RegularT50.otf</string>
-		<string>ProximaNova-RegularT100.otf</string>
-		<string>ProximaNova-SemiBold.otf</string>
-		<string>ProximaNova-SemiBoldT50.otf</string>
-		<string>ProximaNova-SemiBoldT100.otf</string>
+		<string>Figtree-Regular.ttf</string>
+		<string>Figtree-SemiBold.ttf</string>
+		<string>Figtree-Bold.ttf</string>
+		<string>Figtree-ExtraBold.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
