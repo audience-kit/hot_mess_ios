@@ -85,7 +85,7 @@ them.
 | Configuration | API | Facebook app |
 | --- | --- | --- |
 | Debug | `http://localhost:3000` | development (842337999153841) |
-| Staging | `https://api.audiencekit.com` | staging (915436455177328) |
+| Staging | `https://api-staging.audiencekit.com` | staging (1660272792277019) |
 | Release | `https://api.audiencekit.com` | Hot Mess (1168782378316790) |
 
 Release signs in with Hot Mess, a Consumer Facebook app, using classic Facebook
