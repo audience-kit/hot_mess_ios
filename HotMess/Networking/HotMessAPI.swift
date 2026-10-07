@@ -70,7 +70,8 @@ struct HotMessAPI: Sendable {
             events: venue.events,
             friends: venue.friends,
             socialLinks: venue.socialLinks,
-            chatOpen: venue.chatOpen
+            chatOpen: venue.chatOpen,
+            recentMessages: venue.recentMessages
         )
     }
 
@@ -169,6 +170,8 @@ extension HotMessAPI {
 
         static let friendFields = "id name facebook_id: facebookId"
 
+        static let messageFields = "id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt"
+
         /// Enough of a person for a card that links to them.
         static let personSummaryFields = "id name photo_url: pictureUrl"
 
@@ -187,16 +190,12 @@ extension HotMessAPI {
               title image_url: imageUrl
               venue {
                 \(venueFields)
-                recent_messages: recentMessages(limit: 3) {
-                  id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt
-                }
+                recent_messages: recentMessages(limit: 3) { \(messageFields) }
               }
               venues { \(venueFields) }
               locale {
                 id name chat_open: chatOpen
-                recent_messages: recentMessages(limit: 3) {
-                  id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt
-                }
+                recent_messages: recentMessages(limit: 3) { \(messageFields) }
               }
               events { \(eventFields) }
               friends { \(friendFields) }
@@ -217,6 +216,7 @@ extension HotMessAPI {
             events { \(eventFields) }
             friends { \(friendFields) }
             social_links: socialLinks { \(socialLinkFields) }
+            recent_messages: recentMessages(limit: 3) { \(messageFields) }
           }
         }
         """
@@ -264,11 +264,15 @@ struct VenueWithEvents: Decodable, Sendable {
     let friends: [Friend]
     let socialLinks: [SocialLink]
     let chatOpen: Bool
+    /// The last few lines of the chat room, oldest first; empty unless the
+    /// viewer is at the venue or an admin.
+    let recentMessages: [VenueMessage]
 
     private enum CodingKeys: String, CodingKey {
         case events, friends
         case socialLinks = "social_links"
         case chatOpen = "chat_open"
+        case recentMessages = "recent_messages"
     }
 
     init(from decoder: any Decoder) throws {
@@ -278,6 +282,8 @@ struct VenueWithEvents: Decodable, Sendable {
         friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
         chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
+        recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
+            .map(VenueMessage.init(payload:))
     }
 }
 

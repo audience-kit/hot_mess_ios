@@ -15,6 +15,9 @@ struct VenueOverview: Sendable, Equatable {
     /// Whether the user can join the venue's chat room: they're at the venue,
     /// or they're an admin. The way in is hidden otherwise.
     var chatOpen = false
+    /// The last few lines of the venue's chat room, oldest first. The API
+    /// only sends them to someone who can read the room.
+    var recentMessages: [VenueMessage] = []
 }
 
 @MainActor
