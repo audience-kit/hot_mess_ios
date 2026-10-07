@@ -28,7 +28,7 @@ extension Person {
 @MainActor
 @Observable
 final class PeopleViewModel {
-    private(set) var state: LoadState<[Person]> = .idle
+    private(set) var state: LoadState<PeopleListing> = .idle
 
     private let audienceKit: AudienceKitClient
 
@@ -36,17 +36,18 @@ final class PeopleViewModel {
         self.audienceKit = audienceKit
     }
 
-    /// The people the audience follows, from AudienceKit GraphQL.
+    /// The people the audience follows, with their home venues, gigs and the
+    /// friends with them, from AudienceKit GraphQL.
     func load() async {
         if state.value == nil { state = .loading }
 
         do {
             let people = try await audienceKit.people()
-            state = .loaded(
-                people
+            state = .loaded(PeopleListing(
+                everyone: people
                     .sorted { ($0.order, $0.name) < ($1.order, $1.name) }
-                    .compactMap { Person($0, resolve: audienceKit.url(for:)) }
-            )
+                    .compactMap { PersonEntry($0, resolve: audienceKit.url(for:)) }
+            ))
         } catch is CancellationError {
         } catch let error as AudienceKitError {
             state = LoadState(catching: APIError(error))
