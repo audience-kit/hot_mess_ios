@@ -36,7 +36,10 @@ struct VenueChatScreen: View {
                 if let kind = bannerKind(viewModel) {
                     RoomBanner(kind: kind, roomName: room.name, isLocale: room.kind == .locale)
                 }
-                ChatThreadView(messages: threadMessages(viewModel), roomName: room.name)
+                ChatThreadView(messages: threadMessages(viewModel), roomName: room.name) { id in
+                    guard let id = UUID(uuidString: id) else { return }
+                    Task { await viewModel.resend(id) }
+                }
                 composer(viewModel)
             } else {
                 ProgressView()
@@ -96,8 +99,9 @@ struct VenueChatScreen: View {
         }
     }
 
+    /// The room's messages, then the reader's own lines still on their way.
     private func threadMessages(_ viewModel: VenueChatViewModel) -> [ChatThreadMessage] {
-        viewModel.messages.map { message in
+        let sent = viewModel.messages.map { message in
             ChatThreadMessage(
                 id: message.id.uuidString,
                 authorID: message.userID.uuidString,
@@ -108,6 +112,21 @@ struct VenueChatScreen: View {
                 isOwn: viewModel.isOutgoing(message)
             )
         }
+
+        let pending = viewModel.pending.map { message in
+            ChatThreadMessage(
+                id: message.id.uuidString,
+                authorID: viewModel.userID?.uuidString ?? "",
+                authorName: nil,
+                avatarURL: nil,
+                text: message.body,
+                sentAt: message.createdAt,
+                isOwn: true,
+                delivery: message.state == .failed ? .failed : .sending
+            )
+        }
+
+        return sent + pending
     }
 
     private func composer(_ viewModel: VenueChatViewModel) -> some View {

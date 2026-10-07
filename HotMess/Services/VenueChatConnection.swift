@@ -22,6 +22,7 @@ import os
 /// actually arrived since the Starscream 4 upgrade.
 actor VenueChatConnection {
     enum Event: Sendable {
+        /// The server confirmed the subscription; lines can be sent.
         case connected
         case received(VenueMessage)
         /// The server turned the subscription away, or ended it, because the
@@ -41,6 +42,10 @@ actor VenueChatConnection {
     private let decoder = JSONDecoder()
     private nonisolated let continuation: AsyncStream<Event>.Continuation
 
+    /// Built once: Action Cable matches every command to its subscription by
+    /// this exact string, and a Swift dictionary serializes its keys in a
+    /// different order from one instance to the next.
+    private let identifier: String
     private var socket: URLSessionWebSocketTask?
     private var receiveTask: Task<Void, Never>?
 
@@ -50,6 +55,7 @@ actor VenueChatConnection {
 
     init(room: ChatRoom, url: URL, token: String?, session: URLSession = .hotMess) {
         self.room = room
+        identifier = Self.identifier(for: room)
         self.url = url
         self.token = token
         self.session = session
@@ -84,8 +90,9 @@ actor VenueChatConnection {
         continuation.finish()
     }
 
-    /// Sends a line to the room. The message is echoed back by the server, so
-    /// the caller does not append it locally.
+    /// Sends a line to the room. The server echoes it back to everyone in the
+    /// room, the sender included. Call it only after `.connected`: the server
+    /// silently drops a line for a subscription it hasn't confirmed.
     func send(_ body: String) async throws {
         let data = try encoder.encode(OutgoingMessage(message: body))
 
@@ -98,18 +105,19 @@ actor VenueChatConnection {
         )
     }
 
-    // MARK: - Private
-
-    /// Action Cable identifies a subscription by a JSON *string*, not an object.
-    private var identifier: String {
+    /// Action Cable identifies a subscription by a JSON *string*, not an object,
+    /// so the keys are sorted to make it the same every time.
+    static func identifier(for room: ChatRoom) -> String {
         let subscription = ["channel": room.channelName, room.subscriptionKey: room.id.uuidString.lowercased()]
 
-        guard let data = try? JSONSerialization.data(withJSONObject: subscription) else {
+        guard let data = try? JSONSerialization.data(withJSONObject: subscription, options: .sortedKeys) else {
             return "{}"
         }
 
         return String(decoding: data, as: UTF8.self)
     }
+
+    // MARK: - Private
 
     private func subscribe() async {
         do {
@@ -156,7 +164,11 @@ actor VenueChatConnection {
         guard let frame = try? decoder.decode(IncomingFrame.self, from: data) else { return }
 
         switch frame.type {
-        case "welcome", "confirm_subscription":
+        case "welcome":
+            // The socket is open, but the room isn't joined until the server
+            // confirms the subscription.
+            break
+        case "confirm_subscription":
             continuation.yield(.connected)
         case "reject_subscription":
             continuation.yield(.notPresent)

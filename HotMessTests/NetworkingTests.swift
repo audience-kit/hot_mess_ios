@@ -289,3 +289,19 @@ struct APIErrorTests {
         }
     }
 }
+
+@Suite("Chat subscription identifier")
+struct ChatIdentifierTests {
+    /// Action Cable finds a subscription by this exact string, so a key order
+    /// that changes between calls loses messages.
+    @Test("Sorts its keys, so every frame names the same subscription")
+    func sortedKeys() throws {
+        let id = try #require(UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
+        let room = ChatRoom(kind: .venue, id: id, name: "Why KiKi")
+
+        let identifier = VenueChatConnection.identifier(for: room)
+
+        #expect(identifier == #"{"channel":"RealtimeChannel","venue_id":"0a1e0aac-1d01-42d1-9de5-f0279842d9c0"}"#)
+        #expect((0..<20).allSatisfy { _ in VenueChatConnection.identifier(for: room) == identifier })
+    }
+}
