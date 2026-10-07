@@ -129,6 +129,7 @@
 				AC0000000000000000000050 /* Sources */,
 				AC0000000000000000000051 /* Frameworks */,
 				AC0000000000000000000052 /* Resources */,
+				AC00000000000000000000F0 /* Prepare Square frameworks */,
 			);
 			buildRules = (
 			);
@@ -267,6 +268,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AC00000000000000000000F0 /* Prepare Square frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Prepare Square frameworks";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/Scripts/square-frameworks.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AC0000000000000000000050 /* Sources */ = {
@@ -498,6 +521,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AC0000000000000000000040 /* HotMess.debug.xcconfig */;
 			buildSettings = {
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDevelopment;
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -519,6 +543,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AC0000000000000000000041 /* HotMess.staging.xcconfig */;
 			buildSettings = {
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconStaging;
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -540,6 +565,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AC0000000000000000000042 /* HotMess.release.xcconfig */;
 			buildSettings = {
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = HotMess/HotMess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
