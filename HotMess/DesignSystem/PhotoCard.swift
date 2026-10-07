@@ -397,7 +397,7 @@ struct PersonCard: View {
 
     private var friendsSummary: String {
         guard !friends.isEmpty else { return "" }
-        let names = friends.map(\.firstName).formatted(.list(type: .and))
+        let names = friends.map(\.name).formatted(.list(type: .and))
         return String(localized: "With \(names)")
     }
 }

@@ -142,7 +142,7 @@ struct NowScreen: View {
                     VenueCardLink(venue: entry.venue) {
                         VenueCard(
                             venue: entry.venue,
-                            detail: entry.friends.map(\.firstName).formatted(.list(type: .and)),
+                            detail: entry.friends.map(\.name).formatted(.list(type: .and)),
                             pill: entry.friendCount == 1
                                 ? String(localized: "1 friend")
                                 : String(localized: "\(entry.friendCount) friends")
@@ -199,7 +199,7 @@ struct FriendStrip: View {
 
     var body: some View {
         ScrollView(.horizontal) {
-            HStack(spacing: 16) {
+            HStack(alignment: .top, spacing: 16) {
                 ForEach(friends) { friend in
                     Button {
                         if let url = friend.messengerURL { openURL(url) }
@@ -211,11 +211,15 @@ struct FriendStrip: View {
                                 size: 56
                             )
 
-                            Text(friend.firstName)
-                                .font(.caption)
-                                .lineLimit(1)
+                            // Friends see each other's full names; two lines
+                            // fit most, and longer ones truncate at the end.
+                            Text(friend.name)
+                                .font(.hotMess(.caption))
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .truncationMode(.tail)
                         }
-                        .frame(width: 68)
+                        .frame(width: 72)
                     }
                     .buttonStyle(.plain)
                     .disabled(friend.messengerURL == nil)
