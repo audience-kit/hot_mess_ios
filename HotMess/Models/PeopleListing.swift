@@ -10,8 +10,9 @@ import Foundation
 /// friends are with them.
 struct PersonEntry: Hashable, Sendable, Identifiable {
     let person: Person
-    /// The locale of the venue they're based at.
-    let homeLocaleID: UUID?
+    /// The locales they're based in: their home venue's, and every one
+    /// they're featured in.
+    let localeIDs: Set<UUID>
     /// Upcoming gigs, soonest first.
     let gigs: [Gig]
     /// Your friends at their home venue or a gig's venue right now, each once.
@@ -40,7 +41,10 @@ extension PersonEntry {
 
         self.init(
             person: base,
-            homeLocaleID: (person.homeVenue?.locale?.id).flatMap(RecordID.uuid),
+            localeIDs: Set(
+                ([person.homeVenue?.locale?.id] + (person.locales ?? []).map(\.id))
+                    .compactMap { $0.flatMap(RecordID.uuid) }
+            ),
             gigs: (person.events ?? []).compactMap { event in
                 guard let date = event.startDate else { return nil }
                 return Gig(
@@ -80,7 +84,8 @@ struct PeopleListing: Hashable, Sendable {
     struct Local: Hashable, Sendable {
         /// People with a gig in the city this week, soonest gig first.
         let playing: [Playing]
-        /// People based in the city who aren't playing it this week.
+        /// People based in or featured in the city who aren't playing it
+        /// this week.
         let based: [PersonEntry]
 
         var isEmpty: Bool { playing.isEmpty && based.isEmpty }
@@ -101,7 +106,7 @@ struct PeopleListing: Hashable, Sendable {
             .sorted { $0.gig.date < $1.gig.date }
 
         let playingIDs = Set(playing.map(\.id))
-        let based = everyone.filter { $0.homeLocaleID == localeID && !playingIDs.contains($0.id) }
+        let based = everyone.filter { $0.localeIDs.contains(localeID) && !playingIDs.contains($0.id) }
 
         return Local(playing: playing, based: based)
     }
