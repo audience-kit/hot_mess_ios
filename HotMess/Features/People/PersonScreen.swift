@@ -11,54 +11,63 @@ struct PersonScreen: View {
 
     @Environment(AppModel.self) private var model
     @State private var viewModel: PersonViewModel?
+    @State private var heroTone = HeroTone.placeholder
+    @State private var heroCollapsed = false
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { detail in
-            List {
-                Section {
-                    header(detail.person)
-                        .listRowInsets(EdgeInsets())
-                }
-
-                if !detail.socialLinks.isEmpty {
-                    Section(String(localized: "Elsewhere")) {
-                        ForEach(detail.socialLinks) { link in
-                            socialLinkRow(link)
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 24) {
+                        HeroHeader(url: detail.person.coverURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
+                            heroText(detail.person)
                         }
-                    }
-                }
 
-                Section(String(localized: "Events")) {
-                    if detail.events.isEmpty {
-                        Text("No upcoming events.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(detail.events) { event in
-                            NavigationLink(value: AppRoute.event(event.id)) {
-                                EventRow(event: event)
+                        DetailSection(String(localized: "Elsewhere")) {
+                            ForEach(detail.socialLinks) { link in
+                                socialLinkRow(link)
                             }
                         }
-                    }
-                }
 
-                if !detail.tracks.isEmpty {
-                    Section {
-                        ForEach(detail.tracks) { track in
-                            trackRow(track)
+                        DetailSection(String(localized: "Events")) {
+                            if detail.events.isEmpty {
+                                Text("No upcoming events.")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(detail.events) { event in
+                                    DetailLink(route: .event(event.id)) {
+                                        EventRow(event: event)
+                                    }
+                                }
+                            }
                         }
-                    } footer: {
-                        Image("PoweredBySoundCloud")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 20)
-                            .accessibilityLabel(String(localized: "Powered by SoundCloud"))
+
+                        DetailSection {
+                            ForEach(detail.tracks) { track in
+                                trackRow(track)
+                            }
+                        } footer: {
+                            Image("PoweredBySoundCloud")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 20)
+                                .accessibilityLabel(String(localized: "Powered by SoundCloud"))
+                        }
                     }
+                    .padding(.bottom, 24)
                 }
+                .ignoresSafeArea(edges: .top)
+                .trackingHeroCollapse($heroCollapsed)
             }
-            .listStyle(.insetGrouped)
+            // Ignoring the top here too is what makes the proxy report the bars' height.
+            .ignoresSafeArea(edges: .top)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
         }
-        .navigationTitle(viewModel?.state.value?.name ?? String(localized: "Person"))
-        .navigationBarTitleDisplayMode(.inline)
+        .heroNavigationBar(
+            title: viewModel?.state.value?.name ?? String(localized: "Person"),
+            tone: heroTone,
+            collapsed: heroCollapsed || viewModel?.state.value == nil
+        )
         .task {
             ensureViewModel()
             await viewModel?.load()
@@ -67,35 +76,27 @@ struct PersonScreen: View {
 
     // MARK: - Pieces
 
-    private func header(_ person: Person) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            RemoteImage(url: person.coverURL)
-                .frame(height: 180)
+    private func heroText(_ person: Person) -> some View {
+        HStack(alignment: .bottom, spacing: 14) {
+            Avatar(
+                url: person.pictureURL,
+                initials: person.name.initialsForDisplay,
+                size: 76
+            )
+            .overlay { Circle().strokeBorder(.foreground, lineWidth: 3) }
 
-            HStack(alignment: .bottom, spacing: 12) {
-                Avatar(
-                    url: person.pictureURL,
-                    initials: person.name.initialsForDisplay,
-                    size: 84
-                )
-                .overlay { Circle().strokeBorder(.white, lineWidth: 4) }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(person.name)
+                    .font(.hotMess(.title, semibold: true))
+                    .lineLimit(3)
+                    .accessibilityAddTraits(.isHeader)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(person.name)
-                        .font(.hotMess(.title3, semibold: true))
-
-                    if let role = person.role, !role.isEmpty {
-                        Text(role)
-                            .font(.hotMess(.subheadline))
-                            .foregroundStyle(.secondary)
-                    }
+                if let role = person.role, !role.isEmpty {
+                    Text(role)
+                        .font(.hotMess(.subheadline, semibold: true))
                 }
-                .padding(.bottom, 8)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, -28)
         }
-        .padding(.bottom, 36)
     }
 
     @ViewBuilder
