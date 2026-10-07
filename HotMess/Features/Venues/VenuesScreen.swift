@@ -133,7 +133,7 @@ private struct VenuesMapScreen: View {
             }
             .mapControls {
                 MapUserLocationButton()
-                MapCompassButton()
+                MapCompass()
                 MapScaleView()
             }
             .ignoresSafeArea(edges: .bottom)
