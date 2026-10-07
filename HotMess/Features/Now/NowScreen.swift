@@ -91,13 +91,20 @@ struct NowScreen: View {
                 VenueCardLink(venue: venue)
             }
 
-            DetailSection(String(localized: "Small Talk")) {
+            DetailSection(String(localized: "Small talk")) {
                 if now.recentMessages.isEmpty {
                     Text("No one's said anything yet.")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(now.recentMessages) { message in
-                        ChatLine(message: message)
+                        TimelineView(.everyMinute) { context in
+                            ChatLine(
+                                author: message.name,
+                                avatarURL: message.avatarURL,
+                                text: message.body,
+                                time: ChatTime.relative(message.sentAt, now: context.date)
+                            )
+                        }
                     }
                 }
 
@@ -176,38 +183,6 @@ struct NowScreen: View {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)
         }
-    }
-}
-
-/// One line of a venue's chat, as the Now screen previews it: the sender's
-/// photo and name, then what they said.
-struct ChatLine: View {
-    let message: VenueMessage
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Avatar(url: message.avatarURL, initials: message.name?.initialsForDisplay, size: 28)
-
-            VStack(alignment: .leading, spacing: 2) {
-                if let name = message.name {
-                    Text(name)
-                        .font(.hotMess(.caption, semibold: true))
-                        .foregroundStyle(.secondary)
-                }
-
-                Text(message.body)
-                    .font(.hotMess(.subheadline))
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 8)
-
-            Text(message.sentAt, style: .relative)
-                .font(.hotMess(.caption))
-                .foregroundStyle(.tertiary)
-                .monospacedDigit()
-        }
-        .padding(.vertical, 2)
     }
 }
 
