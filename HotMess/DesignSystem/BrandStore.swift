@@ -51,9 +51,9 @@ final class BrandStore {
 final class BrandPalette: @unchecked Sendable {
     static let shared = BrandPalette()
 
-    /// The `hot_mess` preset's accent in admin/src/design/tokens.json.
-    static let defaultLight = RGBAColor(hex: "#b8236f")!
-    static let defaultDark = RGBAColor(hex: "#ff7ab6")!
+    /// The `hot_mess` preset's accent.
+    static let defaultLight = DesignTokens.hotMess.accent
+    static let defaultDark = DesignTokens.hotMessDark.accent
 
     private let lock = OSAllocatedUnfairLock<(light: RGBAColor, dark: RGBAColor)>(
         initialState: (BrandPalette.defaultLight, BrandPalette.defaultDark)
