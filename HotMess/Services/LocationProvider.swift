@@ -117,28 +117,25 @@ final class LocationProvider {
     /// Reports `coordinate` as the device's position until `stopSimulating()`,
     /// so a test build can be "at" a venue from anywhere. The API puts the
     /// user at whichever venue's envelope contains the point.
-    func simulate(at coordinate: CLLocationCoordinate2D, venueName: String) {
+    /// Returns once the position is reported, so the caller can reload.
+    func simulate(at coordinate: CLLocationCoordinate2D, venueName: String) async {
         guard tracker.simulate(latitude: coordinate.latitude, longitude: coordinate.longitude, venueName: venueName)
         else { return }
 
         coordinates = tracker.current
-        Task {
-            await refreshLocale()
-            await reportPosition()
-        }
+        await refreshLocale()
+        await reportPosition()
     }
 
     /// Goes back to the device's real position.
-    func stopSimulating() {
+    func stopSimulating() async {
         guard tracker.stopSimulating() else { return }
 
         coordinates = tracker.current
         guard coordinates != nil else { return }
 
-        Task {
-            await refreshLocale()
-            await reportPosition()
-        }
+        await refreshLocale()
+        await reportPosition()
     }
 
     // MARK: - Delegate plumbing

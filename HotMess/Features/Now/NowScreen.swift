@@ -18,7 +18,7 @@ struct NowScreen: View {
                 if let simulated = model.location.simulatedVenueName {
                     Section {
                         Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
-                            model.location.stopSimulating()
+                            Task { await model.location.stopSimulating() }
                         }
                     } header: {
                         Text("Pretending to be at \(simulated)")

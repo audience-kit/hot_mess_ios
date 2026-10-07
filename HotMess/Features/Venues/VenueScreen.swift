@@ -157,11 +157,18 @@ struct VenueScreen: View {
             DetailSection(String(localized: "Testing")) {
                 if model.location.simulatedVenueName == venue.name {
                     Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
-                        model.location.stopSimulating()
+                        Task {
+                            await model.location.stopSimulating()
+                            await viewModel?.load()
+                        }
                     }
                 } else {
                     Button(String(localized: "Pretend I'm here"), systemImage: "location.fill") {
-                        model.location.simulate(at: coordinate, venueName: venue.name)
+                        // Reload once the visit is recorded, so the chat row appears.
+                        Task {
+                            await model.location.simulate(at: coordinate, venueName: venue.name)
+                            await viewModel?.load()
+                        }
                     }
                 }
             } footer: {
