@@ -65,7 +65,7 @@ struct HotMessAPI: Sendable {
     func venue(_ id: UUID) async throws -> VenueOverview {
         let response = try await query(Documents.venue, variables: ["id": .string(id.uuidString)], as: VenueResponse.self)
         guard let venue = response.venue else { throw APIError.notFound }
-        return VenueOverview(venue: venue.venue, events: venue.events)
+        return VenueOverview(venue: venue.venue, events: venue.events, friends: venue.friends)
     }
 
     // MARK: - Events
@@ -161,6 +161,8 @@ extension HotMessAPI {
         id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl cover_url: coverUrl
         """
 
+        static let friendFields = "id name facebook_id: facebookId"
+
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
         cover_photo_url: coverPhotoUrl is_featured: isFeatured rsvp: viewerRsvp \
@@ -175,6 +177,7 @@ extension HotMessAPI {
               venue { \(venueFields) }
               venues { \(venueFields) }
               events { \(eventFields) }
+              friends { \(friendFields) }
             }
           }
         }
@@ -182,7 +185,7 @@ extension HotMessAPI {
 
         static let venue = """
         query Venue($id: ID!) {
-          venue(id: $id) { \(venueFields) events { \(eventFields) } }
+          venue(id: $id) { \(venueFields) events { \(eventFields) } friends { \(friendFields) } }
         }
         """
 
@@ -224,12 +227,15 @@ struct PersonResponse: Decodable, Sendable {
 struct VenueWithEvents: Decodable, Sendable {
     let venue: Venue
     let events: [Event]
+    let friends: [Friend]
 
-    private enum CodingKeys: String, CodingKey { case events }
+    private enum CodingKeys: String, CodingKey { case events, friends }
 
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
-        events = try decoder.container(keyedBy: CodingKeys.self).decodeIfPresent([Event].self, forKey: .events) ?? []
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
+        friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
     }
 }
 
