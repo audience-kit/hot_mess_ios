@@ -137,6 +137,16 @@ struct ChatThreadMessage: Identifiable, Hashable, Sendable {
     /// Sent by the person reading.
     let isOwn: Bool
     var presence: PresenceState? = nil
+    /// Only the reader's own lines are ever anything but `.sent`.
+    var delivery: ChatDelivery = .sent
+}
+
+/// Where one of the reader's own lines is on its way to the room.
+enum ChatDelivery: Hashable, Sendable {
+    case sent
+    case sending
+    /// Didn't reach the room; tapping it tries again.
+    case failed
 }
 
 /// A chat room's transcript: bubbles grouped by sender, with time dividers and
@@ -145,6 +155,8 @@ struct ChatThreadView: View {
     let messages: [ChatThreadMessage]
     /// The room's name, for the empty state ("Everyone at {name} can see…").
     let roomName: String
+    /// Called with a failed message's ID when the reader taps it.
+    var onRetry: ((String) -> Void)? = nil
 
     @State private var width: CGFloat = 0
 
@@ -156,7 +168,7 @@ struct ChatThreadView: View {
                 } else {
                     LazyVStack(spacing: 0) {
                         ForEach(ChatThreadRow.rows(for: messages)) { row in
-                            ChatThreadRowView(row: row, maxBubbleWidth: maxBubbleWidth)
+                            ChatThreadRowView(row: row, maxBubbleWidth: maxBubbleWidth, onRetry: onRetry)
                                 .id(row.id)
                         }
                     }
@@ -238,6 +250,7 @@ struct ChatThreadRow: Identifiable, Hashable, Sendable {
 private struct ChatThreadRowView: View {
     let row: ChatThreadRow
     let maxBubbleWidth: CGFloat
+    let onRetry: ((String) -> Void)?
 
     private var message: ChatThreadMessage { row.message }
 
@@ -279,13 +292,39 @@ private struct ChatThreadRowView: View {
                     }
 
                     ChatBubble(text: message.text, isOwn: message.isOwn, isLastInGroup: row.isLastInGroup)
+                        .opacity(message.delivery == .sent ? 1 : 0.6)
                         .accessibilityLabel(accessibilityLabel)
+
+                    deliveryStatus
                 }
                 .frame(maxWidth: maxBubbleWidth, alignment: message.isOwn ? .trailing : .leading)
             }
             .frame(maxWidth: .infinity, alignment: message.isOwn ? .trailing : .leading)
         }
         .padding(.top, topSpacing)
+    }
+
+    @ViewBuilder
+    private var deliveryStatus: some View {
+        switch message.delivery {
+        case .sent:
+            EmptyView()
+        case .sending:
+            Text("Sending…")
+                .font(.hotMess(.caption))
+                .foregroundStyle(.secondary)
+                .padding(.trailing, 4)
+        case .failed:
+            Button {
+                onRetry?(message.id)
+            } label: {
+                Label(String(localized: "Not sent. Tap to retry."), systemImage: "exclamationmark.circle")
+                    .font(.hotMess(.caption, semibold: true))
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 4)
+        }
     }
 
     /// 2 between bubbles in a group, 8 between groups.
