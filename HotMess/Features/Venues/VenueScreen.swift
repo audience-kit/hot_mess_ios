@@ -29,9 +29,11 @@ struct VenueScreen: View {
 
                 aboutSection(venue)
 
-                Section(String(localized: "Chat")) {
-                    NavigationLink(value: AppRoute.venueChat(venue)) {
-                        Label(String(localized: "Join the room"), systemImage: "bubble.left.and.bubble.right")
+                if overview.chatOpen {
+                    Section(String(localized: "Chat")) {
+                        NavigationLink(value: AppRoute.venueChat(venue)) {
+                            Label(String(localized: "Join the room"), systemImage: "bubble.left.and.bubble.right")
+                        }
                     }
                 }
 
