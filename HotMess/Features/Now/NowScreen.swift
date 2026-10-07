@@ -74,23 +74,21 @@ struct NowScreen: View {
     @ViewBuilder
     private func nearbySection(_ now: Now) -> some View {
         if let venues = now.venues {
-            DetailSection(String(localized: "Venues")) {
-                if venues.isEmpty {
+            if venues.isEmpty {
+                DetailSection(String(localized: "Venues")) {
                     Text("You aren't near any venues right now.")
                         .foregroundStyle(.secondary)
-                } else {
+                }
+            } else {
+                CardSection(String(localized: "Venues")) {
                     ForEach(venues.prefix(3)) { venue in
-                        DetailLink(route: .venue(venue.id)) {
-                            VenueRow(venue: venue)
-                        }
+                        VenueCardLink(venue: venue)
                     }
                 }
             }
         } else if let venue = now.venue {
-            DetailSection(String(localized: "You're at")) {
-                DetailLink(route: .venue(venue.id)) {
-                    VenueRow(venue: venue)
-                }
+            CardSection(String(localized: "You're at")) {
+                VenueCardLink(venue: venue)
             }
 
             DetailSection(String(localized: "Small Talk")) {
@@ -130,10 +128,18 @@ struct NowScreen: View {
     @ViewBuilder
     private func friendVenuesSection(_ now: Now) -> some View {
         if now.venue == nil, !now.friendVenues.isEmpty {
-            DetailSection(String(localized: "Where your friends are")) {
+            CardSection(String(localized: "Where your friends are")) {
                 ForEach(now.friendVenues) { entry in
-                    DetailLink(route: .venue(entry.venue.id)) {
-                        FriendVenueRow(entry: entry)
+                    VenueCardLink(venue: entry.venue) {
+                        VenueCard(
+                            venue: entry.venue,
+                            detail: entry.friends.map(\.firstName).formatted(.list(type: .and)),
+                            pill: entry.friendCount == 1
+                                ? String(localized: "1 friend")
+                                : String(localized: "\(entry.friendCount) friends")
+                        ) {
+                            FriendFaces(friends: entry.friends)
+                        }
                     }
                 }
             }
@@ -168,38 +174,6 @@ struct NowScreen: View {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)
         }
-    }
-}
-
-/// A venue and how many of your friends are there, with their first names.
-struct FriendVenueRow: View {
-    let entry: FriendVenue
-
-    var body: some View {
-        HStack(spacing: 12) {
-            RemoteImage(url: entry.venue.photoURL)
-                .frame(width: 44, height: 44)
-                .clipShape(.rect(cornerRadius: 10))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.venue.name)
-                    .font(.hotMess(.headline, semibold: true))
-                    .lineLimit(1)
-
-                Text(entry.friends.map(\.firstName).formatted(.list(type: .and)))
-                    .font(.hotMess(.subheadline))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 8)
-
-            Text(entry.friendCount == 1 ? "1 friend" : "\(entry.friendCount) friends")
-                .font(.hotMess(.caption, semibold: true))
-                .foregroundStyle(Color.hotMessAccent)
-                .monospacedDigit()
-        }
-        .padding(.vertical, 4)
     }
 }
 

@@ -17,25 +17,28 @@ struct VenuesScreen: View {
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { collection in
-            List {
-                Section {
+            ScrollView {
+                VStack(spacing: 24) {
                     map(for: collection)
-                }
+                        .clipShape(.rect(cornerRadius: CardMetrics.cornerRadius))
+                        .padding(.horizontal, 16)
 
-                Section(model.brand.name) {
                     if collection.venues.isEmpty {
-                        Text(emptyMessage)
-                            .foregroundStyle(.secondary)
+                        DetailSection(model.brand.name) {
+                            Text(emptyMessage)
+                                .foregroundStyle(.secondary)
+                        }
                     } else {
-                        ForEach(collection.venues) { venue in
-                            NavigationLink(value: AppRoute.venue(venue.id)) {
-                                VenueRow(venue: venue)
+                        CardSection(model.brand.name) {
+                            ForEach(collection.venues) { venue in
+                                VenueCardLink(venue: venue)
                             }
                         }
                     }
                 }
+                .padding(.vertical, 16)
             }
-            .listStyle(.insetGrouped)
+            .background(Color(.systemGroupedBackground))
             .fullScreenCover(isPresented: $isMapExpanded) {
                 VenuesMapScreen(collection: collection) { pin in
                     isMapExpanded = false
@@ -83,7 +86,6 @@ struct VenuesScreen: View {
         }
         .buttonStyle(.plain)
         .frame(height: 220)
-        .listRowInsets(EdgeInsets())
         .accessibilityLabel(Text("Map of venues"))
         .accessibilityHint(Text("Opens the map full screen"))
         .onChange(of: collection) { _, updated in

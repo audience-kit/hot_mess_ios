@@ -72,39 +72,6 @@ struct FeaturedEventRow: View {
     }
 }
 
-struct VenueRow: View {
-    let venue: Venue
-
-    var body: some View {
-        HStack(spacing: 12) {
-            RemoteImage(url: venue.photoURL)
-                .frame(width: 56, height: 56)
-                .clipShape(.rect(cornerRadius: 10))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(venue.name)
-                    .font(.hotMess(.headline, semibold: true))
-                    .lineLimit(1)
-
-                Text(venue.summary)
-                    .font(.hotMess(.subheadline))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 8)
-
-            if let distance = venue.distance {
-                Text(DistanceFormat.string(fromMetres: distance))
-                    .font(.hotMess(.caption))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}
-
 struct PersonRow: View {
     let person: Person
 

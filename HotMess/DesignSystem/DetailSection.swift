@@ -46,7 +46,7 @@ struct DetailSection<Content: View, Footer: View>: View {
                             }
                         }
                     }
-                    .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: Self.cornerRadius))
+                    .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: CardMetrics.cornerRadius))
 
                     footer
                         .padding(.horizontal, 20)
@@ -54,13 +54,6 @@ struct DetailSection<Content: View, Footer: View>: View {
                 .padding(.horizontal, 16)
             }
         }
-    }
-
-    private static var cornerRadius: CGFloat {
-        if #available(iOS 26, *) {
-            return 26
-        }
-        return 12
     }
 }
 
