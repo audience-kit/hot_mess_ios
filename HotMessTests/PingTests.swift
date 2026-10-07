@@ -61,7 +61,7 @@ private enum PingFixtures {
 
     static func uuid(_ text: String) -> UUID { UUID(uuidString: text)! }
 
-    static func friend(_ id: String, _ name: String) -> Friend { Friend(id: uuid(id), name: name) }
+    static func friend(_ id: String, _ name: String) -> HotMess.Friend { HotMess.Friend(id: uuid(id), name: name) }
 }
 
 @Suite("Ping decoding")
