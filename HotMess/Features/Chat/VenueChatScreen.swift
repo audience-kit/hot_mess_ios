@@ -70,7 +70,7 @@ struct VenueChatScreen: View {
 
         switch viewModel.connectionState {
         case .connecting: return .connecting
-        case .disconnected: return .offline
+        case let .disconnected(reason): return .offline(reason)
         case .connected, .notPresent: return nil
         }
     }

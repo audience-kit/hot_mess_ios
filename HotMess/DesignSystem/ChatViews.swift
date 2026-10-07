@@ -407,7 +407,8 @@ struct RoomBanner: View {
         /// An admin in the room from outside the place it's for.
         case range
         case connecting
-        case offline
+        /// The connection's own reason when it gave one, else a plain "Offline."
+        case offline(String?)
     }
 
     let kind: Kind
@@ -431,7 +432,7 @@ struct RoomBanner: View {
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("chat.outOfRange")
         case .connecting, .offline:
-            Text(kind == .connecting ? String(localized: "Connecting…") : String(localized: "Offline. Reconnecting…"))
+            Text(stripText)
                 .font(.hotMess(.footnote))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -439,6 +440,14 @@ struct RoomBanner: View {
                 .padding(.vertical, 4)
                 .background(Color(.tertiarySystemFill))
                 .accessibilityIdentifier(kind == .connecting ? "chat.connecting" : "chat.offline")
+        }
+    }
+
+    private var stripText: String {
+        switch kind {
+        case .connecting: String(localized: "Connecting…")
+        case let .offline(reason): reason ?? String(localized: "Offline.")
+        case .range: ""
         }
     }
 }
@@ -602,7 +611,7 @@ private enum ChatPreviewData {
     VStack(spacing: 12) {
         RoomBanner(kind: .range, roomName: "The Eagle")
         RoomBanner(kind: .connecting, roomName: "The Eagle")
-        RoomBanner(kind: .offline, roomName: "The Eagle")
+        RoomBanner(kind: .offline(nil), roomName: "The Eagle")
     }
 }
 
