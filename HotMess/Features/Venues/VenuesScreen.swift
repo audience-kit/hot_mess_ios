@@ -13,6 +13,7 @@ struct VenuesScreen: View {
     @Environment(AppModel.self) private var model
     @State private var viewModel: VenuesViewModel?
     @State private var camera: MapCameraPosition = .automatic
+    @State private var isMapExpanded = false
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { collection in
@@ -35,6 +36,12 @@ struct VenuesScreen: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .fullScreenCover(isPresented: $isMapExpanded) {
+                VenuesMapScreen(collection: collection) { pin in
+                    isMapExpanded = false
+                    model.venuesPath.append(.venue(pin.id))
+                }
+            }
         }
         .navigationTitle(model.location.locale?.name ?? String(localized: "Venues"))
         .task(id: model.location.locale?.id) {
@@ -53,15 +60,32 @@ struct VenuesScreen: View {
         return String(localized: "No venues yet.")
     }
 
+    /// The inline map is a preview: tapping anywhere on it opens the full
+    /// screen map, which is where panning and zooming happen.
     private func map(for collection: VenueCollection) -> some View {
-        Map(position: $camera) {
-            ForEach(collection.pins) { pin in
-                Marker(pin.name, coordinate: pin.coordinate)
-                    .tint(Color.hotMessAccent)
+        Button {
+            isMapExpanded = true
+        } label: {
+            Map(position: $camera, interactionModes: []) {
+                ForEach(collection.pins) { pin in
+                    Marker(pin.name, coordinate: pin.coordinate)
+                        .tint(Color.hotMessAccent)
+                }
+            }
+            .allowsHitTesting(false)
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.footnote.weight(.semibold))
+                    .padding(8)
+                    .background(.regularMaterial, in: Circle())
+                    .padding(10)
             }
         }
+        .buttonStyle(.plain)
         .frame(height: 220)
         .listRowInsets(EdgeInsets())
+        .accessibilityLabel(Text("Map of venues"))
+        .accessibilityHint(Text("Opens the map full screen"))
         .onChange(of: collection) { _, updated in
             updateCamera(for: updated)
         }
@@ -85,4 +109,78 @@ struct VenuesScreen: View {
             await viewModel?.load(localeID: model.location.locale?.id)
         }
     }
+}
+
+/// The venues map at full screen. Tapping a pin opens that venue; Done closes
+/// the map.
+private struct VenuesMapScreen: View {
+    let collection: VenueCollection
+    let open: (VenuePin) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var camera: MapCameraPosition = .automatic
+    @State private var selection: UUID?
+
+    var body: some View {
+        NavigationStack {
+            Map(position: $camera, selection: $selection) {
+                ForEach(collection.pins) { pin in
+                    Marker(pin.name, coordinate: pin.coordinate)
+                        .tint(Color.hotMessAccent)
+                        .tag(pin.id)
+                }
+                UserAnnotation()
+            }
+            .mapControls {
+                MapUserLocationButton()
+                MapCompassButton()
+                MapScaleView()
+            }
+            .ignoresSafeArea(edges: .bottom)
+            .navigationTitle(Text("Venues"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if let pin = selectedPin {
+                    Button {
+                        open(pin)
+                    } label: {
+                        Label(pin.name, systemImage: "chevron.right")
+                            .labelStyle(.titleAndTrailingIcon)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.hotMessAccent)
+                    .controlSize(.large)
+                    .padding()
+                }
+            }
+            .onAppear {
+                if let region = collection.region {
+                    camera = .region(region)
+                }
+            }
+        }
+    }
+
+    private var selectedPin: VenuePin? {
+        collection.pins.first { $0.id == selection }
+    }
+}
+
+private struct TitleAndTrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            configuration.title
+            configuration.icon
+        }
+    }
+}
+
+private extension LabelStyle where Self == TitleAndTrailingIconLabelStyle {
+    static var titleAndTrailingIcon: TitleAndTrailingIconLabelStyle { .init() }
 }
