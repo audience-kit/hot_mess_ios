@@ -21,7 +21,8 @@ Dependencies resolve through Swift Package Manager on first open:
 | [facebook-ios-sdk](https://github.com/facebook/facebook-ios-sdk) | Login |
 | [Kingfisher](https://github.com/onevcat/Kingfisher) | Remote image loading and caching |
 | [AudienceKit](https://github.com/audience-kit/audience-kit) (`sdk/swift`) | Sign-in, session, GraphQL and branding against the AudienceKit API |
-| [Stripe](https://github.com/stripe/stripe-ios-spm) (`StripePaymentSheet`) | Paying cover in the app |
+| [Stripe](https://github.com/stripe/stripe-ios-spm) (`StripePaymentSheet`) | Paying cover at Stripe venues |
+| [Square In-App Payments](https://github.com/square/in-app-payments-ios) (`SquareInAppPaymentsSDK`) | Paying cover at Square venues |
 
 The app runs on iPhone and iPad.
 
@@ -114,10 +115,18 @@ runtime while it is blank.
 
 When a venue takes cover in the app (`coverCharge.payable`), its page, the
 event that sets tonight's cover, and Now (at the venue) offer "Pay cover".
-`CoverCheckout` calls `buyCover`, presents Stripe's PaymentSheet on the
-venue's connected account (`STPAPIClient.shared.stripeAccount`; Connect
-direct charges) with the platform's publishable key, then `confirmCover`, and
-shows the pass. Passes live under Me → Passes.
+`CoverCheckout` calls `buyCover`, which says who takes the venue's cover
+(`provider`):
+
+- **Stripe**: Stripe's PaymentSheet on the venue's connected account
+  (`STPAPIClient.shared.stripeAccount`; Connect direct charges) with the
+  platform's publishable key, then `confirmCover`.
+- **Square**: Square's In-App Payments SDK with the audience's
+  `squareApplicationId`. The buyer picks Apple Pay (when Square can take it on
+  the device) or Square's card form; either makes a payment token that
+  `payCover` charges to the venue's Square location.
+
+Then it shows the pass. Passes live under Me → Passes.
 
 The pass's QR code is made on the phone every 30 seconds from the pass's
 secret (`CoverPass`, the API's `app/services/cover_pass.rb`), so it works with
@@ -128,7 +137,11 @@ calls `scanAdmission`.
 Apple Pay uses `APPLE_PAY_MERCHANT_ID` (`merchant.social.hotmess`) from the
 xcconfig files and the `in-app-payments` entitlement. Register that merchant
 ID in the Apple Developer account and add an Apple Pay certificate for it on
-Stripe; with the setting empty, the payment sheet takes cards only.
+Stripe; with the setting empty, both providers take cards only. Square venues
+use the same merchant ID, which needs a payment processing certificate made
+from Square's CSR (Square Developer Dashboard → the application → Apple Pay).
+Apple encrypts each payment to one certificate per merchant ID, so if Stripe
+and Square can't share it, give Square its own merchant ID.
 
 ## App icon
 
