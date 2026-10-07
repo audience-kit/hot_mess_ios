@@ -31,6 +31,15 @@ struct VenueScreen: View {
 
                         aboutSection(venue)
 
+                        let socialLinks = overview.socialLinks.filter { $0.url != nil }
+                        if !socialLinks.isEmpty {
+                            DetailSection(String(localized: "Elsewhere")) {
+                                ForEach(socialLinks) { link in
+                                    SocialLinkRow(link: link)
+                                }
+                            }
+                        }
+
                         if overview.chatOpen {
                             DetailSection(String(localized: "Chat")) {
                                 DetailLink(route: .venueChat(venue)) {

@@ -65,7 +65,13 @@ struct HotMessAPI: Sendable {
     func venue(_ id: UUID) async throws -> VenueOverview {
         let response = try await query(Documents.venue, variables: ["id": .string(id.uuidString)], as: VenueResponse.self)
         guard let venue = response.venue else { throw APIError.notFound }
-        return VenueOverview(venue: venue.venue, events: venue.events, friends: venue.friends, chatOpen: venue.chatOpen)
+        return VenueOverview(
+            venue: venue.venue,
+            events: venue.events,
+            friends: venue.friends,
+            socialLinks: venue.socialLinks,
+            chatOpen: venue.chatOpen
+        )
     }
 
     // MARK: - Events
@@ -163,6 +169,11 @@ extension HotMessAPI {
 
         static let friendFields = "id name facebook_id: facebookId"
 
+        /// Enough of a person for a card that links to them.
+        static let personSummaryFields = "id name photo_url: pictureUrl"
+
+        static let socialLinkFields = "id handle provider url"
+
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
         cover_photo_url: coverPhotoUrl is_featured: isFeatured rsvp: viewerRsvp \
@@ -195,7 +206,12 @@ extension HotMessAPI {
 
         static let venue = """
         query Venue($id: ID!) {
-          venue(id: $id) { \(venueFields) chat_open: chatOpen events { \(eventFields) } friends { \(friendFields) } }
+          venue(id: $id) {
+            \(venueFields) chat_open: chatOpen
+            events { \(eventFields) }
+            friends { \(friendFields) }
+            social_links: socialLinks { \(socialLinkFields) }
+          }
         }
         """
 
@@ -216,7 +232,9 @@ extension HotMessAPI {
           person(id: $id) {
             \(personFields)
             events { \(eventFields) }
-            social_links: socialLinks { id handle provider url }
+            social_links: socialLinks { \(socialLinkFields) }
+            members { \(personSummaryFields) }
+            groups { \(personSummaryFields) }
             tracks { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl }
           }
         }
@@ -238,10 +256,12 @@ struct VenueWithEvents: Decodable, Sendable {
     let venue: Venue
     let events: [Event]
     let friends: [Friend]
+    let socialLinks: [SocialLink]
     let chatOpen: Bool
 
     private enum CodingKeys: String, CodingKey {
         case events, friends
+        case socialLinks = "social_links"
         case chatOpen = "chat_open"
     }
 
@@ -250,6 +270,7 @@ struct VenueWithEvents: Decodable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
         friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
+        socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
         chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
     }
 }
