@@ -12,6 +12,7 @@
 		AC00000000000000000000A2 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000092 /* Kingfisher */; };
 		AC00000000000000000000A3 /* AudienceKit in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000093 /* AudienceKit */; };
 		AC00000000000000000000A4 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000094 /* StripePaymentSheet */; };
+		AC00000000000000000000A5 /* SquareInAppPaymentsSDK in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000095 /* SquareInAppPaymentsSDK */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,7 @@
 				AC00000000000000000000A2 /* Kingfisher in Frameworks */,
 				AC00000000000000000000A3 /* AudienceKit in Frameworks */,
 				AC00000000000000000000A4 /* StripePaymentSheet in Frameworks */,
+				AC00000000000000000000A5 /* SquareInAppPaymentsSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -142,6 +144,7 @@
 				AC0000000000000000000092 /* Kingfisher */,
 				AC0000000000000000000093 /* AudienceKit */,
 				AC0000000000000000000094 /* StripePaymentSheet */,
+				AC0000000000000000000095 /* SquareInAppPaymentsSDK */,
 			);
 			productName = HotMess;
 			productReference = AC0000000000000000000020 /* HotMess.app */;
@@ -227,6 +230,7 @@
 				AC0000000000000000000081 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */,
 				AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */,
+				AC0000000000000000000084 /* XCRemoteSwiftPackageReference "in-app-payments-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AC0000000000000000000003 /* Products */;
@@ -748,6 +752,14 @@
 				minimumVersion = 26.0.0;
 			};
 		};
+		AC0000000000000000000084 /* XCRemoteSwiftPackageReference "in-app-payments-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/square/in-app-payments-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.7;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -775,6 +787,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
 			productName = StripePaymentSheet;
+		};
+		AC0000000000000000000095 /* SquareInAppPaymentsSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC0000000000000000000084 /* XCRemoteSwiftPackageReference "in-app-payments-ios" */;
+			productName = SquareInAppPaymentsSDK;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

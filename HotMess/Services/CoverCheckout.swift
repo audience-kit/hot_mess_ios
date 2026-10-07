@@ -5,16 +5,21 @@
 
 import Foundation
 import Observation
+@preconcurrency import PassKit
+@preconcurrency import SquareInAppPaymentsSDK
 @preconcurrency import StripePaymentSheet
+import SwiftUI
 import UIKit
 
 /// Pays a venue's cover in the app and shows the pass.
 ///
-/// `buyCover` starts the payment on the venue's own Stripe account (a Connect
-/// direct charge), Stripe's payment sheet takes it, and `confirmCover` checks
-/// it with Stripe so the pass works before the webhook lands. One checkout
-/// runs at a time, so the app keeps one of these and `CoverPresenter` shows
-/// its pass and errors over whichever tab started it.
+/// `buyCover` starts the payment with the venue's provider. For Stripe it's on
+/// the venue's own Stripe account (a Connect direct charge): Stripe's payment
+/// sheet takes it, and `confirmCover` checks it with Stripe so the pass works
+/// before the webhook lands. For Square, Square's In-App Payments SDK turns
+/// Apple Pay or a card into a payment token and `payCover` charges it. One
+/// checkout runs at a time, so the app keeps one of these and `CoverPresenter`
+/// shows its pass and errors over whichever tab started it.
 @MainActor
 @Observable
 final class CoverCheckout {
@@ -53,24 +58,40 @@ final class CoverCheckout {
         do {
             let purchase = try await api.buyCover(venueID: venueID)
 
-            // Paid already (another device, or a payment that finished after
-            // the sheet closed): straight to the pass.
-            guard let clientSecret = purchase.paymentIntentClientSecret else {
+            switch purchase.nextStep {
+            case .showPass:
+                // Paid already (another device, or a payment that finished
+                // after the sheet closed): straight to the pass.
                 finish(with: purchase.admission)
-                return
-            }
-
-            switch await presentPaymentSheet(for: purchase, clientSecret: clientSecret, venueName: venueName) {
-            case .completed:
-                finish(with: try await api.confirmCover(admissionID: purchase.admission.id))
-            case .canceled:
-                break
-            case let .failed(message):
-                errorMessage = message
+            case let .stripe(clientSecret, publishableKey, accountID):
+                switch await presentPaymentSheet(
+                    clientSecret: clientSecret,
+                    publishableKey: publishableKey,
+                    accountID: accountID,
+                    venueName: venueName
+                ) {
+                case .completed:
+                    finish(with: try await api.confirmCover(admissionID: purchase.admission.id))
+                case .canceled:
+                    break
+                case let .failed(message):
+                    errorMessage = message
+                }
+            case let .square(applicationID):
+                switch await payWithSquare(purchase.admission, applicationID: applicationID, venueName: venueName) {
+                case let .paid(admission):
+                    finish(with: admission)
+                case .canceled:
+                    break
+                case let .failed(message):
+                    errorMessage = message
+                }
+            case .unavailable:
+                errorMessage = String(localized: "This venue can't take cover in the app right now.")
             }
         } catch is CancellationError {
         } catch {
-            errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            errorMessage = paymentErrorMessage(error)
         }
     }
 
@@ -104,17 +125,18 @@ final class CoverCheckout {
     }
 
     private func presentPaymentSheet(
-        for purchase: CoverPurchase,
         clientSecret: String,
+        publishableKey: String,
+        accountID: String,
         venueName: String
     ) async -> SheetOutcome {
         // Direct charges live on the venue's account, so the sheet talks to
         // Stripe as that account with the platform's publishable key.
-        STPAPIClient.shared.publishableKey = purchase.publishableKey
-        STPAPIClient.shared.stripeAccount = purchase.stripeAccountID
+        STPAPIClient.shared.publishableKey = publishableKey
+        STPAPIClient.shared.stripeAccount = accountID
 
         var sheetConfiguration = PaymentSheet.Configuration()
-        sheetConfiguration.merchantDisplayName = venueName.isEmpty ? String(localized: "Hot Mess") : venueName
+        sheetConfiguration.merchantDisplayName = Self.merchantName(venueName)
         sheetConfiguration.returnURL = Self.returnURL
         sheetConfiguration.allowsDelayedPaymentMethods = false
         if let merchantID = configuration.applePayMerchantID {
@@ -141,6 +163,248 @@ final class CoverCheckout {
                     continuation.resume(returning: .failed(error.localizedDescription))
                 }
             }
+        }
+    }
+
+    // MARK: - Square
+
+    private func payWithSquare(_ admission: Admission, applicationID: String, venueName: String) async -> SquareOutcome {
+        // Square needs the application ID before anything else it does,
+        // Apple Pay checks included.
+        SQIPInAppPaymentsSDK.squareApplicationID = applicationID
+
+        guard let presenter = UIApplication.shared.topViewController else {
+            return .failed(String(localized: "Couldn't open the payment sheet."))
+        }
+
+        let merchantID = configuration.applePayMerchantID
+        let methods = SquarePaymentMethod.available(
+            canUseApplePay: SQIPInAppPaymentsSDK.canUseApplePay,
+            merchantID: merchantID
+        )
+        let pay: @MainActor (String) async throws -> Admission = { [api] nonce in
+            try await api.payCover(admissionID: admission.id, sourceID: nonce)
+        }
+
+        switch await Self.chooseSquareMethod(from: methods, price: admission.price, presenter: presenter) {
+        case .applePay:
+            guard let merchantID else { return .canceled }
+            let request = PKPaymentRequest.squarePaymentRequest(
+                merchantIdentifier: merchantID,
+                countryCode: "US",
+                currencyCode: admission.currency.uppercased()
+            )
+            request.paymentSummaryItems = [
+                PKPaymentSummaryItem(
+                    label: Self.merchantName(venueName),
+                    amount: NSDecimalNumber(decimal: admission.totalAmount)
+                ),
+            ]
+            return await SquareApplePay(pay: pay).run(request)
+        case .card:
+            return await SquareCardEntry(pay: pay, price: admission.price).run(from: presenter)
+        case nil:
+            return .canceled
+        }
+    }
+
+    /// Asks Apple Pay or card when both work; otherwise there's nothing to ask.
+    private static func chooseSquareMethod(
+        from methods: [SquarePaymentMethod],
+        price: String,
+        presenter: UIViewController
+    ) async -> SquarePaymentMethod? {
+        guard methods.count > 1 else { return methods.first }
+
+        return await withCheckedContinuation { continuation in
+            let sheet = UIAlertController(
+                title: String(localized: "Pay cover \(price)"),
+                message: nil,
+                preferredStyle: .actionSheet
+            )
+            for method in methods {
+                let title = switch method {
+                case .applePay: String(localized: "Apple Pay")
+                case .card: String(localized: "Card")
+                }
+                sheet.addAction(UIAlertAction(title: title, style: .default) { _ in
+                    continuation.resume(returning: method)
+                })
+            }
+            sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel) { _ in
+                continuation.resume(returning: nil)
+            })
+
+            // iPad shows action sheets as popovers, which need an anchor.
+            if let popover = sheet.popoverPresentationController {
+                popover.sourceView = presenter.view
+                popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            presenter.present(sheet, animated: true)
+        }
+    }
+
+    private static func merchantName(_ venueName: String) -> String {
+        venueName.isEmpty ? String(localized: "Hot Mess") : venueName
+    }
+}
+
+/// How paying through Square ended.
+private enum SquareOutcome: Sendable {
+    case paid(Admission)
+    case canceled
+    case failed(String)
+}
+
+private func paymentErrorMessage(_ error: any Error) -> String {
+    (error as? APIError)?.errorDescription ?? error.localizedDescription
+}
+
+// MARK: - Square Apple Pay
+
+/// Apple Pay through Square: the authorized `PKPayment` becomes a Square
+/// payment token, `pay` charges it, and the Apple Pay sheet shows how that
+/// went. PassKit calls its delegate on the main thread, so the conformance is
+/// `@preconcurrency` with the class on the main actor, as `LocationProvider`
+/// does for Core Location.
+@MainActor
+private final class SquareApplePay: NSObject, @preconcurrency PKPaymentAuthorizationControllerDelegate {
+    private let pay: @MainActor (String) async throws -> Admission
+    private var controller: PKPaymentAuthorizationController?
+    private var continuation: CheckedContinuation<SquareOutcome, Never>?
+    private var outcome = SquareOutcome.canceled
+
+    init(pay: @escaping @MainActor (String) async throws -> Admission) {
+        self.pay = pay
+    }
+
+    func run(_ request: PKPaymentRequest) async -> SquareOutcome {
+        let controller = PKPaymentAuthorizationController(paymentRequest: request)
+        controller.delegate = self
+        self.controller = controller
+
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            controller.present { @Sendable presented in
+                guard !presented else { return }
+                Task { @MainActor in
+                    self.complete(.failed(String(localized: "Couldn't open Apple Pay.")))
+                }
+            }
+        }
+    }
+
+    func paymentAuthorizationController(
+        _ controller: PKPaymentAuthorizationController,
+        didAuthorizePayment payment: PKPayment,
+        handler completion: @escaping (PKPaymentAuthorizationResult) -> Void
+    ) {
+        Task {
+            do {
+                let nonce = try await Self.nonce(for: payment)
+                outcome = .paid(try await pay(nonce))
+                completion(PKPaymentAuthorizationResult(status: .success, errors: nil))
+            } catch {
+                outcome = .failed(paymentErrorMessage(error))
+                completion(PKPaymentAuthorizationResult(status: .failure, errors: [error]))
+            }
+        }
+    }
+
+    func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
+        controller.dismiss { @Sendable in
+            Task { @MainActor in self.complete(self.outcome) }
+        }
+    }
+
+    private func complete(_ outcome: SquareOutcome) {
+        controller = nil
+        continuation?.resume(returning: outcome)
+        continuation = nil
+    }
+
+    /// Square's payment token for an Apple Pay payment.
+    private static func nonce(for payment: PKPayment) async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            SQIPApplePayNonceRequest(payment: payment).perform { @Sendable cardDetails, error in
+                if let cardDetails {
+                    continuation.resume(returning: cardDetails.nonce)
+                } else {
+                    continuation.resume(throwing: error ?? SquareNonceError())
+                }
+            }
+        }
+    }
+}
+
+private struct SquareNonceError: LocalizedError {
+    var errorDescription: String? { String(localized: "Square couldn't read this Apple Pay payment.") }
+}
+
+// MARK: - Square card entry
+
+/// Square's card form, presented over SwiftUI from the top view controller as
+/// Stripe's sheet is. The form hands over a payment token, `pay` charges it,
+/// and the form shows success or the error (so the buyer can fix the card and
+/// try again) before it closes.
+@MainActor
+private final class SquareCardEntry: NSObject, @preconcurrency SQIPCardEntryViewControllerDelegate {
+    private let pay: @MainActor (String) async throws -> Admission
+    private let price: String
+    private var continuation: CheckedContinuation<SquareOutcome, Never>?
+    private var paid: Admission?
+
+    init(pay: @escaping @MainActor (String) async throws -> Admission, price: String) {
+        self.pay = pay
+        self.price = price
+    }
+
+    func run(from presenter: UIViewController) async -> SquareOutcome {
+        let theme = SQIPTheme()
+        theme.tintColor = UIColor(Color.hotMessAccent)
+        theme.saveButtonTitle = String(localized: "Pay \(price)")
+
+        let form = SQIPCardEntryViewController(theme: theme)
+        form.delegate = self
+
+        // The form puts its cancel and pay buttons in a navigation bar.
+        let navigation = UINavigationController(rootViewController: form)
+
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            presenter.present(navigation, animated: true)
+        }
+    }
+
+    func cardEntryViewController(
+        _ cardEntryViewController: SQIPCardEntryViewController,
+        didObtain cardDetails: SQIPCardDetails,
+        completionHandler: @escaping ((any Error)?) -> Void
+    ) {
+        let nonce = cardDetails.nonce
+        Task {
+            do {
+                paid = try await pay(nonce)
+                completionHandler(nil)
+            } catch {
+                completionHandler(error)
+            }
+        }
+    }
+
+    func cardEntryViewController(
+        _ cardEntryViewController: SQIPCardEntryViewController,
+        didCompleteWith status: SQIPCardEntryCompletionStatus
+    ) {
+        let outcome: SquareOutcome = switch (status, paid) {
+        case let (.success, admission?): .paid(admission)
+        default: .canceled
+        }
+
+        cardEntryViewController.dismiss(animated: true) {
+            self.continuation?.resume(returning: outcome)
+            self.continuation = nil
         }
     }
 }

@@ -129,6 +129,25 @@ struct HotMessAPI: Sendable {
         ).buyCover
     }
 
+    /// Pays a Square venue's cover with a payment token (nonce) from Square's
+    /// In-App Payments SDK, a card or Apple Pay. The pass comes back paid when
+    /// Square took the payment.
+    func payCover(admissionID: String, sourceID: String, verificationToken: String? = nil) async throws -> Admission {
+        var variables: [String: GraphQLValue] = [
+            "admissionId": .string(admissionID),
+            "sourceId": .string(sourceID),
+        ]
+        if let verificationToken {
+            variables["verificationToken"] = .string(verificationToken)
+        }
+
+        return try await query(
+            Documents.payCover,
+            variables: variables,
+            as: PayCoverResponse.self
+        ).payCover.admission
+    }
+
     /// Checks the payment with Stripe after the payment sheet finishes, so the
     /// pass works before Stripe's webhook arrives.
     func confirmCover(admissionID: String) async throws -> Admission {
@@ -421,6 +440,17 @@ extension HotMessAPI {
             payment_intent_client_secret: paymentIntentClientSecret
             publishable_key: publishableKey
             stripe_account_id: stripeAccountId
+            provider
+            square_application_id: squareApplicationId
+            square_location_id: squareLocationId
+          }
+        }
+        """
+
+        static let payCover = """
+        mutation PayCover($admissionId: ID!, $sourceId: String!, $verificationToken: String) {
+          payCover(input: { admissionId: $admissionId, sourceId: $sourceId, verificationToken: $verificationToken }) {
+            admission { \(admissionFields) }
           }
         }
         """
@@ -592,6 +622,10 @@ struct AdmissionPayload: Decodable, Sendable {
 
 struct ConfirmCoverResponse: Decodable, Sendable {
     let confirmCover: AdmissionPayload
+}
+
+struct PayCoverResponse: Decodable, Sendable {
+    let payCover: AdmissionPayload
 }
 
 struct RefundAdmissionResponse: Decodable, Sendable {

@@ -113,6 +113,9 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
 
     var price: String { CoverFormat.price(cents: totalCents, currency: currency) }
 
+    /// What the buyer pays, in the currency's units, for Apple Pay.
+    var totalAmount: Decimal { Decimal(totalCents) / 100 }
+
     /// "Fri, Oct 9".
     var nightTitle: String { CoverFormat.night(night) }
 
@@ -201,21 +204,109 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// What `buyCover` returns: the pending pass and what Stripe's payment sheet
-/// needs to take the payment on the venue's account.
+/// What `buyCover` returns: the pending pass and what the venue's payment
+/// provider needs. Stripe venues pay with Stripe's payment sheet on the
+/// venue's account; Square venues with Square's In-App Payments SDK.
 struct CoverPurchase: Decodable, Sendable {
+    /// Who takes the venue's cover.
+    enum Provider: String, Decodable, Sendable {
+        case stripe = "STRIPE"
+        case square = "SQUARE"
+        /// A provider a newer API added.
+        case unknown
+
+        init(from decoder: any Decoder) throws {
+            self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+        }
+    }
+
     let admission: Admission
-    /// `nil` once it's paid.
+    let provider: Provider
+    /// Stripe: for the payment sheet; `nil` once it's paid.
     let paymentIntentClientSecret: String?
-    let publishableKey: String
-    /// The venue's connected Stripe account (a direct charge).
-    let stripeAccountID: String
+    /// Stripe: the audience's publishable key.
+    let publishableKey: String?
+    /// Stripe: the venue's connected account (a direct charge).
+    let stripeAccountID: String?
+    /// Square: the audience's application ID, for the In-App Payments SDK.
+    let squareApplicationID: String?
+    /// Square: the venue's location that gets paid.
+    let squareLocationID: String?
+
+    var isSquare: Bool { provider == .square }
 
     enum CodingKeys: String, CodingKey {
-        case admission
+        case admission, provider
         case paymentIntentClientSecret = "payment_intent_client_secret"
         case publishableKey = "publishable_key"
         case stripeAccountID = "stripe_account_id"
+        case squareApplicationID = "square_application_id"
+        case squareLocationID = "square_location_id"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        admission = try container.decode(Admission.self, forKey: .admission)
+        // Every venue took cover through Stripe before Square came along.
+        provider = try container.decodeIfPresent(Provider.self, forKey: .provider) ?? .stripe
+        paymentIntentClientSecret = try container.decodeIfPresent(String.self, forKey: .paymentIntentClientSecret)
+        publishableKey = try container.decodeIfPresent(String.self, forKey: .publishableKey)
+        stripeAccountID = try container.decodeIfPresent(String.self, forKey: .stripeAccountID)
+        squareApplicationID = try container.decodeIfPresent(String.self, forKey: .squareApplicationID)
+        squareLocationID = try container.decodeIfPresent(String.self, forKey: .squareLocationID)
+    }
+
+    /// What the app does next to take this payment.
+    var nextStep: CoverPaymentStep {
+        switch provider {
+        case .stripe:
+            // Paid already (another device, or a payment that finished after
+            // the sheet closed): no client secret, straight to the pass.
+            guard let clientSecret = paymentIntentClientSecret.nonBlank else { return .showPass }
+            guard let publishableKey = publishableKey.nonBlank,
+                  let accountID = stripeAccountID.nonBlank
+            else { return .unavailable }
+            return .stripe(clientSecret: clientSecret, publishableKey: publishableKey, accountID: accountID)
+        case .square:
+            guard !admission.isPaid else { return .showPass }
+            guard let applicationID = squareApplicationID.nonBlank else { return .unavailable }
+            return .square(applicationID: applicationID)
+        case .unknown:
+            return .unavailable
+        }
+    }
+}
+
+/// The next step in paying a cover, from what `buyCover` returned.
+enum CoverPaymentStep: Hashable, Sendable {
+    /// Nothing left to pay.
+    case showPass
+    /// Stripe's payment sheet, on the venue's connected account.
+    case stripe(clientSecret: String, publishableKey: String, accountID: String)
+    /// Square's In-App Payments SDK makes a payment token for `payCover`.
+    case square(applicationID: String)
+    /// The API didn't send what the app needs to take the payment.
+    case unavailable
+}
+
+/// How a Square venue's cover can be paid on this device.
+enum SquarePaymentMethod: Hashable, Sendable {
+    case applePay
+    case card
+
+    /// Apple Pay first when Square can take it here and the build has a
+    /// merchant ID; a card always.
+    static func available(canUseApplePay: Bool, merchantID: String?) -> [SquarePaymentMethod] {
+        canUseApplePay && merchantID.nonBlank != nil ? [.applePay, .card] : [.card]
+    }
+}
+
+private extension Optional where Wrapped == String {
+    /// `nil` for a missing or blank value.
+    var nonBlank: String? {
+        guard let value = self?.trimmingCharacters(in: .whitespaces), !value.isEmpty else { return nil }
+        return value
     }
 }
 

@@ -147,6 +147,102 @@ struct CoverDecodingTests {
     }
 }
 
+@Suite("Paying cover")
+struct CoverPaymentTests {
+    static let pending = CoverDecodingTests.admission.replacingOccurrences(of: "\"PAID\"", with: "\"PENDING\"")
+
+    private func decodePurchase(_ fields: String, admission: String = CoverPaymentTests.pending) throws -> CoverPurchase {
+        try decode(CoverPurchase.self, from: "{ \"admission\": \(admission), \(fields) }")
+    }
+
+    @Test("Stripe venues pay with the payment sheet on the venue's account")
+    func stripe() throws {
+        let purchase = try decodePurchase("""
+        "provider": "STRIPE", "payment_intent_client_secret": "pi_1_secret_2",
+        "publishable_key": "pk_live_1", "stripe_account_id": "acct_1",
+        "square_application_id": null, "square_location_id": null
+        """)
+
+        #expect(!purchase.isSquare)
+        #expect(purchase.nextStep == .stripe(clientSecret: "pi_1_secret_2", publishableKey: "pk_live_1", accountID: "acct_1"))
+    }
+
+    @Test("A Stripe payment with no client secret is paid already")
+    func stripePaid() throws {
+        let purchase = try decodePurchase("""
+        "provider": "STRIPE", "payment_intent_client_secret": null,
+        "publishable_key": "pk_live_1", "stripe_account_id": "acct_1"
+        """, admission: CoverDecodingTests.admission)
+
+        #expect(purchase.nextStep == .showPass)
+    }
+
+    @Test("An API from before Square still means Stripe")
+    func noProvider() throws {
+        let purchase = try decodePurchase("""
+        "payment_intent_client_secret": "pi_1_secret_2", "publishable_key": "pk_live_1", "stripe_account_id": "acct_1"
+        """)
+
+        #expect(purchase.provider == .stripe)
+        #expect(purchase.nextStep == .stripe(clientSecret: "pi_1_secret_2", publishableKey: "pk_live_1", accountID: "acct_1"))
+    }
+
+    @Test("Stripe without its keys can't be paid in the app")
+    func stripeMissingKeys() throws {
+        let purchase = try decodePurchase("""
+        "provider": "STRIPE", "payment_intent_client_secret": "pi_1_secret_2",
+        "publishable_key": null, "stripe_account_id": "acct_1"
+        """)
+
+        #expect(purchase.nextStep == .unavailable)
+    }
+
+    @Test("Square venues pay with Square's SDK and the audience's application")
+    func square() throws {
+        let purchase = try decodePurchase("""
+        "provider": "SQUARE", "payment_intent_client_secret": null,
+        "publishable_key": null, "stripe_account_id": null,
+        "square_application_id": "sq0idp-abc", "square_location_id": "L123"
+        """)
+
+        #expect(purchase.isSquare)
+        #expect(purchase.squareLocationID == "L123")
+        #expect(purchase.nextStep == .square(applicationID: "sq0idp-abc"))
+    }
+
+    @Test("A paid Square pass goes straight to the pass")
+    func squarePaid() throws {
+        let purchase = try decodePurchase("""
+        "provider": "SQUARE", "square_application_id": "sq0idp-abc", "square_location_id": "L123"
+        """, admission: CoverDecodingTests.admission)
+
+        #expect(purchase.nextStep == .showPass)
+    }
+
+    @Test("Square without an application ID, or a provider from a newer API, can't be paid in the app")
+    func unavailable() throws {
+        #expect(try decodePurchase("\"provider\": \"SQUARE\", \"square_application_id\": \" \"").nextStep == .unavailable)
+
+        let newer = try decodePurchase("\"provider\": \"ADYEN\"")
+        #expect(newer.provider == .unknown)
+        #expect(newer.nextStep == .unavailable)
+    }
+
+    @Test("Offers Apple Pay through Square only when it works here and the build has a merchant ID")
+    func squareMethods() {
+        #expect(SquarePaymentMethod.available(canUseApplePay: true, merchantID: "merchant.social.hotmess") == [.applePay, .card])
+        #expect(SquarePaymentMethod.available(canUseApplePay: false, merchantID: "merchant.social.hotmess") == [.card])
+        #expect(SquarePaymentMethod.available(canUseApplePay: true, merchantID: nil) == [.card])
+        #expect(SquarePaymentMethod.available(canUseApplePay: true, merchantID: "") == [.card])
+    }
+
+    @Test("Apple Pay charges the all-in price in currency units")
+    func totalAmount() {
+        let admission = Admission(id: "a", status: .pending, night: "2026-10-09", totalCents: 1112)
+        #expect(admission.totalAmount == Decimal(string: "11.12"))
+    }
+}
+
 @Suite("Cover formatting")
 struct CoverFormattingTests {
     @Test("Shows cents only when there are some")
