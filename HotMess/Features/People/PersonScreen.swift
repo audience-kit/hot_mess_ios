@@ -105,7 +105,7 @@ struct PersonScreen: View {
             Link(destination: url) {
                 HStack(spacing: 12) {
                     socialIcon(link)
-                    Text(verbatim: "/\(link.handle)")
+                    Text(verbatim: link.label)
                     Spacer()
                     Image(systemName: "arrow.up.right")
                         .font(.footnote)
@@ -115,7 +115,7 @@ struct PersonScreen: View {
         } else {
             HStack(spacing: 12) {
                 socialIcon(link)
-                Text(verbatim: "/\(link.handle)")
+                Text(verbatim: link.label)
             }
         }
     }
@@ -129,7 +129,7 @@ struct PersonScreen: View {
                 .frame(width: 24, height: 24)
                 .clipShape(.rect(cornerRadius: 4))
         } else {
-            Image(systemName: "link")
+            Image(systemName: link.systemImage)
                 .frame(width: 24, height: 24)
                 .foregroundStyle(.secondary)
         }

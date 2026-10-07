@@ -23,6 +23,24 @@ struct SocialLink: Codable, Hashable, Sendable, Identifiable {
         }
     }
 
+    /// The system symbol for a network without a bundled glyph.
+    var systemImage: String {
+        switch provider.lowercased() {
+        case "spotify", "apple_music": "music.note"
+        default: "link"
+        }
+    }
+
+    /// What the row says: the service for music links, whose handles are URL
+    /// paths, otherwise "/handle".
+    var label: String {
+        switch provider.lowercased() {
+        case "spotify": "Spotify"
+        case "apple_music": "Apple Music"
+        default: "/\(handle)"
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, handle, provider, url
     }
