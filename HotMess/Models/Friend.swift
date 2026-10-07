@@ -35,3 +35,31 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
         facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
     }
 }
+
+/// A venue where some of your friends have been lately, with how many, for
+/// Now when you aren't in a venue yourself.
+struct FriendVenue: Decodable, Hashable, Sendable, Identifiable {
+    let venue: Venue
+    let friendCount: Int
+    let friends: [Friend]
+
+    var id: UUID { venue.id }
+
+    enum CodingKeys: String, CodingKey {
+        case venue, friends
+        case friendCount = "friend_count"
+    }
+
+    init(venue: Venue, friendCount: Int, friends: [Friend] = []) {
+        self.venue = venue
+        self.friendCount = friendCount
+        self.friends = friends
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        venue = try container.decode(Venue.self, forKey: .venue)
+        friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
+        friendCount = try container.decodeIfPresent(Int.self, forKey: .friendCount) ?? friends.count
+    }
+}

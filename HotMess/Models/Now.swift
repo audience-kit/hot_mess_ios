@@ -20,6 +20,9 @@ struct Now: Decodable, Hashable, Sendable {
     /// The last few lines of the venue's chat room, oldest first. The API
     /// only sends them to someone who is at the venue.
     let recentMessages: [VenueMessage]
+    /// Where your friends have been lately, most friends first, when you
+    /// aren't in a venue yourself.
+    let friendVenues: [FriendVenue]
     let events: [Event]
     let imageURL: URL?
 
@@ -33,6 +36,7 @@ struct Now: Decodable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         case title, venue, venues, envelope, friends, events
         case imageURL = "image_url"
+        case friendVenues = "friend_venues"
     }
 
     private enum VenueKeys: String, CodingKey {
@@ -55,6 +59,7 @@ struct Now: Decodable, Hashable, Sendable {
             recentMessages = []
         }
         events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
+        friendVenues = try container.decodeIfPresent([FriendVenue].self, forKey: .friendVenues) ?? []
         imageURL = try container.decodeURLIfPresent(forKey: .imageURL)
     }
 
@@ -65,6 +70,7 @@ struct Now: Decodable, Hashable, Sendable {
         envelope: GeoPolygon? = nil,
         friends: [Friend] = [],
         recentMessages: [VenueMessage] = [],
+        friendVenues: [FriendVenue] = [],
         events: [Event] = [],
         imageURL: URL? = nil
     ) {
@@ -74,6 +80,7 @@ struct Now: Decodable, Hashable, Sendable {
         self.envelope = envelope
         self.friends = friends
         self.recentMessages = recentMessages
+        self.friendVenues = friendVenues
         self.events = events
         self.imageURL = imageURL
     }

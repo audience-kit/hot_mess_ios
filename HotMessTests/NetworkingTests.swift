@@ -97,6 +97,28 @@ struct GraphQLTests {
         #expect(now.friends.map(\.name) == ["Alex Friend"])
     }
 
+    @Test("Decodes where friends are when you aren't in a venue")
+    func decodesFriendVenues() throws {
+        let json = Data(#"""
+        {"reportLocation":{"now":{
+          "title":"Happening Now in Spokane","image_url":null,"venue":null,"venues":[],"events":[],"friends":[],
+          "friend_venues":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":null,
+                                     "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,
+                                     "hero_url":null,"is_liked":false},
+                            "friend_count":2,
+                            "friends":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend","facebook_id":null},
+                                       {"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Sam Chatter","facebook_id":null}]}]
+        }}}
+        """#.utf8)
+
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+
+        let entry = try #require(now.friendVenues.first)
+        #expect(entry.venue.name == "Nyne")
+        #expect(entry.friendCount == 2)
+        #expect(entry.friends.map(\.firstName) == ["Alex", "Sam"])
+    }
+
     @Test("Features up to two events with a cover photo")
     func featuredEvents() {
         let cover = URL(string: "https://cdn.example/cover.jpg")

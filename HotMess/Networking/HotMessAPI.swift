@@ -183,6 +183,11 @@ extension HotMessAPI {
               venues { \(venueFields) }
               events { \(eventFields) }
               friends { \(friendFields) }
+              friend_venues: friendVenues {
+                venue { \(venueFields) }
+                friend_count: friendCount
+                friends { \(friendFields) }
+              }
             }
           }
         }
