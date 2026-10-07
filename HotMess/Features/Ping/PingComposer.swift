@@ -7,7 +7,7 @@ import AudienceKit
 import Foundation
 import Observation
 
-/// A place the send sheet opens with already picked: "Ping for here" on a
+/// A place the send sheet opens with already picked: "Ping here" on a
 /// venue or event page.
 enum PingSeed: Hashable, Sendable, Identifiable {
     case venue(Venue)
