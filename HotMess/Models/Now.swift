@@ -17,6 +17,9 @@ struct Now: Decodable, Hashable, Sendable {
     let venues: [Venue]?
     let envelope: GeoPolygon?
     let friends: [Friend]
+    /// The last few lines of the venue's chat room, oldest first. The API
+    /// only sends them to someone who is at the venue.
+    let recentMessages: [VenueMessage]
     let events: [Event]
     let imageURL: URL?
 
@@ -32,6 +35,10 @@ struct Now: Decodable, Hashable, Sendable {
         case imageURL = "image_url"
     }
 
+    private enum VenueKeys: String, CodingKey {
+        case recentMessages = "recent_messages"
+    }
+
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
@@ -40,6 +47,13 @@ struct Now: Decodable, Hashable, Sendable {
         venues = try container.decodeIfPresent([Venue].self, forKey: .venues)
         envelope = try container.decodeIfPresent(GeoPolygon.self, forKey: .envelope)
         friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
+        if (try? container.decodeNil(forKey: .venue)) == false,
+           let venueContainer = try? container.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
+            recentMessages = (try venueContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
+                .map(VenueMessage.init(payload:))
+        } else {
+            recentMessages = []
+        }
         events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
         imageURL = try container.decodeURLIfPresent(forKey: .imageURL)
     }
@@ -50,6 +64,7 @@ struct Now: Decodable, Hashable, Sendable {
         venues: [Venue]? = nil,
         envelope: GeoPolygon? = nil,
         friends: [Friend] = [],
+        recentMessages: [VenueMessage] = [],
         events: [Event] = [],
         imageURL: URL? = nil
     ) {
@@ -58,6 +73,7 @@ struct Now: Decodable, Hashable, Sendable {
         self.venues = venues
         self.envelope = envelope
         self.friends = friends
+        self.recentMessages = recentMessages
         self.events = events
         self.imageURL = imageURL
     }

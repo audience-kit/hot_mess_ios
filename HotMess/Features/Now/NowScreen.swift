@@ -60,21 +60,45 @@ struct NowScreen: View {
                     }
                 }
             }
-        } else {
-            Section(String(localized: "People")) {
-                if now.friends.isEmpty {
-                    Text("None of your friends are out yet.")
+        } else if let venue = now.venue {
+            Section {
+                NavigationLink(value: AppRoute.venue(venue.id)) {
+                    VenueRow(venue: venue)
+                }
+            } header: {
+                Text("You're at")
+            }
+
+            Section(String(localized: "Small Talk")) {
+                if now.recentMessages.isEmpty {
+                    Text("No one's said anything yet.")
                         .foregroundStyle(.secondary)
                 } else {
-                    FriendStrip(friends: now.friends)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                }
-
-                if let venue = now.venue {
-                    NavigationLink(value: AppRoute.venueChat(venue)) {
-                        Label(String(localized: "Small Talk"), systemImage: "bubble.left.and.bubble.right")
+                    ForEach(now.recentMessages) { message in
+                        ChatLine(message: message)
                     }
                 }
+
+                NavigationLink(value: AppRoute.venueChat(venue)) {
+                    Label(String(localized: "Join the chat"), systemImage: "bubble.left.and.bubble.right")
+                }
+            }
+
+            friendsSection(now, title: String(localized: "Friends here"))
+        } else {
+            friendsSection(now, title: String(localized: "People"))
+        }
+    }
+
+    @ViewBuilder
+    private func friendsSection(_ now: Now, title: String) -> some View {
+        Section(title) {
+            if now.friends.isEmpty {
+                Text(now.venue == nil ? "None of your friends are out yet." : "None of your friends are here yet.")
+                    .foregroundStyle(.secondary)
+            } else {
+                FriendStrip(friends: now.friends)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
             }
         }
     }
@@ -108,6 +132,38 @@ struct NowScreen: View {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)
         }
+    }
+}
+
+/// One line of a venue's chat, as the Now screen previews it: the sender's
+/// photo and name, then what they said.
+struct ChatLine: View {
+    let message: VenueMessage
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Avatar(url: message.avatarURL, initials: message.name?.initialsForDisplay, size: 28)
+
+            VStack(alignment: .leading, spacing: 2) {
+                if let name = message.name {
+                    Text(name)
+                        .font(.hotMess(.caption, semibold: true))
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(message.body)
+                    .font(.hotMess(.subheadline))
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(message.sentAt, style: .relative)
+                .font(.hotMess(.caption))
+                .foregroundStyle(.tertiary)
+                .monospacedDigit()
+        }
+        .padding(.vertical, 2)
     }
 }
 
