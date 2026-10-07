@@ -33,17 +33,14 @@ extension VenueCollection {
         envelope?.region ?? MKCoordinateRegion.containing(pins.map(\.coordinate))
     }
 
-    /// The audience's venues from AudienceKit GraphQL, in the audience's order.
-    /// Venues in `localeID` come first when the device's locale is known.
+    /// The audience's visible venues from AudienceKit GraphQL, in the audience's
+    /// order. Only venues in `localeID` are kept once the device's locale is
+    /// known; until then every venue shows.
     init(audienceVenues: [AudienceKit.Venue], localeID: UUID?, resolve: (String?) -> URL?) {
         let visible = audienceVenues
             .filter { !$0.hidden }
-            .sorted { lhs, rhs in
-                let lhsLocal = localeID != nil && RecordID.uuid(lhs.locale.id) == localeID
-                let rhsLocal = localeID != nil && RecordID.uuid(rhs.locale.id) == localeID
-                if lhsLocal != rhsLocal { return lhsLocal }
-                return (lhs.order, lhs.name) < (rhs.order, rhs.name)
-            }
+            .filter { localeID == nil || RecordID.uuid($0.locale.id) == localeID }
+            .sorted { ($0.order, $0.name) < ($1.order, $1.name) }
 
         self.init(venues: visible.compactMap { Venue($0, resolve: resolve) })
     }

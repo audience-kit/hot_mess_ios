@@ -23,7 +23,7 @@ struct VenuesScreen: View {
 
                 Section(model.brand.name) {
                     if collection.venues.isEmpty {
-                        Text("No venues yet.")
+                        Text(emptyMessage)
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(collection.venues) { venue in
@@ -44,6 +44,13 @@ struct VenuesScreen: View {
         .refreshable {
             await viewModel?.load(localeID: model.location.locale?.id)
         }
+    }
+
+    private var emptyMessage: String {
+        if let name = model.location.locale?.name, !name.isEmpty {
+            return String(localized: "No venues in \(name) yet.")
+        }
+        return String(localized: "No venues yet.")
     }
 
     private func map(for collection: VenueCollection) -> some View {
