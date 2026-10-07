@@ -216,13 +216,22 @@ struct FriendFaces: View {
 
     var body: some View {
         HStack(spacing: -7) {
-            ForEach(friends.prefix(limit)) { friend in
+            ForEach(Array(friends.prefix(limit).enumerated()), id: \.element.id) { index, friend in
                 Avatar(
                     url: model.configuration.avatarURL(forUserID: friend.id),
                     initials: friend.name.initialsForDisplay,
                     size: 26
                 )
                 .overlay { Circle().strokeBorder(Color.hotMessAvatarRing, lineWidth: 2) }
+                // Drawn over the ring, which would otherwise cover half of it.
+                .overlay(alignment: .bottomTrailing) {
+                    if let presence = friend.presence {
+                        PresenceDot(state: presence, size: 8, ringColor: Color.hotMessAvatarRing)
+                            .offset(x: 1, y: 1)
+                    }
+                }
+                // Each face over the next, so its presence dot isn't hidden.
+                .zIndex(Double(limit - index))
             }
         }
         .accessibilityHidden(true)

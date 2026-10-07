@@ -33,10 +33,12 @@ final class VenueViewModel {
 
     private let api: HotMessAPI
     private let venueID: UUID
+    private let friends: FriendDirectory?
 
-    init(api: HotMessAPI, venueID: UUID) {
+    init(api: HotMessAPI, venueID: UUID, friends: FriendDirectory? = nil) {
         self.api = api
         self.venueID = venueID
+        self.friends = friends
     }
 
     /// Fetches the venue and its events in one GraphQL request.
@@ -44,7 +46,9 @@ final class VenueViewModel {
         if state.value == nil { state = .loading }
 
         do {
-            state = .loaded(try await api.venue(venueID))
+            let overview = try await api.venue(venueID)
+            friends?.remember(overview.friends)
+            state = .loaded(overview)
         } catch is CancellationError {
         } catch {
             state = LoadState(catching: error)

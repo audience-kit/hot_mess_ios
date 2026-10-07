@@ -238,7 +238,7 @@ struct VenueScreen: View {
 
     private func ensureViewModel() {
         if viewModel == nil {
-            viewModel = VenueViewModel(api: model.api, venueID: venueID)
+            viewModel = VenueViewModel(api: model.api, venueID: venueID, friends: model.friends)
         }
     }
 

@@ -251,7 +251,7 @@ struct NowScreen: View {
 
     private func ensureViewModel() {
         if viewModel == nil {
-            viewModel = NowViewModel(api: model.api)
+            viewModel = NowViewModel(api: model.api, friends: model.friends)
         }
     }
 
@@ -283,7 +283,8 @@ struct FriendStrip: View {
                             Avatar(
                                 url: model.configuration.avatarURL(forUserID: friend.id),
                                 initials: friend.name.initialsForDisplay,
-                                size: 56
+                                size: 56,
+                                presence: friend.presence
                             )
 
                             // Friends see each other's full names; two lines

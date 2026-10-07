@@ -12,16 +12,20 @@ final class NowViewModel {
     private(set) var state: LoadState<Now> = .idle
 
     private let api: HotMessAPI
+    private let friends: FriendDirectory?
 
-    init(api: HotMessAPI) {
+    init(api: HotMessAPI, friends: FriendDirectory? = nil) {
         self.api = api
+        self.friends = friends
     }
 
     func load(near coordinates: Coordinates?) async {
         if state.value == nil { state = .loading }
 
         do {
-            state = .loaded(try await api.now(near: coordinates))
+            let now = try await api.now(near: coordinates)
+            friends?.remember(now)
+            state = .loaded(now)
         } catch is CancellationError {
             // The view went away; leave whatever was on screen alone.
         } catch {

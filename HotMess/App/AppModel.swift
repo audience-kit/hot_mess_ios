@@ -21,6 +21,8 @@ final class AppModel {
     let location: LocationProvider
     /// Paying cover and showing passes, over whichever tab asked.
     let checkout: CoverCheckout
+    /// Friends seen so far, so chat can show them by their full name.
+    let friends = FriendDirectory()
 
     var selectedTab: AppTab = .now
 
@@ -59,7 +61,7 @@ final class AppModel {
     func start() async {
         // UI tests start from the login screen.
         if ProcessInfo.processInfo.arguments.contains("-HotMessUITestSignedOut") {
-            session.signOut()
+            signOut()
         }
 
         // Branding is public, so the login screen can wear the audience's colours.
@@ -72,6 +74,12 @@ final class AppModel {
             // session never went through sign-in's registration.
             Task { await PushNotifications.requestAuthorizationAndRegister() }
         }
+    }
+
+    /// Signs out and forgets what was loaded for the user.
+    func signOut() {
+        friends.forget()
+        session.signOut()
     }
 
     func pingsChanged() {

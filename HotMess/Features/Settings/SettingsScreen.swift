@@ -39,7 +39,7 @@ struct SettingsScreen: View {
             titleVisibility: .visible
         ) {
             Button(String(localized: "Sign Out"), role: .destructive) {
-                model.session.signOut()
+                model.signOut()
             }
         }
         .confirmationDialog(
