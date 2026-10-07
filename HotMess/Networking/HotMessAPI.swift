@@ -181,6 +181,12 @@ extension HotMessAPI {
                 }
               }
               venues { \(venueFields) }
+              locale {
+                id name chat_open: chatOpen
+                recent_messages: recentMessages(limit: 3) {
+                  id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt
+                }
+              }
               events { \(eventFields) }
               friends { \(friendFields) }
               friend_venues: friendVenues {

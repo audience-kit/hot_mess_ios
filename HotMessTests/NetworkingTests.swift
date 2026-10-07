@@ -97,6 +97,37 @@ struct GraphQLTests {
         #expect(now.friends.map(\.name) == ["Alex Friend"])
     }
 
+    @Test("Decodes the locale's chat room into Now when you aren't in a venue")
+    func decodesNowLocaleChat() throws {
+        let json = Data(#"""
+        {"reportLocation":{"now":{
+          "title":"Happening Now in Seattle","image_url":null,"venue":null,"venues":[],"events":[],
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Seattle","chat_open":true,
+                    "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"anyone out?",
+                                        "name":"Ada","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
+                                        "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}
+        }}}
+        """#.utf8)
+
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+
+        #expect(now.locale == AppLocale(id: UUID(uuidString: "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E")!, name: "Seattle"))
+        #expect(now.localeChatOpen)
+        #expect(now.localeMessages.map(\.body) == ["anyone out?"])
+        #expect(now.recentMessages.isEmpty)
+    }
+
+    @Test("A locale's chat room subscribes to the locale channel")
+    func localeChatRoom() {
+        let locale = AppLocale(id: UUID(), name: "Seattle")
+        let room = ChatRoom.locale(locale)
+
+        #expect(room.channelName == "LocaleChannel")
+        #expect(room.subscriptionKey == "locale_id")
+        #expect(room.name == "Seattle")
+        #expect(AppRoute.localeChat(locale).tab == .now)
+    }
+
     @Test("Decodes where friends are when you aren't in a venue")
     func decodesFriendVenues() throws {
         let json = Data(#"""
