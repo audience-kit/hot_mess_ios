@@ -87,7 +87,7 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
             // drawn at once.
             KFImage(url)
                 .cancelOnDisappear(true)
-                .placeholder { Color(red: 0.16, green: 0.12, blue: 0.15) }
+                .placeholder { Color.hotMessPhotoPlaceholder }
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .blur(radius: blur, opaque: true)
@@ -125,7 +125,7 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
 
     private var increasedContrast: Bool { colorSchemeContrast == .increased }
     private var target: Double { increasedContrast ? 7 : 4.5 }
-    private var scrimFloor: Double { increasedContrast || reduceTransparency ? 0.3 : 0 }
+    private var scrimFloor: Double { increasedContrast || reduceTransparency ? ImageTone.accessibleScrimFloor : 0 }
 
     private var cacheKey: String? {
         url.map { "card|\(minHeight)|\(blur)|\($0.absoluteString)|\(target)|\(scrimFloor)" }

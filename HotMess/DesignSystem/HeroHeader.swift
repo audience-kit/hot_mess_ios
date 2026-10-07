@@ -70,7 +70,7 @@ struct HeroHeader<Content: View>: View {
             // read as only the part behind the text having loaded.
             KFImage(url)
                 .cancelOnDisappear(true)
-                .placeholder { Color(red: 0.16, green: 0.12, blue: 0.15) }
+                .placeholder { Color.hotMessPhotoPlaceholder }
                 .resizable()
                 .aspectRatio(contentMode: .fill)
         } else {
@@ -117,7 +117,7 @@ struct HeroHeader<Content: View>: View {
 
     private var increasedContrast: Bool { colorSchemeContrast == .increased }
     private var target: Double { increasedContrast ? 7 : 4.5 }
-    private var scrimFloor: Double { increasedContrast || reduceTransparency ? 0.3 : 0 }
+    private var scrimFloor: Double { increasedContrast || reduceTransparency ? ImageTone.accessibleScrimFloor : 0 }
 
     private var cacheKey: String? {
         url.map { "\($0.absoluteString)|\(target)|\(scrimFloor)" }

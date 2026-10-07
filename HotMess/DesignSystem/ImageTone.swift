@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import CoreGraphics
 import SwiftUI
 
@@ -45,8 +46,13 @@ enum ImageTone {
     static var ink: Color { .hotMessPhotoInk }
     static let inkLuminance = 0.0103
 
-    /// Past this the photo is mostly hidden, so the scrim stops here.
-    static let maxScrim = 0.75
+    /// Past this the photo is mostly hidden, so the scrim stops here
+    /// (`opacity-scrim-max`).
+    static let maxScrim = DesignTokens.Opacity.scrimMax
+
+    /// The least scrim with Increase Contrast or Reduce Transparency on
+    /// (`opacity-scrim-floor`).
+    static let accessibleScrimFloor = DesignTokens.Opacity.scrimFloor
 
     /// The least scrim behind text on a busy photo.
     static let busyScrim = 0.45
