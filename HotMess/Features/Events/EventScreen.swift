@@ -45,12 +45,12 @@ struct EventScreen: View {
                             }
                         }
 
-                        DetailSection(String(localized: "Venue")) {
-                            if let venue = event.venue {
-                                DetailLink(route: .venue(venue.id)) {
-                                    VenueRow(venue: venue)
-                                }
-                            } else {
+                        if let venue = event.venue {
+                            CardSection(String(localized: "Venue")) {
+                                VenueCardLink(venue: venue)
+                            }
+                        } else {
+                            DetailSection(String(localized: "Venue")) {
                                 Text(Event.toBeAnnounced)
                                     .foregroundStyle(.secondary)
                             }
