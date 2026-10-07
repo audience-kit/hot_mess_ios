@@ -80,6 +80,8 @@ struct HotMessAPI: Sendable {
             socialLinks: venue.socialLinks,
             chatOpen: venue.chatOpen,
             recentMessages: venue.recentMessages,
+            coverCharge: venue.coverCharge,
+            viewerAdmission: venue.viewerAdmission,
             friendPings: venue.friendPings
         )
     }
@@ -113,6 +115,63 @@ struct HotMessAPI: Sendable {
         } catch let error as AudienceKitError {
             throw APIError(error)
         }
+    }
+
+    // MARK: - Cover
+
+    /// Starts paying tonight's cover at a venue. Asking again the same night
+    /// returns the same pass and payment.
+    func buyCover(venueID: UUID) async throws -> CoverPurchase {
+        try await query(
+            Documents.buyCover,
+            variables: ["venueId": .string(venueID.uuidString)],
+            as: BuyCoverResponse.self
+        ).buyCover
+    }
+
+    /// Checks the payment with Stripe after the payment sheet finishes, so the
+    /// pass works before Stripe's webhook arrives.
+    func confirmCover(admissionID: String) async throws -> Admission {
+        try await query(
+            Documents.confirmCover,
+            variables: ["admissionId": .string(admissionID)],
+            as: ConfirmCoverResponse.self
+        ).confirmCover.admission
+    }
+
+    func refundAdmission(_ admissionID: String) async throws -> Admission {
+        try await query(
+            Documents.refundAdmission,
+            variables: ["admissionId": .string(admissionID)],
+            as: RefundAdmissionResponse.self
+        ).refundAdmission.admission
+    }
+
+    /// The user's cover passes, newest first.
+    func admissions() async throws -> [Admission] {
+        try await query(Documents.admissions, variables: [:], as: AdmissionsResponse.self).admissions
+    }
+
+    /// Venues whose door the user can work. Empty for almost everyone.
+    func doorVenues() async throws -> [DoorVenue] {
+        try await query(Documents.doorVenues, variables: [:], as: DoorVenuesResponse.self).doorVenues
+    }
+
+    /// Tonight's paid and checked-in counts at a venue's door.
+    func doorCounts(venueID: UUID) async throws -> DoorCounts? {
+        try await query(
+            Documents.venueDoor,
+            variables: ["id": .string(venueID.uuidString)],
+            as: VenueDoorResponse.self
+        ).venue?.door
+    }
+
+    func scanAdmission(venueID: UUID, code: String) async throws -> ScanResult {
+        try await query(
+            Documents.scanAdmission,
+            variables: ["venueId": .string(venueID.uuidString), "code": .string(code)],
+            as: ScanAdmissionResponse.self
+        ).scanAdmission.result
     }
 
     // MARK: - Session
@@ -278,6 +337,23 @@ extension HotMessAPI {
         venue { \(venueFields) }
         """
 
+        static let coverChargeFields = "amount_cents: amountCents total_cents: totalCents currency night from payable"
+
+        static let admissionFields = """
+        id status night total_cents: totalCents currency is_refundable: isRefundable \
+        pass_secret: passSecret scan_count: scanCount checked_in_at: checkedInAt \
+        user_name: userName user_photo_url: userPhotoUrl \
+        venue { id name photo_url: photoUrl } event { id name }
+        """
+
+        /// Tonight's cover at a venue and the user's pass for it.
+        static let venueCoverFields = """
+        cover_charge: coverCharge { \(coverChargeFields) } \
+        viewer_admission: viewerAdmission { \(admissionFields) }
+        """
+
+        static let doorFields = "door { paid_count: paidCount checked_in_count: checkedInCount }"
+
         static let reportLocation = """
         mutation ReportLocation($position: CoordinatesInput!) {
           reportLocation(input: { position: $position }) {
@@ -286,6 +362,7 @@ extension HotMessAPI {
               venue {
                 \(venueFields)
                 recent_messages: recentMessages(limit: 3) { \(messageFields) }
+                \(venueCoverFields)
               }
               venues { \(venueFields) }
               locale {
@@ -314,6 +391,7 @@ extension HotMessAPI {
             friends { \(friendFields) }
             social_links: socialLinks { \(socialLinkFields) }
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
+            \(venueCoverFields)
             friend_pings: friendPings { \(pingFields) }
           }
         }
@@ -327,7 +405,61 @@ extension HotMessAPI {
 
         static let event = """
         query Event($id: ID!) {
-          event(id: $id) { \(eventFields) people { \(personFields) } friend_pings: friendPings { \(pingFields) } }
+          event(id: $id) {
+            \(eventFields) people { \(personFields) }
+            friend_pings: friendPings { \(pingFields) }
+            cover_charge: coverCharge { \(coverChargeFields) }
+            venue_cover: venue { \(venueCoverFields) }
+          }
+        }
+        """
+
+        static let buyCover = """
+        mutation BuyCover($venueId: ID!) {
+          buyCover(input: { venueId: $venueId }) {
+            admission { \(admissionFields) }
+            payment_intent_client_secret: paymentIntentClientSecret
+            publishable_key: publishableKey
+            stripe_account_id: stripeAccountId
+          }
+        }
+        """
+
+        static let confirmCover = """
+        mutation ConfirmCover($admissionId: ID!) {
+          confirmCover(input: { admissionId: $admissionId }) { admission { \(admissionFields) } }
+        }
+        """
+
+        static let refundAdmission = """
+        mutation RefundAdmission($admissionId: ID!) {
+          refundAdmission(input: { admissionId: $admissionId }) { admission { \(admissionFields) } }
+        }
+        """
+
+        static let admissions = """
+        query Admissions {
+          admissions { \(admissionFields) }
+        }
+        """
+
+        static let doorVenues = """
+        query DoorVenues {
+          doorVenues { id name photo_url: photoUrl \(doorFields) }
+        }
+        """
+
+        static let venueDoor = """
+        query VenueDoor($id: ID!) {
+          venue(id: $id) { id name \(doorFields) }
+        }
+        """
+
+        static let scanAdmission = """
+        mutation ScanAdmission($venueId: ID!, $code: String!) {
+          scanAdmission(input: { venueId: $venueId, code: $code }) {
+            result { outcome message admission { \(admissionFields) } }
+          }
         }
         """
 
@@ -406,6 +538,10 @@ struct VenueWithEvents: Decodable, Sendable {
     /// The last few lines of the chat room, oldest first; empty unless the
     /// viewer is at the venue or an admin.
     let recentMessages: [VenueMessage]
+    /// Tonight's cover, or nil when there's none.
+    let coverCharge: CoverCharge?
+    /// The user's cover tonight, paid or being paid.
+    let viewerAdmission: Admission?
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
@@ -413,6 +549,8 @@ struct VenueWithEvents: Decodable, Sendable {
         case socialLinks = "social_links"
         case chatOpen = "chat_open"
         case recentMessages = "recent_messages"
+        case coverCharge = "cover_charge"
+        case viewerAdmission = "viewer_admission"
         case friendPings = "friend_pings"
     }
 
@@ -425,6 +563,8 @@ struct VenueWithEvents: Decodable, Sendable {
         chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
         recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
             .map(VenueMessage.init(payload:))
+        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+        viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
         friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
 }
@@ -440,6 +580,40 @@ struct LocaleEventsResponse: Decodable, Sendable {
 
 struct EventResponse: Decodable, Sendable {
     let event: EventDetail?
+}
+
+struct BuyCoverResponse: Decodable, Sendable {
+    let buyCover: CoverPurchase
+}
+
+struct AdmissionPayload: Decodable, Sendable {
+    let admission: Admission
+}
+
+struct ConfirmCoverResponse: Decodable, Sendable {
+    let confirmCover: AdmissionPayload
+}
+
+struct RefundAdmissionResponse: Decodable, Sendable {
+    let refundAdmission: AdmissionPayload
+}
+
+struct AdmissionsResponse: Decodable, Sendable {
+    let admissions: [Admission]
+}
+
+struct DoorVenuesResponse: Decodable, Sendable {
+    let doorVenues: [DoorVenue]
+}
+
+struct VenueDoorResponse: Decodable, Sendable {
+    struct Venue: Decodable, Sendable { let door: DoorCounts? }
+    let venue: Venue?
+}
+
+struct ScanAdmissionResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let result: ScanResult }
+    let scanAdmission: Payload
 }
 
 struct PingsResponse: Decodable, Sendable {

@@ -93,6 +93,9 @@ struct NowScreen: View {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)
         }
+        .onChange(of: model.checkout.revision) {
+            reload()
+        }
     }
 
     private var navigationTitle: String {
@@ -152,6 +155,14 @@ struct NowScreen: View {
                 }
             }
         } else if let venue = now.venue {
+            // A pass for tonight goes first, ready for the door; otherwise
+            // the way to skip the line when the cover can be paid here.
+            if let pass = now.viewerAdmission, pass.isPaid {
+                TonightPassCard(admission: pass)
+            } else if let coverCharge = now.coverCharge, coverCharge.payable {
+                SkipTheLineCard(venue: venue, coverCharge: coverCharge)
+            }
+
             CardSection(String(localized: "You're at")) {
                 VenueCardLink(venue: venue)
             }

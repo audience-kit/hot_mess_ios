@@ -20,6 +20,10 @@ struct Now: Decodable, Hashable, Sendable {
     /// The last few lines of the venue's chat room, oldest first. The API
     /// only sends them to someone who is at the venue.
     let recentMessages: [VenueMessage]
+    /// Tonight's cover at the venue the user is in, or nil when there's none.
+    let coverCharge: CoverCharge?
+    /// The user's cover tonight at the venue they're in, paid or being paid.
+    let viewerAdmission: Admission?
     /// The locale the user is in, or nearest.
     let locale: AppLocale?
     /// Whether the user can join the locale's chat room: they're out in the
@@ -55,6 +59,8 @@ struct Now: Decodable, Hashable, Sendable {
 
     private enum VenueKeys: String, CodingKey {
         case recentMessages = "recent_messages"
+        case coverCharge = "cover_charge"
+        case viewerAdmission = "viewer_admission"
     }
 
     private enum LocaleKeys: String, CodingKey {
@@ -75,8 +81,12 @@ struct Now: Decodable, Hashable, Sendable {
            let venueContainer = try? container.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
             recentMessages = (try venueContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
                 .map(VenueMessage.init(payload:))
+            coverCharge = try venueContainer.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+            viewerAdmission = try venueContainer.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
         } else {
             recentMessages = []
+            coverCharge = nil
+            viewerAdmission = nil
         }
         if (try? container.decodeNil(forKey: .locale)) == false,
            let localeContainer = try? container.nestedContainer(keyedBy: LocaleKeys.self, forKey: .locale),
@@ -104,6 +114,8 @@ struct Now: Decodable, Hashable, Sendable {
         envelope: GeoPolygon? = nil,
         friends: [Friend] = [],
         recentMessages: [VenueMessage] = [],
+        coverCharge: CoverCharge? = nil,
+        viewerAdmission: Admission? = nil,
         locale: AppLocale? = nil,
         localeChatOpen: Bool = false,
         localeMessages: [VenueMessage] = [],
@@ -119,6 +131,8 @@ struct Now: Decodable, Hashable, Sendable {
         self.envelope = envelope
         self.friends = friends
         self.recentMessages = recentMessages
+        self.coverCharge = coverCharge
+        self.viewerAdmission = viewerAdmission
         self.locale = locale
         self.localeChatOpen = localeChatOpen
         self.localeMessages = localeMessages

@@ -11,6 +11,7 @@
 		AC00000000000000000000A1 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000091 /* FacebookLogin */; };
 		AC00000000000000000000A2 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000092 /* Kingfisher */; };
 		AC00000000000000000000A3 /* AudienceKit in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000093 /* AudienceKit */; };
+		AC00000000000000000000A4 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000094 /* StripePaymentSheet */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +65,7 @@
 				AC00000000000000000000A1 /* FacebookLogin in Frameworks */,
 				AC00000000000000000000A2 /* Kingfisher in Frameworks */,
 				AC00000000000000000000A3 /* AudienceKit in Frameworks */,
+				AC00000000000000000000A4 /* StripePaymentSheet in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -139,6 +141,7 @@
 				AC0000000000000000000091 /* FacebookLogin */,
 				AC0000000000000000000092 /* Kingfisher */,
 				AC0000000000000000000093 /* AudienceKit */,
+				AC0000000000000000000094 /* StripePaymentSheet */,
 			);
 			productName = HotMess;
 			productReference = AC0000000000000000000020 /* HotMess.app */;
@@ -223,6 +226,7 @@
 				AC0000000000000000000080 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 				AC0000000000000000000081 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */,
+				AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AC0000000000000000000003 /* Products */;
@@ -736,6 +740,14 @@
 				kind = branch;
 			};
 		};
+		AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 26.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -758,6 +770,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */;
 			productName = AudienceKit;
+		};
+		AC0000000000000000000094 /* StripePaymentSheet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
+			productName = StripePaymentSheet;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

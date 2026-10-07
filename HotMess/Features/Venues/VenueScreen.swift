@@ -30,6 +30,15 @@ struct VenueScreen: View {
                             heroText(venue)
                         }
 
+                        if overview.coverCharge != nil || overview.viewerAdmission?.isPaid == true {
+                            CoverSection(
+                                coverCharge: overview.coverCharge,
+                                isTonight: true,
+                                admission: overview.viewerAdmission,
+                                venueID: venue.id,
+                                venueName: venue.name
+                            )
+                        }
                         PingPlaceStrip(
                             pings: viewModel?.activePings ?? [],
                             isJoined: viewModel?.isJoinedHere(userID: model.session.userID) == true,
@@ -121,6 +130,10 @@ struct VenueScreen: View {
             Button(String(localized: "OK"), role: .cancel) {}
         } message: {
             Text(viewModel?.pingError ?? "")
+        }
+        .onChange(of: model.checkout.revision) {
+            // A cover was paid or refunded: show the pass, or the way to pay.
+            reload()
         }
     }
 

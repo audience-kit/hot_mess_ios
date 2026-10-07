@@ -47,6 +47,17 @@ struct EventScreen: View {
                             }
                         }
 
+                        if let coverCharge = detail.coverCharge {
+                            // Only tonight's cover can be paid; other nights show the price.
+                            CoverSection(
+                                coverCharge: coverCharge,
+                                isTonight: detail.isCoverTonight,
+                                admission: detail.isCoverTonight ? detail.viewerAdmission : nil,
+                                venueID: event.venue?.id,
+                                venueName: event.venue?.name ?? ""
+                            )
+                        }
+
                         detailsSection(event)
 
                         if let person = event.person {
@@ -113,6 +124,9 @@ struct EventScreen: View {
             Button(String(localized: "OK"), role: .cancel) {}
         } message: {
             Text(viewModel?.pingError ?? "")
+        }
+        .onChange(of: model.checkout.revision) {
+            reload()
         }
         .alert(
             String(localized: "Couldn't Save RSVP"),
