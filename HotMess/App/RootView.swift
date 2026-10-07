@@ -107,6 +107,8 @@ struct RouteDestination: View {
             PersonScreen(personID: id)
         case let .venueChat(venue):
             VenueChatScreen(venue: venue)
+        case let .localeChat(locale):
+            VenueChatScreen(room: .locale(locale))
         }
     }
 }

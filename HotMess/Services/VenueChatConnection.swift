@@ -6,9 +6,10 @@
 import Foundation
 import os
 
-/// A live connection to one venue's chat room.
+/// A live connection to one chat room: a venue's, or a locale's (see `ChatRoom`).
 ///
-/// The room is only open to people at the venue: the server rejects the
+/// A venue's room is only open to people at the venue, and a locale's to people
+/// out in the locale away from its venues: the server rejects the
 /// subscription otherwise, and sends `{"type":"left"}` when someone's presence
 /// lapses. Either way the connection reports `.notPresent` instead of retrying.
 /// Admins can join from anywhere; the server tells everyone whether they're
@@ -24,18 +25,16 @@ actor VenueChatConnection {
         case connected
         case received(VenueMessage)
         /// The server turned the subscription away, or ended it, because the
-        /// user isn't at the venue (by the last position they reported).
+        /// user isn't in the room's place (by the last position they reported).
         case notPresent
-        /// Whether the user is outside the venue. Only admins are let in
+        /// Whether the user is outside the room's place. Only admins are let in
         /// from outside, so `true` means they're there because they're an admin.
         case range(outOfRange: Bool)
         case disconnected(String?)
     }
 
-    private static let channelName = "RealtimeChannel"
-
     private let url: URL
-    private let venueID: UUID
+    private let room: ChatRoom
     private let token: String?
     private let session: URLSession
     private let encoder = JSONEncoder()
@@ -49,8 +48,8 @@ actor VenueChatConnection {
     /// `disconnect()`, so a reconnect means a new `VenueChatConnection`.
     nonisolated let events: AsyncStream<Event>
 
-    init(venueID: UUID, url: URL, token: String?, session: URLSession = .hotMess) {
-        self.venueID = venueID
+    init(room: ChatRoom, url: URL, token: String?, session: URLSession = .hotMess) {
+        self.room = room
         self.url = url
         self.token = token
         self.session = session
@@ -103,7 +102,7 @@ actor VenueChatConnection {
 
     /// Action Cable identifies a subscription by a JSON *string*, not an object.
     private var identifier: String {
-        let subscription = ["channel": Self.channelName, "venue_id": venueID.uuidString.lowercased()]
+        let subscription = ["channel": room.channelName, room.subscriptionKey: room.id.uuidString.lowercased()]
 
         guard let data = try? JSONSerialization.data(withJSONObject: subscription) else {
             return "{}"

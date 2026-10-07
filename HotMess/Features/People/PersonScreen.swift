@@ -29,7 +29,23 @@ struct PersonScreen: View {
 
                         DetailSection(String(localized: "Elsewhere")) {
                             ForEach(detail.profileLinks) { link in
-                                socialLinkRow(link)
+                                SocialLinkRow(link: link)
+                            }
+                        }
+
+                        if !detail.members.isEmpty {
+                            CardSection(String(localized: "Members")) {
+                                ForEach(detail.members) { member in
+                                    PersonCardLink(person: member)
+                                }
+                            }
+                        }
+
+                        if !detail.groups.isEmpty {
+                            CardSection(String(localized: "Part of")) {
+                                ForEach(detail.groups) { group in
+                                    PersonCardLink(person: group)
+                                }
                             }
                         }
 
@@ -120,42 +136,6 @@ struct PersonScreen: View {
             }
         }
         .padding(.horizontal, 20)
-    }
-
-    @ViewBuilder
-    private func socialLinkRow(_ link: SocialLink) -> some View {
-        if let url = link.url {
-            Link(destination: url) {
-                HStack(spacing: 12) {
-                    socialIcon(link)
-                    Text(verbatim: link.label)
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.footnote)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-        } else {
-            HStack(spacing: 12) {
-                socialIcon(link)
-                Text(verbatim: link.label)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func socialIcon(_ link: SocialLink) -> some View {
-        if let assetName = link.assetName {
-            Image(assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24, height: 24)
-                .clipShape(.rect(cornerRadius: 4))
-        } else {
-            Image(systemName: link.systemImage)
-                .frame(width: 24, height: 24)
-                .foregroundStyle(.secondary)
-        }
     }
 
     @ViewBuilder

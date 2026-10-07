@@ -32,6 +32,7 @@ struct NowScreen: View {
                         }
 
                         nearbySection(now)
+                        localeChatSection(now)
                         friendVenuesSection(now)
                         eventsSection(now)
                     }
@@ -91,20 +92,13 @@ struct NowScreen: View {
                 VenueCardLink(venue: venue)
             }
 
-            DetailSection(String(localized: "Small Talk")) {
-                if now.recentMessages.isEmpty {
-                    Text("No one's said anything yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(now.recentMessages) { message in
-                        ChatLine(message: message)
-                    }
-                }
-
-                DetailLink(route: .venueChat(venue)) {
-                    Label(String(localized: "Join the chat"), systemImage: "bubble.left.and.bubble.right")
-                }
-            }
+            ChatPeek(
+                title: String(localized: "Small talk"),
+                roomName: venue.name,
+                messages: now.recentMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                route: .venueChat(venue)
+            )
+            .padding(.horizontal, 16)
 
             friendsSection(now, title: String(localized: "Friends here"))
         } else {
@@ -121,6 +115,21 @@ struct NowScreen: View {
                 FriendStrip(friends: now.friends)
                     .padding(.horizontal, -20)
             }
+        }
+    }
+
+    /// Away from venues: the locale's chat room, for everyone out in it who
+    /// isn't at a venue. Shown only when the API says the user can join.
+    @ViewBuilder
+    private func localeChatSection(_ now: Now) -> some View {
+        if now.venue == nil, now.localeChatOpen, let locale = now.locale {
+            ChatPeek(
+                title: String(localized: "Small talk in \(locale.name)"),
+                roomName: locale.name,
+                messages: now.localeMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                route: .localeChat(locale)
+            )
+            .padding(.horizontal, 16)
         }
     }
 
@@ -176,38 +185,6 @@ struct NowScreen: View {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)
         }
-    }
-}
-
-/// One line of a venue's chat, as the Now screen previews it: the sender's
-/// photo and name, then what they said.
-struct ChatLine: View {
-    let message: VenueMessage
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Avatar(url: message.avatarURL, initials: message.name?.initialsForDisplay, size: 28)
-
-            VStack(alignment: .leading, spacing: 2) {
-                if let name = message.name {
-                    Text(name)
-                        .font(.hotMess(.caption, semibold: true))
-                        .foregroundStyle(.secondary)
-                }
-
-                Text(message.body)
-                    .font(.hotMess(.subheadline))
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 8)
-
-            Text(message.sentAt, style: .relative)
-                .font(.hotMess(.caption))
-                .foregroundStyle(.tertiary)
-                .monospacedDigit()
-        }
-        .padding(.vertical, 2)
     }
 }
 

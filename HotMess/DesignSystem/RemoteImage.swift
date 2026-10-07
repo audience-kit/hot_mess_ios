@@ -46,6 +46,10 @@ struct Avatar: View {
     let url: URL?
     var initials: String?
     var size: CGFloat = 44
+    /// Whether the person can be reached now. `nil` (the default) draws no dot.
+    var presence: PresenceState? = nil
+    /// The ring between the presence dot and the photo: the surface behind the avatar.
+    var presenceRing: Color = Color(.secondarySystemGroupedBackground)
 
     var body: some View {
         Group {
@@ -63,6 +67,13 @@ struct Avatar: View {
         .clipShape(.circle)
         .overlay {
             Circle().strokeBorder(.separator, lineWidth: 0.5)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if let presence {
+                // The dot's 2pt ring sits 1pt outside the avatar's edge.
+                PresenceDot(state: presence, size: size >= 40 ? 12 : 10, ringColor: presenceRing)
+                    .offset(x: 1, y: 1)
+            }
         }
     }
 

@@ -104,7 +104,36 @@ enum Fixtures {
           "artwork_url": "https://cdn.hotmess.social/art.png"
         }
       ],
+      "members": [
+        {
+          "id": "6E1F3A92-0B4C-4D7E-8F15-3A9C2D6B1E77",
+          "name": "Ada Lovelace",
+          "photo_url": "https://cdn.hotmess.social/people/ada.jpg"
+        }
+      ],
+      "groups": [
+        { "id": "7F2A4B03-1C5D-4E8F-9A26-4B0D3E7C2F88", "name": "The Haus of Mess" }
+      ],
       "events": [\(sparseEvent)]
+    }
+    """
+
+    /// A venue as its detail query returns it, with events, friends and links.
+    static let venueDetail = """
+    {
+      "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11",
+      "name": "The Stud",
+      "chat_open": true,
+      "events": [\(sparseEvent)],
+      "friends": [],
+      "social_links": [
+        {
+          "id": "0C3B5D14-2E6F-4A90-8B37-5C1E4F8D3A99",
+          "handle": "thestudsf",
+          "provider": "instagram",
+          "url": "https://instagram.com/thestudsf"
+        }
+      ]
     }
     """
 
