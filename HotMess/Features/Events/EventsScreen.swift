@@ -23,38 +23,27 @@ struct EventsScreen: View {
             } else {
                 let nights = NightCalendar(events: listing.allEvents)
 
-                List {
-                    Section {
-                        NightCalendarView(calendar: nights, selection: $selectedNight)
-                    }
+                ScrollView {
+                    VStack(spacing: 24) {
+                        DetailSection {
+                            NightCalendarView(calendar: nights, selection: $selectedNight)
+                        }
 
-                    if let night = nights.nights.first(where: { $0.date == selectedNight }) {
-                        Section(night.date.formatted(.dateTime.weekday(.wide).month(.wide).day())) {
-                            if night.events.isEmpty {
-                                Text("Nothing on this night yet.")
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                ForEach(night.events) { event in
-                                    eventLink(event)
-                                }
-                            }
-                        }
-                    } else {
-                        ForEach(listing.sections) { section in
-                            Section(section.title) {
-                                if section.events.isEmpty {
-                                    Text("No events.")
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    ForEach(section.events) { event in
-                                        eventLink(event)
-                                    }
-                                }
+                        if let night = nights.nights.first(where: { $0.date == selectedNight }) {
+                            eventsSection(
+                                night.date.formatted(.dateTime.weekday(.wide).month(.wide).day()),
+                                events: night.events,
+                                empty: String(localized: "Nothing on this night yet.")
+                            )
+                        } else {
+                            ForEach(listing.sections) { section in
+                                eventsSection(section.title, events: section.events, empty: String(localized: "No events."))
                             }
                         }
                     }
+                    .padding(.vertical, 16)
                 }
-                .listStyle(.insetGrouped)
+                .background(Color(.systemGroupedBackground))
             }
         }
         .navigationTitle(model.location.locale?.name ?? String(localized: "Events"))
@@ -68,12 +57,18 @@ struct EventsScreen: View {
         }
     }
 
-    private func eventLink(_ event: Event) -> some View {
-        NavigationLink(value: AppRoute.event(event.id)) {
-            if event.isFeatured {
-                FeaturedEventRow(event: event)
-            } else {
-                EventRow(event: event)
+    @ViewBuilder
+    private func eventsSection(_ title: String, events: [Event], empty: String) -> some View {
+        if events.isEmpty {
+            DetailSection(title) {
+                Text(empty)
+                    .foregroundStyle(.secondary)
+            }
+        } else {
+            CardSection(title) {
+                ForEach(events) { event in
+                    EventCardLink(event: event)
+                }
             }
         }
     }

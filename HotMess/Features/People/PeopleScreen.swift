@@ -21,12 +21,15 @@ struct PeopleScreen: View {
                     description: Text("Nobody is listed yet.")
                 )
             } else {
-                List(people) { person in
-                    NavigationLink(value: AppRoute.person(person.id)) {
-                        PersonRow(person: person)
+                ScrollView {
+                    CardSection {
+                        ForEach(people) { person in
+                            PersonCardLink(person: person)
+                        }
                     }
+                    .padding(.vertical, 16)
                 }
-                .listStyle(.plain)
+                .background(Color(.systemGroupedBackground))
             }
         }
         .navigationTitle(String(localized: "People"))
