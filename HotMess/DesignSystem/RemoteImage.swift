@@ -83,7 +83,7 @@ struct Avatar: View {
 
             if let initials, !initials.isEmpty {
                 Text(initials)
-                    .font(.system(size: size * 0.38, weight: .semibold))
+                    .font(.hotMess(fixedSize: size * 0.38, semibold: true))
                     .foregroundStyle(.secondary)
             } else {
                 Image(systemName: "person.fill")
