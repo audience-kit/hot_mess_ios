@@ -15,12 +15,18 @@ struct PositionTrackerTests {
     @Test("Reports the device's position with its beacon")
     func devicePosition() {
         var tracker = PositionTracker(simulationAllowed: false)
-        #expect(!tracker.beacon(major: 1, minor: 2), "no beacon without a position")
+        // #expect can't call mutating methods, so each result is taken first.
+        let beaconWithoutFix = tracker.beacon(major: 1, minor: 2)
+        #expect(!beaconWithoutFix, "no beacon without a position")
 
-        #expect(tracker.deviceFix(latitude: 47.61, longitude: -122.32))
-        #expect(tracker.beacon(major: 1, minor: 2))
-        #expect(!tracker.beacon(major: 1, minor: 2), "the same beacon again changes nothing")
-        #expect(tracker.deviceFix(latitude: 47.62, longitude: -122.33))
+        let firstFix = tracker.deviceFix(latitude: 47.61, longitude: -122.32)
+        #expect(firstFix)
+        let firstBeacon = tracker.beacon(major: 1, minor: 2)
+        #expect(firstBeacon)
+        let sameBeacon = tracker.beacon(major: 1, minor: 2)
+        #expect(!sameBeacon, "the same beacon again changes nothing")
+        let secondFix = tracker.deviceFix(latitude: 47.62, longitude: -122.33)
+        #expect(secondFix)
 
         #expect(tracker.current == Coordinates(latitude: 47.62, longitude: -122.33, beaconMajor: 1, beaconMinor: 2))
     }
@@ -30,18 +36,23 @@ struct PositionTrackerTests {
         var tracker = PositionTracker(simulationAllowed: true)
         tracker.deviceFix(latitude: 47.61, longitude: -122.32)
 
-        #expect(tracker.simulate(latitude: nyne.latitude, longitude: nyne.longitude, venueName: "Nyne"))
+        let started = tracker.simulate(latitude: nyne.latitude, longitude: nyne.longitude, venueName: "Nyne")
+        #expect(started)
         #expect(tracker.current == nyne)
         #expect(tracker.simulatedVenueName == "Nyne")
 
-        #expect(!tracker.deviceFix(latitude: 47.70, longitude: -122.40), "device fixes aren't reported while pretending")
-        #expect(!tracker.beacon(major: 3, minor: 4))
+        let fixWhilePretending = tracker.deviceFix(latitude: 47.70, longitude: -122.40)
+        #expect(!fixWhilePretending, "device fixes aren't reported while pretending")
+        let beaconWhilePretending = tracker.beacon(major: 3, minor: 4)
+        #expect(!beaconWhilePretending)
         #expect(tracker.current == nyne)
 
-        #expect(tracker.stopSimulating())
+        let stopped = tracker.stopSimulating()
+        #expect(stopped)
         #expect(tracker.simulatedVenueName == nil)
         #expect(tracker.current == Coordinates(latitude: 47.70, longitude: -122.40, beaconMajor: 3, beaconMinor: 4))
-        #expect(!tracker.stopSimulating())
+        let stoppedAgain = tracker.stopSimulating()
+        #expect(!stoppedAgain)
     }
 
     @Test("Reports nothing after stopping when there's no real fix yet")
@@ -58,7 +69,8 @@ struct PositionTrackerTests {
         var tracker = PositionTracker(simulationAllowed: false)
         tracker.deviceFix(latitude: 47.61, longitude: -122.32)
 
-        #expect(!tracker.simulate(latitude: nyne.latitude, longitude: nyne.longitude, venueName: "Nyne"))
+        let started = tracker.simulate(latitude: nyne.latitude, longitude: nyne.longitude, venueName: "Nyne")
+        #expect(!started)
         #expect(tracker.simulatedVenueName == nil)
         #expect(tracker.current == Coordinates(latitude: 47.61, longitude: -122.32))
     }
