@@ -356,11 +356,13 @@ struct EventCardLink: View {
 // MARK: - People
 
 /// A person as a shorter card: their picture enlarged and blurred behind a sharp
-/// round avatar, with their name and role beside it. Profile pictures are small
-/// square faces, so filling a wide card with one sharply would crop the head
-/// and show the pixels.
+/// round avatar, with their name and role (or `detail`) beside it, and `friends`
+/// with them top right. Profile pictures are small square faces, so filling a
+/// wide card with one sharply would crop the head and show the pixels.
 struct PersonCard: View {
     let person: Person
+    var detail: String?
+    var friends: [Friend] = []
 
     var body: some View {
         PhotoCard(
@@ -379,28 +381,40 @@ struct PersonCard: View {
                         .font(.hotMess(.headline, semibold: true))
                         .lineLimit(2)
 
-                    if let role = person.role, !role.isEmpty {
-                        Text(role)
+                    if let line = detail ?? person.role, !line.isEmpty {
+                        Text(line)
                             .font(.hotMess(.subheadline, semibold: true))
                             .lineLimit(1)
                     }
                 }
             }
+            .padding(.trailing, friends.isEmpty ? 0 : 64)
         } leading: {
             EmptyView()
         } trailing: {
-            EmptyView()
+            if !friends.isEmpty {
+                FriendFaces(friends: friends, limit: 3)
+            }
         }
+        .accessibilityValue(friendsSummary)
+    }
+
+    private var friendsSummary: String {
+        guard !friends.isEmpty else { return "" }
+        let names = friends.map(\.firstName).formatted(.list(type: .and))
+        return String(localized: "With \(names)")
     }
 }
 
 /// A `PersonCard` that opens the person.
 struct PersonCardLink: View {
     let person: Person
+    var detail: String?
+    var friends: [Friend] = []
 
     var body: some View {
         NavigationLink(value: AppRoute.person(person.id)) {
-            PersonCard(person: person)
+            PersonCard(person: person, detail: detail, friends: friends)
         }
         .buttonStyle(.plain)
     }
