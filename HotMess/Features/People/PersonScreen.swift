@@ -23,8 +23,12 @@ struct PersonScreen: View {
                             heroText(detail.person)
                         }
 
+                        if !detail.tipLinks.isEmpty {
+                            tipButtons(detail)
+                        }
+
                         DetailSection(String(localized: "Elsewhere")) {
-                            ForEach(detail.socialLinks) { link in
+                            ForEach(detail.profileLinks) { link in
                                 socialLinkRow(link)
                             }
                         }
@@ -97,6 +101,25 @@ struct PersonScreen: View {
                 }
             }
         }
+    }
+
+    /// One button per app they take tips on; each opens that app on their profile.
+    private func tipButtons(_ detail: PersonDetail) -> some View {
+        VStack(spacing: 10) {
+            ForEach(detail.tipLinks) { link in
+                if let url = link.url, let app = link.tipApp {
+                    Link(destination: url) {
+                        Label(String(localized: "Tip on \(app)"), systemImage: "dollarsign.circle.fill")
+                            .font(.hotMess(.body, semibold: true))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityLabel(String(localized: "Tip \(detail.name) on \(app)"))
+                }
+            }
+        }
+        .padding(.horizontal, 20)
     }
 
     @ViewBuilder
