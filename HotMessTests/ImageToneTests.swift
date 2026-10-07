@@ -88,8 +88,10 @@ struct ImageToneTests {
 
     @Test("The scrim brings white text to exactly the target")
     func scrimMeetsTarget() {
-        let tone = ImageTone.decide(top: [0], band: Array(repeating: 0.5, count: 100))
-        let darkened = 0.5 * (1 - tone.scrim)
+        // At 0.2 neither white (4.2:1) nor the dark ink (4.1:1) reaches 4.5:1 unaided;
+        // a mid-grey would already pass with dark ink and get no scrim.
+        let tone = ImageTone.decide(top: [0], band: Array(repeating: 0.2, count: 100))
+        let darkened = 0.2 * (1 - tone.scrim)
 
         #expect(tone.text == .light)
         #expect(abs(ImageTone.contrast(1, darkened) - 4.5) < 0.001)
