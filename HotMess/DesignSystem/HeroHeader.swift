@@ -65,9 +65,10 @@ struct HeroHeader<Content: View>: View {
     @ViewBuilder
     private var photo: some View {
         if let url {
+            // No fade: the scrim and text are drawn at once, so a fading photo
+            // read as only the part behind the text having loaded.
             KFImage(url)
                 .cancelOnDisappear(true)
-                .fade(duration: 0.2)
                 .placeholder { Color(red: 0.16, green: 0.12, blue: 0.15) }
                 .resizable()
                 .aspectRatio(contentMode: .fill)
@@ -190,6 +191,7 @@ extension View {
             .toolbarBackground(collapsed ? AnyShapeStyle(Material.bar) : AnyShapeStyle(Color.clear), for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(collapsed ? nil : tone.bar, for: .navigationBar)
+            .modifier(HeroScrollEdge(hidden: !collapsed))
             .animation(.easeOut(duration: 0.15), value: collapsed)
     }
 
@@ -199,6 +201,21 @@ extension View {
             geometry.contentOffset.y + geometry.contentInsets.top > HeroMetrics.bodyHeight - 8
         } action: { _, isCollapsed in
             collapsed.wrappedValue = isCollapsed
+        }
+    }
+}
+
+/// iOS 26 blurs and fades scroll content under the navigation bar, which cut a
+/// sharp line across the hero photo where the effect ended. The photo is the
+/// bar's background while the hero shows, so the effect is off until it scrolls away.
+private struct HeroScrollEdge: ViewModifier {
+    let hidden: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.scrollEdgeEffectHidden(hidden, for: .top)
+        } else {
+            content
         }
     }
 }
