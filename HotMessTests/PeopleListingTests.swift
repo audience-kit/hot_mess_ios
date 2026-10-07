@@ -14,8 +14,18 @@ struct PeopleListingTests {
     private let portland = UUID()
     private let now = Date(timeIntervalSince1970: 1_791_604_800)
 
-    private func entry(_ name: String, home: UUID? = nil, gigs: [PersonEntry.Gig] = []) -> PersonEntry {
-        PersonEntry(person: Person(id: UUID(), name: name), homeLocaleID: home, gigs: gigs, friends: [])
+    private func entry(
+        _ name: String,
+        home: UUID? = nil,
+        featured: [UUID] = [],
+        gigs: [PersonEntry.Gig] = []
+    ) -> PersonEntry {
+        PersonEntry(
+            person: Person(id: UUID(), name: name),
+            localeIDs: Set([home].compactMap { $0 } + featured),
+            gigs: gigs,
+            friends: []
+        )
     }
 
     private func gig(in locale: UUID, hours: Double) -> PersonEntry.Gig {
@@ -47,6 +57,17 @@ struct PeopleListingTests {
 
         #expect(listing.local(to: seattle, now: now).isEmpty)
         #expect(listing.local(to: portland, now: now).playing.count == 1)
+    }
+
+    @Test("People featured in a city are based there too, without a home venue")
+    func featured() {
+        let listing = PeopleListing(everyone: [
+            entry("Featured", featured: [seattle, portland]),
+            entry("Home", home: portland),
+        ])
+
+        #expect(listing.local(to: seattle, now: now).based.map(\.person.name) == ["Featured"])
+        #expect(listing.local(to: portland, now: now).based.map(\.person.name) == ["Featured", "Home"])
     }
 
     @Test("A gig that started earlier tonight still counts")
