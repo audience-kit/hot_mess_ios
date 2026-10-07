@@ -22,7 +22,9 @@ final class LocationProvider {
     private(set) var authorizationStatus: CLAuthorizationStatus
     /// Test builds only: the venue the app is pretending to be at. While it's
     /// set, the venue's position is reported instead of the device's.
-    private(set) var simulatedVenueName: String?
+    var simulatedVenueName: String? { tracker.simulatedVenueName }
+
+    private var tracker: PositionTracker
 
     private let api: HotMessAPI
     private let configuration: AppConfiguration
@@ -41,6 +43,7 @@ final class LocationProvider {
         self.api = api
         self.configuration = configuration
         authorizationStatus = manager.authorizationStatus
+        tracker = PositionTracker(simulationAllowed: configuration.isTestBuild)
 
         locale = Self.restoreLocale()
 
@@ -115,11 +118,10 @@ final class LocationProvider {
     /// so a test build can be "at" a venue from anywhere. The API puts the
     /// user at whichever venue's envelope contains the point.
     func simulate(at coordinate: CLLocationCoordinate2D, venueName: String) {
-        guard configuration.isTestBuild else { return }
+        guard tracker.simulate(latitude: coordinate.latitude, longitude: coordinate.longitude, venueName: venueName)
+        else { return }
 
-        simulatedVenueName = venueName
-        coordinates = Coordinates(latitude: coordinate.latitude, longitude: coordinate.longitude)
-
+        coordinates = tracker.current
         Task {
             await refreshLocale()
             await reportPosition()
@@ -128,13 +130,14 @@ final class LocationProvider {
 
     /// Goes back to the device's real position.
     func stopSimulating() {
-        guard simulatedVenueName != nil else { return }
+        guard tracker.stopSimulating() else { return }
 
-        simulatedVenueName = nil
-        if let location = manager.location {
-            update(with: location)
-        } else {
-            coordinates = nil
+        coordinates = tracker.current
+        guard coordinates != nil else { return }
+
+        Task {
+            await refreshLocale()
+            await reportPosition()
         }
     }
 
@@ -169,15 +172,10 @@ final class LocationProvider {
     }
 
     fileprivate func update(with location: CLLocation) {
-        guard simulatedVenueName == nil else { return }
+        guard tracker.deviceFix(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+        else { return }
 
-        coordinates = Coordinates(
-            latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude,
-            beaconMajor: coordinates?.beaconMajor,
-            beaconMinor: coordinates?.beaconMinor
-        )
-
+        coordinates = tracker.current
         Task {
             await refreshLocale()
             await reportPosition()
@@ -185,22 +183,15 @@ final class LocationProvider {
     }
 
     fileprivate func update(beacons: [CLBeacon]) {
-        guard simulatedVenueName == nil, let nearest = beacons.first else { return }
+        guard let nearest = beacons.first else { return }
 
-        // Only attach beacon identifiers to a position we actually have; the
-        // original fell back to (0, 0) and reported the Gulf of Guinea.
-        let position = coordinates ?? manager.location.map {
-            Coordinates(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
+        // A beacon can be heard before the first significant-change fix.
+        if tracker.current == nil, let location = manager.location {
+            tracker.deviceFix(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
         }
-        guard let position else { return }
+        guard tracker.beacon(major: nearest.major.intValue, minor: nearest.minor.intValue) else { return }
 
-        coordinates = Coordinates(
-            latitude: position.latitude,
-            longitude: position.longitude,
-            beaconMajor: nearest.major.intValue,
-            beaconMinor: nearest.minor.intValue
-        )
-
+        coordinates = tracker.current
         Task { await reportPosition() }
     }
 
