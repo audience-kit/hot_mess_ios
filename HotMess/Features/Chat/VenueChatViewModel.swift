@@ -56,6 +56,14 @@ final class VenueChatViewModel {
     /// avatars from its roster and presence frames. Empty while offline, and
     /// from servers that only send IDs.
     private(set) var roomPeople: [UUID: RoomPerson] = [:]
+    /// People not in the room whom a notification still reaches, by user ID:
+    /// a yellow dot. The server only says so about the user's friends, and to
+    /// admins.
+    private(set) var reachableUserIDs: Set<UUID> = []
+    /// The announcement pinned under the room's title, from the history sent
+    /// on joining and the room's pin frames; it can be older than the
+    /// messages the room shows.
+    private(set) var pinned: VenueMessage?
     var draft: String = ""
 
     let room: ChatRoom
@@ -108,10 +116,10 @@ final class VenueChatViewModel {
         message.isOutgoing(for: userID)
     }
 
-    /// The announcement pinned under the room's title: the latest one the
-    /// room sent marked as pinned.
+    /// The announcement pinned under the room's title: the one the room said
+    /// is pinned, else (from older servers) the latest line marked as pinned.
     var pinnedAnnouncement: VenueMessage? {
-        messages.last { $0.isPinned && $0.kind == .announcement }
+        pinned ?? messages.last { $0.isPinned && $0.kind == .announcement }
     }
 
     /// Everyone else in the room now, for the Here now strip: friends first,
@@ -171,6 +179,13 @@ final class VenueChatViewModel {
                 applyRoster(online: online, people: people, friends: friends)
             case let .presence(userID, online, name, avatarURL):
                 applyPresence(userID: userID, online: online, name: name, avatarURL: avatarURL)
+            case let .reachable(userID):
+                applyPresence(userID: userID, online: false, name: nil, avatarURL: nil)
+                reachableUserIDs.insert(userID)
+            case let .history(messages, pinned):
+                applyHistory(messages, pinned: pinned)
+            case let .pin(id, announcement):
+                applyPin(id: id, announcement: announcement)
             case .notPresent:
                 connectionState = .notPresent
                 clearRoom()
@@ -248,6 +263,7 @@ final class VenueChatViewModel {
     /// Someone joined or left. A join keeps what's already known about them
     /// unless the frame says otherwise.
     func applyPresence(userID: UUID, online: Bool, name: String?, avatarURL: URL?) {
+        reachableUserIDs.remove(userID)
         guard online else {
             onlineUserIDs.remove(userID)
             roomPeople[userID] = nil
@@ -261,9 +277,34 @@ final class VenueChatViewModel {
         roomPeople[userID] = person
     }
 
+    // MARK: - History and pins
+
+    /// What the room sent on joining: it replaces what was shown before, so a
+    /// reconnect doesn't repeat lines. The user's own lines still on their
+    /// way stay pending.
+    func applyHistory(_ history: [VenueMessage], pinned: VenueMessage?) {
+        messages = history
+        self.pinned = pinned
+        reachableUserIDs = Set(history.filter { $0.presence == .push && !$0.isFromPlace }.map(\.userID))
+    }
+
+    /// An announcement was pinned, replacing whichever was, or unpinned.
+    func applyPin(id: UUID, announcement: VenueMessage?) {
+        for index in messages.indices where messages[index].isPinned || messages[index].id == id {
+            messages[index].isPinned = announcement != nil && messages[index].id == id
+        }
+
+        if let announcement {
+            pinned = announcement
+        } else if pinned?.id == id {
+            pinned = nil
+        }
+    }
+
     private func clearRoom() {
         onlineUserIDs = []
         roomPeople = [:]
+        reachableUserIDs = []
     }
 
     // MARK: - Sending
@@ -307,7 +348,20 @@ final class VenueChatViewModel {
             pending.remove(at: index)
         }
 
-        messages.append(message)
+        switch message.presence {
+        case .push where !message.isFromPlace: reachableUserIDs.insert(message.userID)
+        case .online: reachableUserIDs.remove(message.userID)
+        default: break
+        }
+        if message.isPinned, message.kind == .announcement {
+            pinned = message
+        }
+
+        if let index = messages.firstIndex(where: { $0.id == message.id }) {
+            messages[index] = message
+        } else {
+            messages.append(message)
+        }
     }
 
     private func markFailed(_ id: UUID, attempt: Int) {
