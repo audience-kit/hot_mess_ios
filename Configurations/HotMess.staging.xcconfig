@@ -32,6 +32,12 @@ FACEBOOK_CLIENT_TOKEN =
 BUNDLE_SUFFIX = Staging
 APNS_ENVIRONMENT = development
 
+// Apple Pay for cover payments. The merchant ID must be registered in the
+// Apple Developer account (Identifiers -> Merchant IDs) and on Stripe
+// (Settings -> Payment methods -> Apple Pay) before Apple Pay shows. Leave it
+// empty to take cards only.
+APPLE_PAY_MERCHANT_ID = merchant.social.hotmess
+
 // Secrets that stay out of git, such as FACEBOOK_CLIENT_TOKEN. Copy
 // Local.xcconfig.example to Local.staging.xcconfig and fill it in.
 #include? "Local.staging.xcconfig"

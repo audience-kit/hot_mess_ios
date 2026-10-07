@@ -4,6 +4,7 @@
 //
 
 import FacebookCore
+@preconcurrency import StripePaymentSheet
 import SwiftUI
 import UIKit
 
@@ -38,10 +39,13 @@ struct HotMessApp: App {
         }
     }
 
-    /// Facebook gets first refusal on an incoming URL — its login flow comes
-    /// back through `fb<app-id>://` — and anything it doesn't claim is treated
-    /// as one of our own `hotmess://` links.
+    /// Stripe claims its bank redirects (`hotmess://stripe-redirect`), then
+    /// Facebook gets refusal on an incoming URL — its login flow comes back
+    /// through `fb<app-id>://` — and anything neither claims is treated as one
+    /// of our own `hotmess://` links.
     private func handle(_ url: URL) {
+        if StripeAPI.handleURLCallback(with: url) { return }
+
         let handledByFacebook = ApplicationDelegate.shared.application(
             UIApplication.shared,
             open: url,

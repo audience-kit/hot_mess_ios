@@ -19,6 +19,8 @@ final class AppModel {
     /// The audience's look, from AudienceKit branding.
     let brand: BrandStore
     let location: LocationProvider
+    /// Paying cover and showing passes, over whichever tab asked.
+    let checkout: CoverCheckout
 
     var selectedTab: AppTab = .now
 
@@ -47,6 +49,7 @@ final class AppModel {
         brand = BrandStore(audienceKit: audienceKit)
         session = SessionStore(api: api, audienceKit: audienceKit, brand: brand, configuration: configuration)
         location = LocationProvider(api: api, configuration: configuration)
+        checkout = CoverCheckout(api: api, configuration: configuration)
     }
 
     func start() async {

@@ -92,11 +92,33 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
 struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     var event: Event
     let people: [Person]
+    /// The cover at its venue that night, or nil when there's none (or it
+    /// sells tickets).
+    let coverCharge: CoverCharge?
+    /// The cover at its venue tonight, whatever night the event is, so the
+    /// screen can tell whether the event's cover is tonight's.
+    let venueCoverTonight: CoverCharge?
+    /// The user's cover tonight at its venue, paid or being paid.
+    let viewerAdmission: Admission?
 
     var id: UUID { event.id }
 
+    /// Whether the event's cover is the venue's cover tonight, so it can be
+    /// paid now.
+    var isCoverTonight: Bool {
+        guard let coverCharge, let venueCoverTonight else { return false }
+        return coverCharge.night == venueCoverTonight.night
+    }
+
     enum CodingKeys: String, CodingKey {
         case people
+        case coverCharge = "cover_charge"
+        case venueCover = "venue_cover"
+    }
+
+    private enum VenueCoverKeys: String, CodingKey {
+        case coverCharge = "cover_charge"
+        case viewerAdmission = "viewer_admission"
     }
 
     init(from decoder: any Decoder) throws {
@@ -104,6 +126,16 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
         people = try container.decodeIfPresent([Person].self, forKey: .people) ?? []
+        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+
+        if (try? container.decodeNil(forKey: .venueCover)) == false,
+           let venue = try? container.nestedContainer(keyedBy: VenueCoverKeys.self, forKey: .venueCover) {
+            venueCoverTonight = try venue.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+            viewerAdmission = try venue.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+        } else {
+            venueCoverTonight = nil
+            viewerAdmission = nil
+        }
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -113,8 +145,17 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         try container.encode(people, forKey: .people)
     }
 
-    init(event: Event, people: [Person] = []) {
+    init(
+        event: Event,
+        people: [Person] = [],
+        coverCharge: CoverCharge? = nil,
+        venueCoverTonight: CoverCharge? = nil,
+        viewerAdmission: Admission? = nil
+    ) {
         self.event = event
         self.people = people
+        self.coverCharge = coverCharge
+        self.venueCoverTonight = venueCoverTonight
+        self.viewerAdmission = viewerAdmission
     }
 }

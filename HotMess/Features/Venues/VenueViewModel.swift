@@ -18,6 +18,10 @@ struct VenueOverview: Sendable, Equatable {
     /// The last few lines of the venue's chat room, oldest first. The API
     /// only sends them to someone who can read the room.
     var recentMessages: [VenueMessage] = []
+    /// Tonight's cover, or nil when there's none.
+    var coverCharge: CoverCharge?
+    /// The user's cover tonight, paid or being paid.
+    var viewerAdmission: Admission?
 }
 
 @MainActor

@@ -89,6 +89,7 @@ struct MainTabView: View {
             }
         }
         .accessibilityIdentifier("main.tabs")
+        .coverPresenter()
     }
 }
 

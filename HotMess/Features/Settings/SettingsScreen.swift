@@ -17,10 +17,13 @@ struct SettingsScreen: View {
     @State private var isConfirmingSignOut = false
     @State private var isConfirmingReset = false
     @State private var didReset = false
+    /// Venues whose door the user can work; Door mode shows only when there are some.
+    @State private var doorVenues: [DoorVenue] = []
 
     var body: some View {
         List {
             profileSection
+            coverSection
             locationSection
             feedbackSection
             aboutSection
@@ -29,6 +32,7 @@ struct SettingsScreen: View {
         .listStyle(.insetGrouped)
         .navigationTitle(String(localized: "Me"))
         .task { await model.session.refreshUser() }
+        .task { await loadDoorVenues() }
         .confirmationDialog(
             String(localized: "Sign out of Hot Mess?"),
             isPresented: $isConfirmingSignOut,
@@ -75,6 +79,30 @@ struct SettingsScreen: View {
                 }
             }
             .padding(.vertical, 4)
+        }
+    }
+
+    private var coverSection: some View {
+        Section {
+            NavigationLink {
+                PassesScreen()
+            } label: {
+                Label(String(localized: "Passes"), systemImage: "ticket")
+            }
+            .accessibilityIdentifier("me.passes")
+
+            if !doorVenues.isEmpty {
+                NavigationLink {
+                    DoorScreen(venues: doorVenues)
+                } label: {
+                    Label(String(localized: "Door"), systemImage: "qrcode.viewfinder")
+                }
+                .accessibilityIdentifier("me.door")
+            }
+        } footer: {
+            if !doorVenues.isEmpty {
+                Text("Scan cover passes at \(doorVenues.map(\.name).formatted(.list(type: .and))).")
+            }
         }
     }
 
@@ -159,6 +187,14 @@ struct SettingsScreen: View {
         ]
 
         return components.url
+    }
+
+    private func loadDoorVenues() async {
+        do {
+            doorVenues = try await model.api.doorVenues()
+        } catch {
+            // Door mode stays hidden; it's only for venue staff.
+        }
     }
 
     private func resetLocalData() {

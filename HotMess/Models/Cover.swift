@@ -1,0 +1,346 @@
+//
+//  Cover.swift
+//  HotMess
+//
+
+import Foundation
+
+/// What it costs to get into a venue on a night. The app shows `totalCents`,
+/// the all-in price, and takes it in the app when `payable`; otherwise it's
+/// paid at the door.
+struct CoverCharge: Decodable, Hashable, Sendable {
+    /// The cover the venue receives, in cents.
+    let amountCents: Int
+    /// What the buyer pays, all in, in cents.
+    let totalCents: Int
+    /// An ISO 4217 code in lower case, e.g. `usd`.
+    let currency: String
+    /// The night it is for, `yyyy-MM-dd`. A night runs 6am to 6am.
+    let night: String
+    /// When the cover starts, `HH:MM` local time.
+    let from: String?
+    /// Whether it can be paid in the app.
+    let payable: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case currency, night, from, payable
+        case amountCents = "amount_cents"
+        case totalCents = "total_cents"
+    }
+
+    init(
+        amountCents: Int,
+        totalCents: Int,
+        currency: String = "usd",
+        night: String,
+        from: String? = nil,
+        payable: Bool
+    ) {
+        self.amountCents = amountCents
+        self.totalCents = totalCents
+        self.currency = currency
+        self.night = night
+        self.from = from
+        self.payable = payable
+    }
+
+    var price: String { CoverFormat.price(cents: totalCents, currency: currency) }
+
+    /// "Cover $11.12 tonight · from 9 PM", or with the night instead of
+    /// "tonight" for another night.
+    func summary(isTonight: Bool) -> String {
+        let cover = isTonight
+            ? String(localized: "Cover \(price) tonight")
+            : String(localized: "Cover \(price) · \(CoverFormat.night(night))")
+
+        guard let start = from.flatMap(CoverFormat.time) else { return cover }
+        return String(localized: "\(cover) · from \(start)")
+    }
+}
+
+/// Where a cover payment stands.
+enum AdmissionStatus: String, Decodable, Hashable, Sendable {
+    case pending = "PENDING"
+    case paid = "PAID"
+    case failed = "FAILED"
+    case canceled = "CANCELED"
+    case refunded = "REFUNDED"
+    case disputed = "DISPUTED"
+    /// A status a newer API added.
+    case unknown
+
+    init(from decoder: any Decoder) throws {
+        self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+    }
+
+    var title: String {
+        switch self {
+        case .pending: String(localized: "Payment pending")
+        case .paid: String(localized: "Paid")
+        case .failed: String(localized: "Payment failed")
+        case .canceled: String(localized: "Canceled")
+        case .refunded: String(localized: "Refunded")
+        case .disputed: String(localized: "Disputed")
+        case .unknown: String(localized: "Unavailable")
+        }
+    }
+}
+
+/// Someone's cover for one night at a venue, and their pass.
+struct Admission: Decodable, Hashable, Sendable, Identifiable {
+    /// The API's ID, kept as sent: the pass code signs it character for character.
+    let id: String
+    var status: AdmissionStatus
+    /// `yyyy-MM-dd`.
+    let night: String
+    /// What the buyer paid, in cents.
+    let totalCents: Int
+    let currency: String
+    /// Paid, not scanned in, and the night isn't over.
+    var isRefundable: Bool
+    /// The Base64 key the pass QR code is made with. Only the buyer gets it.
+    let passSecret: String?
+    let scanCount: Int
+    let checkedInAt: Date?
+    let userName: String?
+    let userPhotoURL: URL?
+    let venueID: UUID?
+    let venueName: String
+    let venuePhotoURL: URL?
+    let eventName: String?
+
+    var isPaid: Bool { status == .paid }
+
+    var price: String { CoverFormat.price(cents: totalCents, currency: currency) }
+
+    /// "Fri, Oct 9".
+    var nightTitle: String { CoverFormat.night(night) }
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, night, currency, venue, event
+        case totalCents = "total_cents"
+        case isRefundable = "is_refundable"
+        case passSecret = "pass_secret"
+        case scanCount = "scan_count"
+        case checkedInAt = "checked_in_at"
+        case userName = "user_name"
+        case userPhotoURL = "user_photo_url"
+    }
+
+    private enum PlaceKeys: String, CodingKey {
+        case id, name
+        case photoURL = "photo_url"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(String.self, forKey: .id)
+        status = try container.decode(AdmissionStatus.self, forKey: .status)
+        night = try container.decode(String.self, forKey: .night)
+        totalCents = try container.decode(Int.self, forKey: .totalCents)
+        currency = try container.decodeIfPresent(String.self, forKey: .currency) ?? "usd"
+        isRefundable = try container.decodeIfPresent(Bool.self, forKey: .isRefundable) ?? false
+        passSecret = try container.decodeIfPresent(String.self, forKey: .passSecret)
+        scanCount = try container.decodeIfPresent(Int.self, forKey: .scanCount) ?? 0
+        checkedInAt = try? container.decodeIfPresent(Date.self, forKey: .checkedInAt)
+        userName = try container.decodeIfPresent(String.self, forKey: .userName)
+        userPhotoURL = try container.decodeURLIfPresent(forKey: .userPhotoURL)
+
+        if (try? container.decodeNil(forKey: .venue)) == false {
+            let venue = try container.nestedContainer(keyedBy: PlaceKeys.self, forKey: .venue)
+            venueID = try venue.decodeIfPresent(String.self, forKey: .id).flatMap(RecordID.uuid)
+            venueName = try venue.decodeIfPresent(String.self, forKey: .name) ?? ""
+            venuePhotoURL = try venue.decodeURLIfPresent(forKey: .photoURL)
+        } else {
+            venueID = nil
+            venueName = ""
+            venuePhotoURL = nil
+        }
+
+        if (try? container.decodeNil(forKey: .event)) == false {
+            let event = try container.nestedContainer(keyedBy: PlaceKeys.self, forKey: .event)
+            eventName = try event.decodeIfPresent(String.self, forKey: .name)
+        } else {
+            eventName = nil
+        }
+    }
+
+    init(
+        id: String,
+        status: AdmissionStatus,
+        night: String,
+        totalCents: Int,
+        currency: String = "usd",
+        isRefundable: Bool = false,
+        passSecret: String? = nil,
+        scanCount: Int = 0,
+        checkedInAt: Date? = nil,
+        userName: String? = nil,
+        userPhotoURL: URL? = nil,
+        venueID: UUID? = nil,
+        venueName: String = "",
+        venuePhotoURL: URL? = nil,
+        eventName: String? = nil
+    ) {
+        self.id = id
+        self.status = status
+        self.night = night
+        self.totalCents = totalCents
+        self.currency = currency
+        self.isRefundable = isRefundable
+        self.passSecret = passSecret
+        self.scanCount = scanCount
+        self.checkedInAt = checkedInAt
+        self.userName = userName
+        self.userPhotoURL = userPhotoURL
+        self.venueID = venueID
+        self.venueName = venueName
+        self.venuePhotoURL = venuePhotoURL
+        self.eventName = eventName
+    }
+}
+
+/// What `buyCover` returns: the pending pass and what Stripe's payment sheet
+/// needs to take the payment on the venue's account.
+struct CoverPurchase: Decodable, Sendable {
+    let admission: Admission
+    /// `nil` once it's paid.
+    let paymentIntentClientSecret: String?
+    let publishableKey: String
+    /// The venue's connected Stripe account (a direct charge).
+    let stripeAccountID: String
+
+    enum CodingKeys: String, CodingKey {
+        case admission
+        case paymentIntentClientSecret = "payment_intent_client_secret"
+        case publishableKey = "publishable_key"
+        case stripeAccountID = "stripe_account_id"
+    }
+}
+
+// MARK: - Door
+
+/// A venue whose door the user can work, with tonight's counts.
+struct DoorVenue: Decodable, Hashable, Sendable, Identifiable {
+    let id: UUID
+    let name: String
+    let photoURL: URL?
+    var door: DoorCounts?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, door
+        case photoURL = "photo_url"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        photoURL = try container.decodeURLIfPresent(forKey: .photoURL)
+        door = try container.decodeIfPresent(DoorCounts.self, forKey: .door)
+    }
+
+    init(id: UUID, name: String, photoURL: URL? = nil, door: DoorCounts? = nil) {
+        self.id = id
+        self.name = name
+        self.photoURL = photoURL
+        self.door = door
+    }
+}
+
+/// Who paid cover tonight and who has been scanned in.
+struct DoorCounts: Decodable, Hashable, Sendable {
+    let paidCount: Int
+    let checkedInCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case paidCount = "paid_count"
+        case checkedInCount = "checked_in_count"
+    }
+
+    init(paidCount: Int, checkedInCount: Int) {
+        self.paidCount = paidCount
+        self.checkedInCount = checkedInCount
+    }
+}
+
+/// What the door should do with a scanned pass.
+enum ScanOutcome: String, Decodable, Hashable, Sendable {
+    case admit = "ADMIT"
+    case reEntry = "RE_ENTRY"
+    case expired = "EXPIRED"
+    case notPaid = "NOT_PAID"
+    case wrongVenue = "WRONG_VENUE"
+    case unreadable = "UNREADABLE"
+    case unknown
+
+    init(from decoder: any Decoder) throws {
+        self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+    }
+
+    var title: String {
+        switch self {
+        case .admit: String(localized: "ADMIT")
+        case .reEntry: String(localized: "RE-ENTRY")
+        case .expired: String(localized: "OLD CODE")
+        case .notPaid: String(localized: "NOT PAID")
+        case .wrongVenue: String(localized: "WRONG DOOR")
+        case .unreadable, .unknown: String(localized: "NOT A PASS")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .admit: "checkmark.circle.fill"
+        case .reEntry: "arrow.uturn.backward.circle.fill"
+        default: "xmark.octagon.fill"
+        }
+    }
+}
+
+/// The answer to a door scan.
+struct ScanResult: Decodable, Hashable, Sendable {
+    let outcome: ScanOutcome
+    /// What to show the door, e.g. "Paid · Alex".
+    let message: String
+    let admission: Admission?
+}
+
+// MARK: - Formatting
+
+enum CoverFormat {
+    /// "$11.12", or "$10" for whole amounts.
+    static func price(cents: Int, currency: String) -> String {
+        (Decimal(cents) / 100).formatted(
+            .currency(code: currency.uppercased())
+                .precision(.fractionLength(cents % 100 == 0 ? 0 : 2))
+        )
+    }
+
+    /// "21:00" as "9 PM", "21:30" as "9:30 PM", in the device's style.
+    static func time(_ hhmm: String) -> String? {
+        let parts = hhmm.split(separator: ":").compactMap { Int($0) }
+        guard parts.count >= 2,
+              let date = Calendar.current.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: Date())
+        else { return nil }
+
+        let style: Date.FormatStyle = parts[1] == 0 ? .dateTime.hour() : .dateTime.hour().minute()
+        return date.formatted(style)
+    }
+
+    /// "2026-10-09" as "Fri, Oct 9". Nights are calendar dates, so they're
+    /// read and written in UTC to keep the day from shifting.
+    static func night(_ iso: String) -> String {
+        guard let date = nightDate(iso) else { return iso }
+
+        var style = Date.FormatStyle.dateTime.weekday(.abbreviated).month(.abbreviated).day()
+        style.timeZone = .gmt
+        return date.formatted(style)
+    }
+
+    static func nightDate(_ iso: String) -> Date? {
+        try? Date(iso, strategy: Date.ISO8601FormatStyle(timeZone: .gmt).year().month().day())
+    }
+}

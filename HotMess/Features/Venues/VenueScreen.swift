@@ -29,6 +29,16 @@ struct VenueScreen: View {
                             heroText(venue)
                         }
 
+                        if overview.coverCharge != nil || overview.viewerAdmission?.isPaid == true {
+                            CoverSection(
+                                coverCharge: overview.coverCharge,
+                                isTonight: true,
+                                admission: overview.viewerAdmission,
+                                venueID: venue.id,
+                                venueName: venue.name
+                            )
+                        }
+
                         aboutSection(venue)
 
                         let socialLinks = overview.socialLinks.filter { $0.url != nil }
@@ -96,6 +106,10 @@ struct VenueScreen: View {
         .task {
             ensureViewModel()
             await viewModel?.load()
+        }
+        .onChange(of: model.checkout.revision) {
+            // A cover was paid or refunded: show the pass, or the way to pay.
+            reload()
         }
     }
 

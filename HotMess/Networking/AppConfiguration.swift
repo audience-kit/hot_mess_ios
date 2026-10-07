@@ -24,6 +24,10 @@ struct AppConfiguration: Sendable, Hashable {
     /// Staging builds tell the API so, which then signs people in with Hot
     /// Mess's staging Facebook app. See `AUDIENCEKIT_ENVIRONMENT`.
     let environment: AudienceKitEnvironment
+    /// The Apple Pay merchant ID cover payments use, from
+    /// `APPLE_PAY_MERCHANT_ID`. Without one, the payment sheet leaves Apple
+    /// Pay out.
+    let applePayMerchantID: String?
     let version: String
     let build: Int
 
@@ -42,6 +46,8 @@ struct AppConfiguration: Sendable, Hashable {
         audienceID = (bundle.object(forInfoDictionaryKey: "AudienceKitAudienceID") as? String).nonEmpty
         environment = (bundle.object(forInfoDictionaryKey: "AudienceKitEnvironment") as? String)
             .flatMap(AudienceKitEnvironment.init(rawValue:)) ?? .production
+        applePayMerchantID = (bundle.object(forInfoDictionaryKey: "ApplePayMerchantID") as? String).nonEmpty
+            .flatMap { $0.hasPrefix("merchant.") ? $0 : nil }
         version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
         build = (bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
             .flatMap(Int.init) ?? 0
@@ -54,6 +60,7 @@ struct AppConfiguration: Sendable, Hashable {
         audienceHost: String? = defaultAudienceHost,
         audienceID: String? = nil,
         environment: AudienceKitEnvironment = .production,
+        applePayMerchantID: String? = nil,
         version: String = "0.0",
         build: Int = 0
     ) {
@@ -63,6 +70,7 @@ struct AppConfiguration: Sendable, Hashable {
         self.audienceHost = audienceHost
         self.audienceID = audienceID
         self.environment = environment
+        self.applePayMerchantID = applePayMerchantID
         self.version = version
         self.build = build
     }

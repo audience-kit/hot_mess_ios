@@ -21,6 +21,7 @@ Dependencies resolve through Swift Package Manager on first open:
 | [facebook-ios-sdk](https://github.com/facebook/facebook-ios-sdk) | Login |
 | [Kingfisher](https://github.com/onevcat/Kingfisher) | Remote image loading and caching |
 | [AudienceKit](https://github.com/audience-kit/audience-kit) (`sdk/swift`) | Sign-in, session, GraphQL and branding against the AudienceKit API |
+| [Stripe](https://github.com/stripe/stripe-ios-spm) (`StripePaymentSheet`) | Paying cover in the app |
 
 The app runs on iPhone and iPad.
 
@@ -101,6 +102,26 @@ to `hotmess.social` once that domain is verified.
 client token for each environment out of the Facebook app dashboard
 (Settings → Advanced → Client token). The Facebook SDK reports an error at
 runtime while it is blank.
+
+## Cover
+
+When a venue takes cover in the app (`coverCharge.payable`), its page, the
+event that sets tonight's cover, and Now (at the venue) offer "Pay cover".
+`CoverCheckout` calls `buyCover`, presents Stripe's PaymentSheet on the
+venue's connected account (`STPAPIClient.shared.stripeAccount`; Connect
+direct charges) with the platform's publishable key, then `confirmCover`, and
+shows the pass. Passes live under Me → Passes.
+
+The pass's QR code is made on the phone every 30 seconds from the pass's
+secret (`CoverPass`, the API's `app/services/cover_pass.rb`), so it works with
+no signal; a sliding colour band shows staff it's live. Venue staff (anyone
+`doorVenues` returns) get Me → Door, which scans passes with the camera and
+calls `scanAdmission`.
+
+Apple Pay uses `APPLE_PAY_MERCHANT_ID` (`merchant.social.hotmess`) from the
+xcconfig files and the `in-app-payments` entitlement. Register that merchant
+ID in the Apple Developer account and add an Apple Pay certificate for it on
+Stripe; with the setting empty, the payment sheet takes cards only.
 
 ## App icon
 
