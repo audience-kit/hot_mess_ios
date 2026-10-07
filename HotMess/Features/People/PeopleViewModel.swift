@@ -12,12 +12,15 @@ extension Person {
     /// screen still loads the full person over REST by its UUID.
     init?(_ person: AudienceKit.Person, resolve: (String?) -> URL?) {
         guard let id = RecordID.uuid(person.id) else { return nil }
+        // Optional in the SDK once people can be added without a Facebook Page;
+        // binding it this way compiles against SDK versions before and after.
+        let page: AudienceKit.Page? = person.page
 
         self.init(
             id: id,
             name: person.name,
-            pictureURL: resolve(person.page?.photoUrl),
-            coverURL: resolve(person.page?.coverImageUrl)
+            pictureURL: resolve(page?.photoUrl),
+            coverURL: resolve(page?.coverImageUrl)
         )
     }
 }
