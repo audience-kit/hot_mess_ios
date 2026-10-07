@@ -69,6 +69,11 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
     var id: UUID { person.id }
     var name: String { person.name }
 
+    /// Where fans can tip them (Cash App, Venmo), each opening that app.
+    var tipLinks: [SocialLink] { socialLinks.filter { $0.tipApp != nil && $0.url != nil } }
+    /// Their social profiles, without the tip links.
+    var profileLinks: [SocialLink] { socialLinks.filter { $0.tipApp == nil } }
+
     enum CodingKeys: String, CodingKey {
         case events, tracks, members, groups
         case socialLinks = "social_links"

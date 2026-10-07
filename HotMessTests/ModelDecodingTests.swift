@@ -202,6 +202,24 @@ struct PersonDetailTests {
         #expect(detail.events.count == 1)
     }
 
+    @Test("Splits tip links from social profiles")
+    func tipLinks() throws {
+        let detail = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie",
+          "social_links": [
+            { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie", "provider": "instagram",
+              "url": "https://instagram.com/trixie" },
+            { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "TrixieTips", "provider": "cashapp",
+              "url": "https://cash.app/$TrixieTips" },
+            { "id": "3A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie-tips", "provider": "venmo",
+              "url": "https://venmo.com/u/trixie-tips" }
+          ] }
+        """)
+
+        #expect(detail.tipLinks.compactMap(\.tipApp) == ["Cash App", "Venmo"])
+        #expect(detail.profileLinks.map(\.provider) == ["instagram"])
+    }
+
     @Test("Reads the people a person is made of and part of")
     func membersAndGroups() throws {
         let detail = try decode(PersonDetail.self, from: Fixtures.personDetail)
