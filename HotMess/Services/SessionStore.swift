@@ -172,7 +172,11 @@ final class SessionStore {
 
     func registerForPushNotifications(deviceToken: Data) async {
         do {
-            try await api.registerForPush(deviceToken: deviceToken)
+            try await api.registerForPush(
+                deviceToken: deviceToken,
+                appID: Bundle.main.bundleIdentifier,
+                sandbox: configuration.isPushSandbox
+            )
         } catch {
             // Push registration is best-effort; a failure must not block the UI.
             Log.session.error("Push registration failed: \(error.localizedDescription, privacy: .public)")
@@ -210,7 +214,7 @@ final class SessionStore {
                 user = try? await currentUser()
             }
 
-            UIApplication.shared.registerForRemoteNotifications()
+            await PushNotifications.requestAuthorizationAndRegister()
         } catch {
             Log.session.error("Sign-in failed: \(error.localizedDescription, privacy: .public)")
             state = .failed(error.localizedDescription)

@@ -28,7 +28,15 @@ struct HotMessAPI: Sendable {
     /// Records where the device is and returns what's happening there. With no
     /// position there is nothing to look up, so the screen gets an empty "Now".
     func now(near coordinates: Coordinates?) async throws -> Now {
-        guard let coordinates else { return Now(title: String(localized: "Now")) }
+        guard let coordinates else {
+            // Pings don't depend on where you are, so they still show.
+            let current = try? await pings()
+            return Now(
+                title: String(localized: "Now"),
+                myPing: current?.myPing,
+                friendPings: current?.friendPings ?? []
+            )
+        }
 
         return try await query(
             Documents.reportLocation,
@@ -73,20 +81,26 @@ struct HotMessAPI: Sendable {
             chatOpen: venue.chatOpen,
             recentMessages: venue.recentMessages,
             coverCharge: venue.coverCharge,
-            viewerAdmission: venue.viewerAdmission
+            viewerAdmission: venue.viewerAdmission,
+            friendPings: venue.friendPings
         )
     }
 
     // MARK: - Events
 
     func events(in localeID: UUID) async throws -> EventListing {
+        EventListing(upcoming: try await eventList(in: localeID))
+    }
+
+    /// A locale's events as the API orders them.
+    func eventList(in localeID: UUID) async throws -> [Event] {
         let response = try await query(
             Documents.localeEvents,
             variables: ["id": .string(localeID.uuidString)],
             as: LocaleEventsResponse.self
         )
         guard let locale = response.locale else { throw APIError.notFound }
-        return EventListing(upcoming: locale.events)
+        return locale.events
     }
 
     func event(_ id: UUID) async throws -> EventDetail {
@@ -166,12 +180,84 @@ struct HotMessAPI: Sendable {
         try await client.send(Endpoints.manifest(device: device)).apple
     }
 
-    func registerForPush(deviceToken: Data) async throws {
-        do {
-            try await audienceKit.registerDevice(notificationToken: deviceToken.hexEncodedString)
-        } catch let error as AudienceKitError {
-            throw APIError(error)
+    /// Stores the APNs token for this device. `appID` is the bundle
+    /// identifier, which the API sends pushes to as the APNs topic, and
+    /// `sandbox` says the token is for APNs' development environment.
+    func registerForPush(deviceToken: Data, appID: String?, sandbox: Bool) async throws {
+        _ = try await query(
+            Documents.registerDevice,
+            variables: Self.registerDeviceVariables(token: deviceToken.hexEncodedString, appID: appID, sandbox: sandbox),
+            as: RegisterDeviceResponse.self
+        )
+    }
+
+    static func registerDeviceVariables(token: String, appID: String?, sandbox: Bool) -> [String: GraphQLValue] {
+        [
+            "notificationToken": .string(token),
+            "appId": appID.map(GraphQLValue.string) ?? .null,
+            "sandbox": .bool(sandbox),
+        ]
+    }
+
+    // MARK: - Pings
+
+    /// The user's own active Ping and friends' active Pings, without
+    /// reporting a location.
+    func pings() async throws -> PingsResponse {
+        try await query(Documents.pings, variables: [:], as: PingsResponse.self)
+    }
+
+    /// Sends a Ping for tonight, or edits the one already running.
+    func sendPing(places: [PingPlace], note: String?, localeID: UUID?, reach: PingReach) async throws -> Ping {
+        try await query(
+            Documents.sendPing,
+            variables: Self.sendPingVariables(places: places, note: note, localeID: localeID, reach: reach),
+            as: SendPingResponse.self
+        ).sendPing.ping
+    }
+
+    /// "I'm in", on one pick or, with no `targetID`, the whole Ping.
+    func joinPing(_ pingID: String, targetID: String? = nil) async throws -> Ping {
+        try await query(
+            Documents.joinPing,
+            variables: ["pingId": .string(pingID), "targetId": targetID.map(GraphQLValue.string) ?? .null],
+            as: JoinPingResponse.self
+        ).joinPing.ping
+    }
+
+    func leavePing(_ pingID: String) async throws -> Ping {
+        try await query(Documents.leavePing, variables: ["pingId": .string(pingID)], as: LeavePingResponse.self)
+            .leavePing.ping
+    }
+
+    /// Ends the user's own Ping early.
+    func endPing() async throws {
+        _ = try await query(Documents.endPing, variables: [:], as: EndPingResponse.self)
+    }
+
+    static func sendPingVariables(
+        places: [PingPlace],
+        note: String?,
+        localeID: UUID?,
+        reach: PingReach
+    ) -> [String: GraphQLValue] {
+        var venueIDs: [GraphQLValue] = []
+        var eventIDs: [GraphQLValue] = []
+        for place in places {
+            switch place {
+            case let .venue(id): venueIDs.append(.string(id.uuidString.lowercased()))
+            case let .event(id): eventIDs.append(.string(id.uuidString.lowercased()))
+            }
         }
+
+        let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return [
+            "venueIds": .array(venueIDs),
+            "eventIds": .array(eventIDs),
+            "note": trimmed.isEmpty ? .null : .string(trimmed),
+            "localeId": localeID.map { GraphQLValue.string($0.uuidString.lowercased()) } ?? .null,
+            "reach": .string(reach.rawValue),
+        ]
     }
 
     /// Records where the device is, so the API knows which venue the user is in.
@@ -229,6 +315,15 @@ extension HotMessAPI {
 
         static let friendFields = "id name facebook_id: facebookId"
 
+        static let pingJoinFields = "id target_id: targetId user { \(friendFields) }"
+
+        static let pingFields = """
+        id note created_at: createdAt expires_at: expiresAt is_mine: isMine joined reach \
+        user { \(friendFields) } via { \(friendFields) } \
+        targets { id venue { \(venueFields) } event { \(eventFields) } joins { \(pingJoinFields) } } \
+        joins { \(pingJoinFields) }
+        """
+
         static let messageFields = "id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt"
 
         /// Enough of a person for a card that links to them.
@@ -281,6 +376,8 @@ extension HotMessAPI {
                 friend_count: friendCount
                 friends { \(friendFields) }
               }
+              my_ping: myPing { \(pingFields) }
+              friend_pings: friendPings { \(pingFields) }
             }
           }
         }
@@ -295,6 +392,7 @@ extension HotMessAPI {
             social_links: socialLinks { \(socialLinkFields) }
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
             \(venueCoverFields)
+            friend_pings: friendPings { \(pingFields) }
           }
         }
         """
@@ -309,6 +407,7 @@ extension HotMessAPI {
         query Event($id: ID!) {
           event(id: $id) {
             \(eventFields) people { \(personFields) }
+            friend_pings: friendPings { \(pingFields) }
             cover_charge: coverCharge { \(coverChargeFields) }
             venue_cover: venue { \(venueCoverFields) }
           }
@@ -376,6 +475,47 @@ extension HotMessAPI {
           }
         }
         """
+
+        static let pings = """
+        query Pings {
+          my_ping: myPing { \(pingFields) }
+          friend_pings: friendPings { \(pingFields) }
+        }
+        """
+
+        static let sendPing = """
+        mutation SendPing($venueIds: [ID!], $eventIds: [ID!], $note: String, $localeId: ID, $reach: PingReach) {
+          sendPing(input: { venueIds: $venueIds, eventIds: $eventIds, note: $note, localeId: $localeId, reach: $reach }) {
+            ping { \(pingFields) }
+          }
+        }
+        """
+
+        static let joinPing = """
+        mutation JoinPing($pingId: ID!, $targetId: ID) {
+          joinPing(input: { pingId: $pingId, targetId: $targetId }) { ping { \(pingFields) } }
+        }
+        """
+
+        static let leavePing = """
+        mutation LeavePing($pingId: ID!) {
+          leavePing(input: { pingId: $pingId }) { ping { \(pingFields) } }
+        }
+        """
+
+        static let endPing = """
+        mutation EndPing {
+          endPing(input: {}) { ended }
+        }
+        """
+
+        /// The app's own copy of the SDK's document, with the APNs topic and
+        /// environment the API needs to reach this build.
+        static let registerDevice = """
+        mutation RegisterDevice($notificationToken: String!, $appId: String, $sandbox: Boolean) {
+          registerDevice(input: { notificationToken: $notificationToken, appId: $appId, sandbox: $sandbox }) { registered }
+        }
+        """
     }
 }
 
@@ -402,6 +542,7 @@ struct VenueWithEvents: Decodable, Sendable {
     let coverCharge: CoverCharge?
     /// The user's cover tonight, paid or being paid.
     let viewerAdmission: Admission?
+    let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
         case events, friends
@@ -410,6 +551,7 @@ struct VenueWithEvents: Decodable, Sendable {
         case recentMessages = "recent_messages"
         case coverCharge = "cover_charge"
         case viewerAdmission = "viewer_admission"
+        case friendPings = "friend_pings"
     }
 
     init(from decoder: any Decoder) throws {
@@ -423,6 +565,7 @@ struct VenueWithEvents: Decodable, Sendable {
             .map(VenueMessage.init(payload:))
         coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
         viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
 }
 
@@ -471,6 +614,45 @@ struct VenueDoorResponse: Decodable, Sendable {
 struct ScanAdmissionResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let result: ScanResult }
     let scanAdmission: Payload
+}
+
+struct PingsResponse: Decodable, Sendable {
+    let myPing: Ping?
+    let friendPings: [Ping]
+
+    private enum CodingKeys: String, CodingKey {
+        case myPing = "my_ping"
+        case friendPings = "friend_pings"
+    }
+
+    init(myPing: Ping? = nil, friendPings: [Ping] = []) {
+        self.myPing = myPing
+        self.friendPings = friendPings
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        myPing = try container.decodeIfPresent(Ping.self, forKey: .myPing)
+        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
+    }
+}
+
+struct PingPayload: Decodable, Sendable {
+    let ping: Ping
+}
+
+struct SendPingResponse: Decodable, Sendable { let sendPing: PingPayload }
+struct JoinPingResponse: Decodable, Sendable { let joinPing: PingPayload }
+struct LeavePingResponse: Decodable, Sendable { let leavePing: PingPayload }
+
+struct EndPingResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let ended: Bool }
+    let endPing: Payload
+}
+
+struct RegisterDeviceResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let registered: Bool }
+    let registerDevice: Payload
 }
 
 extension Coordinates {

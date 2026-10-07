@@ -17,6 +17,7 @@ struct VenueScreen: View {
     @State private var viewModel: VenueViewModel?
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
+    @State private var pingSeed: PingSeed?
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { overview in
@@ -38,6 +39,14 @@ struct VenueScreen: View {
                                 venueName: venue.name
                             )
                         }
+                        PingPlaceStrip(
+                            pings: viewModel?.activePings ?? [],
+                            isJoined: viewModel?.isJoinedHere(userID: model.session.userID) == true,
+                            isBusy: viewModel?.isUpdatingPings == true,
+                            pingForHere: { pingSeed = .venue(venue) },
+                            join: { Task { await viewModel?.joinHere(userID: model.session.userID) } },
+                            leave: { Task { await viewModel?.leaveHere(userID: model.session.userID) } }
+                        )
 
                         aboutSection(venue)
 
@@ -106,6 +115,21 @@ struct VenueScreen: View {
         .task {
             ensureViewModel()
             await viewModel?.load()
+        }
+        .sheet(item: $pingSeed) { seed in
+            PingSheet(seed: seed)
+                .environment(model)
+        }
+        .alert(
+            String(localized: "Couldn't update ping"),
+            isPresented: Binding(
+                get: { viewModel?.pingError != nil },
+                set: { if !$0 { viewModel?.pingError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(viewModel?.pingError ?? "")
         }
         .onChange(of: model.checkout.revision) {
             // A cover was paid or refunded: show the pass, or the way to pay.

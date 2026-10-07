@@ -100,6 +100,9 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     let venueCoverTonight: CoverCharge?
     /// The user's cover tonight at its venue, paid or being paid.
     let viewerAdmission: Admission?
+    /// Friends' Pings that pick this event. Read from GraphQL only, so it
+    /// isn't encoded.
+    var friendPings: [Ping]
 
     var id: UUID { event.id }
 
@@ -112,6 +115,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case people
+        case friendPings = "friend_pings"
         case coverCharge = "cover_charge"
         case venueCover = "venue_cover"
     }
@@ -136,6 +140,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
             venueCoverTonight = nil
             viewerAdmission = nil
         }
+        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -150,12 +155,14 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         people: [Person] = [],
         coverCharge: CoverCharge? = nil,
         venueCoverTonight: CoverCharge? = nil,
-        viewerAdmission: Admission? = nil
+        viewerAdmission: Admission? = nil,
+        friendPings: [Ping] = []
     ) {
         self.event = event
         self.people = people
         self.coverCharge = coverCharge
         self.venueCoverTonight = venueCoverTonight
         self.viewerAdmission = viewerAdmission
+        self.friendPings = friendPings
     }
 }

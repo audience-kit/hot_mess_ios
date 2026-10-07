@@ -31,6 +31,10 @@ final class AppModel {
     var venuesPath: [AppRoute] = []
     var peoplePath: [AppRoute] = []
 
+    /// Bumped whenever Pings change somewhere other than Now (a push, the
+    /// send sheet on a venue), so Now reloads.
+    private(set) var pingRevision = 0
+
     static let shared = AppModel()
 
     init(configuration: AppConfiguration = AppConfiguration()) {
@@ -64,7 +68,21 @@ final class AppModel {
 
         if session.isSignedIn {
             location.start()
+            // Re-register every launch: APNs tokens change, and a restored
+            // session never went through sign-in's registration.
+            Task { await PushNotifications.requestAuthorizationAndRegister() }
         }
+    }
+
+    func pingsChanged() {
+        pingRevision += 1
+    }
+
+    /// Shows Now from the top, for a tapped Ping notification.
+    func openNow() {
+        selectedTab = .now
+        nowPath = []
+        pingsChanged()
     }
 
     /// Jumps to a route, switching tabs and resetting that tab's stack first —

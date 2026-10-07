@@ -22,6 +22,8 @@ struct VenueOverview: Sendable, Equatable {
     var coverCharge: CoverCharge?
     /// The user's cover tonight, paid or being paid.
     var viewerAdmission: Admission?
+    /// Friends' Pings that pick this venue or one of its events.
+    var friendPings: [Ping] = []
 }
 
 @MainActor
@@ -46,6 +48,50 @@ final class VenueViewModel {
         } catch is CancellationError {
         } catch {
             state = LoadState(catching: error)
+        }
+    }
+
+    // MARK: - Pings
+
+    private(set) var isUpdatingPings = false
+    var pingError: String?
+
+    /// Friends' running Pings that pick this venue or one of its events.
+    var activePings: [Ping] {
+        Ping.friendFeed(state.value?.friendPings ?? [], at: .now)
+    }
+
+    /// Whether the user is in on every friend's Ping here.
+    func isJoinedHere(userID: UUID?) -> Bool {
+        PingPlaceJoin.isJoined(activePings, userID: userID) { $0.targets(atVenue: self.venueID) }
+    }
+
+    /// "I'm in" on each friend's pick here that the user isn't in on yet.
+    func joinHere(userID: UUID?) async {
+        await updatePings { pings, api in
+            try await PingPlaceJoin.join(pings, userID: userID, api: api) { $0.targets(atVenue: self.venueID) }
+        }
+    }
+
+    func leaveHere(userID: UUID?) async {
+        await updatePings { pings, api in
+            try await PingPlaceJoin.leave(pings, userID: userID, api: api) { $0.targets(atVenue: self.venueID) }
+        }
+    }
+
+    private func updatePings(_ action: ([Ping], HotMessAPI) async throws -> [Ping]) async {
+        guard !isUpdatingPings, var overview = state.value else { return }
+        isUpdatingPings = true
+        defer { isUpdatingPings = false }
+
+        do {
+            for ping in try await action(activePings, api) {
+                overview.friendPings = overview.friendPings.replacing(ping)
+            }
+            state = .loaded(overview)
+        } catch {
+            pingError = NowViewModel.message(for: error)
+            await load()
         }
     }
 }
