@@ -55,4 +55,56 @@ final class EventViewModel {
     func dismissRSVPError() {
         rsvpError = nil
     }
+
+    // MARK: - Pings
+
+    private(set) var isUpdatingPings = false
+    var pingError: String?
+
+    /// Friends' running Pings that pick this event.
+    var activePings: [Ping] {
+        Ping.friendFeed(state.value?.friendPings ?? [], at: .now)
+    }
+
+    /// Pings can only be for tonight.
+    var isTonight: Bool {
+        guard let event = state.value?.event else { return false }
+        return PingChoices.isTonight(event)
+    }
+
+    func isJoinedHere(userID: UUID?) -> Bool {
+        PingPlaceJoin.isJoined(activePings, userID: userID) { self.targets(of: $0) }
+    }
+
+    func joinHere(userID: UUID?) async {
+        await updatePings { pings, api in
+            try await PingPlaceJoin.join(pings, userID: userID, api: api) { self.targets(of: $0) }
+        }
+    }
+
+    func leaveHere(userID: UUID?) async {
+        await updatePings { pings, api in
+            try await PingPlaceJoin.leave(pings, userID: userID, api: api) { self.targets(of: $0) }
+        }
+    }
+
+    private func targets(of ping: Ping) -> [PingTarget] {
+        ping.target(forEvent: eventID).map { [$0] } ?? []
+    }
+
+    private func updatePings(_ action: ([Ping], HotMessAPI) async throws -> [Ping]) async {
+        guard !isUpdatingPings, var detail = state.value else { return }
+        isUpdatingPings = true
+        defer { isUpdatingPings = false }
+
+        do {
+            for ping in try await action(activePings, api) {
+                detail.friendPings = detail.friendPings.replacing(ping)
+            }
+            state = .loaded(detail)
+        } catch {
+            pingError = NowViewModel.message(for: error)
+            await load()
+        }
+    }
 }

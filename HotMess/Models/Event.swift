@@ -92,11 +92,15 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
 struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     var event: Event
     let people: [Person]
+    /// Friends' Pings that pick this event. Read from GraphQL only, so it
+    /// isn't encoded.
+    var friendPings: [Ping]
 
     var id: UUID { event.id }
 
     enum CodingKeys: String, CodingKey {
         case people
+        case friendPings = "friend_pings"
     }
 
     init(from decoder: any Decoder) throws {
@@ -104,6 +108,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
         people = try container.decodeIfPresent([Person].self, forKey: .people) ?? []
+        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -113,8 +118,9 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         try container.encode(people, forKey: .people)
     }
 
-    init(event: Event, people: [Person] = []) {
+    init(event: Event, people: [Person] = [], friendPings: [Ping] = []) {
         self.event = event
         self.people = people
+        self.friendPings = friendPings
     }
 }

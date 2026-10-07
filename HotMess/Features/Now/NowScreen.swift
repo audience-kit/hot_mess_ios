@@ -13,6 +13,13 @@ struct NowScreen: View {
     @State private var viewModel: NowViewModel?
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
+    @State private var showingPingSheet = false
+
+    /// Reloads when the position changes or Pings change elsewhere.
+    private struct LoadKey: Hashable {
+        var coordinates: Coordinates?
+        var pingRevision: Int
+    }
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { now in
@@ -31,6 +38,7 @@ struct NowScreen: View {
                             }
                         }
 
+                        pingsSection(now)
                         nearbySection(now)
                         localeChatSection(now)
                         friendVenuesSection(now)
@@ -53,7 +61,35 @@ struct NowScreen: View {
             tone: heroTone,
             collapsed: heroCollapsed || viewModel?.state.value == nil
         )
-        .task(id: model.location.coordinates) {
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showingPingSheet = true
+                } label: {
+                    Text("Ping")
+                        .font(.hotMess(.headline, semibold: true))
+                }
+                .accessibilityHint(String(localized: "Tell your friends you want to go out tonight"))
+            }
+        }
+        .sheet(isPresented: $showingPingSheet) {
+            PingSheet { ping in
+                viewModel?.show(ping)
+            }
+            .environment(model)
+        }
+        .alert(
+            String(localized: "Couldn't update ping"),
+            isPresented: Binding(
+                get: { viewModel?.pingError != nil },
+                set: { if !$0 { viewModel?.pingError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(viewModel?.pingError ?? "")
+        }
+        .task(id: LoadKey(coordinates: model.location.coordinates, pingRevision: model.pingRevision)) {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)
         }
@@ -71,6 +107,34 @@ struct NowScreen: View {
     }
 
     // MARK: - Sections
+
+    /// Your own Ping on top, then friends' Pings, newest first.
+    @ViewBuilder
+    private func pingsSection(_ now: Now) -> some View {
+        if let ping = now.myPing, ping.isActive(at: .now) {
+            MyPingCard(ping: ping) {
+                showingPingSheet = true
+            } end: {
+                Task { await viewModel?.endMyPing() }
+            }
+            .disabled(viewModel?.busyPingIDs.contains(ping.id) == true)
+            .padding(.horizontal, 16)
+        }
+
+        CardSection(String(localized: "Friends going out tonight")) {
+            ForEach(Ping.friendFeed(now.friendPings, at: .now)) { ping in
+                FriendPingCard(
+                    ping: ping,
+                    userID: model.session.userID,
+                    isBusy: viewModel?.busyPingIDs.contains(ping.id) == true
+                ) { target in
+                    Task { await viewModel?.join(ping, target: target) }
+                } leave: {
+                    Task { await viewModel?.leave(ping) }
+                }
+            }
+        }
+    }
 
     @ViewBuilder
     private func nearbySection(_ now: Now) -> some View {

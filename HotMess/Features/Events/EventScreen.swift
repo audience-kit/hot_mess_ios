@@ -17,6 +17,7 @@ struct EventScreen: View {
     @State private var viewModel: EventViewModel?
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
+    @State private var pingSeed: PingSeed?
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { detail in
@@ -27,6 +28,17 @@ struct EventScreen: View {
                     VStack(spacing: 24) {
                         HeroHeader(url: event.coverURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
                             heroText(event)
+                        }
+
+                        if viewModel?.isTonight == true || viewModel?.activePings.isEmpty == false {
+                            PingPlaceStrip(
+                                pings: viewModel?.activePings ?? [],
+                                isJoined: viewModel?.isJoinedHere(userID: model.session.userID) == true,
+                                isBusy: viewModel?.isUpdatingPings == true,
+                                pingForHere: pingForHere(event),
+                                join: { Task { await viewModel?.joinHere(userID: model.session.userID) } },
+                                leave: { Task { await viewModel?.leaveHere(userID: model.session.userID) } }
+                            )
                         }
 
                         DetailSection(String(localized: "Your RSVP")) {
@@ -87,6 +99,21 @@ struct EventScreen: View {
             ensureViewModel()
             await viewModel?.load()
         }
+        .sheet(item: $pingSeed) { seed in
+            PingSheet(seed: seed)
+                .environment(model)
+        }
+        .alert(
+            String(localized: "Couldn't update ping"),
+            isPresented: Binding(
+                get: { viewModel?.pingError != nil },
+                set: { if !$0 { viewModel?.pingError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(viewModel?.pingError ?? "")
+        }
         .alert(
             String(localized: "Couldn't Save RSVP"),
             isPresented: Binding(
@@ -98,6 +125,12 @@ struct EventScreen: View {
         } message: {
             Text(viewModel?.rsvpError ?? "")
         }
+    }
+
+    /// "Ping for here", only for an event tonight.
+    private func pingForHere(_ event: Event) -> (() -> Void)? {
+        guard viewModel?.isTonight == true else { return nil }
+        return { pingSeed = .event(event) }
     }
 
     private func heroText(_ event: Event) -> some View {
