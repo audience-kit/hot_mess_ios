@@ -11,41 +11,49 @@ import SwiftUI
 struct NowScreen: View {
     @Environment(AppModel.self) private var model
     @State private var viewModel: NowViewModel?
+    @State private var heroTone = HeroTone.placeholder
+    @State private var heroCollapsed = false
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { now in
-            List {
-                if let simulated = model.location.simulatedVenueName {
-                    Section {
-                        Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
-                            Task { await model.location.stopSimulating() }
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 24) {
+                        HeroHeader(url: now.imageURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
+                            heroText(now)
                         }
-                    } header: {
-                        Text("Pretending to be at \(simulated)")
-                    }
-                }
 
-                if let imageURL = now.imageURL {
-                    Section {
-                        RemoteImage(url: imageURL)
-                            .frame(height: 160)
-                            .listRowInsets(EdgeInsets())
-                    }
-                }
+                        if let simulated = model.location.simulatedVenueName {
+                            DetailSection(String(localized: "Pretending to be at \(simulated)")) {
+                                Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
+                                    Task { await model.location.stopSimulating() }
+                                }
+                            }
+                        }
 
-                nearbySection(now)
-                friendVenuesSection(now)
-                eventsSection(now)
+                        nearbySection(now)
+                        friendVenuesSection(now)
+                        eventsSection(now)
+                    }
+                    .padding(.bottom, 24)
+                }
+                .ignoresSafeArea(edges: .top)
+                .trackingHeroCollapse($heroCollapsed)
+                .refreshable {
+                    await viewModel?.load(near: model.location.coordinates)
+                }
             }
-            .listStyle(.insetGrouped)
+            // Ignoring the top here too is what makes the proxy report the bars' height.
+            .ignoresSafeArea(edges: .top)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
         }
-        .navigationTitle(navigationTitle)
-        .navigationBarTitleDisplayMode(.large)
+        .heroNavigationBar(
+            title: navigationTitle,
+            tone: heroTone,
+            collapsed: heroCollapsed || viewModel?.state.value == nil
+        )
         .task(id: model.location.coordinates) {
             ensureViewModel()
-            await viewModel?.load(near: model.location.coordinates)
-        }
-        .refreshable {
             await viewModel?.load(near: model.location.coordinates)
         }
     }
@@ -54,33 +62,38 @@ struct NowScreen: View {
         viewModel?.state.value?.title ?? String(localized: "Now")
     }
 
+    private func heroText(_ now: Now) -> some View {
+        Text(now.title)
+            .font(.hotMess(.largeTitle, semibold: true))
+            .lineLimit(2)
+            .accessibilityAddTraits(.isHeader)
+    }
+
     // MARK: - Sections
 
     @ViewBuilder
     private func nearbySection(_ now: Now) -> some View {
         if let venues = now.venues {
-            Section(String(localized: "Venues")) {
+            DetailSection(String(localized: "Venues")) {
                 if venues.isEmpty {
                     Text("You aren't near any venues right now.")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(venues.prefix(3)) { venue in
-                        NavigationLink(value: AppRoute.venue(venue.id)) {
+                        DetailLink(route: .venue(venue.id)) {
                             VenueRow(venue: venue)
                         }
                     }
                 }
             }
         } else if let venue = now.venue {
-            Section {
-                NavigationLink(value: AppRoute.venue(venue.id)) {
+            DetailSection(String(localized: "You're at")) {
+                DetailLink(route: .venue(venue.id)) {
                     VenueRow(venue: venue)
                 }
-            } header: {
-                Text("You're at")
             }
 
-            Section(String(localized: "Small Talk")) {
+            DetailSection(String(localized: "Small Talk")) {
                 if now.recentMessages.isEmpty {
                     Text("No one's said anything yet.")
                         .foregroundStyle(.secondary)
@@ -90,7 +103,7 @@ struct NowScreen: View {
                     }
                 }
 
-                NavigationLink(value: AppRoute.venueChat(venue)) {
+                DetailLink(route: .venueChat(venue)) {
                     Label(String(localized: "Join the chat"), systemImage: "bubble.left.and.bubble.right")
                 }
             }
@@ -101,15 +114,14 @@ struct NowScreen: View {
         }
     }
 
-    @ViewBuilder
     private func friendsSection(_ now: Now, title: String) -> some View {
-        Section(title) {
+        DetailSection(title) {
             if now.friends.isEmpty {
                 Text(now.venue == nil ? "None of your friends are out yet." : "None of your friends are here yet.")
                     .foregroundStyle(.secondary)
             } else {
                 FriendStrip(friends: now.friends)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .padding(.horizontal, -20)
             }
         }
     }
@@ -118,9 +130,9 @@ struct NowScreen: View {
     @ViewBuilder
     private func friendVenuesSection(_ now: Now) -> some View {
         if now.venue == nil, !now.friendVenues.isEmpty {
-            Section(String(localized: "Where your friends are")) {
+            DetailSection(String(localized: "Where your friends are")) {
                 ForEach(now.friendVenues) { entry in
-                    NavigationLink(value: AppRoute.venue(entry.venue.id)) {
+                    DetailLink(route: .venue(entry.venue.id)) {
                         FriendVenueRow(entry: entry)
                     }
                 }
@@ -128,15 +140,14 @@ struct NowScreen: View {
         }
     }
 
-    @ViewBuilder
     private func eventsSection(_ now: Now) -> some View {
-        Section(String(localized: "Events")) {
+        DetailSection(String(localized: "Events")) {
             if now.events.isEmpty {
                 Text("There are no upcoming events.")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(now.events) { event in
-                    NavigationLink(value: AppRoute.event(event.id)) {
+                    DetailLink(route: .event(event.id)) {
                         EventRow(event: event)
                     }
                 }
