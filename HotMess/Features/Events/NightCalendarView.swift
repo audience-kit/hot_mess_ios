@@ -70,17 +70,17 @@ private struct NightCell: View {
                     .font(.hotMess(.caption2))
                     .opacity(0.8)
             }
-            .foregroundStyle(night.busyness >= 2 ? Color.white : Color.primary)
+            .foregroundStyle(night.busyness >= 3 ? Color.hotMessOnAccent : Color.primary)
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: HotMessRadius.lg, style: .continuous)
                     .fill(BusynessShade.color(for: night.busyness))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: HotMessRadius.lg, style: .continuous)
                     .strokeBorder(borderColor, lineWidth: isSelected ? 2.5 : 1.5)
             )
-            .opacity(night.isPast ? 0.35 : 1)
+            .opacity(night.isPast ? HotMessOpacity.past : 1)
         }
         .buttonStyle(.plain)
         .disabled(night.isPast)
@@ -108,8 +108,8 @@ enum BusynessShade {
     static func color(for level: Int) -> Color {
         switch level {
         case ..<1: Color.secondary.opacity(0.08)
-        case 1: Color.hotMessAccent.opacity(0.25)
-        case 2: Color.hotMessAccent.opacity(0.6)
+        case 1: Color.hotMessAccent.opacity(HotMessOpacity.busy1)
+        case 2: Color.hotMessAccent.opacity(HotMessOpacity.busy2)
         default: Color.hotMessAccent
         }
     }
@@ -120,7 +120,7 @@ private struct BusynessLegend: View {
         HStack(spacing: 4) {
             Text("Quiet")
             ForEach(0...NightCalendar.maxLevel, id: \.self) { level in
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                RoundedRectangle(cornerRadius: HotMessRadius.sm, style: .continuous)
                     .fill(BusynessShade.color(for: level))
                     .frame(width: 14, height: 14)
             }

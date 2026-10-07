@@ -11,51 +11,12 @@ import UIKit
 // None of these know about venues: rooms pass their title as `roomName`, so a
 // venue room and a locale-wide room share them.
 
-// MARK: - Colours
-
-extension Color {
-    /// Text and icons on `hotMessAccent` fills (`on-accent`). White on the
-    /// light accent; dark on the dark accent, where white is only 2.4:1.
-    static var hotMessOnAccent: Color { .dynamic(light: 0xFFFFFF, dark: 0x3A0A22) }
-
-    /// `warning`: icons on `hotMessWarningSoft`.
-    static var hotMessWarning: Color { .dynamic(light: 0x8A5300, dark: 0xF2B84B) }
-
-    /// `warning-soft`: the background of a warning strip.
-    static var hotMessWarningSoft: Color { .dynamic(light: 0xFDF1D9, dark: 0x34270E) }
-
-    /// `presence-online`: connected to a chat room now.
-    static var hotMessPresenceOnline: Color { .dynamic(light: 0x1F9D55, dark: 0x2FBF5B) }
-
-    /// `presence-push`: not in chat, but gets push notifications.
-    static var hotMessPresencePush: Color { .dynamic(light: 0xF5B400, dark: 0xF5B400) }
-
-    /// `presence-push-edge`: keeps the yellow ring visible on light surfaces.
-    static var hotMessPresencePushEdge: Color { .dynamic(light: 0x8A5300, dark: 0xF5B400) }
-
-    /// `surface-sunken`: a well that reads as set into the page, like ChatPeek.
-    static var hotMessSurfaceSunken: Color { .dynamic(light: 0xFAF4F7, dark: 0x201A1F) }
-
-    /// A colour that resolves per light or dark appearance from 0xRRGGBB values.
-    static func dynamic(light: UInt32, dark: UInt32) -> Color {
-        Color(uiColor: UIColor { traits in
-            let rgb = traits.userInterfaceStyle == .dark ? dark : light
-            return UIColor(
-                red: CGFloat((rgb >> 16) & 0xFF) / 255,
-                green: CGFloat((rgb >> 8) & 0xFF) / 255,
-                blue: CGFloat(rgb & 0xFF) / 255,
-                alpha: 1
-            )
-        })
-    }
-}
-
 /// Chat metrics from the design system's tokens.
 enum ChatMetrics {
     /// `radius-bubble`.
-    static let bubbleRadius: CGFloat = 16
+    static let bubbleRadius: CGFloat = HotMessRadius.bubble
     /// `radius-sm`: the "tail" corner of a group's last bubble.
-    static let tailRadius: CGFloat = 4
+    static let tailRadius: CGFloat = HotMessRadius.sm
     /// `size-bubble-max`.
     static let bubbleMaxWidth: CGFloat = 280
     /// Bubbles are never wider than this share of the transcript.
