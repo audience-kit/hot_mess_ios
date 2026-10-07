@@ -39,8 +39,8 @@ struct HeroTone: Equatable, Sendable {
 /// wins whenever it reaches the target; dark text only when the photo is bright
 /// enough to need no scrim. Anything busier gets light text over a dark scrim.
 enum ImageTone {
-    /// The Hot Mess `ink` token, #24161d, used for dark hero text.
-    static let ink = Color(red: 0x24 / 255, green: 0x16 / 255, blue: 0x1D / 255)
+    /// The `photo-ink` token, #24161d, used for dark hero text.
+    static var ink: Color { .hotMessPhotoInk }
     static let inkLuminance = 0.0103
 
     /// Past this the photo is mostly hidden, so the scrim stops here.

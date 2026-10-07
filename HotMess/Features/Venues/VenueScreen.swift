@@ -122,7 +122,7 @@ struct VenueScreen: View {
         DetailSection(String(localized: "About")) {
             if let subtitle = venue.subtitle, !subtitle.isEmpty {
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(.hotMess(.subheadline))
             }
 
             if let address = venue.address, !address.isEmpty {
@@ -184,7 +184,7 @@ struct VenueScreen: View {
                 }
             } footer: {
                 Text("Test builds only. Reports this venue's location instead of yours until you stop.")
-                    .font(.footnote)
+                    .font(.hotMess(.footnote))
                     .foregroundStyle(.secondary)
             }
         }

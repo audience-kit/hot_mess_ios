@@ -12,12 +12,8 @@ enum CardMetrics {
     static let personHeight: CGFloat = 84
     static let spacing: CGFloat = 12
 
-    static var cornerRadius: CGFloat {
-        if #available(iOS 26, *) {
-            return 26
-        }
-        return 12
-    }
+    /// `radius-photo`.
+    static var cornerRadius: CGFloat { HotMessRadius.photo }
 }
 
 /// A rounded card filled by a photo, with its text written over it in whichever
@@ -53,7 +49,7 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
     var body: some View {
         content
             .foregroundStyle(tone.textColor)
-            .animation(.easeOut(duration: 0.15), value: tone)
+            .animation(HotMessMotion.quick, value: tone)
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { textFrame = $0 }
             .padding(.horizontal, 18)
             .padding(.top, topClearance)
@@ -115,7 +111,7 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
         .frame(height: scrimHeight)
         .frame(maxHeight: .infinity, alignment: .bottom)
         .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.15), value: tone)
+        .animation(HotMessMotion.quick, value: tone)
     }
 
     // MARK: - Analysis
@@ -194,7 +190,7 @@ struct GlassPill<PillContent: View>: View {
         content
             .foregroundStyle(.white)
             .padding(padding)
-            .background(Color(red: 0.11, green: 0.08, blue: 0.10).opacity(0.55), in: shape)
+            .background(Color.hotMessGlass, in: shape)
             .background(.ultraThinMaterial, in: shape)
             .environment(\.colorScheme, .dark)
     }
@@ -225,7 +221,7 @@ struct FriendFaces: View {
                     initials: friend.name.initialsForDisplay,
                     size: 26
                 )
-                .overlay { Circle().strokeBorder(.white.opacity(0.9), lineWidth: 2) }
+                .overlay { Circle().strokeBorder(Color.hotMessAvatarRing, lineWidth: 2) }
             }
         }
         .accessibilityHidden(true)
@@ -319,7 +315,7 @@ struct EventCard: View {
                     .lineLimit(1)
             }
         } leading: {
-            GlassPill(padding: EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8), shape: AnyShape(RoundedRectangle(cornerRadius: 10))) {
+            GlassPill(padding: EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8), shape: AnyShape(RoundedRectangle(cornerRadius: HotMessRadius.md))) {
                 VStack(spacing: 0) {
                     Text(event.startDate.formatted(.dateTime.month(.abbreviated)).uppercased())
                         .font(.hotMess(.caption2, semibold: true))
@@ -374,7 +370,7 @@ struct PersonCard: View {
         ) {
             HStack(spacing: 14) {
                 Avatar(url: person.pictureURL, initials: person.name.initialsForDisplay, size: 56)
-                    .overlay { Circle().strokeBorder(.white.opacity(0.9), lineWidth: 2) }
+                    .overlay { Circle().strokeBorder(Color.hotMessAvatarRing, lineWidth: 2) }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(person.name)
@@ -401,7 +397,7 @@ struct PersonCard: View {
 
     private var friendsSummary: String {
         guard !friends.isEmpty else { return "" }
-        let names = friends.map(\.firstName).formatted(.list(type: .and))
+        let names = friends.map(\.name).formatted(.list(type: .and))
         return String(localized: "With \(names)")
     }
 }

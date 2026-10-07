@@ -12,7 +12,7 @@ struct TrackRow: View {
         HStack(spacing: 12) {
             RemoteImage(url: track.artworkURL)
                 .frame(width: 64, height: 64)
-                .clipShape(.rect(cornerRadius: 8))
+                .clipShape(.rect(cornerRadius: HotMessRadius.lg))
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(track.title)
@@ -86,7 +86,7 @@ struct SocialLinkRow: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 24, height: 24)
-                .clipShape(.rect(cornerRadius: 4))
+                .clipShape(.rect(cornerRadius: HotMessRadius.sm))
         } else {
             Image(systemName: link.systemImage)
                 .frame(width: 24, height: 24)

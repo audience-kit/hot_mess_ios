@@ -176,7 +176,7 @@ struct RSVPPicker: View {
                         Image(systemName: rsvp.systemImage)
                             .font(.title2)
                         Text(rsvp.title)
-                            .font(.caption)
+                            .font(.hotMess(.caption, semibold: rsvp == selection))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -184,8 +184,8 @@ struct RSVPPicker: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(rsvp == selection ? Color.hotMessAccent : .secondary)
                 .background(
-                    rsvp == selection ? Color.hotMessAccent.opacity(0.12) : .clear,
-                    in: .rect(cornerRadius: 10)
+                    rsvp == selection ? Color.hotMessAccentSoft : .clear,
+                    in: .rect(cornerRadius: HotMessRadius.md)
                 )
                 .accessibilityAddTraits(rsvp == selection ? [.isSelected, .isButton] : .isButton)
             }

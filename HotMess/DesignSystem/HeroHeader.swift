@@ -41,7 +41,7 @@ struct HeroHeader<Content: View>: View {
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { textFrame = $0 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
-                .animation(.easeOut(duration: 0.15), value: tone)
+                .animation(HotMessMotion.quick, value: tone)
         }
         .frame(maxWidth: .infinity, minHeight: topInset + HeroMetrics.bodyHeight, alignment: .bottomLeading)
         .coordinateSpace(.named(Self.space))
@@ -106,7 +106,7 @@ struct HeroHeader<Content: View>: View {
             .frame(height: bandHeight + 90)
         }
         .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.15), value: tone)
+        .animation(HotMessMotion.quick, value: tone)
     }
 
     // MARK: - Analysis
@@ -192,7 +192,7 @@ extension View {
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(collapsed ? nil : tone.bar, for: .navigationBar)
             .modifier(HeroScrollEdge(hidden: !collapsed))
-            .animation(.easeOut(duration: 0.15), value: collapsed)
+            .animation(HotMessMotion.quick, value: collapsed)
     }
 
     /// Tracks whether a hero at the top of this scroll view has scrolled under the bars.

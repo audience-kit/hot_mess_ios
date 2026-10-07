@@ -65,11 +65,11 @@ struct SettingsScreen: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(model.session.user?.name ?? String(localized: "Signed in"))
-                        .font(.headline)
+                        .font(.hotMess(.headline, semibold: true))
 
                     if let locale = model.location.locale {
                         Text(locale.name)
-                            .font(.subheadline)
+                            .font(.hotMess(.subheadline))
                             .foregroundStyle(.secondary)
                     }
                 }
