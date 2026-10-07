@@ -73,6 +73,19 @@ struct ImageToneTests {
         #expect(tone.scrim <= ImageTone.maxScrim)
     }
 
+    @Test("City lights at night get white text over at least the busy scrim")
+    func cityLights() throws {
+        // A dark skyline with a few small bright windows: dark enough on average to
+        // pass 4.5:1, but letters crossing the lights still need a scrim.
+        let tone = try #require(ImageTone.analyze(
+            try image { x, y in x % 5 == 0 && y % 3 == 0 ? 250 : 25 },
+            viewSize: size, top: top, band: band
+        ))
+
+        #expect(tone.text == .light)
+        #expect(tone.scrim >= ImageTone.busyScrim)
+    }
+
     @Test("The scrim brings white text to exactly the target")
     func scrimMeetsTarget() {
         let tone = ImageTone.decide(top: [0], band: Array(repeating: 0.5, count: 100))

@@ -34,10 +34,12 @@ struct HeroTone: Equatable, Sendable {
 /// Reads how bright a photo is behind a hero's text and status bar, and picks a
 /// text colour and the smallest scrim that keeps it readable.
 ///
-/// Each area is shrunk to 32 pixels wide and judged by its worst 10% rather than
-/// its average, so one spotlight right behind a letter still counts. Light text
-/// wins whenever it reaches the target; dark text only when the photo is bright
-/// enough to need no scrim. Anything busier gets light text over a dark scrim.
+/// Each area is shrunk to 64 pixels wide and judged by its brightest 5% rather
+/// than its average, so one spotlight right behind a letter still counts. Light
+/// text wins whenever it reaches the target; dark text only when the photo is
+/// bright and even enough to need no scrim. A busy photo (city lights, murals,
+/// crowds) always gets light text over at least `busyScrim`: contrast against
+/// the brightest pixels alone doesn't account for letters crossing a pattern.
 enum ImageTone {
     /// The `photo-ink` token, #24161d, used for dark hero text.
     static var ink: Color { .hotMessPhotoInk }
@@ -45,6 +47,11 @@ enum ImageTone {
 
     /// Past this the photo is mostly hidden, so the scrim stops here.
     static let maxScrim = 0.75
+
+    /// The least scrim behind text on a busy photo.
+    static let busyScrim = 0.45
+    /// A text band whose brightest and darkest pixels differ by this much is busy.
+    static let busyContrast = 3.0
 
     /// Decides the tone for an image drawn aspect-fill into a view of `viewSize`.
     ///
@@ -71,21 +78,23 @@ enum ImageTone {
     static func decide(top: [Double], band: [Double], target: Double = 4.5, scrimFloor: Double = 0) -> HeroTone {
         let band = band.sorted()
         let darkest = percentile(band, 0.1)
-        let brightest = percentile(band, 0.9)
+        let brightest = percentile(band, 0.95)
+        let busy = contrast(brightest, darkest) >= busyContrast
 
         let text: HeroTone.Text
         var scrim: Double
-        if contrast(1, brightest) >= target {
+        if busy {
+            text = .light
+            scrim = max(busyScrim, scrimFor(brightest, target: target))
+        } else if contrast(1, brightest) >= target {
             text = .light
             scrim = 0
         } else if contrast(darkest, inkLuminance) >= target {
             text = .dark
             scrim = 0
         } else {
-            // A black scrim at opacity a scales luminance by (1 - a); solve for the
-            // brightest pixel landing exactly on the target against white.
             text = .light
-            scrim = 1 - (1.05 / target - 0.05) / brightest
+            scrim = scrimFor(brightest, target: target)
         }
         scrim = min(max(scrim, scrimFloor), maxScrim)
 
@@ -99,6 +108,12 @@ enum ImageTone {
             bar: white >= black ? .dark : .light,
             barScrim: max(white, black) < 3 ? 0.3 : 0
         )
+    }
+
+    /// A black scrim at opacity a scales luminance by (1 - a); this solves for the
+    /// brightest pixel landing exactly on the target against white.
+    static func scrimFor(_ brightest: Double, target: Double) -> Double {
+        brightest <= 0 ? 0 : 1 - (1.05 / target - 0.05) / brightest
     }
 
     /// WCAG relative luminance of an 8-bit sRGB colour.
@@ -136,7 +151,7 @@ enum ImageTone {
     }
 
     /// The luminance of each pixel of `rect`, shrunk to `columns` wide.
-    static func luminances(_ image: CGImage, in rect: CGRect, columns: Int = 32) -> [Double]? {
+    static func luminances(_ image: CGImage, in rect: CGRect, columns: Int = 64) -> [Double]? {
         guard
             !rect.isNull, rect.width >= 1, rect.height >= 1,
             let cropped = image.cropping(to: rect),
@@ -171,6 +186,14 @@ enum ImageTone {
     private static func percentile(_ sorted: [Double], _ fraction: Double) -> Double {
         guard !sorted.isEmpty else { return 0 }
         return sorted[min(sorted.count - 1, Int(fraction * Double(sorted.count)))]
+    }
+}
+
+extension View {
+    /// A soft shadow under light text on a photo, so letter edges hold where the
+    /// scrim fades out. Dark text sits on an even, bright photo and needs none.
+    func photoTextShadow(_ tone: HeroTone) -> some View {
+        shadow(color: .black.opacity(tone.text == .light ? 0.5 : 0), radius: 3, x: 0, y: 1)
     }
 }
 
