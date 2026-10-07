@@ -20,6 +20,9 @@ final class LocationProvider {
     private(set) var coordinates: Coordinates?
     private(set) var locale: AppLocale?
     private(set) var authorizationStatus: CLAuthorizationStatus
+    /// Test builds only: the venue the app is pretending to be at. While it's
+    /// set, the venue's position is reported instead of the device's.
+    private(set) var simulatedVenueName: String?
 
     private let api: HotMessAPI
     private let configuration: AppConfiguration
@@ -106,6 +109,35 @@ final class LocationProvider {
         }
     }
 
+    // MARK: - Testing
+
+    /// Reports `coordinate` as the device's position until `stopSimulating()`,
+    /// so a test build can be "at" a venue from anywhere. The API puts the
+    /// user at whichever venue's envelope contains the point.
+    func simulate(at coordinate: CLLocationCoordinate2D, venueName: String) {
+        guard configuration.isTestBuild else { return }
+
+        simulatedVenueName = venueName
+        coordinates = Coordinates(latitude: coordinate.latitude, longitude: coordinate.longitude)
+
+        Task {
+            await refreshLocale()
+            await reportPosition()
+        }
+    }
+
+    /// Goes back to the device's real position.
+    func stopSimulating() {
+        guard simulatedVenueName != nil else { return }
+
+        simulatedVenueName = nil
+        if let location = manager.location {
+            update(with: location)
+        } else {
+            coordinates = nil
+        }
+    }
+
     // MARK: - Delegate plumbing
 
     private func beginMonitoring() {
@@ -137,6 +169,8 @@ final class LocationProvider {
     }
 
     fileprivate func update(with location: CLLocation) {
+        guard simulatedVenueName == nil else { return }
+
         coordinates = Coordinates(
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude,
@@ -151,7 +185,7 @@ final class LocationProvider {
     }
 
     fileprivate func update(beacons: [CLBeacon]) {
-        guard let nearest = beacons.first else { return }
+        guard simulatedVenueName == nil, let nearest = beacons.first else { return }
 
         // Only attach beacon identifiers to a position we actually have; the
         // original fell back to (0, 0) and reported the Gulf of Guinea.

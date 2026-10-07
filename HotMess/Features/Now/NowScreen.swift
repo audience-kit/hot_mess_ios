@@ -15,6 +15,16 @@ struct NowScreen: View {
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { now in
             List {
+                if let simulated = model.location.simulatedVenueName {
+                    Section {
+                        Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
+                            model.location.stopSimulating()
+                        }
+                    } header: {
+                        Text("Pretending to be at \(simulated)")
+                    }
+                }
+
                 if let imageURL = now.imageURL {
                     Section {
                         RemoteImage(url: imageURL)
