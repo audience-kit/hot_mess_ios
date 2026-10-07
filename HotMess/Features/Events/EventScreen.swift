@@ -141,7 +141,7 @@ struct EventScreen: View {
         }
     }
 
-    /// "Ping for here", only for an event tonight.
+    /// "Ping here", only for an event tonight.
     private func pingForHere(_ event: Event) -> (() -> Void)? {
         guard viewModel?.isTonight == true else { return nil }
         return { pingSeed = .event(event) }

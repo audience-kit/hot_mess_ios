@@ -263,14 +263,14 @@ struct PingJoinButton: View {
 }
 
 /// Under a venue or event's hero: friends who picked this place tonight,
-/// with "I'm in" and "Ping for here".
+/// with "I'm in" and "Ping here".
 struct PingPlaceStrip: View {
     /// Friends' Pings that pick this place.
     let pings: [Ping]
     /// Whether the user is in on every one of them here.
     let isJoined: Bool
     let isBusy: Bool
-    /// `nil` hides "Ping for here", for an event that isn't tonight.
+    /// `nil` hides "Ping here", for an event that isn't tonight.
     let pingForHere: (() -> Void)?
     let join: () -> Void
     let leave: () -> Void
@@ -288,7 +288,7 @@ struct PingPlaceStrip: View {
                         Text("Want to go here tonight?")
                             .font(.hotMess(.subheadline))
                         Spacer(minLength: 8)
-                        Button(String(localized: "Ping for here"), action: pingForHere)
+                        Button(String(localized: "Ping here"), action: pingForHere)
                             .font(.hotMess(.subheadline, semibold: true))
                             .buttonStyle(.bordered)
                             .controlSize(.small)
@@ -315,7 +315,7 @@ struct PingPlaceStrip: View {
 
                         if let pingForHere {
                             Button(action: pingForHere) {
-                                Text("Ping for here")
+                                Text("Ping here")
                                     .font(.hotMess(.subheadline, semibold: true))
                                     .frame(maxWidth: .infinity)
                             }

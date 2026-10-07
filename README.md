@@ -70,7 +70,7 @@ empty and failure states are handled the same way everywhere.
 - **Ping.** "I want to go out tonight": a Ping names tonight's events or
   venues in the user's locale (or none), reaches the user's friends (or
   friends of everyone in its circle) and clears at 5am. It's sent from the
-  Now screen or "Ping for here" on a venue or event, and friends answer with
+  Now screen or "Ping here" on a venue or event, and friends answer with
   "I'm in", also from the `PING` push's `PING_JOIN` action. The documents alias fields to the snake_case keys the
   models decode, and failures map to `APIError`.
 - **REST.** Only the version manifest (`POST /`) is still REST, because it's
