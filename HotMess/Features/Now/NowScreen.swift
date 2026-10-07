@@ -32,6 +32,7 @@ struct NowScreen: View {
                         }
 
                         nearbySection(now)
+                        localeChatSection(now)
                         friendVenuesSection(now)
                         eventsSection(now)
                     }
@@ -120,6 +121,28 @@ struct NowScreen: View {
             } else {
                 FriendStrip(friends: now.friends)
                     .padding(.horizontal, -20)
+            }
+        }
+    }
+
+    /// Away from venues: the locale's chat room, for everyone out in it who
+    /// isn't at a venue. Shown only when the API says the user can join.
+    @ViewBuilder
+    private func localeChatSection(_ now: Now) -> some View {
+        if now.venue == nil, now.localeChatOpen, let locale = now.locale {
+            DetailSection(String(localized: "Small Talk in \(locale.name)")) {
+                if now.localeMessages.isEmpty {
+                    Text("No one's said anything yet.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(now.localeMessages) { message in
+                        ChatLine(message: message)
+                    }
+                }
+
+                DetailLink(route: .localeChat(locale)) {
+                    Label(String(localized: "Join the chat"), systemImage: "bubble.left.and.bubble.right")
+                }
             }
         }
     }

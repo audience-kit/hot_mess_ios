@@ -11,8 +11,19 @@ import UIKit
 /// around a collection view whose cells were commented out, and the working one
 /// dequeued a cell with an empty reuse identifier — a guaranteed crash the
 /// moment a message arrived.
+///
+/// It also serves a locale's room, for people out in the locale who aren't at
+/// a venue.
 struct VenueChatScreen: View {
-    let venue: Venue
+    let room: ChatRoom
+
+    init(room: ChatRoom) {
+        self.room = room
+    }
+
+    init(venue: Venue) {
+        room = .venue(venue)
+    }
 
     @Environment(AppModel.self) private var model
     @State private var viewModel: VenueChatViewModel?
@@ -33,7 +44,7 @@ struct VenueChatScreen: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(venue.name)
+        .navigationTitle(room.name)
         .navigationBarTitleDisplayMode(.inline)
         .task {
             let viewModel = makeViewModel()
@@ -48,12 +59,22 @@ struct VenueChatScreen: View {
 
     // MARK: - Pieces
 
-    /// The server only lets people at the venue into its room.
+    /// The server only lets people at the venue (or out in the locale) into its room.
     private func notPresent(_ viewModel: VenueChatViewModel) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "Only for people at \(venue.name)"), systemImage: "location.slash")
+            switch room.kind {
+            case .venue:
+                Label(String(localized: "Only for people at \(room.name)"), systemImage: "location.slash")
+            case .locale:
+                Label(String(localized: "Only for people out in \(room.name)"), systemImage: "location.slash")
+            }
         } description: {
-            Text("Chat opens when Hot Mess sees you're at the venue.")
+            switch room.kind {
+            case .venue:
+                Text("Chat opens when Hot Mess sees you're at the venue.")
+            case .locale:
+                Text("Chat opens when Hot Mess sees you're out in \(room.name) and not at a venue. Venues have their own chat.")
+            }
         } actions: {
             Button(String(localized: "Try again")) {
                 Task { await viewModel.retry() }
@@ -66,7 +87,9 @@ struct VenueChatScreen: View {
     /// Admins can join from anywhere; say when they couldn't have otherwise.
     private var outOfRangeBanner: some View {
         Label(
-            String(localized: "You're not at \(venue.name). You're in this chat because you're an admin."),
+            room.kind == .venue
+                ? String(localized: "You're not at \(room.name). You're in this chat because you're an admin.")
+                : String(localized: "You're not in \(room.name). You're in this chat because you're an admin."),
             systemImage: "location.slash"
         )
         .font(.footnote)
@@ -145,7 +168,7 @@ struct VenueChatScreen: View {
         if let viewModel { return viewModel }
 
         return VenueChatViewModel(
-            venue: venue,
+            room: room,
             configuration: model.configuration,
             userID: model.session.userID,
             token: model.session.bearerToken,
