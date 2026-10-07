@@ -291,6 +291,178 @@ struct VenueMessageTests {
         #expect(message.isOutgoing(for: payload.userID))
         #expect(message.isOutgoing(for: UUID()) == false)
         #expect(message.isOutgoing(for: nil) == false)
+        #expect(message.role == nil)
+        #expect(message.kind == .text)
+        #expect(message.isPinned == false)
+        #expect(message.richContent == nil)
+    }
+
+    @Test("Decodes a rich message from someone with a role")
+    func richFrame() throws {
+        let payload = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
+        {
+          "type": "incoming",
+          "id": "1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
+          "message": "Shared an event: Sunset Social\\nCome through",
+          "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44",
+          "name": "Kiko M.",
+          "avatar_url": null,
+          "sent_at": "2026-10-06T22:10:00Z",
+          "role": "host",
+          "kind": "event",
+          "title": null,
+          "body": "Come through",
+          "photo_url": null,
+          "event": { "id": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "name": "Sunset Social", "start_at": "2026-10-10T02:00:00Z" },
+          "ends_at": null,
+          "pinned": false
+        }
+        """.utf8))
+
+        let message = VenueMessage(payload: payload)
+
+        #expect(message.body == "Shared an event: Sunset Social\nCome through")
+        #expect(message.role == .host)
+        #expect(message.kind == .event)
+        #expect(message.written == "Come through")
+        #expect(message.event?.name == "Sunset Social")
+        #expect(message.event?.startAt == Date(timeIntervalSince1970: 1_791_597_600))
+        #expect(message.isFromPlace == false)
+        guard case let .event(event, caption) = message.richContent else {
+            Issue.record("Expected an event")
+            return
+        }
+        #expect(event.id == UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
+        #expect(caption == "Come through")
+    }
+
+    @Test("Reads GraphQL's uppercase enums")
+    func graphQLEnums() throws {
+        let payload = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
+        {
+          "message": "Announcement: Coat check closes at midnight",
+          "body": "",
+          "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44",
+          "name": "Neighbours",
+          "role": "VENUE",
+          "kind": "ANNOUNCEMENT",
+          "title": "Coat check closes at midnight",
+          "pinned": true,
+          "posted_as_venue": true,
+          "presence": "ONLINE",
+          "event": null
+        }
+        """.utf8))
+
+        let message = VenueMessage(payload: payload)
+
+        #expect(message.role == .venue)
+        #expect(message.kind == .announcement)
+        #expect(message.isPinned)
+        #expect(message.postedAsVenue)
+        #expect(message.isFromPlace)
+        #expect(message.presence == .online)
+        #expect(message.richContent == .announcement(
+            title: "Coat check closes at midnight", body: nil, photoURL: nil, isPinned: true
+        ))
+    }
+
+    @Test("Shows an unknown or incomplete rich message as its summary")
+    func unknownKind() throws {
+        let payload = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
+        {
+          "message": "Shared a photo",
+          "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44",
+          "role": "dj",
+          "kind": "photo",
+          "photo_url": "",
+          "pinned": "yes"
+        }
+        """.utf8))
+
+        let message = VenueMessage(payload: payload)
+
+        #expect(message.role == nil)
+        #expect(message.kind == .photo)
+        #expect(message.isPinned == false)
+        #expect(message.richContent == nil)
+        #expect(message.threadMessage(currentUserID: nil).text == "Shared a photo")
+    }
+
+    @Test("A special stops showing at its end")
+    func specialEnds() {
+        var message = VenueMessage(body: "Special: Two for one", userID: UUID())
+        message.kind = .special
+        message.title = "Two for one"
+        message.endsAt = Date(timeIntervalSince1970: 1_000)
+
+        #expect(message.isShowing(at: Date(timeIntervalSince1970: 999)))
+        #expect(message.isShowing(at: Date(timeIntervalSince1970: 1_000)) == false)
+    }
+
+    @Test("Shows friends by their full name, and who's online in the room")
+    func friendNamesAndPresence() throws {
+        let userID = UUID()
+        let message = VenueMessage(body: "hi", userID: userID, name: "Aurora B.")
+        let friend = HotMess.Friend(id: userID, name: "Aurora Borealis")
+
+        let stranger = message.threadMessage(currentUserID: nil, online: [])
+        let known = message.threadMessage(currentUserID: nil, friends: [userID: friend], online: [userID])
+
+        #expect(stranger.authorName == "Aurora B.")
+        #expect(stranger.presence == nil)
+        #expect(known.authorName == "Aurora Borealis")
+        #expect(known.presence == .online)
+    }
+
+    @Test("A post as the venue keeps the venue's name and has no presence")
+    func placeKeepsItsName() {
+        let userID = UUID()
+        var message = VenueMessage(body: "Doors at 9", userID: userID, name: "Neighbours")
+        message.role = .venue
+        let friend = HotMess.Friend(id: userID, name: "Aurora Borealis")
+
+        let thread = message.threadMessage(currentUserID: nil, friends: [userID: friend], online: [userID])
+
+        #expect(thread.authorName == "Neighbours")
+        #expect(thread.presence == nil)
+        #expect(thread.isFromPlace)
+        #expect(thread.authorID != userID.uuidString)
+    }
+
+    @Test("Rich messages stand alone in the thread")
+    func richMessagesStandAlone() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        func message(_ id: String, rich: ChatRichContent? = nil, minutes: Double) -> ChatThreadMessage {
+            ChatThreadMessage(
+                id: id, authorID: "kiko", authorName: "Kiko", avatarURL: nil, text: id,
+                sentAt: start.addingTimeInterval(minutes * 60), isOwn: false, rich: rich
+            )
+        }
+
+        let rows = ChatThreadRow.rows(for: [
+            message("a", minutes: 0),
+            message("b", rich: .special(title: "Two for one", body: nil, endsAt: nil), minutes: 1),
+            message("c", minutes: 2),
+            message("d", minutes: 3),
+        ])
+
+        #expect(rows.map(\.isFirstInGroup) == [true, true, true, false])
+        #expect(rows.map(\.isLastInGroup) == [true, true, false, true])
+    }
+
+    @Test("Reads a friend's presence")
+    func friendPresence() throws {
+        let friends = try decode([HotMess.Friend].self, from: """
+        [
+          {"id":"6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44","name":"Aurora Borealis","presence":"ONLINE"},
+          {"id":"0a1e0aac-1d01-42d1-9de5-f0279842d9c0","name":"Sam Oak","presence":"PUSH"},
+          {"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","name":"Jo","presence":"OFFLINE"},
+          {"id":"2b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","name":"Older API"}
+        ]
+        """)
+
+        #expect(friends.map(\.presence) == [.online, .push, nil, nil])
     }
 }
 

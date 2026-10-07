@@ -16,6 +16,13 @@ extension Color {
     /// `accent-soft`: a tinted fill for selected choices and accent badges.
     static var hotMessAccentSoft: Color { .dynamic(light: 0xFDE6F1, dark: 0x3B1A2C) }
 
+    /// `accent-ink`: accent-coloured text on surfaces and on `accent-soft`,
+    /// like a host's RoleTag and a rich message's overline.
+    static var hotMessAccentInk: Color { .dynamic(light: 0xA01F61, dark: 0xFF93C4) }
+
+    /// `control-fill`: the grey filled control, like a staff RoleTag.
+    static var hotMessControlFill: Color { .dynamic(light: 0xEFE4EA, dark: 0x3D3239) }
+
     /// Text and icons on `hotMessAccent` fills (`on-accent`). White on the
     /// light accent; dark on the dark accent, where white is only 2.4:1.
     static var hotMessOnAccent: Color { .dynamic(light: 0xFFFFFF, dark: 0x3A0A22) }

@@ -63,7 +63,7 @@ struct VenueScreen: View {
                             ChatPeek(
                                 title: String(localized: "Chat"),
                                 roomName: venue.name,
-                                messages: overview.recentMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                                messages: overview.recentMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
                                 route: .venueChat(venue)
                             )
                             .padding(.horizontal, 16)
@@ -238,7 +238,7 @@ struct VenueScreen: View {
 
     private func ensureViewModel() {
         if viewModel == nil {
-            viewModel = VenueViewModel(api: model.api, venueID: venueID)
+            viewModel = VenueViewModel(api: model.api, venueID: venueID, friends: model.friends)
         }
     }
 
