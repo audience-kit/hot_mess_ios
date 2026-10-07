@@ -139,7 +139,7 @@ struct AppConfigurationTests {
     func facebookEnvironment() {
         let staging = AppConfiguration(
             baseURL: AppConfiguration.defaultBaseURL,
-            facebookAppID: "915436455177328"
+            facebookAppID: "1660272792277019"
         )
 
         #expect(staging.facebookEnvironment == "staging")

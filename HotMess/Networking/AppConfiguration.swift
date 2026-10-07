@@ -83,7 +83,7 @@ struct AppConfiguration: Sendable, Hashable {
         switch facebookAppID ?? "" {
         case "1168782378316790": String(localized: "production")
         case "713525445368431": String(localized: "AudienceKit platform")
-        case "915436455177328": String(localized: "staging")
+        case "1660272792277019": String(localized: "staging")
         case "842337999153841": String(localized: "development")
         default: String(localized: "unknown")
         }
