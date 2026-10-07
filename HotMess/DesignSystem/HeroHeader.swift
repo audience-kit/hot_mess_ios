@@ -190,6 +190,7 @@ extension View {
             .toolbarBackground(collapsed ? AnyShapeStyle(Material.bar) : AnyShapeStyle(Color.clear), for: .navigationBar)
             .toolbarBackgroundVisibility(.visible, for: .navigationBar)
             .toolbarColorScheme(collapsed ? nil : tone.bar, for: .navigationBar)
+            .modifier(HeroScrollEdge(hidden: !collapsed))
             .animation(.easeOut(duration: 0.15), value: collapsed)
     }
 
@@ -199,6 +200,21 @@ extension View {
             geometry.contentOffset.y + geometry.contentInsets.top > HeroMetrics.bodyHeight - 8
         } action: { _, isCollapsed in
             collapsed.wrappedValue = isCollapsed
+        }
+    }
+}
+
+/// iOS 26 blurs and fades scroll content under the navigation bar, which cut a
+/// sharp line across the hero photo where the effect ended. The photo is the
+/// bar's background while the hero shows, so the effect is off until it scrolls away.
+private struct HeroScrollEdge: ViewModifier {
+    let hidden: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.scrollEdgeEffectHidden(hidden, for: .top)
+        } else {
+            content
         }
     }
 }
