@@ -39,6 +39,15 @@ actor VenueChatConnection {
         /// Someone's first socket joined the room (`true`) or their last one
         /// left. A join carries their name and avatar when the server sends them.
         case presence(userID: UUID, online: Bool, name: String?, avatarURL: URL?)
+        /// Someone left the room (or was never in it) but a notification still
+        /// reaches them: the server only says so about the user's friends, and
+        /// to admins. Drawn as a yellow dot.
+        case reachable(userID: UUID)
+        /// The room's recent messages, oldest first, and the announcement
+        /// pinned under its title (however old), sent on joining.
+        case history(messages: [VenueMessage], pinned: VenueMessage?)
+        /// An announcement was pinned (with it), or unpinned (`nil`).
+        case pin(id: UUID, announcement: VenueMessage?)
         case disconnected(String?)
     }
 
@@ -206,8 +215,14 @@ actor VenueChatConnection {
                     people: frame.people ?? [],
                     friends: frame.friends ?? []
                 )
+            } else if frame.messageType == "history" {
+                return .history(messages: frame.history ?? [], pinned: frame.pinned)
+            } else if frame.messageType == "pin" {
+                guard let id = frame.pinID else { return nil }
+                return .pin(id: id, announcement: frame.pinnedFlag == true ? frame.pinned : nil)
             } else if frame.messageType == "presence" {
                 guard let userID = frame.presenceUserID, let presence = frame.presence else { return nil }
+                if presence == "push" { return .reachable(userID: userID) }
                 return .presence(
                     userID: userID,
                     online: presence == "online",
@@ -257,9 +272,43 @@ actor VenueChatConnection {
         let presence: String?
         let presenceName: String?
         let presenceAvatarURL: URL?
+        /// `messages` and `pinned` inside a `history` message.
+        let history: [VenueMessage]?
+        /// `pinned` inside a `history` message, or `announcement` inside a `pin` one.
+        let pinned: VenueMessage?
+        /// `id` and `pinned` inside a `pin` message.
+        let pinID: UUID?
+        let pinnedFlag: Bool?
 
         enum CodingKeys: String, CodingKey {
             case type, identifier, message
+        }
+
+        /// The fields of `history` and `pin` messages. Each message decodes on
+        /// its own, so one malformed line drops only itself.
+        private struct Backlog: Decodable {
+            let type: String?
+            let messages: [VenueMessage]?
+            let pinned: VenueMessage?
+            let id: UUID?
+            let isPinned: Bool?
+
+            enum CodingKeys: String, CodingKey {
+                case type, messages, pinned, id, announcement
+            }
+
+            init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                type = try? container.decodeIfPresent(String.self, forKey: .type)
+                messages = (try? container.decodeIfPresent([Lenient<VenueMessage.Payload>].self, forKey: .messages))
+                    .map { $0.compactMap { $0.value.map(VenueMessage.init(payload:)) } }
+                id = try? container.decodeIfPresent(UUID.self, forKey: .id)
+                // `pinned` is a message in a history frame and a flag in a pin frame.
+                isPinned = try? container.decodeIfPresent(Bool.self, forKey: .pinned)
+                let payload = (try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .pinned))
+                    ?? (try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .announcement))
+                pinned = payload.map(VenueMessage.init(payload:))
+            }
         }
 
         private struct Typed: Decodable {
@@ -371,6 +420,14 @@ actor VenueChatConnection {
             presence = typed?.presence
             presenceName = typed?.name
             presenceAvatarURL = typed?.avatarURL
+
+            let backlog = (typed?.type == "history" || typed?.type == "pin")
+                ? (try? container.decodeIfPresent(Backlog.self, forKey: .message)) ?? nil
+                : nil
+            history = backlog?.messages
+            pinned = backlog?.pinned
+            pinID = backlog?.id
+            pinnedFlag = backlog?.isPinned
         }
     }
 }

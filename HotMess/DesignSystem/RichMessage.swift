@@ -208,12 +208,13 @@ extension VenueMessage {
         currentUserID: UUID?,
         friends: [UUID: Friend] = [:],
         online: Set<UUID>? = nil,
+        reachable: Set<UUID> = [],
         rich: Bool = true
     ) -> ChatThreadMessage {
         let presence: PresenceState? = if isFromPlace {
             nil
         } else if let online {
-            online.contains(userID) ? .online : nil
+            online.contains(userID) ? .online : (reachable.contains(userID) ? .push : nil)
         } else {
             self.presence
         }

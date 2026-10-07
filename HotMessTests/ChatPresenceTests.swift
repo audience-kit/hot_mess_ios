@@ -126,6 +126,67 @@ struct ChatPresenceFrameTests {
         #expect(name == nil)
         #expect(avatarURL == nil)
     }
+
+    @Test("A friend who left but gets notifications is reachable")
+    func pushPresence() throws {
+        let data = frame(#"{ "type": "presence", "user_id": "\#(sam)", "presence": "push" }"#)
+
+        guard case let .reachable(userID) = try #require(VenueChatConnection.event(from: data)) else {
+            Issue.record("Expected reachable")
+            return
+        }
+
+        #expect(userID == sam)
+    }
+
+    @Test("History brings the recent lines and the pinned announcement")
+    func history() throws {
+        let pinnedID = UUID()
+        let data = frame("""
+        {
+          "type": "history",
+          "messages": [
+            { "id": "\(UUID())", "message": "first", "user_id": "\(sam)", "presence": "push" },
+            { "message": "no sender" },
+            { "id": "\(UUID())", "message": "second", "user_id": "\(aurora)", "role": "staff" }
+          ],
+          "pinned": { "id": "\(pinnedID)", "message": "Announcement: Doors at 9", "user_id": "\(alex)",
+                      "kind": "announcement", "title": "Doors at 9", "pinned": true }
+        }
+        """)
+
+        guard case let .history(messages, pinned) = try #require(VenueChatConnection.event(from: data)) else {
+            Issue.record("Expected history")
+            return
+        }
+
+        #expect(messages.map(\.body) == ["first", "second"])
+        #expect(messages.first?.presence == .push)
+        #expect(messages.last?.role == .staff)
+        #expect(pinned?.id == pinnedID)
+        #expect(pinned?.title == "Doors at 9")
+    }
+
+    @Test("Pins carry the announcement; unpins only its ID")
+    func pins() throws {
+        let id = UUID()
+        let pin = frame(#"{ "type": "pin", "id": "\#(id)", "pinned": true, "announcement": { "id": "\#(id)", "message": "Announcement: Doors", "user_id": "\#(alex)", "kind": "announcement", "title": "Doors", "pinned": true } }"#)
+        let unpin = frame(#"{ "type": "pin", "id": "\#(id)", "pinned": false }"#)
+
+        guard case let .pin(pinnedID, announcement) = try #require(VenueChatConnection.event(from: pin)) else {
+            Issue.record("Expected pin")
+            return
+        }
+        #expect(pinnedID == id)
+        #expect(announcement?.title == "Doors")
+
+        guard case let .pin(unpinnedID, nothing) = try #require(VenueChatConnection.event(from: unpin)) else {
+            Issue.record("Expected unpin")
+            return
+        }
+        #expect(unpinnedID == id)
+        #expect(nothing == nil)
+    }
 }
 
 @Suite("Here now")
@@ -201,5 +262,27 @@ struct HereNowTests {
         viewModel.applyPresence(userID: sam, online: false, name: nil, avatarURL: nil)
         #expect(viewModel.hereNow.isEmpty)
         #expect(viewModel.roomPeople[sam] == nil)
+    }
+
+    @Test("History replaces the lines, and pins move the pinned announcement")
+    @MainActor
+    func viewModelHistoryAndPins() {
+        let viewModel = makeViewModel(friends: FriendDirectory())
+        var old = VenueMessage(id: UUID(), body: "Doors at 9", userID: alex, name: "Alex R.", avatarURL: nil, sentAt: .now)
+        old.kind = .announcement
+        old.isPinned = true
+        var line = VenueMessage(id: UUID(), body: "hi", userID: sam, name: "Sam K.", avatarURL: nil, sentAt: .now)
+        line.presence = .push
+
+        viewModel.applyHistory([line], pinned: old)
+        #expect(viewModel.messages.map(\.id) == [line.id])
+        #expect(viewModel.pinnedAnnouncement?.id == old.id)
+        #expect(viewModel.reachableUserIDs == [sam])
+
+        viewModel.applyPin(id: old.id, announcement: nil)
+        #expect(viewModel.pinnedAnnouncement == nil)
+
+        viewModel.applyPresence(userID: sam, online: true, name: nil, avatarURL: nil)
+        #expect(viewModel.reachableUserIDs.isEmpty)
     }
 }

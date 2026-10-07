@@ -114,8 +114,8 @@ struct VenueChatScreen: View {
     }
 
     /// The room's messages, then the reader's own lines still on their way.
-    /// Friends show by their full name, and everyone in the room now with a
-    /// presence dot. Specials that have ended are left out.
+    /// Friends show by their full name, everyone in the room now with a green
+    /// dot, and friends a notification reaches with a yellow one. Specials that have ended are left out.
     private func threadMessages(_ viewModel: VenueChatViewModel, at date: Date) -> [ChatThreadMessage] {
         let friends = model.friends.byID
         let sent = viewModel.messages
@@ -124,7 +124,8 @@ struct VenueChatScreen: View {
                 message.threadMessage(
                     currentUserID: viewModel.userID,
                     friends: friends,
-                    online: viewModel.onlineUserIDs
+                    online: viewModel.onlineUserIDs,
+                    reachable: viewModel.reachableUserIDs
                 )
             }
 
@@ -148,7 +149,14 @@ struct VenueChatScreen: View {
     private func pinned(_ viewModel: VenueChatViewModel, in messages: [ChatThreadMessage]) -> ChatThreadMessage? {
         guard let pinned = viewModel.pinnedAnnouncement else { return nil }
         let id = pinned.id.uuidString
+        // A pinned announcement can be older than the lines the room shows.
         return messages.first { $0.id == id && $0.announcementTitle != nil }
+            ?? pinned.threadMessage(
+                currentUserID: viewModel.userID,
+                friends: model.friends.byID,
+                online: viewModel.onlineUserIDs,
+                reachable: viewModel.reachableUserIDs
+            )
     }
 
     private func composer(_ viewModel: VenueChatViewModel) -> some View {
