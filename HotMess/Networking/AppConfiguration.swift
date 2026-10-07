@@ -67,6 +67,16 @@ struct AppConfiguration: Sendable, Hashable {
         self.build = build
     }
 
+    /// Staging and debug builds, which get testing aids such as pretending to
+    /// be at a venue. App Store builds never show them.
+    var isTestBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return environment != .production
+        #endif
+    }
+
     /// How the AudienceKit SDK should reach the Hot Mess audience.
     var audienceKit: AudienceKitConfiguration {
         AudienceKitConfiguration(

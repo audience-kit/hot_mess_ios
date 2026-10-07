@@ -46,6 +46,8 @@ struct VenueScreen: View {
                             }
                         }
 
+                        testingSection(venue)
+
                         DetailSection(String(localized: "Events")) {
                             if overview.events.isEmpty {
                                 Text("No upcoming events.")
@@ -143,6 +145,36 @@ struct VenueScreen: View {
                         systemImage: "arrow.up.right.square"
                     )
                 }
+            }
+        }
+    }
+
+    /// Test builds only: report the venue's own position, so the app (and the
+    /// API) treat you as inside it wherever you really are.
+    @ViewBuilder
+    private func testingSection(_ venue: Venue) -> some View {
+        if model.configuration.isTestBuild, let coordinate = venue.coordinate {
+            DetailSection(String(localized: "Testing")) {
+                if model.location.simulatedVenueName == venue.name {
+                    Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
+                        Task {
+                            await model.location.stopSimulating()
+                            await viewModel?.load()
+                        }
+                    }
+                } else {
+                    Button(String(localized: "Pretend I'm here"), systemImage: "location.fill") {
+                        // Reload once the visit is recorded, so the chat row appears.
+                        Task {
+                            await model.location.simulate(at: coordinate, venueName: venue.name)
+                            await viewModel?.load()
+                        }
+                    }
+                }
+            } footer: {
+                Text("Test builds only. Reports this venue's location instead of yours until you stop.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
     }

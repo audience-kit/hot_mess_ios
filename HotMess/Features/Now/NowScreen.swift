@@ -15,6 +15,16 @@ struct NowScreen: View {
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { now in
             List {
+                if let simulated = model.location.simulatedVenueName {
+                    Section {
+                        Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
+                            Task { await model.location.stopSimulating() }
+                        }
+                    } header: {
+                        Text("Pretending to be at \(simulated)")
+                    }
+                }
+
                 if let imageURL = now.imageURL {
                     Section {
                         RemoteImage(url: imageURL)
@@ -24,6 +34,7 @@ struct NowScreen: View {
                 }
 
                 nearbySection(now)
+                friendVenuesSection(now)
                 eventsSection(now)
             }
             .listStyle(.insetGrouped)
@@ -103,6 +114,20 @@ struct NowScreen: View {
         }
     }
 
+    /// Away from venues: where your friends are, as a count per venue.
+    @ViewBuilder
+    private func friendVenuesSection(_ now: Now) -> some View {
+        if now.venue == nil, !now.friendVenues.isEmpty {
+            Section(String(localized: "Where your friends are")) {
+                ForEach(now.friendVenues) { entry in
+                    NavigationLink(value: AppRoute.venue(entry.venue.id)) {
+                        FriendVenueRow(entry: entry)
+                    }
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private func eventsSection(_ now: Now) -> some View {
         Section(String(localized: "Events")) {
@@ -132,6 +157,38 @@ struct NowScreen: View {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)
         }
+    }
+}
+
+/// A venue and how many of your friends are there, with their first names.
+struct FriendVenueRow: View {
+    let entry: FriendVenue
+
+    var body: some View {
+        HStack(spacing: 12) {
+            RemoteImage(url: entry.venue.photoURL)
+                .frame(width: 44, height: 44)
+                .clipShape(.rect(cornerRadius: 10))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.venue.name)
+                    .font(.hotMess(.headline, semibold: true))
+                    .lineLimit(1)
+
+                Text(entry.friends.map(\.firstName).formatted(.list(type: .and)))
+                    .font(.hotMess(.subheadline))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(entry.friendCount == 1 ? "1 friend" : "\(entry.friendCount) friends")
+                .font(.hotMess(.caption, semibold: true))
+                .foregroundStyle(Color.hotMessAccent)
+                .monospacedDigit()
+        }
+        .padding(.vertical, 4)
     }
 }
 

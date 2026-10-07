@@ -20,6 +20,11 @@ final class LocationProvider {
     private(set) var coordinates: Coordinates?
     private(set) var locale: AppLocale?
     private(set) var authorizationStatus: CLAuthorizationStatus
+    /// Test builds only: the venue the app is pretending to be at. While it's
+    /// set, the venue's position is reported instead of the device's.
+    var simulatedVenueName: String? { tracker.simulatedVenueName }
+
+    private var tracker: PositionTracker
 
     private let api: HotMessAPI
     private let configuration: AppConfiguration
@@ -38,6 +43,7 @@ final class LocationProvider {
         self.api = api
         self.configuration = configuration
         authorizationStatus = manager.authorizationStatus
+        tracker = PositionTracker(simulationAllowed: configuration.isTestBuild)
 
         locale = Self.restoreLocale()
 
@@ -106,6 +112,32 @@ final class LocationProvider {
         }
     }
 
+    // MARK: - Testing
+
+    /// Reports `coordinate` as the device's position until `stopSimulating()`,
+    /// so a test build can be "at" a venue from anywhere. The API puts the
+    /// user at whichever venue's envelope contains the point.
+    /// Returns once the position is reported, so the caller can reload.
+    func simulate(at coordinate: CLLocationCoordinate2D, venueName: String) async {
+        guard tracker.simulate(latitude: coordinate.latitude, longitude: coordinate.longitude, venueName: venueName)
+        else { return }
+
+        coordinates = tracker.current
+        await refreshLocale()
+        await reportPosition()
+    }
+
+    /// Goes back to the device's real position.
+    func stopSimulating() async {
+        guard tracker.stopSimulating() else { return }
+
+        coordinates = tracker.current
+        guard coordinates != nil else { return }
+
+        await refreshLocale()
+        await reportPosition()
+    }
+
     // MARK: - Delegate plumbing
 
     private func beginMonitoring() {
@@ -137,13 +169,10 @@ final class LocationProvider {
     }
 
     fileprivate func update(with location: CLLocation) {
-        coordinates = Coordinates(
-            latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude,
-            beaconMajor: coordinates?.beaconMajor,
-            beaconMinor: coordinates?.beaconMinor
-        )
+        guard tracker.deviceFix(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+        else { return }
 
+        coordinates = tracker.current
         Task {
             await refreshLocale()
             await reportPosition()
@@ -153,20 +182,13 @@ final class LocationProvider {
     fileprivate func update(beacons: [CLBeacon]) {
         guard let nearest = beacons.first else { return }
 
-        // Only attach beacon identifiers to a position we actually have; the
-        // original fell back to (0, 0) and reported the Gulf of Guinea.
-        let position = coordinates ?? manager.location.map {
-            Coordinates(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude)
+        // A beacon can be heard before the first significant-change fix.
+        if tracker.current == nil, let location = manager.location {
+            tracker.deviceFix(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
         }
-        guard let position else { return }
+        guard tracker.beacon(major: nearest.major.intValue, minor: nearest.minor.intValue) else { return }
 
-        coordinates = Coordinates(
-            latitude: position.latitude,
-            longitude: position.longitude,
-            beaconMajor: nearest.major.intValue,
-            beaconMinor: nearest.minor.intValue
-        )
-
+        coordinates = tracker.current
         Task { await reportPosition() }
     }
 
