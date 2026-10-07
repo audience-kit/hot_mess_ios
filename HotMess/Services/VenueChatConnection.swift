@@ -32,9 +32,13 @@ actor VenueChatConnection {
         /// from outside, so `true` means they're there because they're an admin.
         case range(outOfRange: Bool)
         /// Everyone in the room now, the user included, sent on joining.
-        case roster(Set<UUID>)
-        /// Someone's first socket joined the room (`true`) or their last one left.
-        case presence(userID: UUID, online: Bool)
+        /// `people` names them (empty from servers that only send IDs), and
+        /// `friends` is every one of the user's friends, by full name, in the
+        /// room or not.
+        case roster(online: Set<UUID>, people: [RoomPerson], friends: [Friend])
+        /// Someone's first socket joined the room (`true`) or their last one
+        /// left. A join carries their name and avatar when the server sends them.
+        case presence(userID: UUID, online: Bool, name: String?, avatarURL: URL?)
         case disconnected(String?)
     }
 
@@ -43,7 +47,6 @@ actor VenueChatConnection {
     private let token: String?
     private let session: URLSession
     private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
     private nonisolated let continuation: AsyncStream<Event>.Continuation
 
     /// Built once: Action Cable matches every command to its subscription by
@@ -165,41 +168,58 @@ actor VenueChatConnection {
             return
         }
 
-        guard let frame = try? decoder.decode(IncomingFrame.self, from: data) else { return }
+        if let event = Self.event(from: data) {
+            continuation.yield(event)
+        }
+    }
+
+    /// The event one incoming frame means, or `nil` for one that means
+    /// nothing to the room (a welcome, a ping, something unreadable).
+    static func event(from data: Data) -> Event? {
+        guard let frame = try? JSONDecoder().decode(IncomingFrame.self, from: data) else { return nil }
 
         switch frame.type {
         case "welcome":
             // The socket is open, but the room isn't joined until the server
             // confirms the subscription.
-            break
+            return nil
         case "confirm_subscription":
-            continuation.yield(.connected)
+            return .connected
         case "reject_subscription":
-            continuation.yield(.notPresent)
+            return .notPresent
         case "disconnect":
-            continuation.yield(.disconnected(nil))
+            return .disconnected(nil)
         case "ping":
-            break
+            return nil
         case .none:
             // A frame with no `type` carries what the channel sent in `message`:
             // a chat line, `{"type":"left"}` once the user's presence lapses,
             // `{"type":"range","out_of_range":…}`, the `roster` of who's in the
             // room on joining, or a `presence` change.
             if frame.messageType == "left" {
-                continuation.yield(.notPresent)
+                return .notPresent
             } else if frame.messageType == "range" {
-                continuation.yield(.range(outOfRange: frame.outOfRange ?? false))
+                return .range(outOfRange: frame.outOfRange ?? false)
             } else if frame.messageType == "roster" {
-                continuation.yield(.roster(Set(frame.online ?? [])))
+                return .roster(
+                    online: Set(frame.online ?? []),
+                    people: frame.people ?? [],
+                    friends: frame.friends ?? []
+                )
             } else if frame.messageType == "presence" {
-                if let userID = frame.presenceUserID, let presence = frame.presence {
-                    continuation.yield(.presence(userID: userID, online: presence == "online"))
-                }
+                guard let userID = frame.presenceUserID, let presence = frame.presence else { return nil }
+                return .presence(
+                    userID: userID,
+                    online: presence == "online",
+                    name: frame.presenceName,
+                    avatarURL: frame.presenceAvatarURL
+                )
             } else if let payload = frame.message {
-                continuation.yield(.received(VenueMessage(payload: payload)))
+                return .received(VenueMessage(payload: payload))
             }
+            return nil
         default:
-            break
+            return nil
         }
     }
 
@@ -229,9 +249,14 @@ actor VenueChatConnection {
         let outOfRange: Bool?
         /// `online` inside a `roster` message.
         let online: [UUID]?
-        /// `user_id` and `presence` inside a `presence` message.
+        /// `people` and `friends` inside a `roster` message, from servers that send them.
+        let people: [RoomPerson]?
+        let friends: [Friend]?
+        /// `user_id`, `presence`, `name` and `avatar_url` inside a `presence` message.
         let presenceUserID: UUID?
         let presence: String?
+        let presenceName: String?
+        let presenceAvatarURL: URL?
 
         enum CodingKeys: String, CodingKey {
             case type, identifier, message
@@ -243,11 +268,16 @@ actor VenueChatConnection {
             let online: [UUID]?
             let userID: UUID?
             let presence: String?
+            let name: String?
+            let avatarURL: URL?
+            let people: [RoomPerson]?
+            let friends: [Friend]?
 
             enum CodingKeys: String, CodingKey {
-                case type, online, presence
+                case type, online, presence, name, people, friends
                 case outOfRange = "out_of_range"
                 case userID = "user_id"
+                case avatarURL = "avatar_url"
             }
 
             init(from decoder: any Decoder) throws {
@@ -259,6 +289,69 @@ actor VenueChatConnection {
                     .map { $0.compactMap(UUID.init(uuidString:)) }
                 userID = try? container.decodeIfPresent(UUID.self, forKey: .userID)
                 presence = try? container.decodeIfPresent(String.self, forKey: .presence)
+                name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap(\.nonBlank)
+                avatarURL = (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap(\.nonBlankURL)
+                // Each person and friend on their own, so one bad entry drops only itself.
+                people = (try? container.decodeIfPresent([Lenient<PersonWire>].self, forKey: .people))
+                    .map { $0.compactMap { $0.value?.person } }
+                friends = (try? container.decodeIfPresent([Lenient<FriendWire>].self, forKey: .friends))
+                    .map { $0.compactMap { $0.value?.friend } }
+            }
+        }
+
+        /// Decodes as `nil` instead of throwing, so one malformed array element
+        /// doesn't fail the whole array.
+        private struct Lenient<Value: Decodable>: Decodable {
+            let value: Value?
+
+            init(from decoder: any Decoder) throws {
+                value = try? Value(from: decoder)
+            }
+        }
+
+        /// One of `people` in a roster.
+        private struct PersonWire: Decodable {
+            let person: RoomPerson?
+
+            enum CodingKeys: String, CodingKey {
+                case name, friend
+                case userID = "user_id"
+                case avatarURL = "avatar_url"
+            }
+
+            init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID) else {
+                    person = nil
+                    return
+                }
+                person = RoomPerson(
+                    id: id,
+                    name: (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap(\.nonBlank),
+                    avatarURL: (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap(\.nonBlankURL),
+                    isFriend: (try? container.decodeIfPresent(Bool.self, forKey: .friend)) ?? false
+                )
+            }
+        }
+
+        /// One of `friends` in a roster: an ID and a full name.
+        private struct FriendWire: Decodable {
+            let friend: Friend?
+
+            enum CodingKeys: String, CodingKey {
+                case name
+                case userID = "user_id"
+            }
+
+            init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID),
+                      let name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap(\.nonBlank)
+                else {
+                    friend = nil
+                    return
+                }
+                friend = Friend(id: id, name: name)
             }
         }
 
@@ -272,8 +365,34 @@ actor VenueChatConnection {
             messageType = typed?.type
             outOfRange = typed?.outOfRange
             online = typed?.online
+            people = typed?.people
+            friends = typed?.friends
             presenceUserID = typed?.userID
             presence = typed?.presence
+            presenceName = typed?.name
+            presenceAvatarURL = typed?.avatarURL
         }
+    }
+}
+
+/// Someone in a chat room, as its roster and presence frames name them.
+struct RoomPerson: Hashable, Sendable, Identifiable {
+    let id: UUID
+    /// "First L." for strangers, a full name for the user's friends. `nil`
+    /// when the server didn't say.
+    var name: String?
+    var avatarURL: URL?
+    /// The server says they're one of the user's friends.
+    var isFriend = false
+}
+
+private extension String {
+    /// `nil` for an empty or all-whitespace string.
+    var nonBlank: String? {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : self
+    }
+
+    var nonBlankURL: URL? {
+        nonBlank.flatMap(URL.init(string:))
     }
 }

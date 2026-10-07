@@ -52,13 +52,24 @@ final class VenueChatViewModel {
     /// Who is in the room now, by user ID: the roster the room sends on
     /// joining, kept up to date by its presence frames. Empty while offline.
     private(set) var onlineUserIDs: Set<UUID> = []
+    /// What the room has said about the people in it, by user ID: names and
+    /// avatars from its roster and presence frames. Empty while offline, and
+    /// from servers that only send IDs.
+    private(set) var roomPeople: [UUID: RoomPerson] = [:]
     var draft: String = ""
 
     let room: ChatRoom
 
     private let url: URL?
+    private let configuration: AppConfiguration
     private let token: String?
     let userID: UUID?
+    /// The app's friends so far. The roster's full list of friends goes in,
+    /// so friends show by full name everywhere.
+    private let friends: FriendDirectory?
+    /// Full names of the user's friends from the room's roster, for when
+    /// there's no directory.
+    private var rosterFriendNames: [UUID: String] = [:]
     private let reportPresence: @MainActor () async -> Void
     private var connection: VenueChatConnection?
     private var presenceTask: Task<Void, Never>?
@@ -70,11 +81,14 @@ final class VenueChatViewModel {
         configuration: AppConfiguration,
         userID: UUID?,
         token: String?,
+        friends: FriendDirectory? = nil,
         reportPresence: @escaping @MainActor () async -> Void = {}
     ) {
         self.room = room
+        self.configuration = configuration
         self.userID = userID
         self.token = token
+        self.friends = friends
         self.reportPresence = reportPresence
         url = configuration.realtimeURL
     }
@@ -98,6 +112,33 @@ final class VenueChatViewModel {
     /// room sent marked as pinned.
     var pinnedAnnouncement: VenueMessage? {
         messages.last { $0.isPinned && $0.kind == .announcement }
+    }
+
+    /// Everyone else in the room now, for the Here now strip: friends first,
+    /// then everyone else, each by name. A friend shows by their full name.
+    /// Without names from the room (an older server), the name and avatar
+    /// they last posted with.
+    var hereNow: [HereNowPerson] {
+        let directory = friends?.byID ?? [:]
+        var ids = onlineUserIDs
+        if let userID { ids.remove(userID) }
+
+        let people = ids.map { id -> HereNowPerson in
+            let person = roomPeople[id]
+            let friendName = rosterFriendNames[id] ?? directory[id]?.name
+            let posted = person?.name == nil || person?.avatarURL == nil
+                ? messages.last(where: { $0.userID == id && !$0.isFromPlace })
+                : nil
+
+            return HereNowPerson(
+                id: id,
+                name: friendName ?? person?.name ?? posted?.name,
+                avatarURL: person?.avatarURL ?? posted?.avatarURL ?? configuration.avatarURL(forUserID: id),
+                isFriend: person?.isFriend == true || friendName != nil
+            )
+        }
+
+        return HereNowPerson.sorted(people)
     }
 
     /// Reports the position, connects, and streams messages until the room
@@ -126,22 +167,18 @@ final class VenueChatViewModel {
                 receive(message)
             case let .range(outOfRange):
                 isOutOfRange = outOfRange
-            case let .roster(online):
-                onlineUserIDs = online
-            case let .presence(userID, online):
-                if online {
-                    onlineUserIDs.insert(userID)
-                } else {
-                    onlineUserIDs.remove(userID)
-                }
+            case let .roster(online, people, friends):
+                applyRoster(online: online, people: people, friends: friends)
+            case let .presence(userID, online, name, avatarURL):
+                applyPresence(userID: userID, online: online, name: name, avatarURL: avatarURL)
             case .notPresent:
                 connectionState = .notPresent
-                onlineUserIDs = []
+                clearRoom()
                 failPending()
                 await stop()
             case let .disconnected(reason):
                 connectionState = .disconnected(reason)
-                onlineUserIDs = []
+                clearRoom()
                 failPending()
             }
         }
@@ -192,6 +229,41 @@ final class VenueChatViewModel {
         presenceTask = nil
         await connection?.disconnect()
         connection = nil
+    }
+
+    // MARK: - Who's here
+
+    /// The room's list of who's in it, sent on joining. Everyone it names is
+    /// in the room, even if `online` (from an older server) left them out.
+    func applyRoster(online: Set<UUID>, people: [RoomPerson], friends roster: [Friend]) {
+        roomPeople = Dictionary(people.map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
+        onlineUserIDs = online.union(people.map(\.id))
+
+        for friend in roster {
+            rosterFriendNames[friend.id] = friend.name
+        }
+        friends?.rememberNames(roster)
+    }
+
+    /// Someone joined or left. A join keeps what's already known about them
+    /// unless the frame says otherwise.
+    func applyPresence(userID: UUID, online: Bool, name: String?, avatarURL: URL?) {
+        guard online else {
+            onlineUserIDs.remove(userID)
+            roomPeople[userID] = nil
+            return
+        }
+
+        onlineUserIDs.insert(userID)
+        var person = roomPeople[userID] ?? RoomPerson(id: userID)
+        if let name { person.name = name }
+        if let avatarURL { person.avatarURL = avatarURL }
+        roomPeople[userID] = person
+    }
+
+    private func clearRoom() {
+        onlineUserIDs = []
+        roomPeople = [:]
     }
 
     // MARK: - Sending

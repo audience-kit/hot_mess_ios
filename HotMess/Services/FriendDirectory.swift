@@ -29,6 +29,21 @@ final class FriendDirectory {
         remember(now.friendVenues.flatMap(\.friends))
     }
 
+    /// Friends a chat room's roster names by ID and full name. Keeps what's
+    /// already known about each one (their Facebook ID, their presence).
+    func rememberNames(_ friends: some Sequence<Friend>) {
+        for friend in friends where !friend.name.isEmpty {
+            let known = byID[friend.id]
+            guard known?.name != friend.name else { continue }
+            byID[friend.id] = Friend(
+                id: friend.id,
+                name: friend.name,
+                facebookID: known?.facebookID,
+                presence: known?.presence
+            )
+        }
+    }
+
     func forget() {
         byID = [:]
     }
