@@ -189,10 +189,6 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
 
 ## Known follow-ups
 
-- The bundled Proxima Nova faces are referenced by the PostScript names
-  `ProximaNova-Regular` and `ProximaNova-Semibold` in `Theme.swift`. If those
-  names do not match the font files, SwiftUI falls back to the system face
-  silently — worth confirming on a device.
 - Sign-in requests `public_profile`, `email` and `user_friends`. The original
   also asked for `user_events` and `user_likes`, which Facebook has since
   removed, and for a `rsvp_event` publish permission that no longer exists —
