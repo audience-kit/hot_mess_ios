@@ -15,53 +15,62 @@ struct EventScreen: View {
 
     @Environment(AppModel.self) private var model
     @State private var viewModel: EventViewModel?
+    @State private var heroTone = HeroTone.placeholder
+    @State private var heroCollapsed = false
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { detail in
             let event = detail.event
 
-            List {
-                Section {
-                    RemoteImage(url: event.coverURL)
-                        .frame(height: 200)
-                        .listRowInsets(EdgeInsets())
-                }
-
-                Section(String(localized: "Your RSVP")) {
-                    RSVPPicker(selection: event.rsvp) { rsvp in
-                        Task { await viewModel?.setRSVP(rsvp) }
-                    }
-                }
-
-                detailsSection(event)
-
-                if let person = event.person {
-                    Section(String(localized: "Host")) {
-                        NavigationLink(value: AppRoute.person(person.id)) {
-                            PersonRow(person: person)
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 24) {
+                        HeroHeader(url: event.coverURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
+                            heroText(event)
                         }
-                    }
-                }
 
-                if let venue = event.venue {
-                    Section(String(localized: "Venue")) {
-                        NavigationLink(value: AppRoute.venue(venue.id)) {
-                            VenueRow(venue: venue)
+                        DetailSection(String(localized: "Your RSVP")) {
+                            RSVPPicker(selection: event.rsvp) { rsvp in
+                                Task { await viewModel?.setRSVP(rsvp) }
+                            }
                         }
-                    }
-                }
 
-                if !detail.people.isEmpty {
-                    Section(String(localized: "Going")) {
-                        ForEach(detail.people) { person in
-                            NavigationLink(value: AppRoute.person(person.id)) {
-                                PersonRow(person: person)
+                        detailsSection(event)
+
+                        if let person = event.person {
+                            DetailSection(String(localized: "Host")) {
+                                DetailLink(route: .person(person.id)) {
+                                    PersonRow(person: person)
+                                }
+                            }
+                        }
+
+                        if let venue = event.venue {
+                            DetailSection(String(localized: "Venue")) {
+                                DetailLink(route: .venue(venue.id)) {
+                                    VenueRow(venue: venue)
+                                }
+                            }
+                        }
+
+                        if !detail.people.isEmpty {
+                            DetailSection(String(localized: "Going")) {
+                                ForEach(detail.people) { person in
+                                    DetailLink(route: .person(person.id)) {
+                                        PersonRow(person: person)
+                                    }
+                                }
                             }
                         }
                     }
+                    .padding(.bottom, 24)
                 }
+                .ignoresSafeArea(edges: .top)
+                .trackingHeroCollapse($heroCollapsed)
             }
-            .listStyle(.insetGrouped)
+            // Ignoring the top here too is what makes the proxy report the bars' height.
+            .ignoresSafeArea(edges: .top)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .toolbar {
                 if let shareURL = event.shareURL {
                     ShareLink(item: shareURL) {
@@ -70,8 +79,11 @@ struct EventScreen: View {
                 }
             }
         }
-        .navigationTitle(viewModel?.state.value?.event.name ?? String(localized: "Event"))
-        .navigationBarTitleDisplayMode(.inline)
+        .heroNavigationBar(
+            title: viewModel?.state.value?.event.name ?? String(localized: "Event"),
+            tone: heroTone,
+            collapsed: heroCollapsed || viewModel?.state.value == nil
+        )
         .task {
             ensureViewModel()
             await viewModel?.load()
@@ -89,9 +101,27 @@ struct EventScreen: View {
         }
     }
 
-    @ViewBuilder
+    private func heroText(_ event: Event) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(event.startDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()).uppercased())
+                .font(.hotMess(.footnote, semibold: true))
+                .tracking(0.8)
+
+            Text(event.name)
+                .font(.hotMess(.title, semibold: true))
+                .lineLimit(3)
+                .accessibilityAddTraits(.isHeader)
+
+            if let place = event.venue?.name ?? event.person?.name {
+                Text(place)
+                    .font(.hotMess(.subheadline, semibold: true))
+                    .lineLimit(1)
+            }
+        }
+    }
+
     private func detailsSection(_ event: Event) -> some View {
-        Section {
+        DetailSection {
             InfoRow(
                 title: String(localized: "Starts"),
                 value: event.startDate.formatted(date: .abbreviated, time: .shortened)

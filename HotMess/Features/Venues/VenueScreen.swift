@@ -15,49 +15,58 @@ struct VenueScreen: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
     @State private var viewModel: VenueViewModel?
+    @State private var heroTone = HeroTone.placeholder
+    @State private var heroCollapsed = false
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { overview in
             let venue = overview.venue
 
-            List {
-                Section {
-                    RemoteImage(url: venue.heroURL ?? venue.photoURL)
-                        .frame(height: 200)
-                        .listRowInsets(EdgeInsets())
-                }
-
-                aboutSection(venue)
-
-                if overview.chatOpen {
-                    Section(String(localized: "Chat")) {
-                        NavigationLink(value: AppRoute.venueChat(venue)) {
-                            Label(String(localized: "Join the room"), systemImage: "bubble.left.and.bubble.right")
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 24) {
+                        HeroHeader(url: venue.heroURL ?? venue.photoURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
+                            heroText(venue)
                         }
-                    }
-                }
 
-                if !overview.friends.isEmpty {
-                    Section(String(localized: "Friends Here")) {
-                        FriendStrip(friends: overview.friends)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    }
-                }
+                        aboutSection(venue)
 
-                Section(String(localized: "Events")) {
-                    if overview.events.isEmpty {
-                        Text("No upcoming events.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(overview.events) { event in
-                            NavigationLink(value: AppRoute.event(event.id)) {
-                                EventRow(event: event)
+                        if overview.chatOpen {
+                            DetailSection(String(localized: "Chat")) {
+                                DetailLink(route: .venueChat(venue)) {
+                                    Label(String(localized: "Join the room"), systemImage: "bubble.left.and.bubble.right")
+                                }
+                            }
+                        }
+
+                        if !overview.friends.isEmpty {
+                            DetailSection(String(localized: "Friends Here")) {
+                                FriendStrip(friends: overview.friends)
+                                    .padding(.horizontal, -20)
+                            }
+                        }
+
+                        DetailSection(String(localized: "Events")) {
+                            if overview.events.isEmpty {
+                                Text("No upcoming events.")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(overview.events) { event in
+                                    DetailLink(route: .event(event.id)) {
+                                        EventRow(event: event)
+                                    }
+                                }
                             }
                         }
                     }
+                    .padding(.bottom, 24)
                 }
+                .ignoresSafeArea(edges: .top)
+                .trackingHeroCollapse($heroCollapsed)
             }
-            .listStyle(.insetGrouped)
+            // Ignoring the top here too is what makes the proxy report the bars' height.
+            .ignoresSafeArea(edges: .top)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .toolbar {
                 if let shareURL = venue.shareURL {
                     ShareLink(item: shareURL) {
@@ -66,17 +75,38 @@ struct VenueScreen: View {
                 }
             }
         }
-        .navigationTitle(viewModel?.state.value?.venue.name ?? String(localized: "Venue"))
-        .navigationBarTitleDisplayMode(.inline)
+        .heroNavigationBar(
+            title: viewModel?.state.value?.venue.name ?? String(localized: "Venue"),
+            tone: heroTone,
+            collapsed: heroCollapsed || viewModel?.state.value == nil
+        )
         .task {
             ensureViewModel()
             await viewModel?.load()
         }
     }
 
+    private func heroText(_ venue: Venue) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(venue.name)
+                .font(.hotMess(.title, semibold: true))
+                .lineLimit(3)
+                .accessibilityAddTraits(.isHeader)
+
+            let details = [venue.address, venue.distance.map(DistanceFormat.string(fromMetres:))]
+                .compactMap { $0 }
+                .filter { !$0.isEmpty }
+            if !details.isEmpty {
+                Text(details.joined(separator: " · "))
+                    .font(.hotMess(.subheadline, semibold: true))
+                    .lineLimit(2)
+            }
+        }
+    }
+
     @ViewBuilder
     private func aboutSection(_ venue: Venue) -> some View {
-        Section(String(localized: "About")) {
+        DetailSection(String(localized: "About")) {
             if let subtitle = venue.subtitle, !subtitle.isEmpty {
                 Text(subtitle)
                     .font(.subheadline)
