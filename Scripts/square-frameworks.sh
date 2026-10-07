@@ -12,4 +12,8 @@ sdk="$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/SquareInAppPaymentsSDK.framewor
 [[ -d "$sdk" ]] || exit 0
 
 /usr/libexec/PlistBuddy -c "Set :CFBundlePackageType FMWK" "$sdk/Info.plist"
+
+# Square's setup re-signs what it moves, which fails with no identity when signing is off (CI's
+# simulator builds pass CODE_SIGNING_ALLOWED=NO). Unsigned builds never reach the App Store.
+[[ "${CODE_SIGNING_ALLOWED:-YES}" == "NO" ]] && exit 0
 [[ -x "$sdk/setup" ]] && "$sdk/setup"
