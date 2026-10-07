@@ -64,7 +64,7 @@ enum ChatTime {
 // MARK: - Presence
 
 /// Whether someone can be reached right now.
-enum PresenceState: Hashable, Sendable {
+enum PresenceState: String, Codable, Hashable, Sendable {
     /// Connected to a chat room now.
     case online
     /// Not in chat, but has a device that gets push notifications.

@@ -49,6 +49,9 @@ final class VenueChatViewModel {
     private(set) var connectionState: ConnectionState = .connecting
     /// The user is in the room from outside its place, which only admins can do.
     private(set) var isOutOfRange = false
+    /// Who is in the room now, by user ID: the roster the room sends on
+    /// joining, kept up to date by its presence frames. Empty while offline.
+    private(set) var onlineUserIDs: Set<UUID> = []
     var draft: String = ""
 
     let room: ChatRoom
@@ -91,6 +94,12 @@ final class VenueChatViewModel {
         message.isOutgoing(for: userID)
     }
 
+    /// The announcement pinned under the room's title: the latest one the
+    /// room sent marked as pinned.
+    var pinnedAnnouncement: VenueMessage? {
+        messages.last { $0.isPinned && $0.kind == .announcement }
+    }
+
     /// Reports the position, connects, and streams messages until the room
     /// closes or the server says the user isn't in the room's place. While it's open,
     /// the position is reported again every few minutes.
@@ -117,12 +126,22 @@ final class VenueChatViewModel {
                 receive(message)
             case let .range(outOfRange):
                 isOutOfRange = outOfRange
+            case let .roster(online):
+                onlineUserIDs = online
+            case let .presence(userID, online):
+                if online {
+                    onlineUserIDs.insert(userID)
+                } else {
+                    onlineUserIDs.remove(userID)
+                }
             case .notPresent:
                 connectionState = .notPresent
+                onlineUserIDs = []
                 failPending()
                 await stop()
             case let .disconnected(reason):
                 connectionState = .disconnected(reason)
+                onlineUserIDs = []
                 failPending()
             }
         }

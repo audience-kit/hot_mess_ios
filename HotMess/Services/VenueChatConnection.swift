@@ -31,6 +31,10 @@ actor VenueChatConnection {
         /// Whether the user is outside the room's place. Only admins are let in
         /// from outside, so `true` means they're there because they're an admin.
         case range(outOfRange: Bool)
+        /// Everyone in the room now, the user included, sent on joining.
+        case roster(Set<UUID>)
+        /// Someone's first socket joined the room (`true`) or their last one left.
+        case presence(userID: UUID, online: Bool)
         case disconnected(String?)
     }
 
@@ -178,12 +182,19 @@ actor VenueChatConnection {
             break
         case .none:
             // A frame with no `type` carries what the channel sent in `message`:
-            // a chat line, `{"type":"left"}` once the user's presence lapses, or
-            // `{"type":"range","out_of_range":…}`.
+            // a chat line, `{"type":"left"}` once the user's presence lapses,
+            // `{"type":"range","out_of_range":…}`, the `roster` of who's in the
+            // room on joining, or a `presence` change.
             if frame.messageType == "left" {
                 continuation.yield(.notPresent)
             } else if frame.messageType == "range" {
                 continuation.yield(.range(outOfRange: frame.outOfRange ?? false))
+            } else if frame.messageType == "roster" {
+                continuation.yield(.roster(Set(frame.online ?? [])))
+            } else if frame.messageType == "presence" {
+                if let userID = frame.presenceUserID, let presence = frame.presence {
+                    continuation.yield(.presence(userID: userID, online: presence == "online"))
+                }
             } else if let payload = frame.message {
                 continuation.yield(.received(VenueMessage(payload: payload)))
             }
@@ -216,6 +227,11 @@ actor VenueChatConnection {
         let messageType: String?
         /// `out_of_range` inside a `range` message.
         let outOfRange: Bool?
+        /// `online` inside a `roster` message.
+        let online: [UUID]?
+        /// `user_id` and `presence` inside a `presence` message.
+        let presenceUserID: UUID?
+        let presence: String?
 
         enum CodingKeys: String, CodingKey {
             case type, identifier, message
@@ -224,10 +240,25 @@ actor VenueChatConnection {
         private struct Typed: Decodable {
             let type: String?
             let outOfRange: Bool?
+            let online: [UUID]?
+            let userID: UUID?
+            let presence: String?
 
             enum CodingKeys: String, CodingKey {
-                case type
+                case type, online, presence
                 case outOfRange = "out_of_range"
+                case userID = "user_id"
+            }
+
+            init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                type = try? container.decodeIfPresent(String.self, forKey: .type)
+                outOfRange = try? container.decodeIfPresent(Bool.self, forKey: .outOfRange)
+                // One malformed ID shouldn't drop everyone else.
+                online = (try? container.decodeIfPresent([String].self, forKey: .online))
+                    .map { $0.compactMap(UUID.init(uuidString:)) }
+                userID = try? container.decodeIfPresent(UUID.self, forKey: .userID)
+                presence = try? container.decodeIfPresent(String.self, forKey: .presence)
             }
         }
 
@@ -240,6 +271,9 @@ actor VenueChatConnection {
             let typed = (try? container.decodeIfPresent(Typed.self, forKey: .message)) ?? nil
             messageType = typed?.type
             outOfRange = typed?.outOfRange
+            online = typed?.online
+            presenceUserID = typed?.userID
+            presence = typed?.presence
         }
     }
 }

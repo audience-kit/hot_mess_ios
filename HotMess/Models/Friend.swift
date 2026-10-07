@@ -9,6 +9,9 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
     let id: UUID
     let name: String
     let facebookID: FacebookID?
+    /// Whether they can be reached now: in chat, by push, or neither (`nil`).
+    /// The API only tells friends.
+    var presence: PresenceState?
 
     var firstName: String { name.firstNameForDisplay }
 
@@ -17,14 +20,15 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
     var messengerURL: URL? { facebookID?.messengerURL }
 
     enum CodingKeys: String, CodingKey {
-        case id, name
+        case id, name, presence
         case facebookID = "facebook_id"
     }
 
-    init(id: UUID, name: String, facebookID: FacebookID? = nil) {
+    init(id: UUID, name: String, facebookID: FacebookID? = nil, presence: PresenceState? = nil) {
         self.id = id
         self.name = name
         self.facebookID = facebookID
+        self.presence = presence
     }
 
     init(from decoder: any Decoder) throws {
@@ -33,6 +37,7 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
+        presence = (try? container.decodeIfPresent(String.self, forKey: .presence)).flatMap { PresenceState(wire: $0) }
     }
 }
 

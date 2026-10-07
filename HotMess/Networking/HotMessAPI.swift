@@ -332,7 +332,7 @@ extension HotMessAPI {
         id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl cover_url: coverUrl
         """
 
-        static let friendFields = "id name facebook_id: facebookId"
+        static let friendFields = "id name facebook_id: facebookId presence"
 
         static let pingJoinFields = "id target_id: targetId user { \(friendFields) }"
 
@@ -343,7 +343,13 @@ extension HotMessAPI {
         joins { \(pingJoinFields) }
         """
 
-        static let messageFields = "id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt"
+        /// A chat line with everything a rich message and its sender's role
+        /// need, aliased to the room frame's keys (see `VenueMessage.Payload`).
+        static let messageFields = """
+        id message body name user_id: userId avatar_url: avatarUrl sent_at: sentAt \
+        role kind title photo_url: photoUrl ends_at: endsAt pinned posted_as_venue: postedAsVenue presence \
+        event { id name start_at: startAt }
+        """
 
         /// Enough of a person for a card that links to them.
         static let personSummaryFields = "id name photo_url: pictureUrl"
