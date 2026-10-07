@@ -30,6 +30,12 @@ extension Font {
         )
     }
 
+    /// Proxima Nova at a fixed size that ignores Dynamic Type, for text that
+    /// must fit a fixed shape, like an avatar's initials.
+    static func hotMess(fixedSize size: CGFloat, semibold: Bool = false) -> Font {
+        .custom(semibold ? "ProximaNova-Semibold" : "ProximaNova-Regular", fixedSize: size)
+    }
+
     private static func baseSize(for style: Font.TextStyle) -> CGFloat {
         switch style {
         case .largeTitle: 34

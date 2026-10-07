@@ -23,9 +23,29 @@ struct PersonScreen: View {
                             heroText(detail.person)
                         }
 
+                        if !detail.tipLinks.isEmpty {
+                            tipButtons(detail)
+                        }
+
                         DetailSection(String(localized: "Elsewhere")) {
-                            ForEach(detail.socialLinks) { link in
-                                socialLinkRow(link)
+                            ForEach(detail.profileLinks) { link in
+                                SocialLinkRow(link: link)
+                            }
+                        }
+
+                        if !detail.members.isEmpty {
+                            CardSection(String(localized: "Members")) {
+                                ForEach(detail.members) { member in
+                                    PersonCardLink(person: member)
+                                }
+                            }
+                        }
+
+                        if !detail.groups.isEmpty {
+                            CardSection(String(localized: "Part of")) {
+                                ForEach(detail.groups) { group in
+                                    PersonCardLink(person: group)
+                                }
                             }
                         }
 
@@ -99,40 +119,23 @@ struct PersonScreen: View {
         }
     }
 
-    @ViewBuilder
-    private func socialLinkRow(_ link: SocialLink) -> some View {
-        if let url = link.url {
-            Link(destination: url) {
-                HStack(spacing: 12) {
-                    socialIcon(link)
-                    Text(verbatim: link.label)
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.footnote)
-                        .foregroundStyle(.tertiary)
+    /// One button per app they take tips on; each opens that app on their profile.
+    private func tipButtons(_ detail: PersonDetail) -> some View {
+        VStack(spacing: 10) {
+            ForEach(detail.tipLinks) { link in
+                if let url = link.url, let app = link.tipApp {
+                    Link(destination: url) {
+                        Label(String(localized: "Tip on \(app)"), systemImage: "dollarsign.circle.fill")
+                            .font(.hotMess(.body, semibold: true))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityLabel(String(localized: "Tip \(detail.name) on \(app)"))
                 }
             }
-        } else {
-            HStack(spacing: 12) {
-                socialIcon(link)
-                Text(verbatim: link.label)
-            }
         }
-    }
-
-    @ViewBuilder
-    private func socialIcon(_ link: SocialLink) -> some View {
-        if let assetName = link.assetName {
-            Image(assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24, height: 24)
-                .clipShape(.rect(cornerRadius: 4))
-        } else {
-            Image(systemName: link.systemImage)
-                .frame(width: 24, height: 24)
-                .foregroundStyle(.secondary)
-        }
+        .padding(.horizontal, 20)
     }
 
     @ViewBuilder

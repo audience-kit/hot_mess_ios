@@ -12,8 +12,8 @@ final class VenueChatViewModel {
     enum ConnectionState: Equatable, Sendable {
         case connecting
         case connected
-        /// The room is only for people at the venue, and the API doesn't have
-        /// the user there. Reconnecting won't help until they are; "Try again" does.
+        /// The room is only for people at the venue (or out in the locale), and
+        /// the API doesn't have the user there. Reconnecting won't help until they are; "Try again" does.
         case notPresent
         case disconnected(String?)
     }
@@ -24,11 +24,11 @@ final class VenueChatViewModel {
 
     private(set) var messages: [VenueMessage] = []
     private(set) var connectionState: ConnectionState = .connecting
-    /// The user is in the room from outside the venue, which only admins can do.
+    /// The user is in the room from outside its place, which only admins can do.
     private(set) var isOutOfRange = false
     var draft: String = ""
 
-    let venue: Venue
+    let room: ChatRoom
 
     private let url: URL?
     private let token: String?
@@ -40,13 +40,13 @@ final class VenueChatViewModel {
     /// - Parameter reportPresence: reports the device's position, so the API
     ///   lets the user into the room and keeps them in it.
     init(
-        venue: Venue,
+        room: ChatRoom,
         configuration: AppConfiguration,
         userID: UUID?,
         token: String?,
         reportPresence: @escaping @MainActor () async -> Void = {}
     ) {
-        self.venue = venue
+        self.room = room
         self.userID = userID
         self.token = token
         self.reportPresence = reportPresence
@@ -64,7 +64,7 @@ final class VenueChatViewModel {
     }
 
     /// Reports the position, connects, and streams messages until the room
-    /// closes or the server says the user isn't at the venue. While it's open,
+    /// closes or the server says the user isn't in the room's place. While it's open,
     /// the position is reported again every few minutes.
     func run() async {
         guard let url else {
@@ -76,7 +76,7 @@ final class VenueChatViewModel {
         await reportPresence()
         startReportingPresence()
 
-        let connection = VenueChatConnection(venueID: venue.id, url: url, token: token)
+        let connection = VenueChatConnection(room: room, url: url, token: token)
         self.connection = connection
         await connection.connect()
 

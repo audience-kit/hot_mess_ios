@@ -202,6 +202,34 @@ struct PersonDetailTests {
         #expect(detail.events.count == 1)
     }
 
+    @Test("Splits tip links from social profiles")
+    func tipLinks() throws {
+        let detail = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie",
+          "social_links": [
+            { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie", "provider": "instagram",
+              "url": "https://instagram.com/trixie" },
+            { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "TrixieTips", "provider": "cashapp",
+              "url": "https://cash.app/$TrixieTips" },
+            { "id": "3A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie-tips", "provider": "venmo",
+              "url": "https://venmo.com/u/trixie-tips" }
+          ] }
+        """)
+
+        #expect(detail.tipLinks.compactMap(\.tipApp) == ["Cash App", "Venmo"])
+        #expect(detail.profileLinks.map(\.provider) == ["instagram"])
+    }
+
+    @Test("Reads the people a person is made of and part of")
+    func membersAndGroups() throws {
+        let detail = try decode(PersonDetail.self, from: Fixtures.personDetail)
+
+        #expect(detail.members.map(\.name) == ["Ada Lovelace"])
+        #expect(detail.members.first?.pictureURL?.lastPathComponent == "ada.jpg")
+        #expect(detail.groups.map(\.name) == ["The Haus of Mess"])
+        #expect(detail.groups.first?.pictureURL == nil)
+    }
+
     @Test("Leaves collections empty when the API omits them")
     func missingCollections() throws {
         let detail = try decode(PersonDetail.self, from: """
@@ -211,6 +239,32 @@ struct PersonDetailTests {
         #expect(detail.events.isEmpty)
         #expect(detail.tracks.isEmpty)
         #expect(detail.socialLinks.isEmpty)
+        #expect(detail.members.isEmpty)
+        #expect(detail.groups.isEmpty)
+    }
+}
+
+@Suite("Venue detail")
+struct VenueDetailTests {
+    @Test("Reads the venue's links elsewhere")
+    func socialLinks() throws {
+        let detail = try decode(VenueWithEvents.self, from: Fixtures.venueDetail)
+
+        #expect(detail.venue.name == "The Stud")
+        #expect(detail.chatOpen)
+        #expect(detail.events.count == 1)
+        #expect(detail.socialLinks.count == 1)
+        #expect(detail.socialLinks.first?.assetName == "Instagram")
+        #expect(detail.socialLinks.first?.url?.host() == "instagram.com")
+    }
+
+    @Test("Leaves links empty when the API omits them")
+    func missingSocialLinks() throws {
+        let detail = try decode(VenueWithEvents.self, from: Fixtures.minimalVenue)
+
+        #expect(detail.socialLinks.isEmpty)
+        #expect(detail.events.isEmpty)
+        #expect(detail.chatOpen == false)
     }
 }
 

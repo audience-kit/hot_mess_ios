@@ -20,6 +20,14 @@ struct Now: Decodable, Hashable, Sendable {
     /// The last few lines of the venue's chat room, oldest first. The API
     /// only sends them to someone who is at the venue.
     let recentMessages: [VenueMessage]
+    /// The locale the user is in, or nearest.
+    let locale: AppLocale?
+    /// Whether the user can join the locale's chat room: they're out in the
+    /// locale and not at a venue, or they're an admin.
+    let localeChatOpen: Bool
+    /// The last few lines of the locale's chat room, oldest first. The API
+    /// only sends them to someone in the locale.
+    let localeMessages: [VenueMessage]
     /// Where your friends have been lately, most friends first, when you
     /// aren't in a venue yourself.
     let friendVenues: [FriendVenue]
@@ -38,7 +46,7 @@ struct Now: Decodable, Hashable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case title, venue, venues, envelope, friends, events
+        case title, venue, venues, envelope, friends, events, locale
         case imageURL = "image_url"
         case friendVenues = "friend_venues"
         case myPing = "my_ping"
@@ -46,6 +54,12 @@ struct Now: Decodable, Hashable, Sendable {
     }
 
     private enum VenueKeys: String, CodingKey {
+        case recentMessages = "recent_messages"
+    }
+
+    private enum LocaleKeys: String, CodingKey {
+        case id, name
+        case chatOpen = "chat_open"
         case recentMessages = "recent_messages"
     }
 
@@ -64,6 +78,18 @@ struct Now: Decodable, Hashable, Sendable {
         } else {
             recentMessages = []
         }
+        if (try? container.decodeNil(forKey: .locale)) == false,
+           let localeContainer = try? container.nestedContainer(keyedBy: LocaleKeys.self, forKey: .locale),
+           let id = try localeContainer.decodeIfPresent(UUID.self, forKey: .id) {
+            locale = AppLocale(id: id, name: try localeContainer.decodeIfPresent(String.self, forKey: .name) ?? "")
+            localeChatOpen = try localeContainer.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
+            localeMessages = (try localeContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
+                .map(VenueMessage.init(payload:))
+        } else {
+            locale = nil
+            localeChatOpen = false
+            localeMessages = []
+        }
         events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
         friendVenues = try container.decodeIfPresent([FriendVenue].self, forKey: .friendVenues) ?? []
         imageURL = try container.decodeURLIfPresent(forKey: .imageURL)
@@ -78,6 +104,9 @@ struct Now: Decodable, Hashable, Sendable {
         envelope: GeoPolygon? = nil,
         friends: [Friend] = [],
         recentMessages: [VenueMessage] = [],
+        locale: AppLocale? = nil,
+        localeChatOpen: Bool = false,
+        localeMessages: [VenueMessage] = [],
         friendVenues: [FriendVenue] = [],
         events: [Event] = [],
         imageURL: URL? = nil,
@@ -90,6 +119,9 @@ struct Now: Decodable, Hashable, Sendable {
         self.envelope = envelope
         self.friends = friends
         self.recentMessages = recentMessages
+        self.locale = locale
+        self.localeChatOpen = localeChatOpen
+        self.localeMessages = localeMessages
         self.friendVenues = friendVenues
         self.events = events
         self.imageURL = imageURL

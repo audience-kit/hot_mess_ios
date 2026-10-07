@@ -41,6 +41,16 @@ struct SocialLink: Codable, Hashable, Sendable, Identifiable {
         }
     }
 
+    /// The app fans tip them with, for a Cash App or Venmo link; `nil` for a
+    /// social profile.
+    var tipApp: String? {
+        switch provider.lowercased() {
+        case "cashapp": "Cash App"
+        case "venmo": "Venmo"
+        default: nil
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, handle, provider, url
     }

@@ -12,7 +12,7 @@ struct TrackRow: View {
         HStack(spacing: 12) {
             RemoteImage(url: track.artworkURL)
                 .frame(width: 64, height: 64)
-                .clipShape(.rect(cornerRadius: 8))
+                .clipShape(.rect(cornerRadius: HotMessRadius.lg))
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(track.title)
@@ -50,6 +50,47 @@ struct InfoRow: View {
             } else {
                 Text(title)
             }
+        }
+    }
+}
+
+/// A person's or venue's link elsewhere, with the network's glyph. Opens the
+/// link when it has a URL.
+struct SocialLinkRow: View {
+    let link: SocialLink
+
+    var body: some View {
+        if let url = link.url {
+            Link(destination: url) {
+                HStack(spacing: 12) {
+                    icon
+                    Text(verbatim: link.label)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        } else {
+            HStack(spacing: 12) {
+                icon
+                Text(verbatim: link.label)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if let assetName = link.assetName {
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .clipShape(.rect(cornerRadius: HotMessRadius.sm))
+        } else {
+            Image(systemName: link.systemImage)
+                .frame(width: 24, height: 24)
+                .foregroundStyle(.secondary)
         }
     }
 }
