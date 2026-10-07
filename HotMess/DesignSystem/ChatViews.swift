@@ -33,6 +33,9 @@ extension Color {
     /// `presence-push-edge`: keeps the yellow ring visible on light surfaces.
     static var hotMessPresencePushEdge: Color { .dynamic(light: 0x8A5300, dark: 0xF5B400) }
 
+    /// `surface-sunken`: a well that reads as set into the page, like ChatPeek.
+    static var hotMessSurfaceSunken: Color { .dynamic(light: 0xFAF4F7, dark: 0x201A1F) }
+
     /// A colour that resolves per light or dark appearance from 0xRRGGBB values.
     static func dynamic(light: UInt32, dark: UInt32) -> Color {
         Color(uiColor: UIColor { traits in
@@ -345,11 +348,24 @@ struct ChatBubble: View {
     let text: String
     let isOwn: Bool
     var isLastInGroup: Bool = true
+    /// Lines of text before an ellipsis; `nil` shows it all.
+    var lineLimit: Int? = nil
+    /// Off where the bubble sits inside a button, like ChatPeek.
+    var isSelectable: Bool = true
 
     var body: some View {
+        if isSelectable {
+            bubble.textSelection(.enabled)
+        } else {
+            bubble
+        }
+    }
+
+    private var bubble: some View {
         Text(text)
             .font(.hotMess(.subheadline))
             .foregroundStyle(isOwn ? Color.hotMessOnAccent : Color.primary)
+            .lineLimit(lineLimit)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -362,7 +378,6 @@ struct ChatBubble: View {
                         .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
                 }
             }
-            .textSelection(.enabled)
     }
 
     private var shape: UnevenRoundedRectangle {

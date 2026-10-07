@@ -91,27 +91,13 @@ struct NowScreen: View {
                 VenueCardLink(venue: venue)
             }
 
-            DetailSection(String(localized: "Small talk")) {
-                if now.recentMessages.isEmpty {
-                    Text("No one's said anything yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(now.recentMessages) { message in
-                        TimelineView(.everyMinute) { context in
-                            ChatLine(
-                                author: message.name,
-                                avatarURL: message.avatarURL,
-                                text: message.body,
-                                time: ChatTime.relative(message.sentAt, now: context.date)
-                            )
-                        }
-                    }
-                }
-
-                DetailLink(route: .venueChat(venue)) {
-                    Label(String(localized: "Join the chat"), systemImage: "bubble.left.and.bubble.right")
-                }
-            }
+            ChatPeek(
+                title: String(localized: "Small talk"),
+                roomName: venue.name,
+                messages: now.recentMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                route: .venueChat(venue)
+            )
+            .padding(.horizontal, 16)
 
             friendsSection(now, title: String(localized: "Friends here"))
         } else {

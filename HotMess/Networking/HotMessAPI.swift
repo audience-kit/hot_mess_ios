@@ -65,7 +65,13 @@ struct HotMessAPI: Sendable {
     func venue(_ id: UUID) async throws -> VenueOverview {
         let response = try await query(Documents.venue, variables: ["id": .string(id.uuidString)], as: VenueResponse.self)
         guard let venue = response.venue else { throw APIError.notFound }
-        return VenueOverview(venue: venue.venue, events: venue.events, friends: venue.friends, chatOpen: venue.chatOpen)
+        return VenueOverview(
+            venue: venue.venue,
+            events: venue.events,
+            friends: venue.friends,
+            chatOpen: venue.chatOpen,
+            recentMessages: venue.recentMessages
+        )
     }
 
     // MARK: - Events
@@ -163,6 +169,8 @@ extension HotMessAPI {
 
         static let friendFields = "id name facebook_id: facebookId"
 
+        static let messageFields = "id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt"
+
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
         cover_photo_url: coverPhotoUrl is_featured: isFeatured rsvp: viewerRsvp \
@@ -176,9 +184,7 @@ extension HotMessAPI {
               title image_url: imageUrl
               venue {
                 \(venueFields)
-                recent_messages: recentMessages(limit: 3) {
-                  id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt
-                }
+                recent_messages: recentMessages(limit: 3) { \(messageFields) }
               }
               venues { \(venueFields) }
               events { \(eventFields) }
@@ -195,7 +201,12 @@ extension HotMessAPI {
 
         static let venue = """
         query Venue($id: ID!) {
-          venue(id: $id) { \(venueFields) chat_open: chatOpen events { \(eventFields) } friends { \(friendFields) } }
+          venue(id: $id) {
+            \(venueFields) chat_open: chatOpen
+            events { \(eventFields) }
+            friends { \(friendFields) }
+            recent_messages: recentMessages(limit: 3) { \(messageFields) }
+          }
         }
         """
 
@@ -239,10 +250,14 @@ struct VenueWithEvents: Decodable, Sendable {
     let events: [Event]
     let friends: [Friend]
     let chatOpen: Bool
+    /// The last few lines of the chat room, oldest first; empty unless the
+    /// viewer is at the venue or an admin.
+    let recentMessages: [VenueMessage]
 
     private enum CodingKeys: String, CodingKey {
         case events, friends
         case chatOpen = "chat_open"
+        case recentMessages = "recent_messages"
     }
 
     init(from decoder: any Decoder) throws {
@@ -251,6 +266,8 @@ struct VenueWithEvents: Decodable, Sendable {
         events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
         friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
         chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
+        recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
+            .map(VenueMessage.init(payload:))
     }
 }
 

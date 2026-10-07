@@ -32,11 +32,13 @@ struct VenueScreen: View {
                         aboutSection(venue)
 
                         if overview.chatOpen {
-                            DetailSection(String(localized: "Chat")) {
-                                DetailLink(route: .venueChat(venue)) {
-                                    Label(String(localized: "Join the room"), systemImage: "bubble.left.and.bubble.right")
-                                }
-                            }
+                            ChatPeek(
+                                title: String(localized: "Chat"),
+                                roomName: venue.name,
+                                messages: overview.recentMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                                route: .venueChat(venue)
+                            )
+                            .padding(.horizontal, 16)
                         }
 
                         if !overview.friends.isEmpty {
