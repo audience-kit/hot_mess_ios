@@ -7,7 +7,7 @@
 //
 
 SERVER_SCHEME = https
-SERVER_BASE = api.audiencekit.com
+SERVER_BASE = api-staging.audiencekit.com
 
 // The AudienceKit audience this build talks to. AUDIENCE_HOST goes with
 // sign-in (so the API checks the Facebook token against Hot Mess's apps and
@@ -18,6 +18,11 @@ AUDIENCE_HOST = hotmess.admin.audiencekit.com
 AUDIENCE_ID = 
 
 FACEBOOK_APP_ID = 915436455177328
+
+// api-staging.audiencekit.com is the production API under its staging host,
+// which signs people in with Hot Mess's staging Facebook app. The build also
+// sends X-AudienceKit-Environment: staging, which does the same on any host.
+AUDIENCEKIT_ENVIRONMENT = staging
 
 // Required by Facebook SDK 13 and later. Copy the client token from the
 // Facebook app dashboard (Settings -> Advanced -> Client token) for each

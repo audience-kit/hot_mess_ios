@@ -21,6 +21,9 @@ struct AppConfiguration: Sendable, Hashable {
     /// The audience's ID, when the build pins it; otherwise the SDK works it
     /// out from the session or the host.
     let audienceID: String?
+    /// Staging builds tell the API so, which then signs people in with Hot
+    /// Mess's staging Facebook app. See `AUDIENCEKIT_ENVIRONMENT`.
+    let environment: AudienceKitEnvironment
     let version: String
     let build: Int
 
@@ -37,6 +40,8 @@ struct AppConfiguration: Sendable, Hashable {
         audienceHost = (bundle.object(forInfoDictionaryKey: "AudienceKitHost") as? String).nonEmpty
             ?? Self.defaultAudienceHost
         audienceID = (bundle.object(forInfoDictionaryKey: "AudienceKitAudienceID") as? String).nonEmpty
+        environment = (bundle.object(forInfoDictionaryKey: "AudienceKitEnvironment") as? String)
+            .flatMap(AudienceKitEnvironment.init(rawValue:)) ?? .production
         version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
         build = (bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
             .flatMap(Int.init) ?? 0
@@ -48,6 +53,7 @@ struct AppConfiguration: Sendable, Hashable {
         facebookAppID: String? = nil,
         audienceHost: String? = defaultAudienceHost,
         audienceID: String? = nil,
+        environment: AudienceKitEnvironment = .production,
         version: String = "0.0",
         build: Int = 0
     ) {
@@ -56,6 +62,7 @@ struct AppConfiguration: Sendable, Hashable {
         self.facebookAppID = facebookAppID
         self.audienceHost = audienceHost
         self.audienceID = audienceID
+        self.environment = environment
         self.version = version
         self.build = build
     }
@@ -66,7 +73,8 @@ struct AppConfiguration: Sendable, Hashable {
             baseURL: baseURL,
             host: audienceHost,
             audienceID: audienceID,
-            facebookAppID: facebookAppID
+            facebookAppID: facebookAppID,
+            environment: environment
         )
     }
 
