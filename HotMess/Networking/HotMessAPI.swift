@@ -174,7 +174,12 @@ extension HotMessAPI {
           reportLocation(input: { position: $position }) {
             now {
               title image_url: imageUrl
-              venue { \(venueFields) }
+              venue {
+                \(venueFields)
+                recent_messages: recentMessages(limit: 3) {
+                  id message name user_id: userId avatar_url: avatarUrl sent_at: sentAt
+                }
+              }
               venues { \(venueFields) }
               events { \(eventFields) }
               friends { \(friendFields) }
