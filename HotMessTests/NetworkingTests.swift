@@ -71,6 +71,32 @@ struct GraphQLTests {
         #expect(now.events.first?.rsvp == .attending)
     }
 
+    @Test("Decodes the venue's recent chat lines into Now")
+    func decodesNowAtVenue() throws {
+        let json = Data(#"""
+        {"reportLocation":{"now":{
+          "title":"Nyne","image_url":null,"venues":null,"events":[],
+          "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
+                   "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,"hero_url":null,
+                   "is_liked":false,
+                   "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"who's here?",
+                                       "name":"Sam","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
+                                       "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]},
+          "friends":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend","facebook_id":"4242"}]
+        }}}
+        """#.utf8)
+
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+
+        #expect(now.venue?.name == "Nyne")
+        #expect(!now.isNearVenues)
+        let line = try #require(now.recentMessages.first)
+        #expect(line.body == "who's here?")
+        #expect(line.name == "Sam")
+        #expect(line.id == UUID(uuidString: "1B2C3D4E-5F60-4718-9A2B-3C4D5E6F7A8B"))
+        #expect(now.friends.map(\.name) == ["Alex Friend"])
+    }
+
     @Test("Features up to two events with a cover photo")
     func featuredEvents() {
         let cover = URL(string: "https://cdn.example/cover.jpg")
