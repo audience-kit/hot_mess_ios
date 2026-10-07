@@ -65,9 +65,10 @@ struct HeroHeader<Content: View>: View {
     @ViewBuilder
     private var photo: some View {
         if let url {
+            // No fade: the scrim and text are drawn at once, so a fading photo
+            // read as only the part behind the text having loaded.
             KFImage(url)
                 .cancelOnDisappear(true)
-                .fade(duration: 0.2)
                 .placeholder { Color(red: 0.16, green: 0.12, blue: 0.15) }
                 .resizable()
                 .aspectRatio(contentMode: .fill)
