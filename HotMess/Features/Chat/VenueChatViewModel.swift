@@ -24,6 +24,8 @@ final class VenueChatViewModel {
 
     private(set) var messages: [VenueMessage] = []
     private(set) var connectionState: ConnectionState = .connecting
+    /// The user is in the room from outside the venue, which only admins can do.
+    private(set) var isOutOfRange = false
     var draft: String = ""
 
     let venue: Venue
@@ -84,6 +86,8 @@ final class VenueChatViewModel {
                 connectionState = .connected
             case let .received(message):
                 messages.append(message)
+            case let .range(outOfRange):
+                isOutOfRange = outOfRange
             case .notPresent:
                 connectionState = .notPresent
                 await stop()

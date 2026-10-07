@@ -11,6 +11,8 @@ import os
 /// The room is only open to people at the venue: the server rejects the
 /// subscription otherwise, and sends `{"type":"left"}` when someone's presence
 /// lapses. Either way the connection reports `.notPresent` instead of retrying.
+/// Admins can join from anywhere; the server tells everyone whether they're
+/// out of range when they join, and admins again whenever that changes.
 /// The server adds the sender's ID, name, avatar and time to each line itself.
 ///
 /// Speaks the Action Cable protocol over `URLSessionWebSocketTask`, replacing
@@ -24,6 +26,9 @@ actor VenueChatConnection {
         /// The server turned the subscription away, or ended it, because the
         /// user isn't at the venue (by the last position they reported).
         case notPresent
+        /// Whether the user is outside the venue. Only admins are let in
+        /// from outside, so `true` means they're there because they're an admin.
+        case range(outOfRange: Bool)
         case disconnected(String?)
     }
 
@@ -162,9 +167,12 @@ actor VenueChatConnection {
             break
         case .none:
             // A frame with no `type` carries what the channel sent in `message`:
-            // a chat line, or `{"type":"left"}` once the user's presence lapses.
+            // a chat line, `{"type":"left"}` once the user's presence lapses, or
+            // `{"type":"range","out_of_range":…}`.
             if frame.messageType == "left" {
                 continuation.yield(.notPresent)
+            } else if frame.messageType == "range" {
+                continuation.yield(.range(outOfRange: frame.outOfRange ?? false))
             } else if let payload = frame.message {
                 continuation.yield(.received(VenueMessage(payload: payload)))
             }
@@ -195,6 +203,8 @@ actor VenueChatConnection {
         let message: VenueMessage.Payload?
         /// The `type` inside `message`, e.g. `left`.
         let messageType: String?
+        /// `out_of_range` inside a `range` message.
+        let outOfRange: Bool?
 
         enum CodingKeys: String, CodingKey {
             case type, identifier, message
@@ -202,6 +212,12 @@ actor VenueChatConnection {
 
         private struct Typed: Decodable {
             let type: String?
+            let outOfRange: Bool?
+
+            enum CodingKeys: String, CodingKey {
+                case type
+                case outOfRange = "out_of_range"
+            }
         }
 
         init(from decoder: any Decoder) throws {
@@ -210,7 +226,9 @@ actor VenueChatConnection {
             type = try? container.decodeIfPresent(String.self, forKey: .type)
             identifier = try? container.decodeIfPresent(String.self, forKey: .identifier)
             message = try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .message)
-            messageType = (try? container.decodeIfPresent(Typed.self, forKey: .message))??.type
+            let typed = (try? container.decodeIfPresent(Typed.self, forKey: .message)) ?? nil
+            messageType = typed?.type
+            outOfRange = typed?.outOfRange
         }
     }
 }

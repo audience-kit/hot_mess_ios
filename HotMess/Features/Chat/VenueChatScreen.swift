@@ -22,6 +22,9 @@ struct VenueChatScreen: View {
             if let viewModel, viewModel.connectionState == .notPresent {
                 notPresent(viewModel)
             } else if let viewModel {
+                if viewModel.isOutOfRange {
+                    outOfRangeBanner
+                }
                 transcript(viewModel)
                 Divider()
                 composer(viewModel)
@@ -58,6 +61,21 @@ struct VenueChatScreen: View {
             .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Admins can join from anywhere; say when they couldn't have otherwise.
+    private var outOfRangeBanner: some View {
+        Label(
+            String(localized: "You're not at \(venue.name). You're in this chat because you're an admin."),
+            systemImage: "location.slash"
+        )
+        .font(.footnote)
+        .foregroundStyle(.orange)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.orange.opacity(0.12))
+        .accessibilityIdentifier("chat.outOfRange")
     }
 
     private func transcript(_ viewModel: VenueChatViewModel) -> some View {
