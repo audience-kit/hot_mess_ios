@@ -19,6 +19,8 @@ AUDIENCE_ID = b0f8b66a-e636-495d-9475-0f5317ea08e0
 
 FACEBOOK_APP_ID = 1168782378316790
 
+AUDIENCEKIT_ENVIRONMENT = production
+
 // Required by Facebook SDK 13 and later. Copy the client token from the
 // Facebook app dashboard (Settings -> Advanced -> Client token) for each
 // environment; login reports an error at runtime while this is empty.

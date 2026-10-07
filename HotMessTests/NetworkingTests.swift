@@ -125,6 +125,14 @@ struct AppConfigurationTests {
         #expect(configuration.beaconUUID == nil)
         #expect(configuration.facebookAppID == nil)
         #expect(configuration.facebookEnvironment == "unknown")
+        #expect(configuration.environment == .production)
+    }
+
+    @Test("Passes the build's environment to the AudienceKit SDK")
+    func audienceKitEnvironment() {
+        let staging = AppConfiguration(baseURL: AppConfiguration.defaultBaseURL, environment: .staging)
+
+        #expect(staging.audienceKit.environment == .staging)
     }
 
     @Test("Names the Facebook environment from the app ID")

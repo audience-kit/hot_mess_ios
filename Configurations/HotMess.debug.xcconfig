@@ -19,6 +19,10 @@ AUDIENCE_ID =
 
 FACEBOOK_APP_ID = 842337999153841
 
+// Development runs against a local API, which uses its own Facebook app, so
+// it doesn't need the staging header.
+AUDIENCEKIT_ENVIRONMENT = production
+
 // Required by Facebook SDK 13 and later. Copy the client token from the
 // Facebook app dashboard (Settings -> Advanced -> Client token) for each
 // environment; login reports an error at runtime while this is empty.

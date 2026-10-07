@@ -19,6 +19,11 @@ AUDIENCE_ID =
 
 FACEBOOK_APP_ID = 915436455177328
 
+// Staging talks to the production API, so it says which build it is: the API
+// then signs people in with Hot Mess's staging Facebook app. See
+// X-AudienceKit-Environment in the AudienceKit SDK.
+AUDIENCEKIT_ENVIRONMENT = staging
+
 // Required by Facebook SDK 13 and later. Copy the client token from the
 // Facebook app dashboard (Settings -> Advanced -> Client token) for each
 // environment; login reports an error at runtime while this is empty.
