@@ -49,6 +49,7 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
     var body: some View {
         content
             .foregroundStyle(tone.textColor)
+            .photoTextShadow(tone)
             .animation(HotMessMotion.quick, value: tone)
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { textFrame = $0 }
             .padding(.horizontal, 18)

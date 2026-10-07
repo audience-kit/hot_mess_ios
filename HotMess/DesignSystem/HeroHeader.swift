@@ -38,6 +38,7 @@ struct HeroHeader<Content: View>: View {
 
             content
                 .foregroundStyle(tone.textColor)
+                .photoTextShadow(tone)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { textFrame = $0 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
