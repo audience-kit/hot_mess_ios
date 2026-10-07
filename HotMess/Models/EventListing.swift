@@ -81,4 +81,13 @@ struct EventListing: Decodable, Hashable, Sendable {
     }
 
     var isEmpty: Bool { sections.allSatisfy(\.events.isEmpty) }
+
+    /// Every event across the sections, once each, soonest first.
+    var allEvents: [Event] {
+        var seen = Set<UUID>()
+        return sections
+            .flatMap(\.events)
+            .filter { seen.insert($0.id).inserted }
+            .sorted { $0.startDate < $1.startDate }
+    }
 }
