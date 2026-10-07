@@ -50,6 +50,9 @@ struct Avatar: View {
     var presence: PresenceState? = nil
     /// The ring between the presence dot and the photo: the surface behind the avatar.
     var presenceRing: Color = Color(.secondarySystemGroupedBackground)
+    /// A place, not a person (a post as the venue): a `radius-md` rounded
+    /// square, so places never look like people.
+    var isPlace = false
 
     var body: some View {
         Group {
@@ -64,9 +67,13 @@ struct Avatar: View {
             }
         }
         .frame(width: size, height: size)
-        .clipShape(.circle)
+        .clipShape(isPlace ? AnyShape(Self.placeShape) : AnyShape(Circle()))
         .overlay {
-            Circle().strokeBorder(.separator, lineWidth: 0.5)
+            if isPlace {
+                Self.placeShape.strokeBorder(.separator, lineWidth: 0.5)
+            } else {
+                Circle().strokeBorder(.separator, lineWidth: 0.5)
+            }
         }
         .overlay(alignment: .bottomTrailing) {
             if let presence {
@@ -75,6 +82,10 @@ struct Avatar: View {
                     .offset(x: 1, y: 1)
             }
         }
+    }
+
+    private static var placeShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: HotMessRadius.md, style: .continuous)
     }
 
     private var fallback: some View {
@@ -86,7 +97,7 @@ struct Avatar: View {
                     .font(.hotMess(fixedSize: size * 0.38, semibold: true))
                     .foregroundStyle(.secondary)
             } else {
-                Image(systemName: "person.fill")
+                Image(systemName: isPlace ? "building.2.fill" : "person.fill")
                     .font(.system(size: size * 0.45))
                     .foregroundStyle(.tertiary)
             }

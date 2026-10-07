@@ -32,6 +32,8 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
     /// Blurs the photo, for pictures too small or square to fill the card sharply.
     var blur: CGFloat = 0
     var alignment: Alignment = .bottomLeading
+    /// `radius-photo`, or `radius-bubble` for an event shared in chat.
+    var cornerRadius: CGFloat = CardMetrics.cornerRadius
     @ViewBuilder var content: Content
     @ViewBuilder var leading: Leading
     @ViewBuilder var trailing: Trailing
@@ -69,8 +71,8 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
             .overlay(alignment: .topTrailing) {
                 trailing.padding(12)
             }
-            .clipShape(.rect(cornerRadius: CardMetrics.cornerRadius))
-            .contentShape(.rect(cornerRadius: CardMetrics.cornerRadius))
+            .clipShape(.rect(cornerRadius: cornerRadius))
+            .contentShape(.rect(cornerRadius: cornerRadius))
             .accessibilityElement(children: .combine)
             .task(id: url) { await loadImage() }
             .onChange(of: analysisKey, initial: true) { analyze() }
@@ -356,6 +358,83 @@ struct EventCardLink: View {
             EventCard(event: event)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// An event shared in a chat room (RichMessage "event"): a card for the
+/// event, an optional caption, and "See event". The room sends only the
+/// event's name and start, so the card wears the accent rather than a photo.
+/// Tapping the card or the button opens the event.
+struct SharedEventMessage: View {
+    let event: SharedEvent
+    let caption: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            NavigationLink(value: AppRoute.event(event.id)) {
+                card
+            }
+            .buttonStyle(.plain)
+
+            if let caption {
+                Text(caption)
+                    .font(.hotMess(.subheadline))
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 4)
+                    .textSelection(.enabled)
+            }
+
+            NavigationLink(value: AppRoute.event(event.id)) {
+                Text("See event")
+                    .font(.hotMess(.subheadline, semibold: true))
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .tint(Color.hotMessAccentInk)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var name: String {
+        event.name.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "An event")
+    }
+
+    private var card: some View {
+        PhotoCard(
+            url: nil,
+            minHeight: 112,
+            topClearance: event.startAt == nil ? 14 : 64,
+            cornerRadius: ChatMetrics.bubbleRadius
+        ) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(.hotMess(.title3, semibold: true))
+                    .lineLimit(2)
+
+                if let startAt = event.startAt {
+                    Text(startAt.formatted(.dateTime.weekday(.wide).hour().minute()))
+                        .font(.hotMess(.subheadline, semibold: true))
+                        .lineLimit(1)
+                }
+            }
+        } leading: {
+            if let startAt = event.startAt {
+                GlassPill(padding: EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8), shape: AnyShape(RoundedRectangle(cornerRadius: HotMessRadius.md))) {
+                    VStack(spacing: 0) {
+                        Text(startAt.formatted(.dateTime.month(.abbreviated)).uppercased())
+                            .font(.hotMess(.caption2, semibold: true))
+                        Text(startAt.formatted(.dateTime.day()))
+                            .font(.hotMess(.title3, semibold: true))
+                            .monospacedDigit()
+                    }
+                    .frame(minWidth: 30)
+                }
+                .accessibilityLabel(startAt.formatted(date: .abbreviated, time: .omitted))
+            }
+        } trailing: {
+            EmptyView()
+        }
     }
 }
 

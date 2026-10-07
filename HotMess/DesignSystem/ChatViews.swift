@@ -7,7 +7,8 @@ import SwiftUI
 import UIKit
 
 // The shared chat kit (design system "Chat"): ChatThreadView and ChatBubble for
-// a room's transcript, RoomBanner, ChatComposer, PresenceDot and ChatLine.
+// a room's transcript, RoomBanner, PinnedBar, ChatComposer, PresenceDot,
+// RoleTag and ChatLine. Rich messages are in RichMessage.swift.
 // None of these know about venues: rooms pass their title as `roomName`, so a
 // venue room and a locale-wide room share them.
 
@@ -21,6 +22,9 @@ enum ChatMetrics {
     static let bubbleMaxWidth: CGFloat = 280
     /// Bubbles are never wider than this share of the transcript.
     static let bubbleMaxFraction: CGFloat = 0.75
+    /// Rich messages (cards) are up to this wide, or `richMaxFraction` of the transcript.
+    static let richMaxWidth: CGFloat = 320
+    static let richMaxFraction: CGFloat = 0.85
     /// `size-avatar-sm`.
     static let avatarSize: CGFloat = 28
     /// Messages from one sender closer together than this form a group.
@@ -139,6 +143,32 @@ struct ChatThreadMessage: Identifiable, Hashable, Sendable {
     var presence: PresenceState? = nil
     /// Only the reader's own lines are ever anything but `.sent`.
     var delivery: ChatDelivery = .sent
+    /// The sender's role in the room: a tag after their name, and a tinted
+    /// bubble for the venue and hosts.
+    var role: ChatRole? = nil
+    /// Posted as the venue: its photo in a rounded square, never a presence dot.
+    var isFromPlace = false
+    /// What a host, the venue or staff posted besides text. `text` is then
+    /// its summary in words, for VoiceOver and previews.
+    var rich: ChatRichContent? = nil
+
+    /// The announcement's title, when this is one.
+    var announcementTitle: String? {
+        if case let .announcement(title, _, _, _) = rich { return title }
+        return nil
+    }
+}
+
+/// A rich message's content (design system "RichMessage").
+enum ChatRichContent: Hashable, Sendable {
+    /// A title, a body and an optional photo.
+    case announcement(title: String, body: String?, photoURL: URL?, isPinned: Bool)
+    /// One of the audience's events, with an optional caption.
+    case event(SharedEvent, caption: String?)
+    /// A photo with an optional caption.
+    case photo(URL, caption: String?)
+    /// A title and body that show until `endsAt`.
+    case special(title: String, body: String?, endsAt: Date?)
 }
 
 /// Where one of the reader's own lines is on its way to the room.
@@ -155,6 +185,9 @@ struct ChatThreadView: View {
     let messages: [ChatThreadMessage]
     /// The room's name, for the empty state ("Everyone at {name} can see…").
     let roomName: String
+    /// The announcement pinned under the room's title, drawn as a PinnedBar
+    /// that scrolls to it. It must be one of `messages`.
+    var pinned: ChatThreadMessage? = nil
     /// Called with a failed message's ID when the reader taps it.
     var onRetry: ((String) -> Void)? = nil
 
@@ -162,38 +195,60 @@ struct ChatThreadView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                if messages.isEmpty {
-                    ChatEmptyState(roomName: roomName)
-                } else {
-                    LazyVStack(spacing: 0) {
-                        ForEach(ChatThreadRow.rows(for: messages)) { row in
-                            ChatThreadRowView(row: row, maxBubbleWidth: maxBubbleWidth, onRetry: onRetry)
-                                .id(row.id)
-                        }
+            VStack(spacing: 0) {
+                if let pinned, let title = pinned.announcementTitle {
+                    PinnedBar(author: pinned.authorName, title: title) {
+                        withAnimation { proxy.scrollTo(pinned.id, anchor: .top) }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
                 }
+
+                thread(proxy)
             }
-            .defaultScrollAnchor(.bottom, for: .initialOffset)
-            .defaultScrollAnchor(.bottom, for: .sizeChanges)
-            .scrollDismissesKeyboard(.interactively)
-            .onGeometryChange(for: CGFloat.self) { geometry in
-                geometry.size.width
-            } action: { newValue in
-                width = newValue
+        }
+    }
+
+    private func thread(_ proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            if messages.isEmpty {
+                ChatEmptyState(roomName: roomName)
+            } else {
+                LazyVStack(spacing: 0) {
+                    ForEach(ChatThreadRow.rows(for: messages)) { row in
+                        ChatThreadRowView(
+                            row: row,
+                            maxBubbleWidth: maxBubbleWidth,
+                            maxRichWidth: maxRichWidth,
+                            onRetry: onRetry
+                        )
+                        .id(row.id)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .onChange(of: messages.count) { _, _ in
-                guard let last = messages.last else { return }
-                withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
-            }
+        }
+        .defaultScrollAnchor(.bottom, for: .initialOffset)
+        .defaultScrollAnchor(.bottom, for: .sizeChanges)
+        .scrollDismissesKeyboard(.interactively)
+        .onGeometryChange(for: CGFloat.self) { geometry in
+            geometry.size.width
+        } action: { newValue in
+            width = newValue
+        }
+        .onChange(of: messages.count) { _, _ in
+            guard let last = messages.last else { return }
+            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
         }
     }
 
     private var maxBubbleWidth: CGFloat {
         guard width > 0 else { return ChatMetrics.bubbleMaxWidth }
         return min(ChatMetrics.bubbleMaxWidth, (width - 32) * ChatMetrics.bubbleMaxFraction)
+    }
+
+    private var maxRichWidth: CGFloat {
+        guard width > 0 else { return ChatMetrics.richMaxWidth }
+        return min(ChatMetrics.richMaxWidth, (width - 32) * ChatMetrics.richMaxFraction)
     }
 }
 
@@ -239,7 +294,9 @@ struct ChatThreadRow: Identifiable, Hashable, Sendable {
         return sentAt.timeIntervalSince(previous) >= ChatMetrics.dividerGap ? sentAt : nil
     }
 
+    /// Rich messages stand alone: each shows its sender's name and avatar.
     private static func sameGroup(_ earlier: ChatThreadMessage, _ later: ChatThreadMessage) -> Bool {
+        guard earlier.rich == nil, later.rich == nil else { return false }
         guard earlier.authorID == later.authorID, earlier.isOwn == later.isOwn else { return false }
         guard let earlierAt = earlier.sentAt, let laterAt = later.sentAt else { return true }
 
@@ -250,6 +307,7 @@ struct ChatThreadRow: Identifiable, Hashable, Sendable {
 private struct ChatThreadRowView: View {
     let row: ChatThreadRow
     let maxBubbleWidth: CGFloat
+    let maxRichWidth: CGFloat
     let onRetry: ((String) -> Void)?
 
     private var message: ChatThreadMessage { row.message }
@@ -269,13 +327,8 @@ private struct ChatThreadRowView: View {
             HStack(alignment: .bottom, spacing: 8) {
                 if !message.isOwn {
                     if row.isLastInGroup {
-                        Avatar(
-                            url: message.avatarURL,
-                            initials: message.authorName?.initialsForDisplay,
-                            size: ChatMetrics.avatarSize,
-                            presence: message.presence
-                        )
-                        .accessibilityHidden(true)
+                        ChatAvatar(message: message)
+                            .accessibilityHidden(true)
                     } else {
                         Color.clear
                             .frame(width: ChatMetrics.avatarSize, height: 1)
@@ -283,21 +336,34 @@ private struct ChatThreadRowView: View {
                 }
 
                 VStack(alignment: message.isOwn ? .trailing : .leading, spacing: 2) {
-                    if !message.isOwn, row.isFirstInGroup, let name = message.authorName, !name.isEmpty {
-                        Text(name)
-                            .font(.hotMess(.caption, semibold: true))
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, 12)
+                    if !message.isOwn, row.isFirstInGroup {
+                        ChatSenderLine(name: message.authorName, role: message.role)
+                            .padding(.leading, message.rich == nil ? 12 : 4)
                             .accessibilityHidden(true)
                     }
 
-                    ChatBubble(text: message.text, isOwn: message.isOwn, isLastInGroup: row.isLastInGroup)
-                        .opacity(message.delivery == .sent ? 1 : 0.6)
-                        .accessibilityLabel(accessibilityLabel)
+                    Group {
+                        if let rich = message.rich {
+                            RichMessageView(content: rich)
+                        } else {
+                            ChatBubble(
+                                text: message.text,
+                                isOwn: message.isOwn,
+                                isLastInGroup: row.isLastInGroup,
+                                isRole: message.role?.tintsBubble == true
+                            )
+                        }
+                    }
+                    .opacity(message.delivery == .sent ? 1 : 0.6)
+                    .accessibilityElement(children: message.rich == nil ? .ignore : .contain)
+                    .accessibilityLabel(accessibilityLabel)
 
                     deliveryStatus
                 }
-                .frame(maxWidth: maxBubbleWidth, alignment: message.isOwn ? .trailing : .leading)
+                .frame(
+                    maxWidth: message.rich == nil ? maxBubbleWidth : maxRichWidth,
+                    alignment: message.isOwn ? .trailing : .leading
+                )
             }
             .frame(maxWidth: .infinity, alignment: message.isOwn ? .trailing : .leading)
         }
@@ -338,7 +404,105 @@ private struct ChatThreadRowView: View {
             return String(localized: "You: \(message.text)")
         }
         let name = message.authorName.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Someone")
+        if let role = message.role {
+            return "\(name), \(role.title): \(message.text)"
+        }
         return "\(name): \(message.text)"
+    }
+}
+
+/// A sender's avatar beside their bubbles: round with presence for people, a
+/// rounded square with no presence for a post as the venue.
+struct ChatAvatar: View {
+    let message: ChatThreadMessage
+    /// The surface behind the avatar, for the presence dot's ring.
+    var presenceRing: Color = Color(.secondarySystemGroupedBackground)
+
+    var body: some View {
+        Avatar(
+            url: message.avatarURL,
+            initials: message.authorName?.initialsForDisplay,
+            size: ChatMetrics.avatarSize,
+            presence: message.isFromPlace ? nil : message.presence,
+            presenceRing: presenceRing,
+            isPlace: message.isFromPlace
+        )
+    }
+}
+
+/// The sender's name above the first incoming bubble of a group, with their
+/// RoleTag after it.
+struct ChatSenderLine: View {
+    let name: String?
+    let role: ChatRole?
+
+    var body: some View {
+        if (name?.isEmpty == false) || role != nil {
+            HStack(spacing: 6) {
+                if let name, !name.isEmpty {
+                    Text(name)
+                        .font(.hotMess(.caption, semibold: true))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if let role {
+                    RoleTag(role: role)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Roles
+
+extension ChatRole {
+    /// The tag's word: "Venue", "Host", "Staff".
+    var title: String {
+        switch self {
+        case .venue: String(localized: "Venue")
+        case .host: String(localized: "Host")
+        case .staff: String(localized: "Staff")
+        }
+    }
+
+    /// The venue and hosts get an `accent-soft` bubble; staff a normal one.
+    var tintsBubble: Bool {
+        self == .venue || self == .host
+    }
+}
+
+/// The pill after a sender's name that says who they are in the room. It's a
+/// word, so the tint never carries meaning alone.
+struct RoleTag: View {
+    let role: ChatRole
+
+    var body: some View {
+        Text(role.title)
+            .font(.hotMess(fixedSize: 11, semibold: true))
+            .tracking(0.2)
+            .foregroundStyle(foreground)
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .frame(minHeight: 16)
+            .background(background, in: .capsule)
+            .fixedSize()
+    }
+
+    private var foreground: Color {
+        switch role {
+        case .venue: .hotMessOnAccent
+        case .host: .hotMessAccentInk
+        case .staff: .primary
+        }
+    }
+
+    private var background: Color {
+        switch role {
+        case .venue: .hotMessAccent
+        case .host: .hotMessAccentSoft
+        case .staff: .hotMessControlFill
+        }
     }
 }
 
@@ -348,6 +512,9 @@ struct ChatBubble: View {
     let text: String
     let isOwn: Bool
     var isLastInGroup: Bool = true
+    /// From the venue or a host: `accent-soft` with primary text, no shadow.
+    /// Ignored on the reader's own bubbles.
+    var isRole: Bool = false
     /// Lines of text before an ellipsis; `nil` shows it all.
     var lineLimit: Int? = nil
     /// Off where the bubble sits inside a button, like ChatPeek.
@@ -372,6 +539,8 @@ struct ChatBubble: View {
             .background {
                 if isOwn {
                     shape.fill(Color.hotMessAccent)
+                } else if isRole {
+                    shape.fill(Color.hotMessAccentSoft)
                 } else {
                     shape
                         .fill(Color(.secondarySystemGroupedBackground))
@@ -472,6 +641,50 @@ struct RoomBanner: View {
         case let .offline(reason): reason ?? String(localized: "Offline.")
         case .range: ""
         }
+    }
+}
+
+// MARK: - Pinned
+
+/// The pinned announcement under a room's title. Tapping it scrolls to the
+/// announcement.
+struct PinnedBar: View {
+    let author: String?
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.hotMessAccentInk)
+                    .accessibilityHidden(true)
+
+                label
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .font(.hotMess(.footnote))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.hotMessAccentSoft)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Pinned announcement: \(title)"))
+        .accessibilityHint(String(localized: "Shows it in the chat"))
+        .accessibilityIdentifier("chat.pinned")
+    }
+
+    /// The author in bold, then the title, truncating as one line.
+    private var label: Text {
+        guard let author, !author.isEmpty else { return Text(title) }
+        let bold = Text(author).font(.hotMess(.footnote, semibold: true))
+        return Text("\(bold) \(title)")
     }
 }
 

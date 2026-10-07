@@ -36,9 +36,17 @@ struct VenueChatScreen: View {
                 if let kind = bannerKind(viewModel) {
                     RoomBanner(kind: kind, roomName: room.name, isLocale: room.kind == .locale)
                 }
-                ChatThreadView(messages: threadMessages(viewModel), roomName: room.name) { id in
-                    guard let id = UUID(uuidString: id) else { return }
-                    Task { await viewModel.resend(id) }
+                // Each minute, so a special leaves the room when it ends.
+                TimelineView(.everyMinute) { timeline in
+                    let messages = threadMessages(viewModel, at: timeline.date)
+                    ChatThreadView(
+                        messages: messages,
+                        roomName: room.name,
+                        pinned: pinned(viewModel, in: messages)
+                    ) { id in
+                        guard let id = UUID(uuidString: id) else { return }
+                        Task { await viewModel.resend(id) }
+                    }
                 }
                 composer(viewModel)
             } else {
@@ -100,18 +108,19 @@ struct VenueChatScreen: View {
     }
 
     /// The room's messages, then the reader's own lines still on their way.
-    private func threadMessages(_ viewModel: VenueChatViewModel) -> [ChatThreadMessage] {
-        let sent = viewModel.messages.map { message in
-            ChatThreadMessage(
-                id: message.id.uuidString,
-                authorID: message.userID.uuidString,
-                authorName: message.name,
-                avatarURL: message.avatarURL,
-                text: message.body,
-                sentAt: message.sentAt,
-                isOwn: viewModel.isOutgoing(message)
-            )
-        }
+    /// Friends show by their full name, and everyone in the room now with a
+    /// presence dot. Specials that have ended are left out.
+    private func threadMessages(_ viewModel: VenueChatViewModel, at date: Date) -> [ChatThreadMessage] {
+        let friends = model.friends.byID
+        let sent = viewModel.messages
+            .filter { $0.isShowing(at: date) }
+            .map { message in
+                message.threadMessage(
+                    currentUserID: viewModel.userID,
+                    friends: friends,
+                    online: viewModel.onlineUserIDs
+                )
+            }
 
         let pending = viewModel.pending.map { message in
             ChatThreadMessage(
@@ -127,6 +136,13 @@ struct VenueChatScreen: View {
         }
 
         return sent + pending
+    }
+
+    /// The pinned announcement, as the thread draws it.
+    private func pinned(_ viewModel: VenueChatViewModel, in messages: [ChatThreadMessage]) -> ChatThreadMessage? {
+        guard let pinned = viewModel.pinnedAnnouncement else { return nil }
+        let id = pinned.id.uuidString
+        return messages.first { $0.id == id && $0.announcementTitle != nil }
     }
 
     private func composer(_ viewModel: VenueChatViewModel) -> some View {

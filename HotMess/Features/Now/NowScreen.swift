@@ -170,7 +170,7 @@ struct NowScreen: View {
             ChatPeek(
                 title: String(localized: "Small talk"),
                 roomName: venue.name,
-                messages: now.recentMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                messages: now.recentMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
                 route: .venueChat(venue)
             )
             .padding(.horizontal, 16)
@@ -201,7 +201,7 @@ struct NowScreen: View {
             ChatPeek(
                 title: String(localized: "Small talk in \(locale.name)"),
                 roomName: locale.name,
-                messages: now.localeMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                messages: now.localeMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
                 route: .localeChat(locale)
             )
             .padding(.horizontal, 16)

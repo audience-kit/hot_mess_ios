@@ -166,13 +166,7 @@ private struct ChatPeekRow: View {
         HStack(alignment: .bottom, spacing: 8) {
             if !message.isOwn {
                 if row.isLastInGroup {
-                    Avatar(
-                        url: message.avatarURL,
-                        initials: message.authorName?.initialsForDisplay,
-                        size: ChatMetrics.avatarSize,
-                        presence: message.presence,
-                        presenceRing: .hotMessSurfaceSunken
-                    )
+                    ChatAvatar(message: message, presenceRing: .hotMessSurfaceSunken)
                 } else {
                     Color.clear
                         .frame(width: ChatMetrics.avatarSize, height: 1)
@@ -180,18 +174,17 @@ private struct ChatPeekRow: View {
             }
 
             VStack(alignment: message.isOwn ? .trailing : .leading, spacing: 2) {
-                if !message.isOwn, row.isFirstInGroup, let name = message.authorName, !name.isEmpty {
-                    Text(name)
-                        .font(.hotMess(.caption, semibold: true))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                if !message.isOwn, row.isFirstInGroup {
+                    ChatSenderLine(name: message.authorName, role: message.role)
                         .padding(.leading, 12)
                 }
 
+                // Rich messages show their summary at a bubble's size.
                 ChatBubble(
                     text: message.text,
                     isOwn: message.isOwn,
                     isLastInGroup: row.isLastInGroup,
+                    isRole: message.role?.tintsBubble == true,
                     lineLimit: 2,
                     isSelectable: false
                 )
@@ -209,18 +202,12 @@ private struct ChatPeekRow: View {
     }
 }
 
-extension VenueMessage {
-    /// This message as a chat room draws it, for the reader `currentUserID`.
-    func threadMessage(currentUserID: UUID?) -> ChatThreadMessage {
-        ChatThreadMessage(
-            id: id.uuidString,
-            authorID: userID.uuidString,
-            authorName: name,
-            avatarURL: avatarURL,
-            text: body,
-            sentAt: sentAt,
-            isOwn: isOutgoing(for: currentUserID)
-        )
+extension [VenueMessage] {
+    /// Recent messages as a ChatPeek shows them: specials that have ended
+    /// left out, friends by their full name, rich messages as their summary.
+    func peekMessages(currentUserID: UUID?, friends: [UUID: Friend], at date: Date = .now) -> [ChatThreadMessage] {
+        filter { $0.isShowing(at: date) }
+            .map { $0.threadMessage(currentUserID: currentUserID, friends: friends, rich: false) }
     }
 }
 
