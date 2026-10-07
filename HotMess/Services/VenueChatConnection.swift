@@ -289,8 +289,8 @@ actor VenueChatConnection {
                     .map { $0.compactMap(UUID.init(uuidString:)) }
                 userID = try? container.decodeIfPresent(UUID.self, forKey: .userID)
                 presence = try? container.decodeIfPresent(String.self, forKey: .presence)
-                name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap(\.nonBlank)
-                avatarURL = (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap(\.nonBlankURL)
+                name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank })
+                avatarURL = (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap({ $0.nonBlankURL })
                 // Each person and friend on their own, so one bad entry drops only itself.
                 people = (try? container.decodeIfPresent([Lenient<PersonWire>].self, forKey: .people))
                     .map { $0.compactMap { $0.value?.person } }
@@ -327,8 +327,8 @@ actor VenueChatConnection {
                 }
                 person = RoomPerson(
                     id: id,
-                    name: (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap(\.nonBlank),
-                    avatarURL: (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap(\.nonBlankURL),
+                    name: (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank }),
+                    avatarURL: (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap({ $0.nonBlankURL }),
                     isFriend: (try? container.decodeIfPresent(Bool.self, forKey: .friend)) ?? false
                 )
             }
@@ -346,7 +346,7 @@ actor VenueChatConnection {
             init(from decoder: any Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
                 guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID),
-                      let name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap(\.nonBlank)
+                      let name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank })
                 else {
                     friend = nil
                     return

@@ -54,6 +54,14 @@ jobs:
             build-for-testing 2>&1 | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)|\*\* " || true
           grep -q "TEST BUILD SUCCEEDED\|BUILD SUCCEEDED" build.log
 
+      - name: Show why the build failed
+        if: failure()
+        run: |
+          # Compiler crashes and some failures print no "error:" line, so the
+          # filtered output above can show nothing but BUILD FAILED.
+          grep -n -A40 "The following build commands failed" build.log || true
+          grep -n -B2 -A25 "Stack dump\|nonzero exit code\|error:" build.log | tail -200 || true
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v5
