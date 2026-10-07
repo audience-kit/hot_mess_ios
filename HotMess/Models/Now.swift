@@ -25,6 +25,10 @@ struct Now: Decodable, Hashable, Sendable {
     let friendVenues: [FriendVenue]
     let events: [Event]
     let imageURL: URL?
+    /// The user's own Ping, while it runs.
+    var myPing: Ping?
+    /// Friends' active Pings, newest first.
+    var friendPings: [Ping]
 
     var isNearVenues: Bool { venues != nil }
 
@@ -37,6 +41,8 @@ struct Now: Decodable, Hashable, Sendable {
         case title, venue, venues, envelope, friends, events
         case imageURL = "image_url"
         case friendVenues = "friend_venues"
+        case myPing = "my_ping"
+        case friendPings = "friend_pings"
     }
 
     private enum VenueKeys: String, CodingKey {
@@ -61,6 +67,8 @@ struct Now: Decodable, Hashable, Sendable {
         events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
         friendVenues = try container.decodeIfPresent([FriendVenue].self, forKey: .friendVenues) ?? []
         imageURL = try container.decodeURLIfPresent(forKey: .imageURL)
+        myPing = try container.decodeIfPresent(Ping.self, forKey: .myPing)
+        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
 
     init(
@@ -72,7 +80,9 @@ struct Now: Decodable, Hashable, Sendable {
         recentMessages: [VenueMessage] = [],
         friendVenues: [FriendVenue] = [],
         events: [Event] = [],
-        imageURL: URL? = nil
+        imageURL: URL? = nil,
+        myPing: Ping? = nil,
+        friendPings: [Ping] = []
     ) {
         self.title = title
         self.venue = venue
@@ -83,5 +93,7 @@ struct Now: Decodable, Hashable, Sendable {
         self.friendVenues = friendVenues
         self.events = events
         self.imageURL = imageURL
+        self.myPing = myPing
+        self.friendPings = friendPings
     }
 }

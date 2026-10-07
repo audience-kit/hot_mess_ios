@@ -51,6 +51,8 @@
 	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
 	<key>FacebookDisplayName</key>
 	<string>Hot Mess</string>
+	<key>HotMessAPNSEnvironment</key>
+	<string>$(APNS_ENVIRONMENT)</string>
 	<key>HotMessBeaconID</key>
 	<string>1422F585-E729-49E3-9E1F-B943DE12BAA9</string>
 	<key>HotMessServerBase</key>

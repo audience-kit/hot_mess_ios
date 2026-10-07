@@ -26,6 +26,9 @@ struct AppConfiguration: Sendable, Hashable {
     let environment: AudienceKitEnvironment
     let version: String
     let build: Int
+    /// The build's `aps-environment`, `development` or `production`, from
+    /// `APNS_ENVIRONMENT`.
+    let apnsEnvironment: String?
 
     static let defaultBaseURL = URL(string: "https://api.audiencekit.com")!
     static let defaultAudienceHost = "hotmess.admin.audiencekit.com"
@@ -45,6 +48,7 @@ struct AppConfiguration: Sendable, Hashable {
         version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
         build = (bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
             .flatMap(Int.init) ?? 0
+        apnsEnvironment = (bundle.object(forInfoDictionaryKey: "HotMessAPNSEnvironment") as? String).nonEmpty
     }
 
     init(
@@ -55,7 +59,8 @@ struct AppConfiguration: Sendable, Hashable {
         audienceID: String? = nil,
         environment: AudienceKitEnvironment = .production,
         version: String = "0.0",
-        build: Int = 0
+        build: Int = 0,
+        apnsEnvironment: String? = nil
     ) {
         self.baseURL = baseURL
         self.beaconUUID = beaconUUID
@@ -65,6 +70,21 @@ struct AppConfiguration: Sendable, Hashable {
         self.environment = environment
         self.version = version
         self.build = build
+        self.apnsEnvironment = apnsEnvironment
+    }
+
+    /// Whether this build's push tokens belong to APNs' sandbox: the
+    /// entitlement says `development`. When the key is missing, debug builds
+    /// are taken to be development-signed.
+    var isPushSandbox: Bool {
+        guard let apnsEnvironment else {
+            #if DEBUG
+            return true
+            #else
+            return false
+            #endif
+        }
+        return apnsEnvironment == "development"
     }
 
     /// Staging and debug builds, which get testing aids such as pretending to
