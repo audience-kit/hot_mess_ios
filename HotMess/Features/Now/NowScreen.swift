@@ -147,14 +147,16 @@ struct NowScreen: View {
     }
 
     private func eventsSection(_ now: Now) -> some View {
-        DetailSection(String(localized: "Events")) {
+        Group {
             if now.events.isEmpty {
-                Text("There are no upcoming events.")
-                    .foregroundStyle(.secondary)
+                DetailSection(String(localized: "Events")) {
+                    Text("There are no upcoming events.")
+                        .foregroundStyle(.secondary)
+                }
             } else {
-                ForEach(now.events) { event in
-                    DetailLink(route: .event(event.id)) {
-                        EventRow(event: event)
+                CardSection(String(localized: "Events")) {
+                    ForEach(now.events) { event in
+                        EventCardLink(event: event)
                     }
                 }
             }

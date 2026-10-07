@@ -29,15 +29,15 @@ struct PersonScreen: View {
                             }
                         }
 
-                        DetailSection(String(localized: "Events")) {
-                            if detail.events.isEmpty {
+                        if detail.events.isEmpty {
+                            DetailSection(String(localized: "Events")) {
                                 Text("No upcoming events.")
                                     .foregroundStyle(.secondary)
-                            } else {
+                            }
+                        } else {
+                            CardSection(String(localized: "Events")) {
                                 ForEach(detail.events) { event in
-                                    DetailLink(route: .event(event.id)) {
-                                        EventRow(event: event)
-                                    }
+                                    EventCardLink(event: event)
                                 }
                             }
                         }

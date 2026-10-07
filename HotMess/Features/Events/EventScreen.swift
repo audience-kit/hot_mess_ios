@@ -38,10 +38,8 @@ struct EventScreen: View {
                         detailsSection(event)
 
                         if let person = event.person {
-                            DetailSection(String(localized: "Host")) {
-                                DetailLink(route: .person(person.id)) {
-                                    PersonRow(person: person)
-                                }
+                            CardSection(String(localized: "Host")) {
+                                PersonCardLink(person: person)
                             }
                         }
 
@@ -57,11 +55,9 @@ struct EventScreen: View {
                         }
 
                         if !detail.people.isEmpty {
-                            DetailSection(String(localized: "Going")) {
+                            CardSection(String(localized: "Going")) {
                                 ForEach(detail.people) { person in
-                                    DetailLink(route: .person(person.id)) {
-                                        PersonRow(person: person)
-                                    }
+                                    PersonCardLink(person: person)
                                 }
                             }
                         }

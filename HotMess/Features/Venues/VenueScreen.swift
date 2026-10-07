@@ -48,15 +48,15 @@ struct VenueScreen: View {
 
                         testingSection(venue)
 
-                        DetailSection(String(localized: "Events")) {
-                            if overview.events.isEmpty {
+                        if overview.events.isEmpty {
+                            DetailSection(String(localized: "Events")) {
                                 Text("No upcoming events.")
                                     .foregroundStyle(.secondary)
-                            } else {
+                            }
+                        } else {
+                            CardSection(String(localized: "Events")) {
                                 ForEach(overview.events) { event in
-                                    DetailLink(route: .event(event.id)) {
-                                        EventRow(event: event)
-                                    }
+                                    EventCardLink(event: event)
                                 }
                             }
                         }
