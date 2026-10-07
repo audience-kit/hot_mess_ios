@@ -239,3 +239,15 @@ struct VenueMessageTests {
         #expect(message.isOutgoing(for: nil) == false)
     }
 }
+
+@Test func musicLinksNameTheirService() {
+    let spotify = SocialLink(id: UUID(), handle: "artist/4Z8W4fKeB5YxbusRsdQVPb", provider: "spotify")
+    let appleMusic = SocialLink(id: UUID(), handle: "us/artist/1", provider: "apple_music")
+    let soundCloud = SocialLink(id: UUID(), handle: "dj-dugan", provider: "soundcloud")
+
+    #expect(spotify.label == "Spotify")
+    #expect(appleMusic.label == "Apple Music")
+    #expect(soundCloud.label == "/dj-dugan")
+    #expect(spotify.systemImage == "music.note")
+    #expect(soundCloud.systemImage == "link")
+}
