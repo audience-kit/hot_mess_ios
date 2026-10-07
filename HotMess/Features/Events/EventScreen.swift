@@ -45,11 +45,14 @@ struct EventScreen: View {
                             }
                         }
 
-                        if let venue = event.venue {
-                            DetailSection(String(localized: "Venue")) {
+                        DetailSection(String(localized: "Venue")) {
+                            if let venue = event.venue {
                                 DetailLink(route: .venue(venue.id)) {
                                     VenueRow(venue: venue)
                                 }
+                            } else {
+                                Text(Event.toBeAnnounced)
+                                    .foregroundStyle(.secondary)
                             }
                         }
 

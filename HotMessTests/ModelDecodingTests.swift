@@ -108,7 +108,7 @@ struct EventDecodingTests {
         let event = try decode(Event.self, from: Fixtures.sparseEvent)
 
         #expect(event.venue == nil)
-        #expect(event.subtitle.isEmpty == false)
+        #expect(event.subtitle.hasSuffix(Event.toBeAnnounced))
     }
 
     @Test("Maps RSVPs onto the GraphQL enum and reads it back")

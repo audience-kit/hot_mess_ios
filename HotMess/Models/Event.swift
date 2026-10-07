@@ -21,9 +21,12 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
 
     var shareURL: URL? { URL(string: "https://hotmess.social/events/\(id.uuidString.lowercased())") }
 
-    /// "9:00 PM at The Stud", or just the time when the venue is unknown —
-    /// the original force-unwrapped the venue here and crashed on venue-less
-    /// events.
+    /// Where an event with no venue yet is.
+    static let toBeAnnounced = String(localized: "To be announced")
+
+    /// "9:00 PM at The Stud", or "9:00 PM · To be announced" when the venue
+    /// isn't set yet — the original force-unwrapped the venue here and
+    /// crashed on venue-less events.
     var subtitle: String {
         let time = startDate.formatted(date: .omitted, time: .shortened)
 
@@ -31,9 +34,9 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
             return String(localized: "\(time) at \(venue.name)")
         }
         if let person {
-            return String(localized: "\(time) with \(person.name)")
+            return String(localized: "\(time) with \(person.name) · \(Self.toBeAnnounced)")
         }
-        return time
+        return "\(time) · \(Self.toBeAnnounced)"
     }
 
     enum CodingKeys: String, CodingKey {
