@@ -11,6 +11,7 @@ struct VenueOverview: Sendable, Equatable {
     var venue: Venue
     var events: [Event] = []
     var friends: [Friend] = []
+    var socialLinks: [SocialLink] = []
     /// Whether the user can join the venue's chat room: they're at the venue,
     /// or they're an admin. The way in is hidden otherwise.
     var chatOpen = false

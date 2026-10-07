@@ -61,12 +61,16 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
     let events: [Event]
     let socialLinks: [SocialLink]
     let tracks: [Track]
+    /// The people this person is made of, such as a troupe's performers.
+    let members: [Person]
+    /// The people this person is part of, such as their troupes.
+    let groups: [Person]
 
     var id: UUID { person.id }
     var name: String { person.name }
 
     enum CodingKeys: String, CodingKey {
-        case events, tracks
+        case events, tracks, members, groups
         case socialLinks = "social_links"
     }
 
@@ -77,6 +81,8 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
         tracks = try container.decodeIfPresent([Track].self, forKey: .tracks) ?? []
+        members = try container.decodeIfPresent([Person].self, forKey: .members) ?? []
+        groups = try container.decodeIfPresent([Person].self, forKey: .groups) ?? []
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -86,12 +92,23 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         try container.encode(events, forKey: .events)
         try container.encode(socialLinks, forKey: .socialLinks)
         try container.encode(tracks, forKey: .tracks)
+        try container.encode(members, forKey: .members)
+        try container.encode(groups, forKey: .groups)
     }
 
-    init(person: Person, events: [Event] = [], socialLinks: [SocialLink] = [], tracks: [Track] = []) {
+    init(
+        person: Person,
+        events: [Event] = [],
+        socialLinks: [SocialLink] = [],
+        tracks: [Track] = [],
+        members: [Person] = [],
+        groups: [Person] = []
+    ) {
         self.person = person
         self.events = events
         self.socialLinks = socialLinks
         self.tracks = tracks
+        self.members = members
+        self.groups = groups
     }
 }

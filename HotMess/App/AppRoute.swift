@@ -11,6 +11,8 @@ enum AppRoute: Hashable, Sendable {
     case event(UUID)
     case person(UUID)
     case venueChat(Venue)
+    /// A locale's chat room, for people out in it who aren't at a venue.
+    case localeChat(AppLocale)
 
     /// Which tab the route belongs in.
     var tab: AppTab {
@@ -18,6 +20,7 @@ enum AppRoute: Hashable, Sendable {
         case .venue, .venueChat: .venues
         case .event: .events
         case .person: .people
+        case .localeChat: .now
         }
     }
 }

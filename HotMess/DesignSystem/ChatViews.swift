@@ -428,6 +428,8 @@ struct RoomBanner: View {
 
     let kind: Kind
     let roomName: String
+    /// A locale-wide room: "not in {city}" rather than "not at {venue}".
+    var isLocale = false
 
     var body: some View {
         switch kind {
@@ -436,8 +438,14 @@ struct RoomBanner: View {
                 Image(systemName: "location.slash")
                     .foregroundStyle(Color.hotMessWarning)
                     .accessibilityHidden(true)
-                Text("You're not at \(roomName). You're in this chat because you're an admin.")
-                    .foregroundStyle(.primary)
+                Group {
+                    if isLocale {
+                        Text("You're not in \(roomName). You're in this chat because you're an admin.")
+                    } else {
+                        Text("You're not at \(roomName). You're in this chat because you're an admin.")
+                    }
+                }
+                .foregroundStyle(.primary)
             }
             .font(.hotMess(.footnote))
             .frame(maxWidth: .infinity, alignment: .leading)

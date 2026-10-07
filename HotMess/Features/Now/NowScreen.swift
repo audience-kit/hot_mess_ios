@@ -32,6 +32,7 @@ struct NowScreen: View {
                         }
 
                         nearbySection(now)
+                        localeChatSection(now)
                         friendVenuesSection(now)
                         eventsSection(now)
                     }
@@ -114,6 +115,21 @@ struct NowScreen: View {
                 FriendStrip(friends: now.friends)
                     .padding(.horizontal, -20)
             }
+        }
+    }
+
+    /// Away from venues: the locale's chat room, for everyone out in it who
+    /// isn't at a venue. Shown only when the API says the user can join.
+    @ViewBuilder
+    private func localeChatSection(_ now: Now) -> some View {
+        if now.venue == nil, now.localeChatOpen, let locale = now.locale {
+            ChatPeek(
+                title: String(localized: "Small talk in \(locale.name)"),
+                roomName: locale.name,
+                messages: now.localeMessages.map { $0.threadMessage(currentUserID: model.session.userID) },
+                route: .localeChat(locale)
+            )
+            .padding(.horizontal, 16)
         }
     }
 

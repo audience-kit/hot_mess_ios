@@ -11,8 +11,19 @@ import UIKit
 /// around a collection view whose cells were commented out, and the working one
 /// dequeued a cell with an empty reuse identifier — a guaranteed crash the
 /// moment a message arrived.
+///
+/// It also serves a locale's room, for people out in the locale who aren't at
+/// a venue.
 struct VenueChatScreen: View {
-    let venue: Venue
+    let room: ChatRoom
+
+    init(room: ChatRoom) {
+        self.room = room
+    }
+
+    init(venue: Venue) {
+        room = .venue(venue)
+    }
 
     @Environment(AppModel.self) private var model
     @State private var viewModel: VenueChatViewModel?
@@ -23,9 +34,9 @@ struct VenueChatScreen: View {
                 notPresent(viewModel)
             } else if let viewModel {
                 if let kind = bannerKind(viewModel) {
-                    RoomBanner(kind: kind, roomName: venue.name)
+                    RoomBanner(kind: kind, roomName: room.name, isLocale: room.kind == .locale)
                 }
-                ChatThreadView(messages: threadMessages(viewModel), roomName: venue.name)
+                ChatThreadView(messages: threadMessages(viewModel), roomName: room.name)
                 composer(viewModel)
             } else {
                 ProgressView()
@@ -33,7 +44,7 @@ struct VenueChatScreen: View {
             }
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(venue.name)
+        .navigationTitle(room.name)
         .navigationBarTitleDisplayMode(.inline)
         .task {
             let viewModel = makeViewModel()
@@ -48,12 +59,22 @@ struct VenueChatScreen: View {
 
     // MARK: - Pieces
 
-    /// The server only lets people at the venue into its room.
+    /// The server only lets people at the venue (or out in the locale) into its room.
     private func notPresent(_ viewModel: VenueChatViewModel) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "Only for people at \(venue.name)"), systemImage: "location.slash")
+            switch room.kind {
+            case .venue:
+                Label(String(localized: "Only for people at \(room.name)"), systemImage: "location.slash")
+            case .locale:
+                Label(String(localized: "Only for people out in \(room.name)"), systemImage: "location.slash")
+            }
         } description: {
-            Text("The room opens when you're there. Your location has to be on so Hot Mess can tell.")
+            switch room.kind {
+            case .venue:
+                Text("The room opens when you're there. Your location has to be on so Hot Mess can tell.")
+            case .locale:
+                Text("The room opens when you're out in \(room.name) and not at a venue. Venues have their own chat. Your location has to be on so Hot Mess can tell.")
+            }
         } actions: {
             Button(String(localized: "Try again")) {
                 Task { await viewModel.retry() }
@@ -101,7 +122,7 @@ struct VenueChatScreen: View {
         if let viewModel { return viewModel }
 
         return VenueChatViewModel(
-            venue: venue,
+            room: room,
             configuration: model.configuration,
             userID: model.session.userID,
             token: model.session.bearerToken,
