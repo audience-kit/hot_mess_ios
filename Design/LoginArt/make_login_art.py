@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Renders the login background and the launch screen mark into HotMess/Assets.xcassets.
 
-Both use the app icon's silhouette (Design/AppIcon/silhouette-mask.png) and the
+Both use the 2017 app icon silhouette (Design/AppIcon/silhouette-mask.png) and the
 AudienceKit `hot_mess` theme, so the launch screen, the login screen and the
 icon read as one piece:
 
