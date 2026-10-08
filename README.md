@@ -100,7 +100,7 @@ them.
 Release signs in with Hot Mess, a Consumer Facebook app, using classic Facebook
 Login: `public_profile`, `email` and `user_friends` (friends who also use the app,
 shown at the same venue). `user_friends` needs App Review on that app. The
-AudienceKit platform app (713525445368431) is for businesses and isn't used here.
+AudienceKit service app (713525445368431) does Page reads for the API and isn't used here.
 
 The API only accepts a Facebook app that belongs to the audience named by
 `AUDIENCE_HOST`. `hotmess.admin.audiencekit.com` resolves by subdomain; switch

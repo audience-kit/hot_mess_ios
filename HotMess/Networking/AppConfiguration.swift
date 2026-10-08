@@ -120,7 +120,7 @@ struct AppConfiguration: Sendable, Hashable {
     var facebookEnvironment: String {
         switch facebookAppID ?? "" {
         case "1168782378316790": String(localized: "production")
-        case "713525445368431": String(localized: "AudienceKit platform")
+        case "713525445368431": String(localized: "AudienceKit service")
         case "1660272792277019": String(localized: "staging")
         case "842337999153841": String(localized: "development")
         default: String(localized: "unknown")
