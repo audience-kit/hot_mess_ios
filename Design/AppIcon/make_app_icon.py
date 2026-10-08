@@ -39,7 +39,7 @@ PAPER_DARK = "#141014"
 ICON_SETS = {
     "AppIcon": dict(paper="#f6eff3", left="#2fb4ff", right="#ff3d9a", dark_figure="#cfe9ff"),
     "AppIconStaging": dict(paper="#c9efc6", left="#ffd23d", right="#2fbf4f", dark_figure="#c9efc6"),
-    "AppIconDevelopment": dict(paper="#f1d2f4", left="#2fb4ff", right="#b84cc4", dark_figure="#f1d2f4"),
+    "AppIconDevelopment": dict(paper="#dcc0f5", left="#a46bff", right="#5e1a9c", dark_figure="#dcc0f5"),
 }
 
 # The figure is scaled and placed so the head sits in the upper middle of the icon.
