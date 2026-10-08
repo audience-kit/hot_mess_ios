@@ -1,39 +1,41 @@
 #!/usr/bin/env python3
 """Renders the login background and the launch screen mark into HotMess/Assets.xcassets.
 
-Both use the 2017 app icon silhouette (Design/AppIcon/silhouette-mask.png) and the
-AudienceKit `hot_mess` theme, so the launch screen, the login screen and the
-icon read as one piece:
+Both use the app icon's "misprint" mark (the figure in Design/AppIcon/silhouette.svg
+with blue and pink copies out of register behind it), so the launch screen, the
+login screen and the icon read as one piece:
 
-  LoginBackground  1290x2796 portrait. The silhouette rises from the bottom
-                   edge against the accent gradient, with a soft glow behind
-                   the head, and the bottom third fades to ink, where the
-                   sign-in button sits.
+  LoginBackground  1290x2796 portrait. The figure rises from the bottom edge,
+                   printed in ink on a dark ground so only the blue and pink
+                   edges catch the light, and the bottom third fades to ink,
+                   where the sign-in button sits.
   LaunchMark       The light app icon as a rounded tile, 180pt at @3x, shown
                    centred on the ink LaunchBackground colour.
 
   python3 Design/LoginArt/make_login_art.py        # from the repository root
 
-Requires Pillow.
+Requires cairosvg and Pillow.
 """
 
 from __future__ import annotations
 
+import io
 import json
+import re
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+import cairosvg
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "HotMess" / "Assets.xcassets"
-MASK = ROOT / "Design" / "AppIcon" / "silhouette-mask.png"
+SILHOUETTE = ROOT / "Design" / "AppIcon" / "silhouette.svg"
 ICON = ASSETS / "AppIcon.appiconset" / "AppIcon.png"
 
-ACCENT_TOP = (0xD6, 0x3A, 0x8A)
-ACCENT = (0xB8, 0x23, 0x6F)
-ACCENT_DEEP = (0x6E, 0x10, 0x40)
-ACCENT_GLOW = (0xFF, 0x7A, 0xB6)
-INK = (0x1A, 0x15, 0x19)
+INK = (0x1A, 0x15, 0x19)  # LaunchBackground
+INK_RAISED = (0x2E, 0x25, 0x2C)
+FIGURE = "#0e0a0d"
+LEFT_INK, RIGHT_INK = "#2fb4ff", "#ff3d9a"  # the Production icon's inks
 
 WIDTH, HEIGHT = 1290, 2796  # iPhone 6.9" at @3x; scaledToFill covers every other screen
 
@@ -55,29 +57,29 @@ def gradient(size, stops):
     return image
 
 
-def glow(size, centre, radius, colour, strength):
-    """A blurred disc of light, screened onto the background."""
-    layer = Image.new("RGB", size, (0, 0, 0))
-    draw = ImageDraw.Draw(layer)
-    x, y = centre
-    draw.ellipse([x - radius, y - radius, x + radius, y + radius], fill=lerp((0, 0, 0), colour, strength))
-    return layer.filter(ImageFilter.GaussianBlur(radius * 0.6))
-
-
 def login_background():
     size = (WIDTH, HEIGHT)
-    image = gradient(size, [(0, ACCENT_TOP), (0.45, ACCENT), (1, ACCENT_DEEP)])
+    image = gradient(size, [(0, INK_RAISED), (0.5, INK), (1, INK)])
 
-    # As on the icon, the figure is cut off at the bottom edge; scaled up so its
-    # shoulders run off both sides.
-    figure_width = round(WIDTH * 1.55)
-    mask = Image.open(MASK).convert("L").resize((figure_width, figure_width), Image.LANCZOS)
-    left = (WIDTH - figure_width) // 2
-    top = HEIGHT - figure_width
-
-    image = ImageChops.screen(image, glow(size, (WIDTH // 2, top + round(figure_width * 0.36)), WIDTH * 0.5,
-                                          ACCENT_GLOW, 0.5))
-    image.paste(Image.new("RGB", mask.size, INK), (left, top), mask)
+    # The figure in silhouette.svg's 1200px-wide space, scaled so its shoulders run
+    # off both sides and its head sits a little below the middle of the screen.
+    d = re.search(r'<path id="figure" d="([^"]+)"', SILHOUETTE.read_text()).group(1)
+    scale, dx, dy = 1.2, 37, 300
+    offset_x, offset_y = 44, 20
+    layer = lambda fill, x, y: (f'<path transform="translate({x} {y}) scale({scale}) translate({dx} {dy})" '
+                                f'd="{d}" fill="{fill}"/>')
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}">'
+           + layer(LEFT_INK, -offset_x, -offset_y) + layer(RIGHT_INK, offset_x, offset_y) + layer(FIGURE, 0, 0)
+           + "</svg>")
+    figure = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=WIDTH,
+                                                    output_height=HEIGHT))).convert("RGBA")
+    # A faint bloom from the inks, as if the edges were lit from behind.
+    bloom = figure.filter(ImageFilter.GaussianBlur(40))
+    bloom.putalpha(bloom.getchannel("A").point(lambda a: a * 0.35))
+    image = image.convert("RGBA")
+    image.alpha_composite(bloom)
+    image.alpha_composite(figure)
+    image = image.convert("RGB")
 
     # Fade the bottom third to ink, so the button and footnote sit on one colour.
     fade = gradient(size, [(0, (0, 0, 0)), (0.62, (0, 0, 0)), (0.82, (255, 255, 255)), (1, (255, 255, 255))])
