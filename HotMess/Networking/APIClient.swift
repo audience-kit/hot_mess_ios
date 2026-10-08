@@ -43,7 +43,7 @@ actor APIClient {
         do {
             data = try await audienceKit.data(for: request)
         } catch let error as AudienceKitError {
-            throw APIError(error)
+            throw await Self.recorded(APIError(error), operation: "\(endpoint.method.rawValue) \(endpoint.path)")
         }
 
         if Response.self == EmptyResponse.self, let empty = EmptyResponse() as? Response {
@@ -53,8 +53,18 @@ actor APIClient {
         do {
             return try decoder.decode(Response.self, from: data)
         } catch {
-            throw APIError.decoding(String(describing: error))
+            throw await Self.recorded(
+                APIError.decoding(String(describing: error)),
+                operation: "\(endpoint.method.rawValue) \(endpoint.path)"
+            )
         }
+    }
+
+    /// Hands a failure to `ErrorReporter`, which keeps it for "Report a
+    /// Problem" and sends the ones that point at a bug.
+    static func recorded(_ error: APIError, operation: String) async -> APIError {
+        await ErrorReporter.shared.record(error, operation: operation)
+        return error
     }
 }
 

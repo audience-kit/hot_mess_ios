@@ -284,6 +284,20 @@ struct HotMessAPI: Sendable {
         _ = try await now(near: coordinates)
     }
 
+    // MARK: - Support
+
+    /// "Report a Problem". Works signed out too, so sign-in trouble can be
+    /// reported; the API then finds the audience from `host`.
+    @discardableResult
+    func reportProblem(_ report: BugReportRequest, signedIn: Bool) async throws -> BugReportResponse {
+        try await client.send(Endpoint(
+            "/v1/bug_reports",
+            method: .post,
+            body: JSONBody(report),
+            requiresAuthentication: signedIn
+        ))
+    }
+
     private func query<Response: Decodable & Sendable>(
         _ document: String,
         variables: [String: GraphQLValue],
@@ -292,8 +306,17 @@ struct HotMessAPI: Sendable {
         do {
             return try await audienceKit.graphQL(document, variables: variables, as: type, decoder: .hotMess)
         } catch let error as AudienceKitError {
-            throw APIError(error)
+            throw await APIClient.recorded(APIError(error), operation: Self.operationName(document))
         }
+    }
+
+    /// "query Venue" or "mutation SendPing", for error reports: the document's
+    /// first line up to its variables or selection.
+    static func operationName(_ document: String) -> String {
+        let head = document.trimmingCharacters(in: .whitespacesAndNewlines)
+            .prefix { $0 != "(" && $0 != "{" && $0 != "\n" }
+        let name = head.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? "graphql" : "graphql \(name)"
     }
 }
 

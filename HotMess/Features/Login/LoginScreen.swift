@@ -11,6 +11,7 @@ struct LoginScreen: View {
     @Environment(AppModel.self) private var model
     @State private var isShowingError = false
     @State private var hasAppeared = false
+    @State private var isReportingProblem = false
 
     var body: some View {
         ZStack {
@@ -46,12 +47,27 @@ struct LoginScreen: View {
             withAnimation(.easeOut(duration: 0.5)) { hasAppeared = true }
         }
         .onChange(of: model.session.state) { _, state in
-            if case .failed = state { isShowingError = true }
+            if case let .failed(message) = state {
+                isShowingError = true
+                ErrorReporter.shared.record(kind: "sign_in", message: message)
+            }
         }
         .alert(String(localized: "Sign In Failed"), isPresented: $isShowingError) {
             Button(String(localized: "OK"), role: .cancel) {}
+            Button(String(localized: "Report a Problem")) { isReportingProblem = true }
         } message: {
             Text(failureMessage ?? String(localized: "Please try again."))
+        }
+        .sheet(isPresented: $isReportingProblem) {
+            NavigationStack {
+                ReportProblemScreen()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(String(localized: "Cancel")) { isReportingProblem = false }
+                        }
+                    }
+            }
+            .preferredColorScheme(nil)
         }
     }
 

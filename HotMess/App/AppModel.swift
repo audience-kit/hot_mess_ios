@@ -59,6 +59,8 @@ final class AppModel {
     }
 
     func start() async {
+        ErrorReporter.shared.start(audienceKit: audienceKit, configuration: configuration)
+
         // UI tests start from the login screen.
         if ProcessInfo.processInfo.arguments.contains("-HotMessUITestSignedOut") {
             signOut()
