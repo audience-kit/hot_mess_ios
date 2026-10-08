@@ -52,7 +52,8 @@ struct EndpointTests {
         #expect(connect.path == "/v1/token")
         #expect(connect.requiresAuthentication)
 
-        let body = try #require(connect.body?.encode(JSONEncoder()))
+        let encode = try #require(connect.body?.encode)
+        let body = try encode(JSONEncoder())
         let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["connect"] as? Bool == true)
         #expect(json["redirect_uri"] as? String == "fb1://authorize/")
