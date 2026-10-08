@@ -40,7 +40,7 @@ final class FacebookWebLogin: NSObject, ASWebAuthenticationPresentationContextPr
 
     /// The dialog URL. `state` ties the redirect to this request.
     func dialogURL(state: String) -> URL {
-        var components = URLComponents(string: "https://www.facebook.com/v21.0/dialog/oauth")!
+        var components = URLComponents(string: "https://www.facebook.com/v26.0/dialog/oauth")!
         var items = [
             URLQueryItem(name: "client_id", value: appID),
             URLQueryItem(name: "redirect_uri", value: redirectURI),
