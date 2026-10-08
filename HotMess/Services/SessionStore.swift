@@ -48,11 +48,14 @@ enum SessionError: Error, LocalizedError {
 @MainActor
 @Observable
 final class SessionStore {
+    /// Whether sign-in asks for `user_friends`, which shows friends who also use
+    /// the app at the same venue. Off until Meta's App Review approves it on the
+    /// Hot Mess Consumer app; until then everyone's friends list is empty.
+    static let asksForFriends = false
+
     /// Permissions requested at sign-in, on the Hot Mess Consumer app.
-    ///
-    /// `user_friends` shows friends who also use the app at the same venue, and
-    /// needs App Review on the Facebook app; `public_profile` and `email` don't.
-    static let requestedPermissions = ["public_profile", "email", "user_friends"]
+    /// `public_profile` and `email` need no App Review; `user_friends` does.
+    static let requestedPermissions = ["public_profile", "email"] + (asksForFriends ? ["user_friends"] : [])
 
     /// Where the session token lives. Same service and account as the app's
     /// previous keychain wrapper, so existing installs stay signed in.
