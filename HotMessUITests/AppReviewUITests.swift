@@ -114,15 +114,24 @@ final class AppReviewUITests: XCTestCase {
     // MARK: - Where friends show up
 
     /// Now: friends going out tonight, friends here, and where your friends are.
+    /// Scrolls down Now once, pausing on each friends section on the way, then back to the top.
+    /// Searching for each section separately kept swiping at the bottom of the page when it wasn't there.
     private func showNow() {
         open(tab: "Now")
         sleep(dwell)
-        for title in ["Friends going out tonight", "Friends here", "Where your friends are"] {
-            if scroll(to: app.staticTexts[title]) {
+        var shown = Set<String>()
+        for _ in 0..<3 {
+            for title in ["Friends going out tonight", "Friends here", "Where your friends are"]
+            where !shown.contains(title) && app.staticTexts[title].isHittable {
+                shown.insert(title)
                 snapshot(title)
                 sleep(dwell)
             }
+            app.swipeUp(velocity: .slow)
+            sleep(1)
         }
+        for _ in 0..<3 { app.swipeDown(velocity: .fast) }
+        sleep(1)
     }
 
     /// A venue friends are at: Friends Here, then its chat room, where friends are listed first.
@@ -181,7 +190,7 @@ final class AppReviewUITests: XCTestCase {
     /// Scrolls the screen up until `element` is on screen.
     @discardableResult
     private func scroll(to element: XCUIElement) -> Bool {
-        for _ in 0..<6 {
+        for _ in 0..<3 {
             if element.exists, element.isHittable { return true }
             app.swipeUp(velocity: .slow)
             sleep(1)
