@@ -25,25 +25,44 @@ struct BlockedUser: Decodable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// What the API keeps about the user's own safety settings.
+/// What the API keeps about the user's own safety settings, and how their
+/// account signs in.
 struct SafetyState: Decodable, Sendable {
     var termsAcceptedAt: Date?
     var blockedUsers: [BlockedUser]
+    /// False for an account that signed in with Apple and hasn't connected
+    /// Facebook, so has no friends to show.
+    var hasFacebook: Bool
+    /// True while the audience is in App Review, for an Apple account: the
+    /// reviewer can pretend to be at a venue, like a test build.
+    var canPretendLocation: Bool
 
     private enum CodingKeys: String, CodingKey {
         case termsAcceptedAt = "terms_accepted_at"
         case blockedUsers = "blocked_users"
+        case hasFacebook = "has_facebook"
+        case canPretendLocation = "can_pretend_location"
     }
 
-    init(termsAcceptedAt: Date? = nil, blockedUsers: [BlockedUser] = []) {
+    init(
+        termsAcceptedAt: Date? = nil,
+        blockedUsers: [BlockedUser] = [],
+        hasFacebook: Bool = true,
+        canPretendLocation: Bool = false
+    ) {
         self.termsAcceptedAt = termsAcceptedAt
         self.blockedUsers = blockedUsers
+        self.hasFacebook = hasFacebook
+        self.canPretendLocation = canPretendLocation
     }
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         termsAcceptedAt = try container.decodeIfPresent(Date.self, forKey: .termsAcceptedAt)
         blockedUsers = try container.decodeIfPresent([BlockedUser].self, forKey: .blockedUsers) ?? []
+        // An API from before Sign in with Apple only had Facebook accounts.
+        hasFacebook = try container.decodeIfPresent(Bool.self, forKey: .hasFacebook) ?? true
+        canPretendLocation = try container.decodeIfPresent(Bool.self, forKey: .canPretendLocation) ?? false
     }
 }
 

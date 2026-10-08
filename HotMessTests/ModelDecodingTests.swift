@@ -502,5 +502,17 @@ struct SafetyDecodingTests {
 
         #expect(state.termsAcceptedAt == nil)
         #expect(state.blockedUsers.isEmpty)
+        #expect(state.hasFacebook, "an API without the field only has Facebook accounts")
+        #expect(!state.canPretendLocation)
+    }
+
+    @Test("Reads an Apple account without Facebook, in App Review")
+    func appleAccount() throws {
+        let state = try decode(SafetyState.self, from: """
+        { "terms_accepted_at": null, "blocked_users": [], "has_facebook": false, "can_pretend_location": true }
+        """)
+
+        #expect(!state.hasFacebook)
+        #expect(state.canPretendLocation)
     }
 }

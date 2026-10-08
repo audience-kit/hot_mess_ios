@@ -38,6 +38,16 @@ struct NowScreen: View {
                             }
                         }
 
+                        if !model.safety.hasFacebook {
+                            DetailSection(String(localized: "Friends")) {
+                                ConnectFacebookButton()
+                            } footer: {
+                                ConnectFacebookFooter()
+                                    .font(.hotMess(.footnote))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
                         pingsSection(now)
                         nearbySection(now)
                         localeChatSection(now)
@@ -89,6 +99,8 @@ struct NowScreen: View {
         } message: {
             Text(viewModel?.pingError ?? "")
         }
+        // Whether to offer Connect Facebook.
+        .task { await model.safety.load() }
         .task(id: LoadKey(coordinates: model.location.coordinates, pingRevision: model.pingRevision)) {
             ensureViewModel()
             await viewModel?.load(near: model.location.coordinates)

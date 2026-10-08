@@ -3,10 +3,12 @@
 //  HotMess
 //
 
+import AuthenticationServices
 import SwiftUI
 
 /// What `RootView` shows when there is no session: the Hot Mess silhouette in
-/// the audience's colours, its name and tagline, and Facebook sign-in.
+/// the audience's colours, its name and tagline, and Facebook sign-in, with
+/// Sign in with Apple beside it (App Store guideline 4.8).
 struct LoginScreen: View {
     @Environment(AppModel.self) private var model
     @State private var isShowingError = false
@@ -118,7 +120,18 @@ struct LoginScreen: View {
             .accessibilityIdentifier("login.facebook")
             .accessibilityLabel(String(localized: "Continue with Facebook"))
 
-            Text("Hot Mess uses your Facebook profile to find your friends and the events near you.")
+            SignInWithAppleButton(.continue) { request in
+                request.requestedScopes = [.fullName, .email]
+            } onCompletion: { result in
+                model.session.signInWithApple(result)
+            }
+            .signInWithAppleButtonStyle(.white)
+            .frame(maxWidth: .infinity, minHeight: 54, maxHeight: 54)
+            .clipShape(Capsule())
+            .disabled(isSigningIn)
+            .accessibilityIdentifier("login.apple")
+
+            Text("Hot Mess uses your Facebook profile to find your friends and the events near you. With Apple, you can connect Facebook later.")
                 .font(.hotMess(.footnote))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.7))

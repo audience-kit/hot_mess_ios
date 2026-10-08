@@ -35,6 +35,28 @@ struct EndpointTests {
         #expect(manifest.method == .post)
         #expect(manifest.requiresAuthentication == false)
     }
+
+    @Test("Signs in with Apple without a session, and connects Facebook with one")
+    func appleAndConnect() throws {
+        let device = DeviceDescription(identifier: "d")
+        let apple = HotMessAPI.Endpoints.appleSignIn(
+            AppleSignInRequest(identityToken: "t", firstName: "Ada", lastName: nil, host: "hotmess.social", device: device)
+        )
+        #expect(apple.path == "/v1/token/apple")
+        #expect(apple.requiresAuthentication == false)
+
+        let connect = HotMessAPI.Endpoints.connectFacebook(
+            ConnectFacebookRequest(code: "c", redirectURI: "fb1://authorize/", host: nil, facebookAppID: "1",
+                                   device: device)
+        )
+        #expect(connect.path == "/v1/token")
+        #expect(connect.requiresAuthentication)
+
+        let body = try #require(connect.body?.encode(JSONEncoder()))
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["connect"] as? Bool == true)
+        #expect(json["redirect_uri"] as? String == "fb1://authorize/")
+    }
 }
 
 @Suite("GraphQL")

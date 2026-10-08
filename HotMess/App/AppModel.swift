@@ -95,6 +95,16 @@ final class AppModel {
         signOut()
     }
 
+    /// Connects Facebook to an account that signed in with Apple, then
+    /// re-reads what depends on it. False when the person cancels.
+    func connectFacebook() async throws -> Bool {
+        guard try await session.connectFacebook() else { return false }
+
+        friends.forget()
+        await safety.load(force: true)
+        return true
+    }
+
     func pingsChanged() {
         pingRevision += 1
     }

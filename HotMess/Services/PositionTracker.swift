@@ -7,7 +7,8 @@ import Foundation
 
 /// Which position the app reports: the device's, with the nearest beacon once
 /// one is heard, or in a test build the venue the tester is pretending to be at
-/// ("Pretend I'm here" on a venue). While pretending, device fixes and beacons
+/// ("Pretend I'm here" on a venue). App Review gets the same button, when the
+/// API allows it for the reviewer's account. While pretending, device fixes and beacons
 /// are kept but not reported, so stopping goes straight back to the real
 /// position.
 struct PositionTracker: Sendable {
@@ -54,10 +55,10 @@ struct PositionTracker: Sendable {
     }
 
     /// Reports this venue's position instead of the device's. False, and
-    /// ignored, outside test builds.
+    /// ignored, outside test builds unless `allowed` (App Review).
     @discardableResult
-    mutating func simulate(latitude: Double, longitude: Double, venueName: String) -> Bool {
-        guard simulationAllowed else { return false }
+    mutating func simulate(latitude: Double, longitude: Double, venueName: String, allowed: Bool = false) -> Bool {
+        guard simulationAllowed || allowed else { return false }
 
         simulated = Coordinates(latitude: latitude, longitude: longitude)
         simulatedVenueName = venueName

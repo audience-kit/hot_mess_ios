@@ -26,6 +26,7 @@ struct SettingsScreen: View {
     var body: some View {
         List {
             profileSection
+            facebookSection
             coverSection
             locationSection
             privacySection
@@ -38,6 +39,7 @@ struct SettingsScreen: View {
         .navigationTitle(String(localized: "Me"))
         .task { await model.session.refreshUser() }
         .task { await loadDoorVenues() }
+        .task { await model.safety.load() }
         .confirmationDialog(
             String(localized: "Sign out of Hot Mess?"),
             isPresented: $isConfirmingSignOut,
@@ -97,6 +99,18 @@ struct SettingsScreen: View {
                 }
             }
             .padding(.vertical, 4)
+        }
+    }
+
+    /// For an account that signed in with Apple and hasn't connected Facebook.
+    @ViewBuilder
+    private var facebookSection: some View {
+        if !model.safety.hasFacebook {
+            Section {
+                ConnectFacebookButton()
+            } footer: {
+                ConnectFacebookFooter()
+            }
         }
     }
 

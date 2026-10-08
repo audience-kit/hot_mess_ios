@@ -7,7 +7,9 @@ import Foundation
 import Observation
 
 /// The user's blocks and whether they've agreed to the terms of use, which
-/// chat needs before anyone can read or post (App Store guideline 1.2).
+/// chat needs before anyone can read or post (App Store guideline 1.2). Also
+/// whether the account has Facebook, and whether App Review lets it pretend
+/// to be at a venue.
 ///
 /// Blocking hides the person at once here; the API also stops sending their
 /// messages and presence to the room within a minute.
@@ -19,6 +21,10 @@ final class SafetyStore {
     /// Whether the API has said yet; until then chat waits rather than
     /// asking someone who already agreed.
     private(set) var isLoaded = false
+    /// Assumed until the API says otherwise, so nobody who signed in with
+    /// Facebook is asked to connect it.
+    private(set) var hasFacebook = true
+    private(set) var canPretendLocation = false
 
     private let api: HotMessAPI
 
@@ -43,6 +49,8 @@ final class SafetyStore {
             let state = try await api.safety()
             blockedUsers = state.blockedUsers
             termsAcceptedAt = state.termsAcceptedAt
+            hasFacebook = state.hasFacebook
+            canPretendLocation = state.canPretendLocation
             isLoaded = true
         } catch {
             // Chat asks again on the next visit.
@@ -84,6 +92,8 @@ final class SafetyStore {
     func forget() {
         blockedUsers = []
         termsAcceptedAt = nil
+        hasFacebook = true
+        canPretendLocation = false
         isLoaded = false
     }
 }

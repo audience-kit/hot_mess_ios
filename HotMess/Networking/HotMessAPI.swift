@@ -199,6 +199,19 @@ struct HotMessAPI: Sendable {
         try await client.send(Endpoints.manifest(device: device)).apple
     }
 
+    /// Trades a Sign in with Apple identity token for a session. The caller
+    /// stores the token it returns.
+    func signInWithApple(_ request: AppleSignInRequest) async throws -> SignInResult {
+        try await client.send(Endpoints.appleSignIn(request))
+    }
+
+    /// Connects Facebook to the signed-in account, with the code from
+    /// Facebook's login dialog, and returns a new session for the account.
+    /// The caller stores the token it returns.
+    func connectFacebook(_ request: ConnectFacebookRequest) async throws -> SignInResult {
+        try await client.send(Endpoints.connectFacebook(request))
+    }
+
     /// Stores the APNs token for this device. `appID` is the bundle
     /// identifier, which the API sends pushes to as the APNs topic, and
     /// `sandbox` says the token is for APNs' development environment.
@@ -382,11 +395,59 @@ extension HotMessAPI {
                 requiresAuthentication: false
             )
         }
+
+        /// Sign in with Apple. Sign-in mints the token, so none is sent.
+        static func appleSignIn(_ request: AppleSignInRequest) -> Endpoint<SignInResult> {
+            Endpoint("/v1/token/apple", method: .post, body: JSONBody(request), requiresAuthentication: false)
+        }
+
+        /// Facebook sign-in with `connect`, sent with the current session so
+        /// the API knows which account Facebook joins.
+        static func connectFacebook(_ request: ConnectFacebookRequest) -> Endpoint<SignInResult> {
+            Endpoint("/v1/token", method: .post, body: JSONBody(request))
+        }
     }
 }
 
 struct ManifestRequest: Encodable, Sendable {
     let device: DeviceDescription
+}
+
+/// `POST /v1/token/apple`. Apple gives the name only the first time someone
+/// signs in to the app, so it's sent along then.
+struct AppleSignInRequest: Encodable, Sendable {
+    let identityToken: String
+    let firstName: String?
+    let lastName: String?
+    let host: String?
+    let device: DeviceDescription
+
+    enum CodingKeys: String, CodingKey {
+        case identityToken = "identity_token"
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case host
+        case device
+    }
+}
+
+/// `POST /v1/token` with `connect`, for an account that signed in with Apple.
+struct ConnectFacebookRequest: Encodable, Sendable {
+    let code: String
+    let redirectURI: String
+    let host: String?
+    let facebookAppID: String?
+    let device: DeviceDescription
+    let connect = true
+
+    enum CodingKeys: String, CodingKey {
+        case code
+        case redirectURI = "redirect_uri"
+        case host
+        case facebookAppID = "facebook_app_id"
+        case device
+        case connect
+    }
 }
 
 // MARK: - GraphQL
@@ -620,7 +681,10 @@ extension HotMessAPI {
 
         static let safety = """
         query Safety {
-          me { terms_accepted_at: termsAcceptedAt blocked_users: blockedUsers { \(blockedUserFields) } }
+          me {
+            terms_accepted_at: termsAcceptedAt blocked_users: blockedUsers { \(blockedUserFields) }
+            has_facebook: hasFacebook can_pretend_location: canPretendLocation
+          }
         }
         """
 
