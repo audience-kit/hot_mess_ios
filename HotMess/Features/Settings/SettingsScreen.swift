@@ -127,6 +127,13 @@ struct SettingsScreen: View {
 
     private var feedbackSection: some View {
         Section {
+            NavigationLink {
+                ReportProblemScreen()
+            } label: {
+                Label(String(localized: "Report a Problem"), systemImage: "exclamationmark.bubble")
+            }
+            .accessibilityIdentifier("me.reportProblem")
+
             if let url = feedbackURL {
                 Link(destination: url) {
                     Label(String(localized: "Submit Feedback"), systemImage: "envelope")
