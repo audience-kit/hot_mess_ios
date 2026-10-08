@@ -17,6 +17,9 @@ struct SettingsScreen: View {
     @State private var isConfirmingSignOut = false
     @State private var isConfirmingReset = false
     @State private var didReset = false
+    @State private var isConfirmingDelete = false
+    @State private var isDeleting = false
+    @State private var deleteFailed = false
     /// Venues whose door the user can work; Door mode shows only when there are some.
     @State private var doorVenues: [DoorVenue] = []
 
@@ -25,9 +28,11 @@ struct SettingsScreen: View {
             profileSection
             coverSection
             locationSection
+            privacySection
             feedbackSection
             aboutSection
             dangerSection
+            deleteSection
         }
         .listStyle(.insetGrouped)
         .navigationTitle(String(localized: "Me"))
@@ -53,6 +58,19 @@ struct SettingsScreen: View {
         }
         .alert(String(localized: "Local Data Cleared"), isPresented: $didReset) {
             Button(String(localized: "OK"), role: .cancel) {}
+        }
+        .alert(String(localized: "Delete your account?"), isPresented: $isConfirmingDelete) {
+            Button(String(localized: "Delete Account"), role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: {
+            Text("This permanently deletes your Hot Mess account, your messages, RSVPs, Pings and friends list, and signs you out. Cover passes you bought stay with the venue. It can't be undone.")
+        }
+        .alert(String(localized: "Couldn't delete your account"), isPresented: $deleteFailed) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text("Please try again, or email feedback@hotmess.social and we'll delete it for you.")
         }
     }
 
@@ -125,6 +143,25 @@ struct SettingsScreen: View {
         }
     }
 
+    private var privacySection: some View {
+        Section(String(localized: "Privacy & Safety")) {
+            NavigationLink {
+                BlockedPeopleScreen()
+            } label: {
+                Label(String(localized: "Blocked People"), systemImage: "hand.raised")
+            }
+            .accessibilityIdentifier("me.blocked")
+
+            Link(destination: LegalLinks.privacy) {
+                Label(String(localized: "Privacy Policy"), systemImage: "hand.raised.square")
+            }
+
+            Link(destination: LegalLinks.terms) {
+                Label(String(localized: "Terms of Use"), systemImage: "doc.text")
+            }
+        }
+    }
+
     private var feedbackSection: some View {
         Section {
             NavigationLink {
@@ -171,7 +208,40 @@ struct SettingsScreen: View {
         }
     }
 
+    private var deleteSection: some View {
+        Section {
+            Button(role: .destructive) {
+                isConfirmingDelete = true
+            } label: {
+                if isDeleting {
+                    HStack {
+                        Text("Deleting Account…")
+                        Spacer()
+                        ProgressView()
+                    }
+                } else {
+                    Text("Delete Account")
+                }
+            }
+            .disabled(isDeleting)
+            .accessibilityIdentifier("me.deleteAccount")
+        } footer: {
+            Text("Deletes your account and everything Hot Mess keeps about you.")
+        }
+    }
+
     // MARK: - Helpers
+
+    private func deleteAccount() async {
+        isDeleting = true
+        defer { isDeleting = false }
+
+        do {
+            try await model.deleteAccount()
+        } catch {
+            deleteFailed = true
+        }
+    }
 
     private var locationStatusText: String {
         if model.location.isAuthorized { return String(localized: "Allowed") }

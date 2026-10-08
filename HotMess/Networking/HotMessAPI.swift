@@ -284,6 +284,54 @@ struct HotMessAPI: Sendable {
         _ = try await now(near: coordinates)
     }
 
+    // MARK: - Safety
+
+    /// Who the user blocked and whether they've agreed to the terms of use.
+    func safety() async throws -> SafetyState {
+        try await query(Documents.safety, variables: [:], as: SafetyResponse.self).me ?? SafetyState()
+    }
+
+    func blockUser(_ id: UUID) async throws -> [BlockedUser] {
+        try await query(
+            Documents.blockUser,
+            variables: ["userId": .string(id.uuidString.lowercased())],
+            as: BlockUserResponse.self
+        ).blockUser.blockedUsers
+    }
+
+    func unblockUser(_ id: UUID) async throws -> [BlockedUser] {
+        try await query(
+            Documents.unblockUser,
+            variables: ["userId": .string(id.uuidString.lowercased())],
+            as: UnblockUserResponse.self
+        ).unblockUser.blockedUsers
+    }
+
+    /// Reports a chat message to the audience's admins, and blocks its sender
+    /// too when asked.
+    func reportChatMessage(_ id: UUID, reason: String?, block: Bool) async throws {
+        _ = try await query(
+            Documents.reportChatMessage,
+            variables: [
+                "messageId": .string(id.uuidString.lowercased()),
+                "reason": reason.map(GraphQLValue.string) ?? .null,
+                "block": .bool(block),
+            ],
+            as: ReportChatMessageResponse.self
+        )
+    }
+
+    func acceptTerms() async throws -> Date? {
+        try await query(Documents.acceptTerms, variables: [:], as: AcceptTermsResponse.self)
+            .acceptTerms.termsAcceptedAt
+    }
+
+    /// Deletes the account and everything the API keeps about the user. It
+    /// can't be undone; the session is gone afterwards.
+    func deleteAccount() async throws {
+        _ = try await query(Documents.deleteAccount, variables: ["confirm": .bool(true)], as: DeleteAccountResponse.self)
+    }
+
     // MARK: - Support
 
     /// "Report a Problem". Works signed out too, so sign-in trouble can be
@@ -568,6 +616,44 @@ extension HotMessAPI {
         }
         """
 
+        static let blockedUserFields = "id name avatar_url: avatarUrl"
+
+        static let safety = """
+        query Safety {
+          me { terms_accepted_at: termsAcceptedAt blocked_users: blockedUsers { \(blockedUserFields) } }
+        }
+        """
+
+        static let blockUser = """
+        mutation BlockUser($userId: ID!) {
+          blockUser(input: { userId: $userId }) { blocked_users: blockedUsers { \(blockedUserFields) } }
+        }
+        """
+
+        static let unblockUser = """
+        mutation UnblockUser($userId: ID!) {
+          unblockUser(input: { userId: $userId }) { blocked_users: blockedUsers { \(blockedUserFields) } }
+        }
+        """
+
+        static let reportChatMessage = """
+        mutation ReportChatMessage($messageId: ID!, $reason: String, $block: Boolean) {
+          reportChatMessage(input: { messageId: $messageId, reason: $reason, block: $block }) { reported blocked }
+        }
+        """
+
+        static let acceptTerms = """
+        mutation AcceptTerms {
+          acceptTerms(input: {}) { terms_accepted_at: termsAcceptedAt }
+        }
+        """
+
+        static let deleteAccount = """
+        mutation DeleteAccount($confirm: Boolean!) {
+          deleteAccount(input: { confirm: $confirm }) { deleted }
+        }
+        """
+
         /// The app's own copy of the SDK's document, with the APNs topic and
         /// environment the API needs to reach this build.
         static let registerDevice = """
@@ -711,6 +797,43 @@ struct LeavePingResponse: Decodable, Sendable { let leavePing: PingPayload }
 struct EndPingResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let ended: Bool }
     let endPing: Payload
+}
+
+struct SafetyResponse: Decodable, Sendable {
+    let me: SafetyState?
+}
+
+struct BlockedUsersPayload: Decodable, Sendable {
+    let blockedUsers: [BlockedUser]
+
+    private enum CodingKeys: String, CodingKey {
+        case blockedUsers = "blocked_users"
+    }
+}
+
+struct BlockUserResponse: Decodable, Sendable { let blockUser: BlockedUsersPayload }
+struct UnblockUserResponse: Decodable, Sendable { let unblockUser: BlockedUsersPayload }
+
+struct ReportChatMessageResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let reported: Bool }
+    let reportChatMessage: Payload
+}
+
+struct AcceptTermsResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable {
+        let termsAcceptedAt: Date?
+
+        private enum CodingKeys: String, CodingKey {
+            case termsAcceptedAt = "terms_accepted_at"
+        }
+    }
+
+    let acceptTerms: Payload
+}
+
+struct DeleteAccountResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let deleted: Bool }
+    let deleteAccount: Payload
 }
 
 struct RegisterDeviceResponse: Decodable, Sendable {

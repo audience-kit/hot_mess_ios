@@ -190,6 +190,10 @@ struct ChatThreadView: View {
     var pinned: ChatThreadMessage? = nil
     /// Called with a failed message's ID when the reader taps it.
     var onRetry: ((String) -> Void)? = nil
+    /// Report and Block, in the menu on someone else's message (App Store
+    /// guideline 1.2). Without them there's no menu.
+    var onReport: ((ChatThreadMessage) -> Void)? = nil
+    var onBlock: ((ChatThreadMessage) -> Void)? = nil
 
     @State private var width: CGFloat = 0
 
@@ -218,7 +222,9 @@ struct ChatThreadView: View {
                             row: row,
                             maxBubbleWidth: maxBubbleWidth,
                             maxRichWidth: maxRichWidth,
-                            onRetry: onRetry
+                            onRetry: onRetry,
+                            onReport: onReport,
+                            onBlock: onBlock
                         )
                         .id(row.id)
                     }
@@ -309,8 +315,16 @@ private struct ChatThreadRowView: View {
     let maxBubbleWidth: CGFloat
     let maxRichWidth: CGFloat
     let onRetry: ((String) -> Void)?
+    var onReport: ((ChatThreadMessage) -> Void)? = nil
+    var onBlock: ((ChatThreadMessage) -> Void)? = nil
 
     private var message: ChatThreadMessage { row.message }
+
+    /// Someone else's message that reached the room. A post as the venue is
+    /// the venue's own, so it has no sender to block.
+    private var canReport: Bool {
+        !message.isOwn && message.delivery == .sent && !message.isFromPlace && onReport != nil
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -357,6 +371,16 @@ private struct ChatThreadRowView: View {
                     .opacity(message.delivery == .sent ? 1 : 0.6)
                     .accessibilityElement(children: message.rich == nil ? .ignore : .contain)
                     .accessibilityLabel(accessibilityLabel)
+                    .contextMenu {
+                        if canReport {
+                            moderationActions
+                        }
+                    }
+                    .accessibilityActions {
+                        if canReport {
+                            moderationActions
+                        }
+                    }
 
                     deliveryStatus
                 }
@@ -368,6 +392,30 @@ private struct ChatThreadRowView: View {
             .frame(maxWidth: .infinity, alignment: message.isOwn ? .trailing : .leading)
         }
         .padding(.top, topSpacing)
+    }
+
+    @ViewBuilder
+    private var moderationActions: some View {
+        Button {
+            onReport?(message)
+        } label: {
+            Label(String(localized: "Report…"), systemImage: "exclamationmark.bubble")
+        }
+
+        if let onBlock {
+            Button(role: .destructive) {
+                onBlock(message)
+            } label: {
+                Label(blockTitle, systemImage: "hand.raised")
+            }
+        }
+    }
+
+    private var blockTitle: String {
+        if let name = message.authorName, !name.isEmpty {
+            return String(localized: "Block \(name)")
+        }
+        return String(localized: "Block")
     }
 
     @ViewBuilder

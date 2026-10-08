@@ -477,3 +477,30 @@ struct VenueMessageTests {
     #expect(spotify.systemImage == "music.note")
     #expect(soundCloud.systemImage == "link")
 }
+
+@Suite("Safety decoding")
+struct SafetyDecodingTests {
+    @Test("Reads who the user blocked and when they agreed to the terms")
+    func fullPayload() throws {
+        let state = try decode(SafetyState.self, from: """
+        {
+          "terms_accepted_at": "2026-10-08T22:00:00Z",
+          "blocked_users": [
+            { "id": "6f2c1c1e-5e0a-4f0e-9a49-0b7f4a3c2d10", "name": "Aurora B.", "avatar_url": "https://example.com/a.jpg" }
+          ]
+        }
+        """)
+
+        #expect(state.termsAcceptedAt == (try instant("2026-10-08T22:00:00Z")))
+        #expect(state.blockedUsers.map(\.name) == ["Aurora B."])
+        #expect(state.blockedUsers.first?.avatarURL == URL(string: "https://example.com/a.jpg"))
+    }
+
+    @Test("Treats a user who never agreed or blocked anyone as neither")
+    func emptyPayload() throws {
+        let state = try decode(SafetyState.self, from: #"{ "terms_accepted_at": null }"#)
+
+        #expect(state.termsAcceptedAt == nil)
+        #expect(state.blockedUsers.isEmpty)
+    }
+}
