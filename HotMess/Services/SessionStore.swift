@@ -51,7 +51,7 @@ final class SessionStore {
     /// Whether sign-in asks for `user_friends`, which shows friends who also use
     /// the app at the same venue. Off until Meta's App Review approves it on the
     /// Hot Mess Consumer app; until then everyone's friends list is empty.
-    static let asksForFriends = false
+    static let asksForFriends = true
 
     /// Permissions requested at sign-in, on the Hot Mess Consumer app.
     /// `public_profile` and `email` need no App Review; `user_friends` does.
