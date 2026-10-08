@@ -146,12 +146,13 @@ and Square can't share it, give Square its own merchant ID.
 ## App icon
 
 Each build configuration has one 1024×1024 universal icon with light, dark and
-tinted appearances (`AppIcon` for Release, `AppIconStaging`, `AppIconDevelopment`
-with a ribbon naming the build). They're rendered, not drawn by hand:
-`Design/AppIcon/make_app_icon.py` recolours the original Hot Mess silhouette
-(`Design/AppIcon/silhouette-mask.png`) with the AudienceKit `hot_mess` theme
-(accent `#b8236f`, dark accent `#ff7ab6`, ink `#1a1519`). Edit the script and
-run `python3 Design/AppIcon/make_app_icon.py` (needs Pillow) to change them.
+tinted appearances, coloured by build as the 2017 icons were: `AppIcon`
+(Production, blue on white), `AppIconStaging` (Test, green) and
+`AppIconDevelopment` (Development, purple). The mark is the figure from the
+original login background (`Design/AppIcon/silhouette.svg`) printed slightly out
+of register. They're rendered, not drawn by hand: edit
+`Design/AppIcon/make_app_icon.py` and run `python3 Design/AppIcon/make_app_icon.py`
+(needs cairosvg). It also writes SVG masters to `Design/AppIcon/masters/`.
 
 ## Tests
 

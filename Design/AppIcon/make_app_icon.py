@@ -1,114 +1,80 @@
 #!/usr/bin/env python3
 """Renders the Hot Mess app icons into HotMess/Assets.xcassets.
 
-The mark is the silhouette from the original Hot Mess icon (silhouette-mask.png,
-extracted from the 2017 1024px icon), recoloured with the AudienceKit
-`hot_mess` theme from audience-kit/admin/src/design/tokens.json:
+The mark is the "misprint": the figure from the original login background
+(silhouette.svg) in ink, with two offset copies slipping out of register
+behind it. Each build has its own colour, as the 2017 icons did:
 
-  accent        #b8236f (light)   #ff7ab6 (dark)
-  surface       #1a1519 (hot_mess_dark)
+  AppIcon             Production   blue    (white paper, blue and pink inks)
+  AppIconStaging      Test         green
+  AppIconDevelopment  Development  purple
 
 Each set is one 1024x1024 universal icon with light, dark and tinted
-appearances, opaque with square corners (iOS applies the mask).
+appearances, opaque with square corners (iOS applies the mask). The SVG
+masters are written next to this script in masters/.
 
   python3 Design/AppIcon/make_app_icon.py          # from the repository root
 
-Requires Pillow.
+Requires cairosvg.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+import cairosvg
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 ASSETS = ROOT / "HotMess" / "Assets.xcassets"
-FONT = ROOT / "HotMess" / "Resources" / "ProximaNova-SemiBold.otf"
+MASTERS = HERE / "masters"
 SIZE = 1024
 
-ACCENT_TOP = (0xD6, 0x3A, 0x8A)  # accent, lifted
-ACCENT = (0xB8, 0x23, 0x6F)  # hot_mess accent
-ACCENT_DEEP = (0x6E, 0x10, 0x40)  # accent, deepened
-ACCENT_DARK_MODE = (0xFF, 0x7A, 0xB6)  # hot_mess_dark accent
-INK = (0x1A, 0x15, 0x19)  # hot_mess_dark surface
-INK_RAISED = (0x27, 0x20, 0x26)  # hot_mess_dark surface-raised
+INK = "#1a1519"  # hot_mess_dark surface
+PAPER_DARK = "#141014"
 
-# Build configurations -> icon set and the ribbon that marks non-production builds.
+# Icon set -> paper, the ink behind-left, the ink behind-right, and the figure in dark mode.
 ICON_SETS = {
-    "AppIcon": None,
-    "AppIconStaging": "STAGING",
-    "AppIconDevelopment": "DEV",
+    "AppIcon": dict(paper="#f6eff3", left="#2fb4ff", right="#ff3d9a", dark_figure="#cfe9ff"),
+    "AppIconStaging": dict(paper="#c9efc6", left="#ffd23d", right="#2fbf4f", dark_figure="#c9efc6"),
+    "AppIconDevelopment": dict(paper="#dcc0f5", left="#a46bff", right="#5e1a9c", dark_figure="#dcc0f5"),
 }
 
-
-def lerp(a, b, t):
-    return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
-
-
-def gradient(stops):
-    """A vertical gradient through (position, colour) stops."""
-    image = Image.new("RGB", (SIZE, SIZE))
-    draw = ImageDraw.Draw(image)
-    for y in range(SIZE):
-        t = y / (SIZE - 1)
-        for (p0, c0), (p1, c1) in zip(stops, stops[1:]):
-            if p0 <= t <= p1:
-                draw.line([(0, y), (SIZE, y)], fill=lerp(c0, c1, (t - p0) / (p1 - p0)))
-                break
-    return image
+# The figure is scaled and placed so the head sits in the upper middle of the icon.
+PLACEMENT = "scale(0.80) translate(140 -470)"
+OFFSET = (30, 14)
 
 
-def silhouette():
-    mask = Image.open(HERE / "silhouette-mask.png").convert("L")
-    return mask.resize((SIZE, SIZE), Image.LANCZOS) if mask.size != (SIZE, SIZE) else mask
+def figure_path():
+    svg = (HERE / "silhouette.svg").read_text()
+    return re.search(r'<path id="figure" d="([^"]+)"', svg).group(1)
 
 
-def compose(background, figure, mask):
-    background.paste(figure, (0, 0), mask)
-    return background
-
-
-def ribbon(image, label, fill, text):
-    """A band across the bottom naming the build, so test builds are easy to tell apart."""
-    draw = ImageDraw.Draw(image)
-    top = SIZE - 210
-    draw.rectangle([(0, top), (SIZE, SIZE)], fill=fill)
-    font = ImageFont.truetype(str(FONT), 120)
-    box = draw.textbbox((0, 0), label, font=font)
-    width, height = box[2] - box[0], box[3] - box[1]
-    draw.text(((SIZE - width) / 2 - box[0], top + (210 - height) / 2 - box[1] - 20), label, font=font, fill=text)
-    return image
-
-
-def render(label):
-    mask = silhouette()
-
-    light = compose(
-        gradient([(0, ACCENT_TOP), (0.55, ACCENT), (1, ACCENT_DEEP)]),
-        Image.new("RGB", (SIZE, SIZE), INK),
-        mask,
+def misprint(paper, left, right, figure):
+    d = figure_path()
+    dx, dy = OFFSET
+    layer = lambda fill, x, y: (
+        f'<g transform="translate({x} {y})"><path transform="{PLACEMENT}" d="{d}" fill="{fill}"/></g>'
     )
-    dark = compose(
-        gradient([(0, INK_RAISED), (1, INK)]),
-        gradient([(0, ACCENT_DARK_MODE), (1, ACCENT)]),
-        mask,
-    )
-    # Tinted icons are greyscale; iOS tints them by luminance.
-    tinted = compose(
-        Image.new("RGB", (SIZE, SIZE), (0, 0, 0)),
-        gradient([(0, (0xFF, 0xFF, 0xFF)), (1, (0x9A, 0x9A, 0x9A))]),
-        mask,
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {SIZE} {SIZE}" width="{SIZE}" height="{SIZE}">'
+        f'<rect width="{SIZE}" height="{SIZE}" fill="{paper}"/>'
+        + layer(left, -dx, -dy)
+        + layer(right, dx, dy)
+        + layer(figure, 0, 0)
+        + "</svg>\n"
     )
 
-    if label:
-        ribbon(light, label, INK, (0xFF, 0xFF, 0xFF))
-        ribbon(dark, label, ACCENT_DARK_MODE, INK)
-        ribbon(tinted, label, (0xFF, 0xFF, 0xFF), (0, 0, 0))
 
-    return light, dark, tinted
+def render(colours):
+    light = misprint(colours["paper"], colours["left"], colours["right"], INK)
+    # Dark mode prints in reverse: light figure on dark paper, same inks.
+    dark = misprint(PAPER_DARK, colours["left"], colours["right"], colours["dark_figure"])
+    # Tinted icons are greyscale on black; iOS tints them by luminance.
+    tinted = misprint("#000000", "#5c5c5c", "#8e8e8e", "#ffffff")
+    return {"": light, "-dark": dark, "-tinted": tinted}
 
 
 def contents(name):
@@ -129,16 +95,17 @@ def contents(name):
 
 
 def main():
-    for name, label in ICON_SETS.items():
+    MASTERS.mkdir(exist_ok=True)
+    for name, colours in ICON_SETS.items():
         folder = ASSETS / f"{name}.appiconset"
         folder.mkdir(exist_ok=True)
         for old in folder.iterdir():
             old.unlink()
 
-        light, dark, tinted = render(label)
-        light.save(folder / f"{name}.png", optimize=True)
-        dark.save(folder / f"{name}-dark.png", optimize=True)
-        tinted.save(folder / f"{name}-tinted.png", optimize=True)
+        for suffix, svg in render(colours).items():
+            (MASTERS / f"{name}{suffix}.svg").write_text(svg)
+            cairosvg.svg2png(bytestring=svg.encode(), write_to=str(folder / f"{name}{suffix}.png"),
+                             output_width=SIZE, output_height=SIZE, background_color="white")
         (folder / "Contents.json").write_text(json.dumps(contents(name), indent=2) + "\n")
         print(f"wrote {folder.relative_to(ROOT)}")
 
