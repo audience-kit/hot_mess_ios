@@ -59,9 +59,11 @@ struct HereNowStrip: View {
     var body: some View {
         // One compact row: the count, then the faces. A horizontal scroll view
         // takes all the height it's offered, so it's held to its content's;
-        // otherwise it splits the screen with the thread below it.
+        // otherwise it splits the screen with the thread below it. The row is
+        // a plain HStack: a LazyHStack reports no height of its own, so the
+        // strip would collapse to nothing.
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 Text(countLabel)
                     .font(.hotMess(.caption, semibold: true))
                     .foregroundStyle(.secondary)
