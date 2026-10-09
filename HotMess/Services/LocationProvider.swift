@@ -75,7 +75,9 @@ final class LocationProvider {
     }
 
     static let beaconIdentifier = "social.hotmess.beacon"
-    static let monitorName = "social.hotmess.venues"
+    /// CLMonitor names must be alphanumeric: a dot throws "Monitor name is not
+    /// valid" when the monitor is created, crashing the app at launch.
+    static let monitorName = "HotMessVenues"
     static let recenterIdentifier = "recenter"
     static let venueIdentifierPrefix = "venue:"
 
