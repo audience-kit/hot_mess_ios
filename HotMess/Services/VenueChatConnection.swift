@@ -48,6 +48,10 @@ actor VenueChatConnection {
         case history(messages: [VenueMessage], pinned: VenueMessage?)
         /// An announcement was pinned (with it), or unpinned (`nil`).
         case pin(id: UUID, announcement: VenueMessage?)
+        /// An admin removed a message; nobody sees it again.
+        case removed(id: UUID)
+        /// An admin cleared the room: every message so far is gone.
+        case cleared
         case disconnected(String?)
     }
 
@@ -204,7 +208,8 @@ actor VenueChatConnection {
             // A frame with no `type` carries what the channel sent in `message`:
             // a chat line, `{"type":"left"}` once the user's presence lapses,
             // `{"type":"range","out_of_range":…}`, the `roster` of who's in the
-            // room on joining, or a `presence` change.
+            // room on joining, a `presence` change, or an admin's `removed` or
+            // `cleared`.
             if frame.messageType == "left" {
                 return .notPresent
             } else if frame.messageType == "range" {
@@ -220,6 +225,11 @@ actor VenueChatConnection {
             } else if frame.messageType == "pin" {
                 guard let id = frame.pinID else { return nil }
                 return .pin(id: id, announcement: frame.pinnedFlag == true ? frame.pinned : nil)
+            } else if frame.messageType == "removed" {
+                guard let id = frame.removedID else { return nil }
+                return .removed(id: id)
+            } else if frame.messageType == "cleared" {
+                return .cleared
             } else if frame.messageType == "presence" {
                 guard let userID = frame.presenceUserID, let presence = frame.presence else { return nil }
                 if presence == "push" { return .reachable(userID: userID) }
@@ -279,6 +289,8 @@ actor VenueChatConnection {
         /// `id` and `pinned` inside a `pin` message.
         let pinID: UUID?
         let pinnedFlag: Bool?
+        /// `id` inside a `removed` message.
+        let removedID: UUID?
 
         enum CodingKeys: String, CodingKey {
             case type, identifier, message
@@ -313,6 +325,7 @@ actor VenueChatConnection {
 
         private struct Typed: Decodable {
             let type: String?
+            let id: UUID?
             let outOfRange: Bool?
             let online: [UUID]?
             let userID: UUID?
@@ -323,7 +336,7 @@ actor VenueChatConnection {
             let friends: [Friend]?
 
             enum CodingKeys: String, CodingKey {
-                case type, online, presence, name, people, friends
+                case type, id, online, presence, name, people, friends
                 case outOfRange = "out_of_range"
                 case userID = "user_id"
                 case avatarURL = "avatar_url"
@@ -332,6 +345,7 @@ actor VenueChatConnection {
             init(from decoder: any Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
                 type = try? container.decodeIfPresent(String.self, forKey: .type)
+                id = try? container.decodeIfPresent(UUID.self, forKey: .id)
                 outOfRange = try? container.decodeIfPresent(Bool.self, forKey: .outOfRange)
                 // One malformed ID shouldn't drop everyone else.
                 online = (try? container.decodeIfPresent([String].self, forKey: .online))
@@ -428,6 +442,7 @@ actor VenueChatConnection {
             pinned = backlog?.pinned
             pinID = backlog?.id
             pinnedFlag = backlog?.isPinned
+            removedID = typed?.type == "removed" ? typed?.id : nil
         }
     }
 }
