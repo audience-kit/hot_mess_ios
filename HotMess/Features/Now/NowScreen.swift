@@ -115,11 +115,27 @@ struct NowScreen: View {
         viewModel?.state.value?.title ?? String(localized: "Now")
     }
 
+    @ViewBuilder
     private func heroText(_ now: Now) -> some View {
-        Text(now.title)
-            .font(.hotMess(.largeTitle, semibold: true))
-            .lineLimit(2)
-            .accessibilityAddTraits(.isHeader)
+        if let venue = now.venue {
+            VenueCardLink(venue: venue) {
+                HStack(spacing: 12) {
+                    Text(venue.name)
+                        .font(.hotMess(.largeTitle, semibold: true))
+                        .lineLimit(2)
+                        .accessibilityAddTraits(.isHeader)
+                    Image(systemName: "chevron.right")
+                        .font(.hotMess(.headline, semibold: true))
+                        .accessibilityHidden(true)
+                }
+            }
+            .accessibilityHint(String(localized: "View venue details"))
+        } else {
+            Text(now.title)
+                .font(.hotMess(.largeTitle, semibold: true))
+                .lineLimit(2)
+                .accessibilityAddTraits(.isHeader)
+        }
     }
 
     // MARK: - Sections
@@ -176,22 +192,41 @@ struct NowScreen: View {
                 SkipTheLineCard(venue: venue, coverCharge: coverCharge)
             }
 
-            CardSection(String(localized: "You're at")) {
-                VenueCardLink(venue: venue)
-            }
-
             ChatPeek(
                 title: String(localized: "Small talk"),
                 roomName: venue.name,
                 messages: now.recentMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
+                participants: chatParticipants(now, venue: venue),
                 route: .venueChat(venue)
             )
             .padding(.horizontal, 16)
 
-            friendsSection(now, title: String(localized: "Friends here"))
         } else {
             friendsSection(now, title: String(localized: "People"))
         }
+    }
+
+    private func chatParticipants(_ now: Now, venue: Venue) -> [ChatPeek.Participant] {
+        let viewerID = model.session.userID
+        var participants = [
+            ChatPeek.Participant(
+                id: "venue-\(venue.id)", name: venue.name,
+                avatarURL: venue.photoURL, isPlace: true
+            ),
+            ChatPeek.Participant(
+                id: "viewer", name: String(localized: "You"),
+                avatarURL: viewerID.map { model.configuration.avatarURL(forUserID: $0) }
+            )
+        ]
+        var seen = Set<UUID>()
+        for friend in now.friends where friend.id != viewerID && seen.insert(friend.id).inserted {
+            participants.append(ChatPeek.Participant(
+                id: friend.id.uuidString, name: friend.name,
+                avatarURL: model.configuration.avatarURL(forUserID: friend.id),
+                presence: friend.presence
+            ))
+        }
+        return participants
     }
 
     private func friendsSection(_ now: Now, title: String) -> some View {

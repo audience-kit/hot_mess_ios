@@ -1,0 +1,51 @@
+{
+  "originHash" : "151a0a07c8c02a9e0050c7b3be1de7a9936bef9fb9369227921d14c7432279f1",
+  "pins" : [
+    {
+      "identity" : "audience-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/audience-kit/audience-kit.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "d0f98fa96c3bab3e3cf4787bf9a16c79b5a4a316"
+      }
+    },
+    {
+      "identity" : "facebook-ios-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/facebook/facebook-ios-sdk",
+      "state" : {
+        "revision" : "80d0ee82f6370d1bace1431a80cb80575f98ee90",
+        "version" : "18.1.1"
+      }
+    },
+    {
+      "identity" : "in-app-payments-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/square/in-app-payments-ios",
+      "state" : {
+        "revision" : "386889b41c945b64a147a2999823356c0883504e",
+        "version" : "1.6.7"
+      }
+    },
+    {
+      "identity" : "kingfisher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/onevcat/Kingfisher.git",
+      "state" : {
+        "revision" : "8648fe649c5d62be38721110f835821906e9242a",
+        "version" : "8.13.0"
+      }
+    },
+    {
+      "identity" : "stripe-ios-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/stripe/stripe-ios-spm",
+      "state" : {
+        "revision" : "938bad5c435cba09690e6a097c3d7354f89eebf3",
+        "version" : "26.13.0"
+      }
+    }
+  ],
+  "version" : 3
+}

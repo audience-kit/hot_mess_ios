@@ -67,36 +67,42 @@ struct VenuesScreen: View {
     /// The inline map is a preview: tapping anywhere on it opens the full
     /// screen map, which is where panning and zooming happen.
     private func map(for collection: VenueCollection) -> some View {
-        Button {
-            isMapExpanded = true
-        } label: {
-            Map(position: $camera, interactionModes: []) {
-                ForEach(collection.pins) { pin in
-                    Marker(pin.name, coordinate: pin.coordinate)
-                        .tint(Color.hotMessAccent)
-                }
+        Map(position: $camera, interactionModes: []) {
+            ForEach(collection.pins) { pin in
+                Marker(pin.name, coordinate: pin.coordinate)
+                    .tint(Color.hotMessAccent)
             }
-            .allowsHitTesting(false)
-            .overlay(alignment: .topTrailing) {
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.footnote.weight(.semibold))
-                    .padding(8)
-                    .background(.regularMaterial, in: Circle())
-                    .padding(10)
-            }
+            UserAnnotation()
         }
-        .buttonStyle(.plain)
+        .allowsHitTesting(false)
+        .overlay {
+            Button {
+                isMapExpanded = true
+            } label: {
+                Rectangle().fill(.clear)
+                    .contentShape(Rectangle())
+                    .overlay(alignment: .topTrailing) {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.footnote.weight(.semibold))
+                            .padding(8)
+                            .background(.regularMaterial, in: Circle())
+                            .padding(10)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Map of venues"))
+            .accessibilityHint(Text("Opens the map full screen"))
+        }
         .frame(height: 220)
-        .accessibilityLabel(Text("Map of venues"))
-        .accessibilityHint(Text("Opens the map full screen"))
         .onChange(of: collection) { _, updated in
             updateCamera(for: updated)
         }
         .onAppear { updateCamera(for: collection) }
+        .onChange(of: model.location.coordinates) { updateCamera(for: collection) }
     }
 
     private func updateCamera(for collection: VenueCollection) {
-        guard let region = collection.region else { return }
+        guard let region = collection.region(including: model.location.coordinates) else { return }
         camera = .region(region)
     }
 
@@ -121,6 +127,7 @@ private struct VenuesMapScreen: View {
     let open: (VenuePin) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppModel.self) private var model
     @State private var camera: MapCameraPosition = .automatic
     @State private var selection: UUID?
 
@@ -162,8 +169,12 @@ private struct VenuesMapScreen: View {
                     .padding()
                 }
             }
+            .task {
+                model.location.start()
+                await model.location.refreshPosition()
+            }
             .onAppear {
-                if let region = collection.region {
+                if let region = collection.region(including: model.location.coordinates) {
                     camera = .region(region)
                 }
             }

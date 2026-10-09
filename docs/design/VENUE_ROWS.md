@@ -16,7 +16,7 @@ Each venue row is its own photo, with the name and details written over it. The 
 ### Where the row is used
 
 - **Venues tab:** the full list under the map.
-- **Now:** nearby venues, "You're at", and "Where your friends are" (with the friend faces in the corner).
+- **Now:** nearby venues and "Where your friends are" (with the friend faces in the corner). The current venue appears in the hero, whose name opens venue details.
 - **Event screen:** the Venue section, as a single row.
 - **Dynamic Type:** at large text sizes the row grows taller and the name wraps to two lines. The scrim grows with it.
 

@@ -33,6 +33,13 @@ extension VenueCollection {
         envelope?.region ?? MKCoordinateRegion.containing(pins.map(\.coordinate))
     }
 
+    func region(including location: Coordinates?) -> MKCoordinateRegion? {
+        guard let location else { return region }
+        return MKCoordinateRegion.containing(pins.map(\.coordinate) + [
+            CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+        ])
+    }
+
     /// The audience's visible venues from AudienceKit GraphQL, in the audience's
     /// order. Only venues in `localeID` are kept once the device's locale is
     /// known; until then every venue shows.

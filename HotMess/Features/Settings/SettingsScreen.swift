@@ -20,8 +20,6 @@ struct SettingsScreen: View {
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
     @State private var deleteFailed = false
-    /// Venues whose door the user can work; Door mode shows only when there are some.
-    @State private var doorVenues: [DoorVenue] = []
 
     var body: some View {
         List {
@@ -38,7 +36,6 @@ struct SettingsScreen: View {
         .listStyle(.insetGrouped)
         .navigationTitle(String(localized: "Me"))
         .task { await model.session.refreshUser() }
-        .task { await loadDoorVenues() }
         .task { await model.safety.load() }
         .confirmationDialog(
             String(localized: "Sign out of Hot Mess?"),
@@ -122,19 +119,6 @@ struct SettingsScreen: View {
                 Label(String(localized: "Passes"), systemImage: "ticket")
             }
             .accessibilityIdentifier("me.passes")
-
-            if !doorVenues.isEmpty {
-                NavigationLink {
-                    DoorScreen(venues: doorVenues)
-                } label: {
-                    Label(String(localized: "Door"), systemImage: "qrcode.viewfinder")
-                }
-                .accessibilityIdentifier("me.door")
-            }
-        } footer: {
-            if !doorVenues.isEmpty {
-                Text("Scan cover passes at \(doorVenues.map(\.name).formatted(.list(type: .and))).")
-            }
         }
     }
 
@@ -278,14 +262,6 @@ struct SettingsScreen: View {
         ]
 
         return components.url
-    }
-
-    private func loadDoorVenues() async {
-        do {
-            doorVenues = try await model.api.doorVenues()
-        } catch {
-            // Door mode stays hidden; it's only for venue staff.
-        }
     }
 
     private func resetLocalData() {

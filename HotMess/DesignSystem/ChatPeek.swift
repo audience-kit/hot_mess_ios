@@ -10,6 +10,14 @@ import SwiftUI
 /// one button that opens the room. It holds no connection; the screen showing
 /// it refreshes `messages` when it loads.
 struct ChatPeek: View {
+    struct Participant: Identifiable {
+        let id: String
+        let name: String
+        let avatarURL: URL?
+        var presence: PresenceState? = nil
+        var isPlace = false
+    }
+
     /// What tapping the panel does.
     enum Destination {
         case route(AppRoute)
@@ -25,6 +33,7 @@ struct ChatPeek: View {
     /// People in the room now, when known. Draws "N here now".
     var online: Int?
     var limit: Int
+    var participants: [Participant]
     let destination: Destination
 
     @State private var width: CGFloat = 0
@@ -35,6 +44,7 @@ struct ChatPeek: View {
         messages: [ChatThreadMessage],
         online: Int? = nil,
         limit: Int = 3,
+        participants: [Participant] = [],
         route: AppRoute
     ) {
         self.title = title
@@ -42,6 +52,7 @@ struct ChatPeek: View {
         self.messages = messages
         self.online = online
         self.limit = limit
+        self.participants = participants
         self.destination = .route(route)
     }
 
@@ -51,6 +62,7 @@ struct ChatPeek: View {
         messages: [ChatThreadMessage],
         online: Int? = nil,
         limit: Int = 3,
+        participants: [Participant] = [],
         action: @escaping () -> Void
     ) {
         self.title = title
@@ -58,6 +70,7 @@ struct ChatPeek: View {
         self.messages = messages
         self.online = online
         self.limit = limit
+        self.participants = participants
         self.destination = .action(action)
     }
 
@@ -81,6 +94,25 @@ struct ChatPeek: View {
     private var panel: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
+
+            if !participants.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(participants) { participant in
+                            Avatar(
+                                url: participant.avatarURL,
+                                initials: participant.name.initialsForDisplay,
+                                size: 32,
+                                presence: participant.presence,
+                                presenceRing: .hotMessSurfaceSunken,
+                                isPlace: participant.isPlace
+                            )
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .scrollIndicators(.hidden)
+            }
 
             if visible.isEmpty {
                 Text("No one's said anything yet. Say hello.")
@@ -114,6 +146,13 @@ struct ChatPeek: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(participants.map { participant in
+            if let presence = participant.presence, presence != .offline {
+                return participant.name + ", " + (presence == .online
+                    ? String(localized: "In chat") : String(localized: "Reachable by notification"))
+            }
+            return participant.name
+        }.joined(separator: "; "))
     }
 
     private var header: some View {

@@ -98,8 +98,8 @@ them.
 | Release | `https://api.audiencekit.com` | Hot Mess (1168782378316790) |
 
 Release signs in with Hot Mess, a Consumer Facebook app, using classic Facebook
-Login: `public_profile`, `email` and `user_friends` (friends who also use the app,
-shown at the same venue). `user_friends` needs App Review on that app. The
+Login with only `public_profile` until App Review is approved. Email and friend
+permissions are not requested. The
 AudienceKit service app (713525445368431) does Page reads for the API and isn't used here.
 
 The API only accepts a Facebook app that belongs to the audience named by
@@ -130,9 +130,8 @@ Then it shows the pass. Passes live under Me → Passes.
 
 The pass's QR code is made on the phone every 30 seconds from the pass's
 secret (`CoverPass`, the API's `app/services/cover_pass.rb`), so it works with
-no signal; a sliding colour band shows staff it's live. Venue staff (anyone
-`doorVenues` returns) get Me → Door, which scans passes with the camera and
-calls `scanAdmission`.
+no signal; a sliding colour band shows staff it's live. Door operations are handled
+through Velvet, rather than the Me tab.
 
 Apple Pay uses `APPLE_PAY_MERCHANT_ID` (`merchant.social.hotmess`) from the
 xcconfig files and the `in-app-payments` entitlement. Register that merchant
@@ -190,8 +189,5 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
 
 ## Known follow-ups
 
-- Sign-in requests `public_profile`, `email` and `user_friends`. The original
-  also asked for `user_events` and `user_likes`, which Facebook has since
-  removed, and for a `rsvp_event` publish permission that no longer exists —
-  RSVPs now go to the Hot Mess API only. Confirm the permission set against the
-  Facebook app configuration.
+- Sign-in requests only `public_profile` while App Review is pending. Revisit
+  additional permissions after approval.
