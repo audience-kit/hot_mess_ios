@@ -347,6 +347,16 @@ struct HotMessAPI: Sendable {
         )
     }
 
+    /// Takes back one of the user's own chat messages. The room drops it for
+    /// everyone, the same as when an admin removes it.
+    func removeMyChatMessage(_ id: UUID) async throws {
+        _ = try await query(
+            Documents.removeMyChatMessage,
+            variables: ["messageId": .string(id.uuidString.lowercased())],
+            as: RemoveMyChatMessageResponse.self
+        )
+    }
+
     func acceptTerms() async throws -> Date? {
         try await query(Documents.acceptTerms, variables: [:], as: AcceptTermsResponse.self)
             .acceptTerms.termsAcceptedAt
@@ -725,6 +735,12 @@ extension HotMessAPI {
         }
         """
 
+        static let removeMyChatMessage = """
+        mutation RemoveMyChatMessage($messageId: ID!) {
+          removeMyChatMessage(input: { messageId: $messageId }) { removedMessageId }
+        }
+        """
+
         static let acceptTerms = """
         mutation AcceptTerms {
           acceptTerms(input: {}) { terms_accepted_at: termsAcceptedAt }
@@ -918,6 +934,11 @@ struct UnblockUserResponse: Decodable, Sendable { let unblockUser: BlockedUsersP
 struct ReportChatMessageResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let reported: Bool }
     let reportChatMessage: Payload
+}
+
+struct RemoveMyChatMessageResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let removedMessageId: String }
+    let removeMyChatMessage: Payload
 }
 
 struct AcceptTermsResponse: Decodable, Sendable {

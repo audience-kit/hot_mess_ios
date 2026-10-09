@@ -50,23 +50,40 @@ struct HereNowPerson: Identifiable, Hashable, Sendable {
     }
 }
 
-/// Who else is in a chat room now: a count and their faces in one short row
-/// under the room's banner, friends first with an accent ring and a heart.
-/// Draw it only when someone else is here.
+/// The venue whose room it is, first in the Here now strip: a venue is
+/// always in its own room.
+struct HereNowPlace: Hashable, Sendable {
+    let name: String
+    let photoURL: URL?
+}
+
+/// Who is in a chat room now, in one short row under the room's banner: the
+/// count (when anyone else is here), the venue (always there in its own room), then everyone else,
+/// friends first with an accent ring and a heart. A locale's room has no
+/// venue, so draw it there only when someone else is here.
 struct HereNowStrip: View {
+    var place: HereNowPlace? = nil
     let people: [HereNowPerson]
 
     var body: some View {
         // One compact row: the count, then the faces. A horizontal scroll view
         // takes all the height it's offered, so it's held to its content's;
-        // otherwise it splits the screen with the thread below it.
+        // otherwise it splits the screen with the thread below it. The row is
+        // a plain HStack: a LazyHStack reports no height of its own, so the
+        // strip would collapse to nothing.
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .center, spacing: 10) {
-                Text(countLabel)
-                    .font(.hotMess(.caption, semibold: true))
-                    .foregroundStyle(.secondary)
-                    .fixedSize()
-                    .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 10) {
+                if !people.isEmpty {
+                    Text(countLabel)
+                        .font(.hotMess(.caption, semibold: true))
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                        .accessibilityAddTraits(.isHeader)
+                }
+
+                if let place {
+                    HereNowPlaceFace(place: place)
+                }
 
                 ForEach(people) { person in
                     HereNowFace(person: person)
@@ -136,6 +153,29 @@ struct HereNowFace: View {
     }
 }
 
+/// The venue in the Here now strip: its photo as a rounded square, so it
+/// never looks like a person, and its name under it.
+struct HereNowPlaceFace: View {
+    let place: HereNowPlace
+
+    /// Matches `HereNowFace`'s avatar and ring, so the row lines up.
+    private static let size: CGFloat = 36
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Avatar(url: place.photoURL, initials: place.name.initialsForDisplay, size: Self.size, isPlace: true)
+
+            Text(place.name)
+                .font(.hotMess(.caption2, semibold: true))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(maxWidth: Self.size + 16)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(localized: "\(place.name), the venue"))
+    }
+}
+
 /// The small heart on a friend's avatar.
 private struct FriendBadge: View {
     let surface: Color
@@ -165,7 +205,7 @@ private struct FriendBadge: View {
 
     VStack(spacing: 0) {
         RoomBanner(kind: .range, roomName: "The Eagle")
-        HereNowStrip(people: people)
+        HereNowStrip(place: HereNowPlace(name: "The Eagle", photoURL: nil), people: people)
         PinnedBar(author: "The Eagle", title: "Beer bust starts at 3") {}
         Spacer()
     }

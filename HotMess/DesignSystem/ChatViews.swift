@@ -194,6 +194,9 @@ struct ChatThreadView: View {
     /// guideline 1.2). Without them there's no menu.
     var onReport: ((ChatThreadMessage) -> Void)? = nil
     var onBlock: ((ChatThreadMessage) -> Void)? = nil
+    /// Delete, in the menu on the reader's own sent messages. Without it
+    /// their messages have no menu.
+    var onDelete: ((ChatThreadMessage) -> Void)? = nil
 
     @State private var width: CGFloat = 0
 
@@ -224,7 +227,8 @@ struct ChatThreadView: View {
                             maxRichWidth: maxRichWidth,
                             onRetry: onRetry,
                             onReport: onReport,
-                            onBlock: onBlock
+                            onBlock: onBlock,
+                            onDelete: onDelete
                         )
                         .id(row.id)
                     }
@@ -317,8 +321,14 @@ private struct ChatThreadRowView: View {
     let onRetry: ((String) -> Void)?
     var onReport: ((ChatThreadMessage) -> Void)? = nil
     var onBlock: ((ChatThreadMessage) -> Void)? = nil
+    var onDelete: ((ChatThreadMessage) -> Void)? = nil
 
     private var message: ChatThreadMessage { row.message }
+
+    /// The reader's own message that reached the room.
+    private var canDelete: Bool {
+        message.isOwn && message.delivery == .sent && onDelete != nil
+    }
 
     /// Someone else's message that reached the room. A post as the venue is
     /// the venue's own, so it has no sender to block.
@@ -350,9 +360,12 @@ private struct ChatThreadRowView: View {
                 }
 
                 VStack(alignment: message.isOwn ? .trailing : .leading, spacing: 2) {
-                    if !message.isOwn, row.isFirstInGroup {
+                    // The reader's own posts as the venue name it the way
+                    // everyone else sees them ("Try-Angles [Venue]"); their
+                    // ordinary messages as themselves need no name.
+                    if row.isFirstInGroup, !message.isOwn || message.isFromPlace {
                         ChatSenderLine(name: message.authorName, role: message.role)
-                            .padding(.leading, message.rich == nil ? 12 : 4)
+                            .padding(message.isOwn ? .trailing : .leading, message.rich == nil ? 12 : 4)
                             .accessibilityHidden(true)
                     }
 
@@ -375,10 +388,16 @@ private struct ChatThreadRowView: View {
                         if canReport {
                             moderationActions
                         }
+                        if canDelete {
+                            deleteAction
+                        }
                     }
                     .accessibilityActions {
                         if canReport {
                             moderationActions
+                        }
+                        if canDelete {
+                            deleteAction
                         }
                     }
 
@@ -408,6 +427,14 @@ private struct ChatThreadRowView: View {
             } label: {
                 Label(blockTitle, systemImage: "hand.raised")
             }
+        }
+    }
+
+    private var deleteAction: some View {
+        Button(role: .destructive) {
+            onDelete?(message)
+        } label: {
+            Label(String(localized: "Delete"), systemImage: "trash")
         }
     }
 
@@ -449,6 +476,9 @@ private struct ChatThreadRowView: View {
 
     private var accessibilityLabel: String {
         if message.isOwn {
+            if let name = message.authorName, !name.isEmpty, let role = message.role {
+                return String(localized: "You, as \(name), \(role.title): \(message.text)")
+            }
             return String(localized: "You: \(message.text)")
         }
         let name = message.authorName.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Someone")

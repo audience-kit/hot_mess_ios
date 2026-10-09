@@ -32,6 +32,7 @@ struct VenueChatScreen: View {
     @State private var reportTarget: ChatThreadMessage?
     @State private var blockOffer: ChatThreadMessage?
     @State private var blockTarget: ChatThreadMessage?
+    @State private var deleteTarget: ChatThreadMessage?
     @State private var failureMessage: String?
 
     var body: some View {
@@ -105,6 +106,19 @@ struct VenueChatScreen: View {
         } message: { _ in
             Text("You won't see their messages in any room. They won't be told. You can unblock them in Settings.")
         }
+        .confirmationDialog(
+            String(localized: "Delete this message?"),
+            isPresented: isPresenting($deleteTarget),
+            titleVisibility: .visible,
+            presenting: deleteTarget
+        ) { message in
+            Button(String(localized: "Delete"), role: .destructive) {
+                Task { await delete(message) }
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: { _ in
+            Text("It's removed for everyone in the room.")
+        }
         .alert(
             String(localized: "Something went wrong"),
             isPresented: isPresenting($failureMessage),
@@ -125,12 +139,14 @@ struct VenueChatScreen: View {
                 if let kind = bannerKind(viewModel) {
                     RoomBanner(kind: kind, roomName: room.name, isLocale: room.kind == .locale)
                 }
-                // Who else is here, friends first. Above the pinned
+                // Who is here: the venue, which is always in its own room,
+                // then everyone else, friends first. Above the pinned
                 // announcement, which the thread draws at its top.
                 let blocked = model.safety.blockedIDs
                 let hereNow = viewModel.hereNow.filter { !blocked.contains($0.id) }
-                if !hereNow.isEmpty {
-                    HereNowStrip(people: hereNow)
+                let place = room.kind == .venue ? HereNowPlace(name: room.name, photoURL: room.photoURL) : nil
+                if place != nil || !hereNow.isEmpty {
+                    HereNowStrip(place: place, people: hereNow)
                 }
                 // Each minute, so a special leaves the room when it ends.
                 TimelineView(.everyMinute) { timeline in
@@ -144,7 +160,8 @@ struct VenueChatScreen: View {
                             Task { await viewModel.resend(id) }
                         },
                         onReport: { reportTarget = $0 },
-                        onBlock: { blockTarget = $0 }
+                        onBlock: { blockTarget = $0 },
+                        onDelete: { deleteTarget = $0 }
                     )
                 }
                 composer(viewModel)
@@ -177,6 +194,19 @@ struct VenueChatScreen: View {
             try await model.safety.block(sender)
         } catch {
             failureMessage = String(localized: "Couldn't block them. Please try again.")
+        }
+    }
+
+    /// Takes back the user's own message. The room's removal frame drops it
+    /// for everyone else; it goes from this screen at once.
+    private func delete(_ message: ChatThreadMessage) async {
+        guard let id = UUID(uuidString: message.id) else { return }
+
+        do {
+            try await model.api.removeMyChatMessage(id)
+            viewModel?.applyRemoval(id: id)
+        } catch {
+            failureMessage = String(localized: "Couldn't delete it. Please try again.")
         }
     }
 
