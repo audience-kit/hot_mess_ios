@@ -360,9 +360,10 @@ private struct ChatThreadRowView: View {
                 }
 
                 VStack(alignment: message.isOwn ? .trailing : .leading, spacing: 2) {
-                    // The reader's own messages name them too, the way
-                    // everyone else in the room sees them ("Try-Angles [Venue]").
-                    if row.isFirstInGroup {
+                    // The reader's own posts as the venue name it the way
+                    // everyone else sees them ("Try-Angles [Venue]"); their
+                    // ordinary messages as themselves need no name.
+                    if row.isFirstInGroup, !message.isOwn || message.isFromPlace {
                         ChatSenderLine(name: message.authorName, role: message.role)
                             .padding(message.isOwn ? .trailing : .leading, message.rich == nil ? 12 : 4)
                             .accessibilityHidden(true)
