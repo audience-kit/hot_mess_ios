@@ -25,6 +25,7 @@ struct VenueChatScreen: View {
         room = .venue(venue)
     }
 
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(AppModel.self) private var model
     @State private var viewModel: VenueChatViewModel?
     /// Whether the user has agreed to the terms is read before the room opens.
@@ -55,13 +56,22 @@ struct VenueChatScreen: View {
             await model.safety.load()
             isCheckingTerms = false
         }
-        // The room opens only once they've agreed to the terms.
-        .task(id: model.safety.hasAcceptedTerms) {
-            guard model.safety.hasAcceptedTerms else { return }
-
-            let viewModel = makeViewModel()
-            self.viewModel = viewModel
-            await viewModel.run()
+        // Rejoin on foregrounding: iOS may suspend the socket while another app is open.
+        // Keep the model so the draft and pending lines survive the transition.
+        .task(id: model.safety.hasAcceptedTerms && scenePhase == .active) {
+            guard model.safety.hasAcceptedTerms else {
+                await viewModel?.stop()
+                return
+            }
+            guard scenePhase == .active else {
+                await viewModel?.stop()
+                return
+            }
+            let current = viewModel ?? makeViewModel()
+            self.viewModel = current
+            await current.stop()
+            guard !Task.isCancelled else { return }
+            await current.run()
         }
         .onDisappear {
             let viewModel = self.viewModel

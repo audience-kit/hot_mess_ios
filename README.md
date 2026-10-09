@@ -191,3 +191,11 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
 
 - Sign-in requests only `public_profile` while App Review is pending. Revisit
   additional permissions after approval.
+
+The shared Swift package is resolved from the AudienceKit repository root (`../../..`). Keep this iOS checkout at `apps/hot_mess/ios` when building. Consumer services come from `AudienceKit`; shared design tokens and UI come from `AudienceKitUI`, both built on `AudienceCore`.
+
+## Shared App Group
+
+All AudienceKit iOS apps use `group.com.audiencekit.shared` on team `DWVXMLB45Y`. The entitlement is enabled for every build configuration. Hot Mess also retains its existing `group.social.hotmess` membership. Use the shared group identifier with `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` or `UserDefaults(suiteName:)` when implementing shared state; namespace that state by environment and audience. Adding the capability does not migrate existing credentials or preferences into the group.
+
+Verified on October 9, 2026: signed test builds of Focus, Velvet, Backstage, and Hot Mess were installed on the paired iPhone 15 Pro Max. Their signed entitlements and provisioning profiles include the shared group, and iOS reports the same shared container for all four.

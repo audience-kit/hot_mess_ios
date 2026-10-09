@@ -13,6 +13,7 @@
 		AC00000000000000000000A3 /* AudienceKit in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000093 /* AudienceKit */; };
 		AC00000000000000000000A4 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000094 /* StripePaymentSheet */; };
 		AC00000000000000000000A5 /* SquareInAppPaymentsSDK in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000095 /* SquareInAppPaymentsSDK */; };
+		ACAD00000000000000000002 /* AudienceKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = ACAD00000000000000000001; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,7 @@
 				AC00000000000000000000A1 /* FacebookLogin in Frameworks */,
 				AC00000000000000000000A2 /* Kingfisher in Frameworks */,
 				AC00000000000000000000A3 /* AudienceKit in Frameworks */,
+                ACAD00000000000000000002 /* AudienceKitUI in Frameworks */,
 				AC00000000000000000000A4 /* StripePaymentSheet in Frameworks */,
 				AC00000000000000000000A5 /* SquareInAppPaymentsSDK in Frameworks */,
 			);
@@ -144,6 +146,7 @@
 				AC0000000000000000000091 /* FacebookLogin */,
 				AC0000000000000000000092 /* Kingfisher */,
 				AC0000000000000000000093 /* AudienceKit */,
+                ACAD00000000000000000001 /* AudienceKitUI */,
 				AC0000000000000000000094 /* StripePaymentSheet */,
 				AC0000000000000000000095 /* SquareInAppPaymentsSDK */,
 			);
@@ -206,6 +209,9 @@
 				TargetAttributes = {
 					AC0000000000000000000010 = {
 						CreatedOnToolsVersion = 16.0;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = { enabled = 1; };
+						};
 					};
 					AC0000000000000000000011 = {
 						CreatedOnToolsVersion = 16.0;
@@ -762,14 +768,10 @@
 				minimumVersion = 8.0.0;
 			};
 		};
-		AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/audience-kit/audience-kit.git";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
+		AC0000000000000000000082 /* AudienceKit local package */ = {
+            isa = XCLocalSwiftPackageReference;
+            relativePath = ../../..;
+        };
 		AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/stripe/stripe-ios-spm";
@@ -819,6 +821,10 @@
 			package = AC0000000000000000000084 /* XCRemoteSwiftPackageReference "in-app-payments-ios" */;
 			productName = SquareInAppPaymentsSDK;
 		};
+        ACAD00000000000000000001 /* AudienceKitUI */ = {
+            isa = XCSwiftPackageProductDependency;
+            productName = AudienceKitUI;
+        };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AC0000000000000000000001 /* Project object */;

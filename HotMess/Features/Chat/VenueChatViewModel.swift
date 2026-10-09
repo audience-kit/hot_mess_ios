@@ -160,6 +160,7 @@ final class VenueChatViewModel {
 
         connectionState = .connecting
         await reportPresence()
+        guard !Task.isCancelled else { return }
         startReportingPresence()
 
         let connection = VenueChatConnection(room: room, url: url, token: token)
@@ -167,6 +168,7 @@ final class VenueChatViewModel {
         await connection.connect()
 
         for await event in connection.events {
+            guard !Task.isCancelled, self.connection === connection else { break }
             switch event {
             case .connected:
                 connectionState = .connected
@@ -246,8 +248,9 @@ final class VenueChatViewModel {
     func stop() async {
         presenceTask?.cancel()
         presenceTask = nil
-        await connection?.disconnect()
+        let previous = connection
         connection = nil
+        await previous?.disconnect()
     }
 
     // MARK: - Who's here

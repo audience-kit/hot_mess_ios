@@ -1,15 +1,6 @@
 {
-  "originHash" : "151a0a07c8c02a9e0050c7b3be1de7a9936bef9fb9369227921d14c7432279f1",
+  "originHash" : "61b5bc79c87eff98acfc65f05c88000cdf4287231243469665038eebfdf1bd2a",
   "pins" : [
-    {
-      "identity" : "audience-kit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/audience-kit/audience-kit.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "d0f98fa96c3bab3e3cf4787bf9a16c79b5a4a316"
-      }
-    },
     {
       "identity" : "facebook-ios-sdk",
       "kind" : "remoteSourceControl",

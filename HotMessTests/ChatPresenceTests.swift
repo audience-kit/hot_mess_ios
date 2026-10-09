@@ -21,6 +21,24 @@ private func frame(_ message: String) -> Data {
 
 @Suite("Chat room presence frames")
 struct ChatPresenceFrameTests {
+    @Test("A live venue announcement is delivered without reopening history")
+    func liveAnnouncement() throws {
+        let data = frame("""
+        { "type": "incoming", "id": "\(UUID())", "user_id": "\(me)",
+          "message": "Announcement: Doors open", "body": "Welcome in",
+          "name": "The Venue", "role": "venue", "kind": "announcement",
+          "title": "Doors open", "pinned": false, "presence": null }
+        """)
+        guard case let .received(message) = try #require(VenueChatConnection.event(from: data)) else {
+            Issue.record("Expected a live message")
+            return
+        }
+        #expect(message.kind == .announcement)
+        #expect(message.title == "Doors open")
+        #expect(message.written == "Welcome in")
+        #expect(message.isFromPlace)
+    }
+
     @Test("A roster names everyone in the room and lists every friend")
     func fullRoster() throws {
         let data = frame("""
