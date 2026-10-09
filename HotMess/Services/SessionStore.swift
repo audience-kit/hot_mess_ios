@@ -55,8 +55,15 @@ enum SessionError: Error, LocalizedError {
 @MainActor
 @Observable
 final class SessionStore {
-    /// Keep Facebook sign-in limited to the public profile until App Review is approved.
-    static let requestedPermissions = ["public_profile"]
+    /// Whether sign-in asks for `email` and `user_friends` (friends who also use
+    /// the app at the same venue). Off while Meta's App Review has both pending
+    /// on the Hot Mess Consumer app, so the betas ask only for `public_profile`;
+    /// until it's back on, everyone's friends list is empty and no email is
+    /// stored. Turn it back on once Meta approves them.
+    static let asksForReviewedPermissions = false
+
+    /// Permissions requested at sign-in, on the Hot Mess Consumer app.
+    static let requestedPermissions = ["public_profile"] + (asksForReviewedPermissions ? ["email", "user_friends"] : [])
 
     /// Where the session token lives. Same service and account as the app's
     /// previous keychain wrapper, so existing installs stay signed in.
