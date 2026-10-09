@@ -186,6 +186,10 @@ final class VenueChatViewModel {
                 applyHistory(messages, pinned: pinned)
             case let .pin(id, announcement):
                 applyPin(id: id, announcement: announcement)
+            case let .removed(id):
+                applyRemoval(id: id)
+            case .cleared:
+                applyClear()
             case .notPresent:
                 connectionState = .notPresent
                 clearRoom()
@@ -299,6 +303,22 @@ final class VenueChatViewModel {
         } else if pinned?.id == id {
             pinned = nil
         }
+    }
+
+    /// An admin removed a message: it goes from the transcript, and from under
+    /// the room's title if it was the pinned announcement.
+    func applyRemoval(id: UUID) {
+        messages.removeAll { $0.id == id }
+        if pinned?.id == id {
+            pinned = nil
+        }
+    }
+
+    /// An admin cleared the room: every line so far goes, the pinned
+    /// announcement too. The user's own unsent lines stay.
+    func applyClear() {
+        messages = []
+        pinned = nil
     }
 
     private func clearRoom() {
