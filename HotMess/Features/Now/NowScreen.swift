@@ -59,6 +59,7 @@ struct NowScreen: View {
                 .ignoresSafeArea(edges: .top)
                 .trackingHeroCollapse($heroCollapsed)
                 .refreshable {
+                    await model.location.refreshPosition()
                     await viewModel?.load(near: model.location.coordinates)
                 }
             }

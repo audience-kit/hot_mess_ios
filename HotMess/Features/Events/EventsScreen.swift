@@ -53,6 +53,7 @@ struct EventsScreen: View {
             await viewModel?.load(localeID: model.location.locale?.id)
         }
         .refreshable {
+            await model.location.refreshPosition()
             await viewModel?.load(localeID: model.location.locale?.id)
         }
     }

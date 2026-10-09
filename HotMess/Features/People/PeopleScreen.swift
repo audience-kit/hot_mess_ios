@@ -60,6 +60,7 @@ struct PeopleScreen: View {
             await viewModel?.load()
         }
         .refreshable {
+            await model.location.refreshPosition()
             await viewModel?.load()
         }
     }

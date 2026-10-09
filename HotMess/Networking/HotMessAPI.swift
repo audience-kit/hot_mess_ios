@@ -45,6 +45,19 @@ struct HotMessAPI: Sendable {
         ).reportLocation.now
     }
 
+    // MARK: - Geofences
+
+    /// Every visible venue's envelope, nearest `coordinates` first, for the
+    /// regions the app watches. Only the id, point and radius, so the whole
+    /// audience stays a small download.
+    func venueFences(near coordinates: Coordinates) async throws -> [VenueFence] {
+        try await query(
+            Documents.venueFences,
+            variables: ["near": coordinates.audienceKit.graphQLValue],
+            as: VenueFencesResponse.self
+        ).venues
+    }
+
     // MARK: - Locales
 
     func closestLocale(to coordinates: Coordinates?) async throws -> AppLocale? {
@@ -511,6 +524,12 @@ extension HotMessAPI {
 
         static let doorFields = "door { paid_count: paidCount checked_in_count: checkedInCount }"
 
+        static let venueFences = """
+        query VenueFences($near: CoordinatesInput!) {
+          venues(near: $near) { id point distance_tolerance: distanceTolerance }
+        }
+        """
+
         static let reportLocation = """
         mutation ReportLocation($position: CoordinatesInput!) {
           reportLocation(input: { position: $position }) {
@@ -731,6 +750,24 @@ extension HotMessAPI {
 struct ReportLocationResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let now: Now }
     let reportLocation: Payload
+}
+
+struct VenueFencesResponse: Decodable, Sendable {
+    let venues: [VenueFence]
+
+    private enum CodingKeys: String, CodingKey { case venues }
+
+    /// A venue whose location has no point can't be watched; it's skipped
+    /// rather than failing the rest.
+    private struct Entry: Decodable {
+        let fence: VenueFence?
+        init(from decoder: any Decoder) throws { fence = try? VenueFence(from: decoder) }
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        venues = try container.decode([Entry].self, forKey: .venues).compactMap(\.fence)
+    }
 }
 
 struct PersonResponse: Decodable, Sendable {
