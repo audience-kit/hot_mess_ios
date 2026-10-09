@@ -187,6 +187,24 @@ struct ChatPresenceFrameTests {
         #expect(unpinnedID == id)
         #expect(nothing == nil)
     }
+
+    @Test("Admins' removals name the message; clearing the room names none")
+    func removals() throws {
+        let id = UUID()
+        let removed = frame(#"{ "type": "removed", "id": "\#(id)" }"#)
+        let cleared = frame(#"{ "type": "cleared", "cleared_at": "2026-10-09T04:00:00.123Z" }"#)
+
+        guard case let .removed(removedID) = try #require(VenueChatConnection.event(from: removed)) else {
+            Issue.record("Expected removed")
+            return
+        }
+        #expect(removedID == id)
+
+        guard case .cleared = try #require(VenueChatConnection.event(from: cleared)) else {
+            Issue.record("Expected cleared")
+            return
+        }
+    }
 }
 
 @Suite("Here now")
@@ -284,5 +302,29 @@ struct HereNowTests {
 
         viewModel.applyPresence(userID: sam, online: true, name: nil, avatarURL: nil)
         #expect(viewModel.reachableUserIDs.isEmpty)
+    }
+
+    @Test("Removed lines go, and clearing the room takes every line and the pin")
+    @MainActor
+    func viewModelRemovals() {
+        let viewModel = makeViewModel(friends: FriendDirectory())
+        var pinned = VenueMessage(id: UUID(), body: "Doors at 9", userID: alex, name: "Alex R.", avatarURL: nil, sentAt: .now)
+        pinned.kind = .announcement
+        pinned.isPinned = true
+        let rude = VenueMessage(id: UUID(), body: "rude", userID: sam, name: "Sam K.", avatarURL: nil, sentAt: .now)
+        let kind = VenueMessage(id: UUID(), body: "kind", userID: sam, name: "Sam K.", avatarURL: nil, sentAt: .now)
+
+        viewModel.applyHistory([pinned, rude, kind], pinned: pinned)
+        viewModel.applyRemoval(id: rude.id)
+        #expect(viewModel.messages.map(\.id) == [pinned.id, kind.id])
+
+        viewModel.applyRemoval(id: pinned.id)
+        #expect(viewModel.messages.map(\.id) == [kind.id])
+        #expect(viewModel.pinnedAnnouncement == nil)
+
+        viewModel.applyHistory([kind], pinned: pinned)
+        viewModel.applyClear()
+        #expect(viewModel.messages.isEmpty)
+        #expect(viewModel.pinnedAnnouncement == nil)
     }
 }
