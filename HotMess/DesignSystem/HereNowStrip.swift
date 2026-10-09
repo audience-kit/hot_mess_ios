@@ -58,7 +58,7 @@ struct HereNowPlace: Hashable, Sendable {
 }
 
 /// Who is in a chat room now, in one short row under the room's banner: the
-/// count, the venue (always there in its own room), then everyone else,
+/// count (when anyone else is here), the venue (always there in its own room), then everyone else,
 /// friends first with an accent ring and a heart. A locale's room has no
 /// venue, so draw it there only when someone else is here.
 struct HereNowStrip: View {
@@ -73,11 +73,13 @@ struct HereNowStrip: View {
         // strip would collapse to nothing.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .center, spacing: 10) {
-                Text(countLabel)
-                    .font(.hotMess(.caption, semibold: true))
-                    .foregroundStyle(.secondary)
-                    .fixedSize()
-                    .accessibilityAddTraits(.isHeader)
+                if !people.isEmpty {
+                    Text(countLabel)
+                        .font(.hotMess(.caption, semibold: true))
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                        .accessibilityAddTraits(.isHeader)
+                }
 
                 if let place {
                     HereNowPlaceFace(place: place)
@@ -103,9 +105,7 @@ struct HereNowStrip: View {
     }
 
     private var countLabel: String {
-        people.isEmpty
-            ? String(localized: "Nobody else yet")
-            : String(localized: "\(people.count) here now")
+        String(localized: "\(people.count) here now")
     }
 }
 
