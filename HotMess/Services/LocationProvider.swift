@@ -35,6 +35,20 @@ final class LocationProvider {
     private var beaconRegion: CLBeaconRegion?
     private var isMonitoring = false
 
+    /// Callers waiting on `refreshPosition()`, resumed by the next fix, a
+    /// failure, or their timeout.
+    private var pendingFixes: [UUID: CheckedContinuation<Void, Never>] = [:]
+    /// Re-reads the position every `refreshInterval` while the app is open.
+    private var refreshTask: Task<Void, Never>?
+
+    /// Watches the nearest venues' envelopes. See `GeofencePlan`.
+    private var monitor: CLMonitor?
+    private var monitorTask: Task<Void, Never>?
+    private var geofencePlan: GeofencePlan?
+    private var venueFences: [VenueFence] = []
+    private var venueFencesFetchedAt: Date?
+    private var isPlanningGeofences = false
+
     /// Remembered so the first launch after a cold start has a locale to work
     /// with before Core Location produces a fix.
     private static let storedLocaleIDKey = "localeId"
@@ -61,6 +75,19 @@ final class LocationProvider {
     }
 
     static let beaconIdentifier = "social.hotmess.beacon"
+    static let monitorName = "social.hotmess.venues"
+    static let recenterIdentifier = "recenter"
+    static let venueIdentifierPrefix = "venue:"
+
+    /// How often the position is re-read while the app is open. Presence on
+    /// the API lasts two hours, so this keeps it current without keeping GPS on.
+    static let refreshInterval: Duration = .seconds(5 * 60)
+    /// How long `refreshPosition()` waits for Core Location before giving up.
+    static let fixTimeout: Duration = .seconds(10)
+    /// A fix this recent is used as is when the app comes back.
+    static let freshFixAge: TimeInterval = 60
+    /// Venue envelopes are downloaded again after this long.
+    static let venueFencesMaxAge: TimeInterval = 6 * 60 * 60
 
     var isAuthorized: Bool {
         authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
@@ -88,6 +115,8 @@ final class LocationProvider {
     func stop() {
         guard isMonitoring else { return }
 
+        refreshTask?.cancel()
+        refreshTask = nil
         manager.stopMonitoringSignificantLocationChanges()
 
         if let beaconConstraint {
@@ -98,6 +127,34 @@ final class LocationProvider {
         }
 
         isMonitoring = false
+    }
+
+    /// Asks Core Location for a fresh fix and returns once it's in and
+    /// reported, Core Location gives up, or `fixTimeout` passes. Pull to
+    /// refresh calls this, so a refresh never reloads around a stale position.
+    func refreshPosition() async {
+        guard isAuthorized else { return }
+
+        let id = UUID()
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.fixTimeout)
+            self?.resumeFix(id)
+        }
+
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            pendingFixes[id] = continuation
+            manager.requestLocation()
+        }
+    }
+
+    private func resumeFix(_ id: UUID) {
+        pendingFixes.removeValue(forKey: id)?.resume()
+    }
+
+    private func resumePendingFixes() {
+        let waiting = pendingFixes.values
+        pendingFixes.removeAll()
+        waiting.forEach { $0.resume() }
     }
 
     /// Asks the API which locale the current position belongs to.
@@ -156,11 +213,27 @@ final class LocationProvider {
             manager.startRangingBeacons(satisfying: beaconConstraint)
         }
 
-        if let location = manager.location {
+        // A recent cached fix shows something at once; an old one would be
+        // reported as where the user is now, so it waits for a fresh one.
+        if let location = manager.location,
+           Date.now.timeIntervalSince(location.timestamp) < Self.freshFixAge {
             update(with: location)
+        } else {
+            Task { await refreshPosition() }
         }
 
         Task { await refreshLocale() }
+
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.refreshInterval)
+                guard !Task.isCancelled else { return }
+                await self?.refreshPosition()
+            }
+        }
+
+        startGeofencing()
     }
 
     fileprivate func authorizationChanged(to status: CLAuthorizationStatus) {
@@ -172,14 +245,26 @@ final class LocationProvider {
     }
 
     fileprivate func update(with location: CLLocation) {
+        // Geofences follow the device, even while pretending to be elsewhere.
+        Task { await planGeofences(around: location) }
+
         guard tracker.deviceFix(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
-        else { return }
+        else {
+            resumePendingFixes()
+            return
+        }
 
         coordinates = tracker.current
+        // A refresh waits for the locale too, so a pulled list reloads in the right city.
         Task {
             await refreshLocale()
             await reportPosition()
+            resumePendingFixes()
         }
+    }
+
+    fileprivate func fixFailed() {
+        resumePendingFixes()
     }
 
     fileprivate func update(beacons: [CLBeacon]) {
@@ -209,6 +294,109 @@ final class LocationProvider {
         } catch {
             Log.location.error("Location report failed: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    // MARK: - Geofences
+
+    /// Starts watching venue envelopes. The monitor outlives the app's
+    /// launches, so its regions from last time are still there; the first fix
+    /// replaces them.
+    private func startGeofencing() {
+        guard monitorTask == nil else { return }
+
+        monitorTask = Task { @MainActor [weak self] in
+            let monitor = await CLMonitor(Self.monitorName)
+            self?.monitor = monitor
+            if let location = self?.manager.location {
+                await self?.planGeofences(around: location)
+            }
+
+            do {
+                for try await event in await monitor.events {
+                    await self?.geofenceChanged(event.identifier, inside: event.state == .satisfied)
+                }
+            } catch {
+                Log.location.error("Geofence monitoring stopped: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    /// Entering or leaving a venue means presence changed: read the position
+    /// and report it. Leaving the re-center circle means unwatched venues may
+    /// be close now, so the regions are planned again from the new fix.
+    private func geofenceChanged(_ identifier: String, inside: Bool) async {
+        if identifier == Self.recenterIdentifier {
+            guard !inside else { return }
+            geofencePlan = nil
+        } else if !identifier.hasPrefix(Self.venueIdentifierPrefix) {
+            return
+        }
+
+        Log.location.info("Geofence \(identifier, privacy: .public) \(inside ? "entered" : "left", privacy: .public)")
+        await refreshPosition()
+    }
+
+    /// Picks the regions to watch from `location`, downloading the venues'
+    /// envelopes when they're missing or old. Does nothing while the device
+    /// is still well inside the current re-center circle.
+    private func planGeofences(around location: CLLocation) async {
+        guard let monitor, isAuthorized, !isPlanningGeofences else { return }
+
+        if let geofencePlan {
+            let center = CLLocation(latitude: geofencePlan.recenterLatitude, longitude: geofencePlan.recenterLongitude)
+            let fencesFresh = venueFencesFetchedAt.map { Date.now.timeIntervalSince($0) < Self.venueFencesMaxAge } ?? false
+            if fencesFresh, location.distance(from: center) < geofencePlan.recenterRadius / 2 { return }
+        }
+
+        isPlanningGeofences = true
+        defer { isPlanningGeofences = false }
+
+        let position = Coordinates(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+
+        if venueFencesFetchedAt.map({ Date.now.timeIntervalSince($0) >= Self.venueFencesMaxAge }) ?? true {
+            do {
+                venueFences = try await api.venueFences(near: position)
+                venueFencesFetchedAt = .now
+            } catch {
+                Log.location.error("Venue envelopes failed: \(error.localizedDescription, privacy: .public)")
+                // Try again on the next fix; keep watching what we had.
+                if venueFencesFetchedAt == nil { return }
+            }
+        }
+
+        let plan = GeofencePlan(around: position, venues: venueFences)
+        await apply(plan, to: monitor)
+        geofencePlan = plan
+    }
+
+    private func apply(_ plan: GeofencePlan, to monitor: CLMonitor) async {
+        // The radius is part of the identifier, so a venue whose envelope
+        // changed is replaced rather than kept.
+        let wanted = Dictionary(
+            plan.venues.map { ("\(Self.venueIdentifierPrefix)\($0.id.uuidString.lowercased()):\(Int($0.radius))", $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let existing = Set(await monitor.identifiers)
+
+        for identifier in existing where wanted[identifier] == nil {
+            await monitor.remove(identifier)
+        }
+
+        for (identifier, fence) in wanted where !existing.contains(identifier) {
+            await monitor.add(
+                CLMonitor.CircularGeographicCondition(center: fence.center, radius: fence.radius),
+                identifier: identifier,
+                assuming: .unsatisfied
+            )
+        }
+
+        await monitor.add(
+            CLMonitor.CircularGeographicCondition(center: plan.recenterCenter, radius: plan.recenterRadius),
+            identifier: Self.recenterIdentifier,
+            assuming: .satisfied
+        )
+
+        Log.location.info("Watching \(wanted.count) venues, re-center radius \(Int(plan.recenterRadius))m")
     }
 
     // MARK: - Persistence
@@ -262,7 +450,8 @@ private final class Delegate: NSObject, @preconcurrency CLLocationManagerDelegat
         Task { await owner.refreshLocale() }
     }
 
-    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
         Log.location.error("Core Location failed: \(error.localizedDescription, privacy: .public)")
+        owner?.fixFailed()
     }
 }
