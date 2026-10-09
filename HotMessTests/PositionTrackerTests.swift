@@ -55,6 +55,20 @@ struct PositionTrackerTests {
         #expect(!stoppedAgain)
     }
 
+    @Test("Pretends outside a test build only when App Review allows it")
+    func appReview() {
+        var tracker = PositionTracker(simulationAllowed: false)
+
+        let refused = tracker.simulate(latitude: nyne.latitude, longitude: nyne.longitude, venueName: "Nyne")
+        #expect(!refused)
+        #expect(tracker.current == nil)
+
+        let allowed = tracker.simulate(latitude: nyne.latitude, longitude: nyne.longitude, venueName: "Nyne",
+                                       allowed: true)
+        #expect(allowed)
+        #expect(tracker.current == nyne)
+    }
+
     @Test("Reports nothing after stopping when there's no real fix yet")
     func stopWithoutFix() {
         var tracker = PositionTracker(simulationAllowed: true)

@@ -4,6 +4,7 @@
 //
 
 import AudienceKit
+import AuthenticationServices
 import FacebookCore
 import FacebookLogin
 import Foundation
@@ -24,6 +25,7 @@ enum SessionError: Error, LocalizedError {
     case cancelled
     case configurationUnavailable
     case missingFacebookToken
+    case missingAppleToken
     case facebook(String)
 
     var errorDescription: String? {
@@ -34,17 +36,22 @@ enum SessionError: Error, LocalizedError {
             String(localized: "Facebook login isn't configured for this build.")
         case .missingFacebookToken:
             String(localized: "Facebook didn't return an access token.")
+        case .missingAppleToken:
+            String(localized: "Apple didn't return a sign-in token.")
         case let .facebook(reason):
             reason
         }
     }
 }
 
-/// Owns authentication: the Facebook handshake and the signed-in user.
+/// Owns authentication: the Facebook handshake, Sign in with Apple, and the
+/// signed-in user.
 ///
 /// The app runs Facebook Login; the AudienceKit SDK exchanges the Facebook
 /// token for a session, keeps it in the keychain, and reports when the API
-/// ends it (sign-out elsewhere, Facebook deauthorization).
+/// ends it (sign-out elsewhere, Facebook deauthorization). An account that
+/// signed in with Apple has no Facebook until the person connects it, which
+/// is what brings their friends.
 @MainActor
 @Observable
 final class SessionStore {
@@ -157,6 +164,73 @@ final class SessionStore {
         }
     }
 
+    /// Signs in with what the Sign in with Apple button returned. The
+    /// credential is read here, so only its strings cross into the request.
+    func signInWithApple(_ result: Result<ASAuthorization, any Error>) {
+        let credential: ASAuthorizationAppleIDCredential
+        switch result {
+        case let .success(authorization):
+            guard let appleID = authorization.credential as? ASAuthorizationAppleIDCredential else {
+                state = .failed(SessionError.missingAppleToken.localizedDescription)
+                return
+            }
+            credential = appleID
+        case let .failure(error):
+            if (error as? ASAuthorizationError)?.code == .canceled {
+                Log.session.info("Apple sign-in cancelled")
+                state = .signedOut
+            } else {
+                Log.session.error("Apple sign-in failed: \(String(describing: error), privacy: .public)")
+                state = .failed(error.localizedDescription)
+            }
+            return
+        }
+
+        guard let data = credential.identityToken, let identityToken = String(data: data, encoding: .utf8) else {
+            state = .failed(SessionError.missingAppleToken.localizedDescription)
+            return
+        }
+
+        // Apple only gives the name the first time; the API keeps it.
+        let firstName = credential.fullName?.givenName
+        let lastName = credential.fullName?.familyName
+        let host = audienceKit.configuration.host
+
+        state = .signingIn
+        Task {
+            await exchange { device in
+                let request = AppleSignInRequest(identityToken: identityToken, firstName: firstName,
+                                                 lastName: lastName, host: host, device: device)
+                return try await self.storing(self.api.signInWithApple(request))
+            }
+        }
+    }
+
+    /// Connects Facebook to an account that signed in with Apple, through
+    /// Facebook's login dialog. The session that comes back can be a
+    /// different account: when the Facebook profile already had one, that
+    /// account takes over the Apple sign-in. False when the person cancels.
+    func connectFacebook() async throws -> Bool {
+        let result: FacebookWebLogin.Result
+        do {
+            result = try await facebookWebLogin().authorize()
+        } catch SessionError.cancelled {
+            return false
+        }
+
+        let request = ConnectFacebookRequest(
+            code: result.code,
+            redirectURI: result.redirectURI,
+            host: audienceKit.configuration.host,
+            facebookAppID: audienceKit.configuration.facebookAppID,
+            device: DeviceInfo.description(for: configuration)
+        )
+        let session = try await storing(api.connectFacebook(request))
+        user = User(id: session.user.id, name: session.user.name) ?? user
+        if let refreshed = try? await currentUser() { user = refreshed }
+        return true
+    }
+
     func signOut() {
         loginManager.logOut()
         AccessToken.current = nil
@@ -197,6 +271,12 @@ final class SessionStore {
     private func currentUser() async throws -> User? {
         guard let me = try await audienceKit.me() else { return nil }
         return User(me)
+    }
+
+    /// Keeps a session minted outside the SDK where the SDK reads it.
+    private func storing(_ session: SignInResult) throws -> SignInResult {
+        try Self.tokenStore.saveToken(session.token)
+        return session
     }
 
     private func exchange(facebookToken: String) async {

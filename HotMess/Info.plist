@@ -47,12 +47,16 @@
 	<string>$(AUDIENCE_ID)</string>
 	<key>AudienceKitHost</key>
 	<string>$(AUDIENCE_HOST)</string>
+	<key>FacebookAdvertiserIDCollectionEnabled</key>
+	<false/>
 	<key>FacebookAppID</key>
 	<string>$(FACEBOOK_APP_ID)</string>
 	<key>FacebookClientToken</key>
 	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
 	<key>FacebookDisplayName</key>
 	<string>Hot Mess</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<false/>
 	<key>HotMessAPNSEnvironment</key>
 	<string>$(APNS_ENVIRONMENT)</string>
 	<key>HotMessBeaconID</key>

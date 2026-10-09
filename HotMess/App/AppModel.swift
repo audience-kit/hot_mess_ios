@@ -23,6 +23,8 @@ final class AppModel {
     let checkout: CoverCheckout
     /// Friends seen so far, so chat can show them by their full name.
     let friends = FriendDirectory()
+    /// Who the user blocked, and whether they've agreed to the terms.
+    let safety: SafetyStore
 
     var selectedTab: AppTab = .now
 
@@ -56,6 +58,7 @@ final class AppModel {
         session = SessionStore(api: api, audienceKit: audienceKit, brand: brand, configuration: configuration)
         location = LocationProvider(api: api, configuration: configuration)
         checkout = CoverCheckout(api: api, configuration: configuration)
+        safety = SafetyStore(api: api)
     }
 
     func start() async {
@@ -81,7 +84,25 @@ final class AppModel {
     /// Signs out and forgets what was loaded for the user.
     func signOut() {
         friends.forget()
+        safety.forget()
         session.signOut()
+    }
+
+    /// Deletes the account on the server, then signs out here. The API
+    /// erases everything it keeps about the user.
+    func deleteAccount() async throws {
+        try await api.deleteAccount()
+        signOut()
+    }
+
+    /// Connects Facebook to an account that signed in with Apple, then
+    /// re-reads what depends on it. False when the person cancels.
+    func connectFacebook() async throws -> Bool {
+        guard try await session.connectFacebook() else { return false }
+
+        friends.forget()
+        await safety.load(force: true)
+        return true
     }
 
     func pingsChanged() {

@@ -20,8 +20,9 @@ final class LocationProvider {
     private(set) var coordinates: Coordinates?
     private(set) var locale: AppLocale?
     private(set) var authorizationStatus: CLAuthorizationStatus
-    /// Test builds only: the venue the app is pretending to be at. While it's
-    /// set, the venue's position is reported instead of the device's.
+    /// Test builds and App Review only: the venue the app is pretending to be
+    /// at. While it's set, the venue's position is reported instead of the
+    /// device's.
     var simulatedVenueName: String? { tracker.simulatedVenueName }
 
     private var tracker: PositionTracker
@@ -118,8 +119,10 @@ final class LocationProvider {
     /// so a test build can be "at" a venue from anywhere. The API puts the
     /// user at whichever venue's envelope contains the point.
     /// Returns once the position is reported, so the caller can reload.
-    func simulate(at coordinate: CLLocationCoordinate2D, venueName: String) async {
-        guard tracker.simulate(latitude: coordinate.latitude, longitude: coordinate.longitude, venueName: venueName)
+    /// `allowed` lets a release build do it too, for App Review.
+    func simulate(at coordinate: CLLocationCoordinate2D, venueName: String, allowed: Bool = false) async {
+        guard tracker.simulate(latitude: coordinate.latitude, longitude: coordinate.longitude,
+                               venueName: venueName, allowed: allowed)
         else { return }
 
         coordinates = tracker.current

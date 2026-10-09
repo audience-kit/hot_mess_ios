@@ -116,6 +116,8 @@ struct VenueScreen: View {
             ensureViewModel()
             await viewModel?.load()
         }
+        // Whether App Review may pretend to be here.
+        .task { await model.safety.load() }
         .sheet(item: $pingSeed) { seed in
             PingSheet(seed: seed)
                 .environment(model)
@@ -198,12 +200,14 @@ struct VenueScreen: View {
         }
     }
 
-    /// Test builds only: report the venue's own position, so the app (and the
-    /// API) treat you as inside it wherever you really are.
+    /// Test builds, and App Review: report the venue's own position, so the
+    /// app (and the API) treat you as inside it wherever you really are.
     @ViewBuilder
     private func testingSection(_ venue: Venue) -> some View {
-        if model.configuration.isTestBuild, let coordinate = venue.coordinate {
-            DetailSection(String(localized: "Testing")) {
+        let isTestBuild = model.configuration.isTestBuild
+        let isReview = model.safety.canPretendLocation
+        if isTestBuild || isReview, let coordinate = venue.coordinate {
+            DetailSection(isTestBuild ? String(localized: "Testing") : String(localized: "App Review")) {
                 if model.location.simulatedVenueName == venue.name {
                     Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
                         Task {
@@ -215,13 +219,15 @@ struct VenueScreen: View {
                     Button(String(localized: "Pretend I'm here"), systemImage: "location.fill") {
                         // Reload once the visit is recorded, so the chat row appears.
                         Task {
-                            await model.location.simulate(at: coordinate, venueName: venue.name)
+                            await model.location.simulate(at: coordinate, venueName: venue.name, allowed: isReview)
                             await viewModel?.load()
                         }
                     }
                 }
             } footer: {
-                Text("Test builds only. Reports this venue's location instead of yours until you stop.")
+                Text(isTestBuild
+                    ? String(localized: "Test builds only. Reports this venue's location instead of yours until you stop.")
+                    : String(localized: "For App Review. Reports this venue's location instead of yours until you stop, so you can try its chat."))
                     .font(.hotMess(.footnote))
                     .foregroundStyle(.secondary)
             }
