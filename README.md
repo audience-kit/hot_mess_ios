@@ -94,7 +94,7 @@ them.
 | Configuration | API | Facebook app |
 | --- | --- | --- |
 | Debug | `http://localhost:3000` | development (842337999153841) |
-| Staging | `https://api-staging.audiencekit.com` | staging (1660272792277019) |
+| Staging | `https://api.next.audiencekit.com` | staging (1660272792277019) |
 | Release | `https://api.audiencekit.com` | Hot Mess (1168782378316790) |
 
 Release signs in with Hot Mess, a Consumer Facebook app, using classic Facebook
@@ -200,7 +200,7 @@ Release retains `group.social.hotmess` and `group.com.audiencekit.shared`. Stagi
 
 Use `Scripts/testflight.sh --next` to archive and upload Next, or add `--export-only` to stop at export. Next artifacts go into `build/testflight-next`; the default command still archives Release into `build/testflight`. Distribution archives override `APNS_ENVIRONMENT=production` so the packaged runtime setting matches TestFlight push delivery. Direct Staging device builds keep development APNs.
 
-The shared group is only for deliberate cross-app data, not environment-specific sessions, credentials, or databases. The staging host currently routes to the production API with the staging environment header; separate app identifiers and groups do not isolate backend records.
+The shared group is only for deliberate cross-app data, not environment-specific sessions, credentials, or databases. Staging calls the next preview (`api.next.audiencekit.com`), which runs new API code against production data; separate app identifiers and groups do not isolate backend records.
 
 Portal setup: the Next ID and private/shared group assignments are registered. On October 9, 2026, Apple Pay Payment Processing (merchant.social.hotmess), Associated Domains, Push Notifications, Sign in with Apple (primary App ID), and Wallet were enabled and verified on `social.hotmess.HotMess.next`. Provisioning must include these capabilities; a signed archive/export and a separate App Store Connect app record are still needed before TestFlight distribution.
 
