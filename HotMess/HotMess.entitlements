@@ -24,7 +24,7 @@
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.social.hotmess</string>
+		<string>$(HOTMESS_APP_GROUP)</string>
 		<string>group.com.audiencekit.shared</string>
 	</array>
 </dict>

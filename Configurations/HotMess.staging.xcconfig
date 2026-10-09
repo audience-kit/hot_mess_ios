@@ -29,7 +29,7 @@ AUDIENCEKIT_ENVIRONMENT = staging
 // environment; login reports an error at runtime while this is empty.
 FACEBOOK_CLIENT_TOKEN =
 
-BUNDLE_SUFFIX = Staging
+BUNDLE_SUFFIX = .next
 APNS_ENVIRONMENT = development
 
 // Apple Pay for cover payments. The merchant ID must be registered in the
@@ -41,3 +41,7 @@ APPLE_PAY_MERCHANT_ID = merchant.social.hotmess
 // Secrets that stay out of git, such as FACEBOOK_CLIENT_TOKEN. Copy
 // Local.xcconfig.example to Local.staging.xcconfig and fill it in.
 #include? "Local.staging.xcconfig"
+
+// Separate local data from the production Hot Mess app.
+HOTMESS_APP_GROUP = group.social.hotmess.next
+HOTMESS_DISPLAY_NAME = Hot Mess Next

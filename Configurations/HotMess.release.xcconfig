@@ -38,3 +38,6 @@ APPLE_PAY_MERCHANT_ID = merchant.social.hotmess
 // Secrets that stay out of git, such as FACEBOOK_CLIENT_TOKEN. Copy
 // Local.xcconfig.example to Local.release.xcconfig and fill it in.
 #include? "Local.release.xcconfig"
+
+HOTMESS_APP_GROUP = group.social.hotmess
+HOTMESS_DISPLAY_NAME = Hot Mess

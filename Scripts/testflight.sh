@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Archives the Release build, exports it for App Store Connect and uploads it to TestFlight.
+# Archives the selected build (Release by default), exports it for App Store Connect and uploads it to TestFlight.
 #
 #   Scripts/testflight.sh                 # archive, export and upload
+#   Scripts/testflight.sh --next          # separate .next app, staging API
 #   Scripts/testflight.sh --export-only   # stop after exporting build/testflight/export/HotMess.ipa
 #
 # The build number defaults to the minutes since 2026-01-01 UTC, so every upload is newer than
@@ -25,14 +26,20 @@ die() {
 }
 
 mode="upload"
-case "${1:-}" in
-    "") ;;
-    --export-only) mode="export" ;;
-    *) die "unknown argument $1" ;;
-esac
+configuration="Release"
+scheme="HotMess Release"
+channel="production"
+for argument in "$@"; do
+    case "$argument" in
+        --export-only) mode="export" ;;
+        --next) configuration="Staging"; scheme="HotMess Next"; channel="next" ;;
+        *) die "unknown argument $argument" ;;
+    esac
+done
 
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
 out="$root/build/testflight"
+[[ "$channel" == "next" ]] && out="$root/build/testflight-next"
 # Minutes since 2026-01-01 UTC: always increasing, and small enough for the API's 32-bit
 # sessions.build column. (A yyyymmddHHMM stamp overflowed it and failed every sign-in.)
 build_number="${BUILD_NUMBER:-$(( ($(date -u +%s) - 1767225600) / 60 ))}"
@@ -122,16 +129,17 @@ fi
 rm -rf "$out"
 mkdir -p "$out"
 
-echo "==> Archiving HotMess Release, build $build_number"
+echo "==> Archiving $scheme, build $build_number"
 xcodebuild archive \
     -project "$root/HotMess.xcodeproj" \
-    -scheme "HotMess Release" \
-    -configuration Release \
+    -scheme "$scheme" \
+    -configuration "$configuration" \
     -destination "generic/platform=iOS" \
     -archivePath "$out/HotMess.xcarchive" \
     -allowProvisioningUpdates \
     DEVELOPMENT_TEAM="$TEAM_ID" \
-    CURRENT_PROJECT_VERSION="$build_number"
+    CURRENT_PROJECT_VERSION="$build_number" \
+    APNS_ENVIRONMENT=production
 
 echo "==> Exporting for App Store Connect"
 xcodebuild -exportArchive \

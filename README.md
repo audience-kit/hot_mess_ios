@@ -196,6 +196,16 @@ The shared Swift package is resolved from the AudienceKit repository root (`../.
 
 ## Shared App Group
 
-All AudienceKit iOS apps use `group.com.audiencekit.shared` on team `DWVXMLB45Y`. The entitlement is enabled for every build configuration. Hot Mess also retains its existing `group.social.hotmess` membership. Use the shared group identifier with `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` or `UserDefaults(suiteName:)` when implementing shared state; namespace that state by environment and audience. Adding the capability does not migrate existing credentials or preferences into the group.
+Release retains `group.social.hotmess` and `group.com.audiencekit.shared`. Staging (scheme **HotMess Next**) uses bundle ID **`social.hotmess.HotMess.next`**, display name **Hot Mess Next**, private group **`group.social.hotmess.next`**, and the cross-app **`group.com.audiencekit.shared`**. The old staging installation remains separate. Debug keeps its existing development identity and entitlements.
+
+Use `Scripts/testflight.sh --next` to archive and upload Next, or add `--export-only` to stop at export. Next artifacts go into `build/testflight-next`; the default command still archives Release into `build/testflight`. Distribution archives override `APNS_ENVIRONMENT=production` so the packaged runtime setting matches TestFlight push delivery. Direct Staging device builds keep development APNs.
+
+The shared group is only for deliberate cross-app data, not environment-specific sessions, credentials, or databases. The staging host currently routes to the production API with the staging environment header; separate app identifiers and groups do not isolate backend records.
+
+Portal setup: the Next ID and private/shared group assignments are registered. On October 9, 2026, Apple Pay Payment Processing (merchant.social.hotmess), Associated Domains, Push Notifications, Sign in with Apple (primary App ID), and Wallet were enabled and verified on `social.hotmess.HotMess.next`. Provisioning must include these capabilities; a signed archive/export and a separate App Store Connect app record are still needed before TestFlight distribution.
 
 Verified on October 9, 2026: signed test builds of Focus, Velvet, Backstage, and Hot Mess were installed on the paired iPhone 15 Pro Max. Their signed entitlements and provisioning profiles include the shared group, and iOS reports the same shared container for all four.
+
+## Next setup verification
+
+On October 9, 2026, an unsigned generic-iOS Staging build of **Hot Mess Next** passed. Packaged values were checked: `social.hotmess.HotMess.next`, `https://api-staging.audiencekit.com`, staging API environment, and production APNs when built for TestFlight. The upload script passed shell syntax and mocked export-only checks for both production and Next, including separate output directories. No upload or signed-device validation was performed. The new App Store Connect record and OAuth provider registration for the new ID remain pending. Portal capabilities are now enabled as recorded above; this does not verify payment processing, push delivery, associated-domain files, or end-to-end sign-in.
