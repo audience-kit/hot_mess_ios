@@ -125,12 +125,14 @@ struct VenueChatScreen: View {
                 if let kind = bannerKind(viewModel) {
                     RoomBanner(kind: kind, roomName: room.name, isLocale: room.kind == .locale)
                 }
-                // Who else is here, friends first. Above the pinned
+                // Who is here: the venue, which is always in its own room,
+                // then everyone else, friends first. Above the pinned
                 // announcement, which the thread draws at its top.
                 let blocked = model.safety.blockedIDs
                 let hereNow = viewModel.hereNow.filter { !blocked.contains($0.id) }
-                if !hereNow.isEmpty {
-                    HereNowStrip(people: hereNow)
+                let place = room.kind == .venue ? HereNowPlace(name: room.name, photoURL: room.photoURL) : nil
+                if place != nil || !hereNow.isEmpty {
+                    HereNowStrip(place: place, people: hereNow)
                 }
                 // Each minute, so a special leaves the room when it ends.
                 TimelineView(.everyMinute) { timeline in

@@ -17,9 +17,11 @@ struct ChatRoom: Hashable, Sendable {
     let kind: Kind
     let id: UUID
     let name: String
+    /// The venue's photo, for the first face in the room's Here now strip.
+    var photoURL: URL? = nil
 
     static func venue(_ venue: Venue) -> ChatRoom {
-        ChatRoom(kind: .venue, id: venue.id, name: venue.name)
+        ChatRoom(kind: .venue, id: venue.id, name: venue.name, photoURL: venue.photoURL)
     }
 
     static func locale(_ locale: AppLocale) -> ChatRoom {
