@@ -84,8 +84,6 @@
 	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Hot Mess listens for beacons in venues so it can tell which room you are in.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Hot Mess uses the camera at the door to scan cover passes.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Hot Mess uses your location in the background to estimate how busy a venue is and to recommend places based on who else is out.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

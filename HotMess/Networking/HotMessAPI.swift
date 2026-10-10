@@ -184,28 +184,6 @@ struct HotMessAPI: Sendable {
         try await query(Documents.admissions, variables: [:], as: AdmissionsResponse.self).admissions
     }
 
-    /// Venues whose door the user can work. Empty for almost everyone.
-    func doorVenues() async throws -> [DoorVenue] {
-        try await query(Documents.doorVenues, variables: [:], as: DoorVenuesResponse.self).doorVenues
-    }
-
-    /// Tonight's paid and checked-in counts at a venue's door.
-    func doorCounts(venueID: UUID) async throws -> DoorCounts? {
-        try await query(
-            Documents.venueDoor,
-            variables: ["id": .string(venueID.uuidString)],
-            as: VenueDoorResponse.self
-        ).venue?.door
-    }
-
-    func scanAdmission(venueID: UUID, code: String) async throws -> ScanResult {
-        try await query(
-            Documents.scanAdmission,
-            variables: ["venueId": .string(venueID.uuidString), "code": .string(code)],
-            as: ScanAdmissionResponse.self
-        ).scanAdmission.result
-    }
-
     // MARK: - Session
 
     func serviceManifest(device: DeviceDescription) async throws -> VersionInfo {
@@ -532,8 +510,6 @@ extension HotMessAPI {
         viewer_admission: viewerAdmission { \(admissionFields) }
         """
 
-        static let doorFields = "door { paid_count: paidCount checked_in_count: checkedInCount }"
-
         static let venueFences = """
         query VenueFences($near: CoordinatesInput!) {
           venues(near: $near) { id point distance_tolerance: distanceTolerance }
@@ -637,26 +613,6 @@ extension HotMessAPI {
         static let admissions = """
         query Admissions {
           admissions { \(admissionFields) }
-        }
-        """
-
-        static let doorVenues = """
-        query DoorVenues {
-          doorVenues { id name photo_url: photoUrl \(doorFields) }
-        }
-        """
-
-        static let venueDoor = """
-        query VenueDoor($id: ID!) {
-          venue(id: $id) { id name \(doorFields) }
-        }
-        """
-
-        static let scanAdmission = """
-        mutation ScanAdmission($venueId: ID!, $code: String!) {
-          scanAdmission(input: { venueId: $venueId, code: $code }) {
-            result { outcome message admission { \(admissionFields) } }
-          }
         }
         """
 
@@ -866,20 +822,6 @@ struct RefundAdmissionResponse: Decodable, Sendable {
 
 struct AdmissionsResponse: Decodable, Sendable {
     let admissions: [Admission]
-}
-
-struct DoorVenuesResponse: Decodable, Sendable {
-    let doorVenues: [DoorVenue]
-}
-
-struct VenueDoorResponse: Decodable, Sendable {
-    struct Venue: Decodable, Sendable { let door: DoorCounts? }
-    let venue: Venue?
-}
-
-struct ScanAdmissionResponse: Decodable, Sendable {
-    struct Payload: Decodable, Sendable { let result: ScanResult }
-    let scanAdmission: Payload
 }
 
 struct PingsResponse: Decodable, Sendable {

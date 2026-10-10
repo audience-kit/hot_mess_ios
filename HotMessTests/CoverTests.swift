@@ -59,13 +59,6 @@ struct CoverPassTests {
         let refunded = Admission(id: Self.admissionID, status: .refunded, night: "2026-10-09", totalCents: 1112, passSecret: Self.secret)
         #expect(refunded.passCode(at: Self.start) == nil)
     }
-
-    @Test("The door treats new codes for the same pass as a repeat")
-    func doorRepeatKey() {
-        #expect(DoorViewModel.passKey(for: "HMC1.abc.59711040.HOStwur5mLjF7zvb") == "abc")
-        #expect(DoorViewModel.passKey(for: "HMC1.abc.59711041.p2tYO-g5T45lRFzN") == "abc")
-        #expect(DoorViewModel.passKey(for: "https://example.com") == "https://example.com")
-    }
 }
 
 @Suite("Cover decoding")
@@ -129,21 +122,6 @@ struct CoverDecodingTests {
         #expect(now.coverCharge?.totalCents == 1112)
         #expect(now.coverCharge?.payable == true)
         #expect(now.viewerAdmission?.isPaid == true)
-    }
-
-    @Test("Reads a scan result and door counts")
-    func scan() throws {
-        let result = try decode(ScanResult.self, from: """
-        { "outcome": "RE_ENTRY", "message": "Re-entry · Rick, in at 9:41pm", "admission": null }
-        """)
-        #expect(result.outcome == .reEntry)
-        #expect(result.admission == nil)
-
-        let venue = try decode(DoorVenue.self, from: """
-        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud",
-          "door": { "paid_count": 12, "checked_in_count": 8 } }
-        """)
-        #expect(venue.door == DoorCounts(paidCount: 12, checkedInCount: 8))
     }
 }
 
