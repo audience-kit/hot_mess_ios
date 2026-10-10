@@ -29,6 +29,20 @@ jobs:
           ssh-key: ${{ secrets.AUDIENCE_KIT_DEPLOY_KEY }}
           token: ${{ secrets.AUDIENCE_KIT_TOKEN || github.token }}
 
+      # A change that spans both repositories uses the same branch name in each: build against
+      # audience-kit's copy of this branch when there is one, so the pair builds before either merges.
+      - name: Use audience-kit's matching branch
+        working-directory: audience-kit
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git fetch --depth=1 origin "refs/heads/$BRANCH" 2>/dev/null; then
+            git checkout --detach FETCH_HEAD
+            echo "Building against audience-kit $BRANCH"
+          else
+            echo "No audience-kit branch $BRANCH; building against next"
+          fi
+
       - uses: actions/checkout@v5
         with:
           path: audience-kit/apps/hot_mess/ios
