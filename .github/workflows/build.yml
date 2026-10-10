@@ -14,8 +14,8 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      # HotMess.xcodeproj resolves the AudienceKit Swift package from the repository root of
-      # audience-kit three levels up (`../../..`), where this repository is the
+      # HotMess.xcodeproj resolves the AudienceKit Swift package from sdk/audiencekit-swift in
+      # audience-kit three levels up (`../../../sdk/audiencekit-swift`), where this repository is the
       # apps/hot_mess/ios submodule. Lay the runner out the same way: audience-kit (private,
       # read with AUDIENCE_KIT_DEPLOY_KEY, a read-only deploy key, or AUDIENCE_KIT_TOKEN) at the
       # root and this checkout under it.
@@ -25,9 +25,23 @@ jobs:
           repository: audience-kit/audience-kit
           ref: next
           path: audience-kit
-          sparse-checkout: sdk/swift
+          sparse-checkout: sdk/audiencekit-swift
           ssh-key: ${{ secrets.AUDIENCE_KIT_DEPLOY_KEY }}
           token: ${{ secrets.AUDIENCE_KIT_TOKEN || github.token }}
+
+      # A change that spans both repositories uses the same branch name in each: build against
+      # audience-kit's copy of this branch when there is one, so the pair builds before either merges.
+      - name: Use audience-kit's matching branch
+        working-directory: audience-kit
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git fetch --depth=1 origin "refs/heads/$BRANCH" 2>/dev/null; then
+            git checkout --detach FETCH_HEAD
+            echo "Building against audience-kit $BRANCH"
+          else
+            echo "No audience-kit branch $BRANCH; building against next"
+          fi
 
       - uses: actions/checkout@v5
         with:

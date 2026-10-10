@@ -770,7 +770,7 @@
 		};
 		AC0000000000000000000082 /* AudienceKit local package */ = {
             isa = XCLocalSwiftPackageReference;
-            relativePath = ../../..;
+            relativePath = ../../../sdk/audiencekit-swift;
         };
 		AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
