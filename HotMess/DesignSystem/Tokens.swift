@@ -60,15 +60,6 @@ extension Color {
     /// `photo-ink`: dark text over a bright photo. The same in every theme.
     static var hotMessPhotoInk: Color { Color(DesignTokens.hotMess.photoInk) }
 
-    /// `door-admit`: Door mode's full-screen "let them in". The same in every theme.
-    static var hotMessDoorAdmit: Color { Color(red: 0x1F / 255, green: 0x9D / 255, blue: 0x55 / 255) }
-
-    /// `door-re-entry`: Door mode's "coming back in", under dark text. The same in every theme.
-    static var hotMessDoorReEntry: Color { Color(red: 0xF5 / 255, green: 0xB4 / 255, blue: 0x00 / 255) }
-
-    /// `door-refuse`: Door mode's "don't let them in". The same in every theme.
-    static var hotMessDoorRefuse: Color { Color(red: 0xC6 / 255, green: 0x28 / 255, blue: 0x28 / 255) }
-
     /// The white ring around avatars that sit on photos (`opacity-ring`).
     static var hotMessAvatarRing: Color { Color.white.opacity(HotMessOpacity.ring) }
 

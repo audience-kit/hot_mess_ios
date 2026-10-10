@@ -130,8 +130,8 @@ Then it shows the pass. Passes live under Me → Passes.
 
 The pass's QR code is made on the phone every 30 seconds from the pass's
 secret (`CoverPass`, the API's `app/services/cover_pass.rb`), so it works with
-no signal; a sliding colour band shows staff it's live. Door operations are handled
-through Velvet, rather than the Me tab.
+no signal; a sliding colour band shows staff it's live. Scanning passes at the
+door is Velvet's job (the separate staff app), not this app's.
 
 Apple Pay uses `APPLE_PAY_MERCHANT_ID` (`merchant.social.hotmess`) from the
 xcconfig files and the `in-app-payments` entitlement. Register that merchant
