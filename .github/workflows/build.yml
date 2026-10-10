@@ -6,40 +6,35 @@ on:
   pull_request:
   workflow_dispatch:
 
+defaults:
+  run:
+    working-directory: audience-kit/apps/hot_mess/ios
+
 jobs:
   build:
     runs-on: macos-latest
     steps:
+      # HotMess.xcodeproj resolves the AudienceKit Swift package from the repository root of
+      # audience-kit three levels up (`../../..`), where this repository is the
+      # apps/hot_mess/ios submodule. Lay the runner out the same way: audience-kit (private,
+      # read with AUDIENCE_KIT_DEPLOY_KEY, a read-only deploy key, or AUDIENCE_KIT_TOKEN) at the
+      # root and this checkout under it.
+      - name: Check out audience-kit
+        uses: actions/checkout@v5
+        with:
+          repository: audience-kit/audience-kit
+          ref: next
+          path: audience-kit
+          sparse-checkout: sdk/swift
+          ssh-key: ${{ secrets.AUDIENCE_KIT_DEPLOY_KEY }}
+          token: ${{ secrets.AUDIENCE_KIT_TOKEN || github.token }}
+
       - uses: actions/checkout@v5
+        with:
+          path: audience-kit/apps/hot_mess/ios
 
       - name: Show Xcode version
         run: xcodebuild -version
-
-      # The AudienceKit SDK lives in the private audience-kit repository. SwiftPM clones it with
-      # AUDIENCE_KIT_TOKEN (a token with read access to it, the same secret hot_mess_android uses),
-      # or else AUDIENCE_KIT_DEPLOY_KEY (a read-only deploy key on audience-kit).
-      - name: Let SwiftPM read audience-kit
-        env:
-          AUDIENCE_KIT_TOKEN: ${{ secrets.AUDIENCE_KIT_TOKEN }}
-          AUDIENCE_KIT_DEPLOY_KEY: ${{ secrets.AUDIENCE_KIT_DEPLOY_KEY }}
-        run: |
-          url="https://github.com/audience-kit/audience-kit.git"
-          if [ -n "$AUDIENCE_KIT_TOKEN" ]; then
-            git config --global url."https://x-access-token:${AUDIENCE_KIT_TOKEN}@github.com/audience-kit/audience-kit.git".insteadOf "$url"
-          elif [ -n "$AUDIENCE_KIT_DEPLOY_KEY" ]; then
-            mkdir -p ~/.ssh
-            printf '%s\n' "$AUDIENCE_KIT_DEPLOY_KEY" > ~/.ssh/audience_kit
-            chmod 600 ~/.ssh/audience_kit
-            ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-            git config --global url."git@github.com:audience-kit/audience-kit.git".insteadOf "$url"
-            # xcodebuild runs git with its own SSH command, so core.sshCommand is ignored; ssh's
-            # config file still applies.
-            printf 'Host github.com\n  IdentityFile ~/.ssh/audience_kit\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-            chmod 600 ~/.ssh/config
-          else
-            echo "::error::Add an AUDIENCE_KIT_TOKEN (read access to audience-kit/audience-kit) or AUDIENCE_KIT_DEPLOY_KEY repository secret."
-            exit 1
-          fi
 
       - name: Build and test
         run: |
@@ -67,4 +62,4 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: build-log
-          path: build.log
+          path: audience-kit/apps/hot_mess/ios/build.log
