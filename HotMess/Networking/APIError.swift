@@ -59,7 +59,7 @@ enum APIError: Error, Equatable, Sendable, LocalizedError {
             self = APIError(urlError: urlError)
         case let .decoding(detail):
             self = .decoding(detail)
-        case .signInFailed, .graphQL, .missingConfiguration, .tokenStorage:
+        case .signInFailed, .graphQL, .missingConfiguration, .tokenStorage, .updateRequired:
             self = .transport(error.localizedDescription)
         }
     }
