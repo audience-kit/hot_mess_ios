@@ -14,8 +14,8 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      # HotMess.xcodeproj resolves the AudienceKit Swift package from the repository root of
-      # audience-kit three levels up (`../../..`), where this repository is the
+      # HotMess.xcodeproj resolves the AudienceKit Swift package from sdk/audiencekit-swift in
+      # audience-kit three levels up (`../../../sdk/audiencekit-swift`), where this repository is the
       # apps/hot_mess/ios submodule. Lay the runner out the same way: audience-kit (private,
       # read with AUDIENCE_KIT_DEPLOY_KEY, a read-only deploy key, or AUDIENCE_KIT_TOKEN) at the
       # root and this checkout under it.
@@ -25,7 +25,7 @@ jobs:
           repository: audience-kit/audience-kit
           ref: next
           path: audience-kit
-          sparse-checkout: sdk/swift
+          sparse-checkout: sdk/audiencekit-swift
           ssh-key: ${{ secrets.AUDIENCE_KIT_DEPLOY_KEY }}
           token: ${{ secrets.AUDIENCE_KIT_TOKEN || github.token }}
 

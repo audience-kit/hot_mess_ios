@@ -20,7 +20,7 @@ Dependencies resolve through Swift Package Manager on first open:
 | --- | --- |
 | [facebook-ios-sdk](https://github.com/facebook/facebook-ios-sdk) | Login |
 | [Kingfisher](https://github.com/onevcat/Kingfisher) | Remote image loading and caching |
-| [AudienceKit](https://github.com/audience-kit/audience-kit) (`sdk/swift`) | Sign-in, session, GraphQL and branding against the AudienceKit API |
+| [AudienceKit](https://github.com/audience-kit/audience-kit) (`sdk/audiencekit-swift`) | Sign-in, session, GraphQL and branding against the AudienceKit API |
 | [Stripe](https://github.com/stripe/stripe-ios-spm) (`StripePaymentSheet`) | Paying cover at Stripe venues |
 | [Square In-App Payments](https://github.com/square/in-app-payments-ios) (`SquareInAppPaymentsSDK`) | Paying cover at Square venues |
 
@@ -192,7 +192,7 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
 - Sign-in requests only `public_profile` while App Review is pending. Revisit
   additional permissions after approval.
 
-The shared Swift package is resolved from the AudienceKit repository root (`../../..`). Keep this iOS checkout at `apps/hot_mess/ios` when building. Consumer services come from `AudienceKit`; shared design tokens and UI come from `AudienceKitUI`, both built on `AudienceCore`.
+The shared Swift package is resolved from `sdk/audiencekit-swift` in the AudienceKit repository (`../../../sdk/audiencekit-swift`). Keep this iOS checkout at `apps/hot_mess/ios` when building. Consumer services come from `AudienceKit`; shared design tokens and UI come from `AudienceKitUI`, both built on `AudienceCore`.
 
 ## Shared App Group
 
