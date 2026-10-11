@@ -63,10 +63,10 @@ struct GeofencePlanTests {
     @Test("Decodes envelopes from the venues query, skipping venues without a point")
     func decoding() throws {
         let json = Data("""
-        {"venues": [
+        {"audience": {"venues": {"list": {"nodes": [
           {"id": "6f1c1f5e-2d47-4c5e-9f4b-1f2a3b4c5d6e", "point": "POINT (-117.41 47.65)", "distance_tolerance": 120},
           {"id": "7a2d2f6e-3e58-4d6f-8a5c-2a3b4c5d6e7f", "point": null, "distance_tolerance": 250}
-        ]}
+        ]}}}}
         """.utf8)
 
         let response = try JSONDecoder.hotMess.decode(VenueFencesResponse.self, from: json)

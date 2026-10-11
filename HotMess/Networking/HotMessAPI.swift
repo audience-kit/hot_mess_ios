@@ -236,7 +236,7 @@ struct HotMessAPI: Sendable {
     /// The user's own active Ping and friends' active Pings, without
     /// reporting a location.
     func pings() async throws -> PingsResponse {
-        try await query(Documents.pings, variables: [:], as: PingsResponse.self)
+        try await query(Documents.pings, variables: [:], as: AudiencePingsResponse.self).pings
     }
 
     /// Sends a Ping for tonight, or edits the one already running.
@@ -535,7 +535,7 @@ extension HotMessAPI {
 
         static let venueFences = """
         query VenueFences($near: CoordinatesInput!) {
-          venues(near: $near) { id point distance_tolerance: distanceTolerance }
+          audience { venues { list(near: $near) { nodes { id point distance_tolerance: distanceTolerance } } } }
         }
         """
 
@@ -578,7 +578,7 @@ extension HotMessAPI {
 
         static let venue = """
         query Venue($id: ID!) {
-          venue(id: $id) {
+          venues { venue(id: $id) {
             \(venueFields)
             events { upcoming { nodes { \(eventFields) } } }
             friends { list { nodes { \(friendFields) } } }
@@ -587,7 +587,7 @@ extension HotMessAPI {
             \(venueCoverFields)
             \(onNowFields)
             ping { friend_pings: friendPings { \(pingFields) } }
-          }
+          } }
         }
         """
 
@@ -599,12 +599,12 @@ extension HotMessAPI {
 
         static let event = """
         query Event($id: ID!) {
-          event(id: $id) {
+          events { event(id: $id) {
             \(eventFields) people { lineup { nodes { \(personFields) } } }
             ping { friend_pings: friendPings { \(pingFields) } }
             cover { cover_charge: charge { \(coverChargeFields) } }
             venue_cover: venue { venue { \(venueCoverFields) } }
-          }
+          } }
         }
         """
 
@@ -644,27 +644,29 @@ extension HotMessAPI {
 
         static let admissions = """
         query Admissions {
-          admissions { \(admissionFields) }
+          cover { admissions { nodes { \(admissionFields) } } }
         }
         """
 
         static let person = """
         query Person($id: ID!) {
-          person(id: $id) {
+          people { person(id: $id) {
             \(personFields)
             events { upcoming { nodes { \(eventFields) } } }
             \(profileSocialLinks)
             members { \(personSummaryFields) }
             groups { \(personSummaryFields) }
             music { tracks { nodes { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl } } }
-          }
+          } }
         }
         """
 
         static let pings = """
         query Pings {
-          my_ping: myPing { \(pingFields) }
-          friend_pings: friendPings { \(pingFields) }
+          audience { ping {
+            my_ping: myPing { \(pingFields) }
+            friend_pings: friendPings { \(pingFields) }
+          } }
         }
         """
 
@@ -761,10 +763,11 @@ struct ReportLocationResponse: Decodable, Sendable {
     let reportLocation: Now
 }
 
+/// `audience { venues { list(near:) { nodes } } }`.
 struct VenueFencesResponse: Decodable, Sendable {
     let venues: [VenueFence]
 
-    private enum CodingKeys: String, CodingKey { case venues }
+    private enum CodingKeys: String, CodingKey { case audience, venues, list, nodes }
 
     /// A venue whose location has no point can't be watched; it's skipped
     /// rather than failing the rest.
@@ -774,13 +777,21 @@ struct VenueFencesResponse: Decodable, Sendable {
     }
 
     init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        venues = try container.decode([Entry].self, forKey: .venues).compactMap(\.fence)
+        let list = try decoder.container(keyedBy: CodingKeys.self)
+            .nestedContainer(keyedBy: CodingKeys.self, forKey: .audience)
+            .nestedContainer(keyedBy: CodingKeys.self, forKey: .venues)
+            .nestedContainer(keyedBy: CodingKeys.self, forKey: .list)
+        venues = try list.decode([Entry].self, forKey: .nodes).compactMap(\.fence)
     }
 }
 
+/// `people { person(id:) }`.
 struct PersonResponse: Decodable, Sendable {
-    let person: PersonDetail?
+    struct People: Decodable, Sendable { let person: PersonDetail? }
+
+    let people: People?
+
+    var person: PersonDetail? { people?.person }
 }
 
 /// A venue and its events, which GraphQL returns as one object.
@@ -829,8 +840,13 @@ struct VenueWithEvents: Decodable, Sendable {
     }
 }
 
+/// `venues { venue(id:) }`.
 struct VenueResponse: Decodable, Sendable {
-    let venue: VenueWithEvents?
+    struct Venues: Decodable, Sendable { let venue: VenueWithEvents? }
+
+    let venues: Venues?
+
+    var venue: VenueWithEvents? { venues?.venue }
 }
 
 struct LocaleEventsResponse: Decodable, Sendable {
@@ -846,8 +862,13 @@ struct LocaleEventsResponse: Decodable, Sendable {
     let locale: Locale?
 }
 
+/// `events { event(id:) }`.
 struct EventResponse: Decodable, Sendable {
-    let event: EventDetail?
+    struct Events: Decodable, Sendable { let event: EventDetail? }
+
+    let events: Events?
+
+    var event: EventDetail? { events?.event }
 }
 
 struct BuyCoverResponse: Decodable, Sendable {
@@ -870,8 +891,23 @@ struct RefundAdmissionResponse: Decodable, Sendable {
     let refundAdmission: AdmissionPayload
 }
 
+/// `cover { admissions { nodes } }`; no cover facet reads as no passes.
 struct AdmissionsResponse: Decodable, Sendable {
-    let admissions: [Admission]
+    struct Nodes: Decodable, Sendable { let nodes: [Admission] }
+    struct Cover: Decodable, Sendable { let admissions: Nodes }
+
+    let cover: Cover?
+
+    var admissions: [Admission] { cover?.admissions.nodes ?? [] }
+}
+
+/// `audience { ping { my_ping friend_pings } }`; no ping facet reads as none.
+struct AudiencePingsResponse: Decodable, Sendable {
+    struct Audience: Decodable, Sendable { let ping: PingsResponse? }
+
+    let audience: Audience
+
+    var pings: PingsResponse { audience.ping ?? PingsResponse() }
 }
 
 struct PingsResponse: Decodable, Sendable {
