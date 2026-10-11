@@ -291,11 +291,6 @@ struct HotMessAPI: Sendable {
         ]
     }
 
-    /// Records where the device is, so the API knows which venue the user is in.
-    func reportLocation(_ coordinates: Coordinates) async throws {
-        _ = try await now(near: coordinates)
-    }
-
     // MARK: - Safety
 
     /// Who the user blocked and whether they've agreed to the terms of use.

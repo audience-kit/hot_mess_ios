@@ -40,7 +40,9 @@ struct PositionTracker: Sendable {
     }
 
     /// Attaches the nearest beacon to the device's position. True when it
-    /// changes what's reported.
+    /// changes what's reported: the API reads only the major (a locale), and
+    /// ranging hears the nearest beacon in a room change every second or so,
+    /// so another beacon in the same locale isn't worth reporting.
     @discardableResult
     mutating func beacon(major: Int, minor: Int) -> Bool {
         // Only attach beacon identifiers to a position we actually have; the
@@ -48,10 +50,11 @@ struct PositionTracker: Sendable {
         guard var position = device,
               position.beaconMajor != major || position.beaconMinor != minor else { return false }
 
+        let localeChanged = position.beaconMajor != major
         position.beaconMajor = major
         position.beaconMinor = minor
         device = position
-        return simulated == nil
+        return localeChanged && simulated == nil
     }
 
     /// Reports this venue's position instead of the device's. False, and
