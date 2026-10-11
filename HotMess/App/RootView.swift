@@ -90,6 +90,8 @@ struct MainTabView: View {
         }
         .accessibilityIdentifier("main.tabs")
         .coverPresenter()
+        .notificationBannerHost()
+        .notificationBannerHost()
     }
 }
 

@@ -18,15 +18,20 @@ enum HotMessDecoding {
             let container = try decoder.singleValueContainer()
             let text = try container.decode(String.self)
 
-            if let date = fractionalSeconds.date(from: text) { return date }
-            if let date = iso8601WithFractionalSeconds.date(from: text) { return date }
-            if let date = iso8601.date(from: text) { return date }
+            if let date = date(from: text) { return date }
 
             throw DecodingError.dataCorruptedError(
                 in: container,
                 debugDescription: "Unrecognised date format: \(text)"
             )
         }
+    }
+
+    /// A date in any of the shapes the API sends, or `nil`.
+    static func date(from text: String) -> Date? {
+        fractionalSeconds.date(from: text)
+            ?? iso8601WithFractionalSeconds.date(from: text)
+            ?? iso8601.date(from: text)
     }
 
     static var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy {

@@ -25,6 +25,8 @@ final class AppModel {
     let friends = FriendDirectory()
     /// Who the user blocked, and whether they've agreed to the terms.
     let safety: SafetyStore
+    /// The user's notifications while the app is in front, shown in the app.
+    let notifications: NotificationStream
 
     var selectedTab: AppTab = .now
 
@@ -59,6 +61,17 @@ final class AppModel {
         location = LocationProvider(api: api, configuration: configuration)
         checkout = CoverCheckout(api: api, configuration: configuration)
         safety = SafetyStore(api: api)
+        notifications = NotificationStream(
+            url: configuration.realtimeURL,
+            audienceID: { [configuration, api] in
+                if let audienceID = configuration.audienceID { return audienceID }
+                return try? await api.audienceID()
+            },
+            token: { [session] in session.isSignedIn ? session.bearerToken : nil }
+        )
+        notifications.onReceive = { [weak self] notification in
+            if notification.ping != nil { self?.pingsChanged() }
+        }
     }
 
     func start() async {
@@ -85,6 +98,7 @@ final class AppModel {
     func signOut() {
         friends.forget()
         safety.forget()
+        notifications.reset()
         session.signOut()
     }
 
@@ -107,6 +121,27 @@ final class AppModel {
 
     func pingsChanged() {
         pingRevision += 1
+    }
+
+    /// Goes where a tapped notification leads, whether the system showed it
+    /// or the app did: Now, for a Ping.
+    func open(_ notification: PingNotification) {
+        switch notification.kind {
+        case .ping, .pingJoin:
+            openNow()
+        }
+    }
+
+    /// "I'm in" on a friend's Ping notification: joins the whole Ping.
+    func join(_ notification: PingNotification) async {
+        guard let pingID = notification.pingID else { return }
+
+        do {
+            _ = try await api.joinPing(pingID)
+        } catch {
+            Log.app.error("Joining a ping from a notification failed: \(error.localizedDescription, privacy: .public)")
+        }
+        pingsChanged()
     }
 
     /// Shows Now from the top, for a tapped Ping notification.

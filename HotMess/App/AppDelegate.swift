@@ -52,14 +52,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 // MARK: - Notifications
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    /// Pings show as banners in the foreground too, and Now picks up the change.
+    /// Pings show as banners in the foreground too, and Now picks up the
+    /// change. A notification the app already showed itself (its in-app copy
+    /// came over `myNotifications`, now or within a moment) isn't shown again.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        if PingNotification(userInfo: notification.request.content.userInfo) != nil {
+        let userInfo = notification.request.content.userInfo
+        let notificationID = InAppNotification.notificationID(in: userInfo)
+
+        if PingNotification(userInfo: userInfo) != nil {
             await AppDelegate.pingsChanged()
         }
+        guard await AppDelegate.shouldPresentSystemCopy(notificationID: notificationID) else { return [] }
+
         return [.banner, .list, .sound]
     }
 
@@ -77,26 +84,23 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if action == PingNotification.joinAction {
             await AppDelegate.join(notification)
         } else if action == UNNotificationDefaultActionIdentifier {
-            await AppDelegate.openNow()
+            await AppDelegate.open(notification)
         }
     }
 
     @MainActor
     private static func join(_ notification: PingNotification) async {
-        guard let pingID = notification.pingID else { return }
-        let model = AppModel.shared
-
-        do {
-            _ = try await model.api.joinPing(pingID)
-        } catch {
-            Log.app.error("Joining a ping from a notification failed: \(error.localizedDescription, privacy: .public)")
-        }
-        model.pingsChanged()
+        await AppModel.shared.join(notification)
     }
 
     @MainActor
-    private static func openNow() {
-        AppModel.shared.openNow()
+    private static func open(_ notification: PingNotification) {
+        AppModel.shared.open(notification)
+    }
+
+    @MainActor
+    private static func shouldPresentSystemCopy(notificationID: String?) async -> Bool {
+        await AppModel.shared.notifications.shouldPresentSystemCopy(notificationID: notificationID)
     }
 
     @MainActor
