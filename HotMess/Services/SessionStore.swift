@@ -268,10 +268,10 @@ final class SessionStore {
 
     // MARK: - Private
 
-    /// The signed-in user, from the audience's GraphQL `me`.
+    /// The signed-in user, from the audience's GraphQL `me`, with their
+    /// profile photo.
     private func currentUser() async throws -> User? {
-        guard let me = try await audienceKit.me() else { return nil }
-        return User(me)
+        try await api.me()
     }
 
     /// Keeps a session minted outside the SDK where the SDK reads it.
@@ -294,9 +294,8 @@ final class SessionStore {
             user = User(id: session.user.id, name: session.user.name)
             state = .signedIn
 
-            if user == nil {
-                user = try? await currentUser()
-            }
+            // The sign-in response has no profile photo; `me` does.
+            if let refreshed = try? await currentUser() { user = refreshed }
 
             await PushNotifications.requestAuthorizationAndRegister()
         } catch {

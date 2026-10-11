@@ -215,14 +215,14 @@ struct NowScreen: View {
             ),
             ChatPeek.Participant(
                 id: "viewer", name: String(localized: "You"),
-                avatarURL: viewerID.map { model.configuration.avatarURL(forUserID: $0) }
+                avatarURL: model.session.user?.avatarURL
             )
         ]
         var seen = Set<UUID>()
         for friend in now.friends where friend.id != viewerID && seen.insert(friend.id).inserted {
             participants.append(ChatPeek.Participant(
                 id: friend.id.uuidString, name: friend.name,
-                avatarURL: model.configuration.avatarURL(forUserID: friend.id),
+                avatarURL: friend.avatarURL,
                 presence: friend.presence
             ))
         }
@@ -329,7 +329,7 @@ struct FriendStrip: View {
                     } label: {
                         VStack(spacing: 6) {
                             Avatar(
-                                url: model.configuration.avatarURL(forUserID: friend.id),
+                                url: friend.avatarURL,
                                 initials: friend.name.initialsForDisplay,
                                 size: 56,
                                 presence: friend.presence

@@ -214,13 +214,11 @@ struct FriendFaces: View {
     let friends: [Friend]
     var limit = 4
 
-    @Environment(AppModel.self) private var model
-
     var body: some View {
         HStack(spacing: -7) {
             ForEach(Array(friends.prefix(limit).enumerated()), id: \.element.id) { index, friend in
                 Avatar(
-                    url: model.configuration.avatarURL(forUserID: friend.id),
+                    url: friend.avatarURL,
                     initials: friend.name.initialsForDisplay,
                     size: 26
                 )

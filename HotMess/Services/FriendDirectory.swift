@@ -30,7 +30,7 @@ final class FriendDirectory {
     }
 
     /// Friends a chat room's roster names by ID and full name. Keeps what's
-    /// already known about each one (their Facebook ID, their presence).
+    /// already known about each one (their Facebook ID, presence and photo).
     func rememberNames(_ friends: some Sequence<Friend>) {
         for friend in friends where !friend.name.isEmpty {
             let known = byID[friend.id]
@@ -39,7 +39,8 @@ final class FriendDirectory {
                 id: friend.id,
                 name: friend.name,
                 facebookID: known?.facebookID,
-                presence: known?.presence
+                presence: known?.presence,
+                avatarURL: known?.avatarURL ?? friend.avatarURL
             )
         }
     }
