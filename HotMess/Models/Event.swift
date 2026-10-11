@@ -168,8 +168,8 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     let venueCoverTonight: CoverCharge?
     /// The user's cover tonight at its venue, paid or being paid.
     let viewerAdmission: Admission?
-    /// Friends' Pings that pick this event. Read from GraphQL only, so it
-    /// isn't encoded.
+    /// Friends' Pings that pick this event, from its ping facet. Read from
+    /// GraphQL only, so it isn't encoded.
     var friendPings: [Ping]
 
     var id: UUID { event.id }
@@ -182,8 +182,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case people, cover
-        case friendPings = "friend_pings"
+        case people, cover, ping
         case venueCover = "venue_cover"
     }
 
@@ -208,7 +207,9 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         }
         venueCoverTonight = venueCover?.coverCharge
         viewerAdmission = venueCover?.viewerAdmission
-        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
+        // The ping facet is null without a viewer or the ping module, which
+        // reads as no Pings.
+        friendPings = try container.decodeIfPresent(PingsResponse.self, forKey: .ping)?.friendPings ?? []
     }
 
     func encode(to encoder: any Encoder) throws {

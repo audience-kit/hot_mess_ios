@@ -585,7 +585,7 @@ extension HotMessAPI {
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
             \(venueCoverFields)
             \(onNowFields)
-            friend_pings: friendPings { \(pingFields) }
+            ping { friend_pings: friendPings { \(pingFields) } }
           }
         }
         """
@@ -600,7 +600,7 @@ extension HotMessAPI {
         query Event($id: ID!) {
           event(id: $id) {
             \(eventFields) people { \(personFields) }
-            friend_pings: friendPings { \(pingFields) }
+            ping { friend_pings: friendPings { \(pingFields) } }
             cover { cover_charge: charge { \(coverChargeFields) } }
             venue_cover: venue { venue { \(venueCoverFields) } }
           }
@@ -801,11 +801,10 @@ struct VenueWithEvents: Decodable, Sendable {
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
-        case events, friends, cover, profile
+        case events, friends, cover, profile, ping
         case chatOpen = "chat_open"
         case recentMessages = "recent_messages"
         case onNow = "on_now"
-        case friendPings = "friend_pings"
     }
 
     init(from decoder: any Decoder) throws {
@@ -824,7 +823,8 @@ struct VenueWithEvents: Decodable, Sendable {
         coverCharge = cover?.coverCharge
         viewerAdmission = cover?.viewerAdmission
         onNow = container.decodeAppearances(forKey: .onNow)
-        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
+        // Friends' Pings come through the ping facet; missing reads as none.
+        friendPings = try container.decodeIfPresent(PingsResponse.self, forKey: .ping)?.friendPings ?? []
     }
 }
 
