@@ -128,7 +128,10 @@ struct PingDecodingTests {
 
     @Test("Decodes the Pings query with no Ping of your own")
     func decodesPingsQuery() throws {
-        let response = try PingFixtures.decode(PingsResponse.self, #"{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}"#)
+        let response = try PingFixtures.decode(
+            AudiencePingsResponse.self,
+            #"{"audience":{"ping":{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}}}"#
+        ).pings
 
         #expect(response.myPing == nil)
         #expect(response.friendPings.count == 1)
@@ -137,11 +140,11 @@ struct PingDecodingTests {
     @Test("Decodes friends' Pings on a venue and an event")
     func decodesPlacePings() throws {
         let venueJSON = PingFixtures.venue.dropLast(1) + #","chat":{"open":false},"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
-        let venue = try PingFixtures.decode(VenueResponse.self, #"{"venue":\#(venueJSON)}"#)
+        let venue = try PingFixtures.decode(VenueResponse.self, #"{"venues":{"venue":\#(venueJSON)}}"#)
         #expect(venue.venue?.friendPings.first?.user.firstName == "Jordan")
 
         let eventJSON = PingFixtures.event.dropLast(1) + #","people":{"lineup":{"nodes":[]}},"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
-        let event = try PingFixtures.decode(EventResponse.self, #"{"event":\#(eventJSON)}"#)
+        let event = try PingFixtures.decode(EventResponse.self, #"{"events":{"event":\#(eventJSON)}}"#)
         #expect(event.event?.friendPings.count == 1)
         #expect(event.event?.event.name == "Drag Bingo")
     }
