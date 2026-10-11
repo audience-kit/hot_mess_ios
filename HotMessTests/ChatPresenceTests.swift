@@ -14,22 +14,32 @@ private let sam = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
 private let jo = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
 private let alex = UUID(uuidString: "00000000-0000-0000-0000-000000000004")!
 
-/// Wraps what the channel sent the way Action Cable does.
-private func frame(_ message: String) -> Data {
-    Data(#"{ "identifier": "{\"channel\":\"RealtimeChannel\"}", "message": \#(message) }"#.utf8)
+/// One subscription result, the way `GraphQLChannel` sends it over Action Cable.
+private func result(_ room: String, more: Bool = true) -> Data {
+    Data(#"{ "identifier": "{\"channel\":\"GraphQLChannel\"}", "message": { "result": { "data": { "room": \#(room) } }, "more": \#(more) } }"#.utf8)
 }
 
-@Suite("Chat room presence frames")
+private func events(_ room: String, more: Bool = true) -> [VenueChatConnection.Event] {
+    VenueChatConnection.events(from: result(room, more: more))
+}
+
+/// A `ChatMessagePosted`'s line, aliased as the subscription selects it.
+private func line(_ text: String, from sender: UUID, id: UUID = UUID(), extra: String = "") -> String {
+    #"{ "id": "\#(id)", "message": "\#(text)", "body": "\#(text)", "user_id": "\#(sender)", "sent_at": "2026-10-11T04:00:00Z", "kind": "TEXT", "pinned": false, "posted_as_venue": false, "posted_as_person": false\#(extra) }"#
+}
+
+@Suite("Chat room events")
 struct ChatPresenceFrameTests {
     @Test("A live venue announcement is delivered without reopening history")
     func liveAnnouncement() throws {
-        let data = frame("""
-        { "type": "incoming", "id": "\(UUID())", "user_id": "\(me)",
-          "message": "Announcement: Doors open", "body": "Welcome in",
-          "name": "The Venue", "role": "venue", "kind": "announcement",
-          "title": "Doors open", "pinned": false, "presence": null }
+        let events = events("""
+        { "__typename": "ChatMessagePosted", "sender_presence": null,
+          "message": { "id": "\(UUID())", "user_id": "\(me)",
+            "message": "Announcement: Doors open", "body": "Welcome in",
+            "name": "The Venue", "role": "VENUE", "kind": "ANNOUNCEMENT",
+            "title": "Doors open", "pinned": false, "posted_as_venue": false } }
         """)
-        guard case let .received(message) = try #require(VenueChatConnection.event(from: data)) else {
+        guard case let .received(message) = try #require(events.first), events.count == 1 else {
             Issue.record("Expected a live message")
             return
         }
@@ -37,22 +47,24 @@ struct ChatPresenceFrameTests {
         #expect(message.title == "Doors open")
         #expect(message.written == "Welcome in")
         #expect(message.isFromPlace)
+        #expect(message.presence == nil)
     }
 
     @Test("An automatic \"On now\" announcement shows as the venue's card")
     func onNowAnnouncement() throws {
-        // As VenueAnnouncements broadcasts it: posted as the venue by its
-        // announcer, a venue-device user who is never in the room.
+        // Posted as the venue by its announcer, a venue-device user who is
+        // never in the room.
         let announcer = UUID()
-        let data = frame("""
-        { "type": "incoming", "id": "\(UUID())", "user_id": "\(announcer)",
-          "message": "Announcement: On now\\nTrixie Mattel is on the decks", "body": "Trixie Mattel is on the decks",
-          "name": "The Stud", "avatar_url": null, "sent_at": "2026-10-11T04:00:00Z",
-          "role": "venue", "kind": "announcement", "title": "On now", "photo_url": null,
-          "event": null, "ends_at": null, "pinned": false, "automatic": true,
-          "posted_as_venue": true, "presence": null }
+        let events = events("""
+        { "__typename": "ChatMessagePosted", "sender_presence": null,
+          "message": { "id": "\(UUID())", "user_id": "\(announcer)",
+            "message": "Announcement: On now\\nTrixie Mattel is on the decks", "body": "Trixie Mattel is on the decks",
+            "name": "The Stud", "avatar_url": null, "sent_at": "2026-10-11T04:00:00Z",
+            "role": "VENUE", "kind": "ANNOUNCEMENT", "title": "On now", "photo_url": null,
+            "event": null, "ends_at": null, "pinned": false, "posted_as_venue": true,
+            "posted_as_person": false, "person": null } }
         """)
-        guard case let .received(message) = try #require(VenueChatConnection.event(from: data)) else {
+        guard case let .received(message) = try #require(events.first) else {
             Issue.record("Expected a live message")
             return
         }
@@ -69,87 +81,154 @@ struct ChatPresenceFrameTests {
         ))
     }
 
-    @Test("A roster names everyone in the room and lists every friend")
-    func fullRoster() throws {
-        let data = frame("""
+    @Test("A posted line takes its sender's presence in the room")
+    func senderPresence() throws {
+        let pushed = events(#"{ "__typename": "ChatMessagePosted", "sender_presence": "PUSH", "message": \#(line("hi", from: sam)) }"#)
+        let here = events(#"{ "__typename": "ChatMessagePosted", "sender_presence": "ONLINE", "message": \#(line("yo", from: aurora)) }"#)
+
+        guard case let .received(first) = try #require(pushed.first),
+              case let .received(second) = try #require(here.first)
+        else {
+            Issue.record("Expected two lines")
+            return
+        }
+        #expect(first.presence == .push)
+        #expect(first.userID == sam)
+        #expect(first.body == "hi")
+        #expect(second.presence == .online)
+    }
+
+    @Test("Joining connects, then brings range, roster and history")
+    func joined() throws {
+        let pinnedID = UUID()
+        let events = events("""
         {
-          "type": "roster",
-          "online": ["\(me)", "\(aurora)", "\(sam)"],
-          "people": [
-            { "user_id": "\(me)", "name": "Rick Mark", "avatar_url": "https://example.com/me.jpg", "friend": false },
-            { "user_id": "\(aurora)", "name": "Aurora Bell", "avatar_url": "https://example.com/a.jpg", "friend": true },
-            { "user_id": "\(sam)", "name": "Sam K." }
+          "__typename": "ChatJoined",
+          "out_of_range": true,
+          "roster": {
+            "people": [
+              { "user_id": "\(me)", "name": "Rick Mark", "avatar_url": "https://example.com/me.jpg", "friend": false },
+              { "user_id": "\(aurora)", "name": "Aurora Bell", "avatar_url": "https://example.com/a.jpg", "friend": true },
+              { "user_id": "\(sam)", "name": "Sam K.", "avatar_url": null, "friend": false }
+            ],
+            "friends": [
+              { "user_id": "\(aurora)", "name": "Aurora Bell" },
+              { "user_id": "\(alex)", "name": "Alex Rivera" }
+            ]
+          },
+          "history": [
+            { "sender_presence": "PUSH", "message": \(line("first", from: sam)) },
+            { "sender_presence": null, "message": { "message": "no sender" } },
+            { "sender_presence": "ONLINE", "message": \(line("second", from: aurora, extra: #", "role": "STAFF""#)) }
           ],
-          "friends": [
-            { "user_id": "\(aurora)", "name": "Aurora Bell" },
-            { "user_id": "\(alex)", "name": "Alex Rivera" }
-          ]
+          "pinnedMessage": { "sender_presence": null, "message": { "id": "\(pinnedID)", "message": "Announcement: Doors at 9",
+            "body": "", "user_id": "\(alex)", "kind": "ANNOUNCEMENT", "title": "Doors at 9", "pinned": true } }
         }
         """)
 
-        guard case let .roster(online, people, friends) = try #require(VenueChatConnection.event(from: data)) else {
-            Issue.record("Expected a roster")
+        #expect(events.count == 4)
+        guard events.count == 4,
+              case .connected = events[0],
+              case let .range(outOfRange) = events[1],
+              case let .roster(online, people, friends) = events[2],
+              case let .history(messages, pinned) = events[3]
+        else {
+            Issue.record("Expected connected, range, roster, history")
             return
         }
 
+        #expect(outOfRange)
+
         #expect(online == [me, aurora, sam])
         #expect(people.count == 3)
-
         let auroraHere = try #require(people.first { $0.id == aurora })
         #expect(auroraHere.name == "Aurora Bell")
         #expect(auroraHere.avatarURL?.absoluteString == "https://example.com/a.jpg")
         #expect(auroraHere.isFriend)
-
         let samHere = try #require(people.first { $0.id == sam })
         #expect(samHere.name == "Sam K.")
         #expect(samHere.avatarURL == nil)
         #expect(!samHere.isFriend)
-
         #expect(friends.map(\.id) == [aurora, alex])
         #expect(friends.map(\.name) == ["Aurora Bell", "Alex Rivera"])
+
+        #expect(messages.map(\.body) == ["first", "second"])
+        #expect(messages.first?.presence == .push)
+        #expect(messages.last?.role == .staff)
+        #expect(messages.last?.presence == .online)
+        #expect(pinned?.id == pinnedID)
+        #expect(pinned?.title == "Doors at 9")
+        #expect(pinned?.kind == .announcement)
     }
 
-    @Test("A roster from an older server, with only `online`, still decodes")
-    func onlineOnlyRoster() throws {
-        let data = frame(#"{ "type": "roster", "online": ["\#(aurora)", "not-a-uuid"] }"#)
+    @Test("An empty room joins with nobody else and no lines")
+    func emptyJoin() throws {
+        let events = events(#"{ "__typename": "ChatJoined", "out_of_range": false, "roster": { "people": [], "friends": [] }, "history": [], "pinnedMessage": null }"#)
 
-        guard case let .roster(online, people, friends) = try #require(VenueChatConnection.event(from: data)) else {
-            Issue.record("Expected a roster")
+        guard events.count == 4,
+              case let .range(outOfRange) = events[1],
+              case let .roster(online, people, friends) = events[2],
+              case let .history(messages, pinned) = events[3]
+        else {
+            Issue.record("Expected a join")
             return
         }
-
-        #expect(online == [aurora])
+        #expect(!outOfRange)
+        #expect(online.isEmpty)
         #expect(people.isEmpty)
         #expect(friends.isEmpty)
+        #expect(messages.isEmpty)
+        #expect(pinned == nil)
     }
 
     @Test("One malformed person or friend drops only itself")
     func malformedEntries() throws {
-        let data = frame("""
+        let events = events("""
         {
-          "type": "roster",
-          "online": [],
-          "people": [{ "user_id": "nope", "name": "Bad" }, { "user_id": "\(jo)", "name": 7, "friend": "yes" }],
-          "friends": [{ "user_id": "\(alex)" }, { "user_id": "\(aurora)", "name": "Aurora Bell" }]
+          "__typename": "ChatJoined", "out_of_range": false, "history": [], "pinnedMessage": null,
+          "roster": {
+            "people": [{ "user_id": "nope", "name": "Bad" }, { "user_id": "\(jo)", "name": 7, "friend": "yes" }],
+            "friends": [{ "user_id": "\(alex)" }, { "user_id": "\(aurora)", "name": "Aurora Bell" }]
+          }
         }
         """)
 
-        guard case let .roster(_, people, friends) = try #require(VenueChatConnection.event(from: data)) else {
+        guard events.count == 4, case let .roster(online, people, friends) = events[2] else {
             Issue.record("Expected a roster")
             return
         }
 
+        #expect(online == [jo])
         #expect(people.map(\.id) == [jo])
         #expect(people.first?.name == nil)
         #expect(people.first?.isFriend == false)
         #expect(friends.map(\.id) == [aurora])
     }
 
+    @Test("An edited announcement arrives as the line, updated")
+    func updated() throws {
+        let id = UUID()
+        let events = events("""
+        { "__typename": "ChatMessageUpdated",
+          "message": { "id": "\(id)", "message": "2 for 1: Wells", "body": "Wells", "user_id": "\(alex)",
+            "kind": "SPECIAL", "title": "2 for 1", "ends_at": "2026-10-11T06:00:00Z", "pinned": false } }
+        """)
+
+        guard case let .received(message) = try #require(events.first) else {
+            Issue.record("Expected the updated line")
+            return
+        }
+        #expect(message.id == id)
+        #expect(message.kind == .special)
+        #expect(message.title == "2 for 1")
+        #expect(message.endsAt == Date(timeIntervalSince1970: 1_791_698_400))
+    }
+
     @Test("A join carries a name and avatar")
     func onlinePresence() throws {
-        let data = frame(#"{ "type": "presence", "user_id": "\#(sam)", "presence": "online", "name": "Sam K.", "avatar_url": "https://example.com/s.jpg" }"#)
+        let events = events(#"{ "__typename": "ChatPresenceChanged", "user_id": "\#(sam)", "presence": "ONLINE", "name": "Sam K.", "avatar_url": "https://example.com/s.jpg" }"#)
 
-        guard case let .presence(userID, online, name, avatarURL) = try #require(VenueChatConnection.event(from: data)) else {
+        guard case let .presence(userID, online, name, avatarURL) = try #require(events.first) else {
             Issue.record("Expected presence")
             return
         }
@@ -162,9 +241,9 @@ struct ChatPresenceFrameTests {
 
     @Test("A leave is only an ID")
     func offlinePresence() throws {
-        let data = frame(#"{ "type": "presence", "user_id": "\#(sam)", "presence": "offline" }"#)
+        let events = events(#"{ "__typename": "ChatPresenceChanged", "user_id": "\#(sam)", "presence": "OFFLINE", "name": null, "avatar_url": null }"#)
 
-        guard case let .presence(userID, online, name, avatarURL) = try #require(VenueChatConnection.event(from: data)) else {
+        guard case let .presence(userID, online, name, avatarURL) = try #require(events.first) else {
             Issue.record("Expected presence")
             return
         }
@@ -177,9 +256,9 @@ struct ChatPresenceFrameTests {
 
     @Test("A friend who left but gets notifications is reachable")
     func pushPresence() throws {
-        let data = frame(#"{ "type": "presence", "user_id": "\#(sam)", "presence": "push" }"#)
+        let events = events(#"{ "__typename": "ChatPresenceChanged", "user_id": "\#(sam)", "presence": "PUSH" }"#)
 
-        guard case let .reachable(userID) = try #require(VenueChatConnection.event(from: data)) else {
+        guard case let .reachable(userID) = try #require(events.first) else {
             Issue.record("Expected reachable")
             return
         }
@@ -187,48 +266,30 @@ struct ChatPresenceFrameTests {
         #expect(userID == sam)
     }
 
-    @Test("History brings the recent lines and the pinned announcement")
-    func history() throws {
-        let pinnedID = UUID()
-        let data = frame("""
-        {
-          "type": "history",
-          "messages": [
-            { "id": "\(UUID())", "message": "first", "user_id": "\(sam)", "presence": "push" },
-            { "message": "no sender" },
-            { "id": "\(UUID())", "message": "second", "user_id": "\(aurora)", "role": "staff" }
-          ],
-          "pinned": { "id": "\(pinnedID)", "message": "Announcement: Doors at 9", "user_id": "\(alex)",
-                      "kind": "announcement", "title": "Doors at 9", "pinned": true }
-        }
-        """)
-
-        guard case let .history(messages, pinned) = try #require(VenueChatConnection.event(from: data)) else {
-            Issue.record("Expected history")
+    @Test("An admin crossing the room's edge changes the range")
+    func range() throws {
+        guard case let .range(outOfRange) = try #require(events(#"{ "__typename": "ChatRangeChanged", "out_of_range": true }"#).first) else {
+            Issue.record("Expected range")
             return
         }
-
-        #expect(messages.map(\.body) == ["first", "second"])
-        #expect(messages.first?.presence == .push)
-        #expect(messages.last?.role == .staff)
-        #expect(pinned?.id == pinnedID)
-        #expect(pinned?.title == "Doors at 9")
+        #expect(outOfRange)
     }
 
     @Test("Pins carry the announcement; unpins only its ID")
     func pins() throws {
         let id = UUID()
-        let pin = frame(#"{ "type": "pin", "id": "\#(id)", "pinned": true, "announcement": { "id": "\#(id)", "message": "Announcement: Doors", "user_id": "\#(alex)", "kind": "announcement", "title": "Doors", "pinned": true } }"#)
-        let unpin = frame(#"{ "type": "pin", "id": "\#(id)", "pinned": false }"#)
+        let pin = events(#"{ "__typename": "ChatPinChanged", "message_id": "\#(id)", "is_pinned": true, "announcement": { "id": "\#(id)", "message": "Announcement: Doors", "body": "", "user_id": "\#(alex)", "kind": "ANNOUNCEMENT", "title": "Doors", "pinned": true } }"#)
+        let unpin = events(#"{ "__typename": "ChatPinChanged", "message_id": "\#(id)", "is_pinned": false, "announcement": null }"#)
 
-        guard case let .pin(pinnedID, announcement) = try #require(VenueChatConnection.event(from: pin)) else {
+        guard case let .pin(pinnedID, announcement) = try #require(pin.first) else {
             Issue.record("Expected pin")
             return
         }
         #expect(pinnedID == id)
         #expect(announcement?.title == "Doors")
+        #expect(announcement?.isPinned == true)
 
-        guard case let .pin(unpinnedID, nothing) = try #require(VenueChatConnection.event(from: unpin)) else {
+        guard case let .pin(unpinnedID, nothing) = try #require(unpin.first) else {
             Issue.record("Expected unpin")
             return
         }
@@ -239,17 +300,76 @@ struct ChatPresenceFrameTests {
     @Test("Admins' removals name the message; clearing the room names none")
     func removals() throws {
         let id = UUID()
-        let removed = frame(#"{ "type": "removed", "id": "\#(id)" }"#)
-        let cleared = frame(#"{ "type": "cleared", "cleared_at": "2026-10-09T04:00:00.123Z" }"#)
+        let removed = events(#"{ "__typename": "ChatMessageRemoved", "message_id": "\#(id)" }"#)
+        let cleared = events(#"{ "__typename": "ChatRoomCleared", "cleared_at": "2026-10-09T04:00:00.123Z" }"#)
 
-        guard case let .removed(removedID) = try #require(VenueChatConnection.event(from: removed)) else {
+        guard case let .removed(removedID) = try #require(removed.first) else {
             Issue.record("Expected removed")
             return
         }
         #expect(removedID == id)
 
-        guard case .cleared = try #require(VenueChatConnection.event(from: cleared)) else {
+        guard case .cleared = try #require(cleared.first) else {
             Issue.record("Expected cleared")
+            return
+        }
+    }
+
+    @Test("Leaving the room, for any reason, is not being there")
+    func left() throws {
+        for reason in ["AWAY", "BANNED", "REMOVED"] {
+            let events = events(#"{ "__typename": "ChatLeft", "reason": "\#(reason)" }"#, more: false)
+            #expect(events.count == 1)
+            guard case .notPresent = try #require(events.first) else {
+                Issue.record("Expected notPresent for \(reason)")
+                return
+            }
+        }
+    }
+
+    @Test("A refused subscription, or a rejected channel, is not being there")
+    func refused() throws {
+        let refused = Data(#"{ "identifier": "{}", "message": { "result": { "data": null, "errors": [{ "message": "You're not at this venue" }] }, "more": false } }"#.utf8)
+        let refusedEvents = VenueChatConnection.events(from: refused)
+        #expect(refusedEvents.count == 1)
+        guard case .notPresent = try #require(refusedEvents.first) else {
+            Issue.record("Expected notPresent")
+            return
+        }
+
+        let rejected = Data(#"{ "identifier": "{}", "type": "reject_subscription" }"#.utf8)
+        guard case .notPresent = try #require(VenueChatConnection.events(from: rejected).first) else {
+            Issue.record("Expected notPresent")
+            return
+        }
+    }
+
+    @Test("The server ending the subscription otherwise counts as a drop")
+    func ended() throws {
+        let events = events(#"{ "__typename": "ChatRangeChanged", "out_of_range": false }"#, more: false)
+
+        #expect(events.count == 2)
+        guard events.count == 2, case .range = events[0], case .disconnected = events[1] else {
+            Issue.record("Expected the range, then a drop")
+            return
+        }
+    }
+
+    @Test("The confirmation runs the subscription; welcomes, pings and unknown events mean nothing")
+    func housekeeping() throws {
+        let confirm = Data(#"{ "identifier": "{}", "type": "confirm_subscription" }"#.utf8)
+        guard case .confirmed = VenueChatConnection.incoming(from: confirm) else {
+            Issue.record("Expected the confirmation")
+            return
+        }
+        #expect(VenueChatConnection.events(from: confirm).isEmpty)
+        #expect(VenueChatConnection.events(from: Data(#"{ "type": "welcome" }"#.utf8)).isEmpty)
+        #expect(VenueChatConnection.events(from: Data(#"{ "type": "ping", "message": 1791691200 }"#.utf8)).isEmpty)
+        #expect(VenueChatConnection.events(from: Data("not json".utf8)).isEmpty)
+        #expect(events(#"{ "__typename": "ChatSomethingNew" }"#).isEmpty)
+
+        guard case .disconnected = try #require(VenueChatConnection.events(from: Data(#"{ "type": "disconnect", "reason": "unauthorized" }"#.utf8)).first) else {
+            Issue.record("Expected disconnected")
             return
         }
     }
@@ -374,6 +494,44 @@ struct HereNowTests {
         viewModel.applyClear()
         #expect(viewModel.messages.isEmpty)
         #expect(viewModel.pinnedAnnouncement == nil)
+    }
+}
+
+@Suite("Sending chat lines")
+struct ChatSendTests {
+    @MainActor
+    private func makeViewModel() -> VenueChatViewModel {
+        VenueChatViewModel(
+            room: ChatRoom(kind: .venue, id: UUID(), name: "The Eagle"),
+            configuration: AppConfiguration(baseURL: URL(string: "https://api.hotmess.social")!),
+            userID: me,
+            token: nil
+        )
+    }
+
+    @Test("The mutation's answer shows the line; its echo only updates it")
+    @MainActor
+    func mutationFirst() {
+        let viewModel = makeViewModel()
+        let sent = VenueMessage(id: UUID(), body: "hi", userID: me)
+        var echo = sent
+        echo.presence = .online
+
+        viewModel.settle(UUID(), with: sent)
+        viewModel.receive(echo)
+
+        #expect(viewModel.messages.map(\.id) == [sent.id])
+        #expect(viewModel.messages.first?.presence == .online)
+    }
+
+    @Test("Without the API, nothing can be sent")
+    @MainActor
+    func noAPI() async {
+        let viewModel = makeViewModel()
+        await viewModel.run()
+
+        #expect(viewModel.connectionState == .disconnected("Chat isn't available for this build."))
+        await viewModel.stop()
     }
 }
 

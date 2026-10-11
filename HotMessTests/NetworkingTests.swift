@@ -160,8 +160,8 @@ struct GraphQLTests {
         let locale = AppLocale(id: UUID(), name: "Seattle")
         let room = ChatRoom.locale(locale)
 
-        #expect(room.channelName == "LocaleChannel")
-        #expect(room.subscriptionKey == "locale_id")
+        #expect(room.channelName == "localeChat")
+        #expect(room.subscriptionKey == "localeId")
         #expect(room.name == "Seattle")
         #expect(AppRoute.localeChat(locale).tab == .now)
     }
@@ -346,18 +346,66 @@ struct APIErrorTests {
     }
 }
 
-@Suite("Chat subscription identifier")
+@Suite("Chat subscription")
 struct ChatIdentifierTests {
     /// Action Cable finds a subscription by this exact string, so a key order
     /// that changes between calls loses messages.
-    @Test("Sorts its keys, so every frame names the same subscription")
-    func sortedKeys() throws {
+    @Test("Names GraphQLChannel, the audience and the operation, with sorted keys")
+    func sortedKeys() {
+        let identifier = VenueChatConnection.identifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123")
+
+        #expect(identifier == #"{"audience_id":"b0f8b66a-e636-495d-9475-0f5317ea08e0","channel":"GraphQLChannel","channelId":"abc123"}"#)
+        #expect((0..<20).allSatisfy { _ in
+            VenueChatConnection.identifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123") == identifier
+        })
+    }
+
+    @Test("Executes the room's subscription, aliased to room, with its ID")
+    func execute() throws {
         let id = try #require(UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
-        let room = ChatRoom(kind: .venue, id: id, name: "Why KiKi")
+        let venue = ChatRoom(kind: .venue, id: id, name: "Why KiKi")
+        let locale = ChatRoom(kind: .locale, id: id, name: "Seattle")
 
-        let identifier = VenueChatConnection.identifier(for: room)
+        let data = VenueChatConnection.executeData(for: venue)
+        let object = try #require(try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any])
+        #expect(object["action"] as? String == "execute")
+        #expect(object["operationName"] as? String == "ChatRoom")
+        #expect(object["variables"] as? [String: String] == ["id": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0"])
 
-        #expect(identifier == #"{"channel":"RealtimeChannel","venue_id":"0a1e0aac-1d01-42d1-9de5-f0279842d9c0"}"#)
-        #expect((0..<20).allSatisfy { _ in VenueChatConnection.identifier(for: room) == identifier })
+        let query = try #require(object["query"] as? String)
+        #expect(query.hasPrefix("subscription ChatRoom($id: ID!)"))
+        #expect(query.contains("room: venueChat(venueId: $id)"))
+        for type in ["ChatJoined", "ChatMessagePosted", "ChatMessageUpdated", "ChatMessageRemoved", "ChatPinChanged",
+                     "ChatRoomCleared", "ChatPresenceChanged", "ChatRangeChanged", "ChatLeft"] {
+            #expect(query.contains("... on \(type) "))
+        }
+        #expect(query.contains("sender_presence: senderPresence"))
+
+        #expect(VenueChatConnection.subscriptionDocument(for: locale).contains("room: localeChat(localeId: $id)"))
+        #expect(VenueChatConnection.executeData(for: venue) == data)
+    }
+
+    @Test("Sends a line to the room it's in")
+    func sendVariables() throws {
+        let id = try #require(UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
+
+        #expect(HotMessAPI.sendMyChatMessageVariables("hi", in: ChatRoom(kind: .venue, id: id, name: "Why KiKi")) == [
+            "input": ["venueId": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "message": "hi"],
+        ])
+        #expect(HotMessAPI.sendMyChatMessageVariables("anyone out?", in: ChatRoom(kind: .locale, id: id, name: "Seattle")) == [
+            "input": ["localeId": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "message": "anyone out?"],
+        ])
+        #expect(HotMessAPI.Documents.sendMyChatMessage.contains("sendMyChatMessage(input: $input)"))
+    }
+
+    @Test("Decodes the mutation's line")
+    func sendResponse() throws {
+        let json = Data(#"{ "sendMyChatMessage": { "message": { "id": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "message": "hi", "body": "hi", "user_id": "00000000-0000-0000-0000-0000000000aa", "sent_at": "2026-10-11T04:00:00Z", "kind": "TEXT", "role": null, "pinned": false, "posted_as_venue": false, "posted_as_person": false } } }"#.utf8)
+        let message = VenueMessage(payload: try JSONDecoder.hotMess.decode(SendMyChatMessageResponse.self, from: json).sendMyChatMessage.message)
+
+        #expect(message.id == UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
+        #expect(message.body == "hi")
+        #expect(message.kind == .text)
+        #expect(message.sentAt == Date(timeIntervalSince1970: 1_791_691_200))
     }
 }

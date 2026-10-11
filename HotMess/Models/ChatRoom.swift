@@ -6,7 +6,7 @@
 import Foundation
 
 /// A chat room: a venue's, for people at the venue, or a locale's, for
-/// people out in the locale who aren't at a venue. Both speak the same frames,
+/// people out in the locale who aren't at a venue. Both deliver the same events,
 /// so one connection and one screen serve either.
 struct ChatRoom: Hashable, Sendable {
     enum Kind: Hashable, Sendable {
@@ -28,19 +28,20 @@ struct ChatRoom: Hashable, Sendable {
         ChatRoom(kind: .locale, id: locale.id, name: locale.name)
     }
 
-    /// The Action Cable channel on the API.
+    /// The GraphQL subscription field that follows the room.
     var channelName: String {
         switch kind {
-        case .venue: "RealtimeChannel"
-        case .locale: "LocaleChannel"
+        case .venue: "venueChat"
+        case .locale: "localeChat"
         }
     }
 
-    /// The subscription parameter naming the room.
+    /// The argument naming the room, to the subscription and to
+    /// `sendMyChatMessage`'s input.
     var subscriptionKey: String {
         switch kind {
-        case .venue: "venue_id"
-        case .locale: "locale_id"
+        case .venue: "venueId"
+        case .locale: "localeId"
         }
     }
 }
