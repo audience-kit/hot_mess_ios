@@ -95,6 +95,7 @@ struct HotMessAPI: Sendable {
             recentMessages: venue.recentMessages,
             coverCharge: venue.coverCharge,
             viewerAdmission: venue.viewerAdmission,
+            onNow: venue.onNow,
             friendPings: venue.friendPings
         )
     }
@@ -487,6 +488,11 @@ extension HotMessAPI {
         /// Enough of a person for a card that links to them.
         static let personSummaryFields = "id name photo_url: pictureUrl"
 
+        /// Who is on at a venue right now (see `Appearance`).
+        static let onNowFields = """
+        on_now: onNow { id role starts_at: startsAt ends_at: endsAt person { \(personSummaryFields) } }
+        """
+
         static let socialLinkFields = "id handle provider url"
 
         static let eventFields = """
@@ -525,6 +531,7 @@ extension HotMessAPI {
                 \(venueFields)
                 recent_messages: recentMessages(limit: 3) { \(messageFields) }
                 \(venueCoverFields)
+                \(onNowFields)
               }
               venues { \(venueFields) }
               locale {
@@ -554,6 +561,7 @@ extension HotMessAPI {
             social_links: socialLinks { \(socialLinkFields) }
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
             \(venueCoverFields)
+            \(onNowFields)
             friend_pings: friendPings { \(pingFields) }
           }
         }
@@ -760,6 +768,8 @@ struct VenueWithEvents: Decodable, Sendable {
     let coverCharge: CoverCharge?
     /// The user's cover tonight, paid or being paid.
     let viewerAdmission: Admission?
+    /// Who is on there right now, by start.
+    let onNow: [Appearance]
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
@@ -769,6 +779,7 @@ struct VenueWithEvents: Decodable, Sendable {
         case recentMessages = "recent_messages"
         case coverCharge = "cover_charge"
         case viewerAdmission = "viewer_admission"
+        case onNow = "on_now"
         case friendPings = "friend_pings"
     }
 
@@ -783,6 +794,7 @@ struct VenueWithEvents: Decodable, Sendable {
             .map(VenueMessage.init(payload:))
         coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
         viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+        onNow = container.decodeAppearances(forKey: .onNow)
         friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
 }

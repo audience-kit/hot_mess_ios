@@ -24,6 +24,8 @@ struct Now: Decodable, Hashable, Sendable {
     let coverCharge: CoverCharge?
     /// The user's cover tonight at the venue they're in, paid or being paid.
     let viewerAdmission: Admission?
+    /// Who is on at the venue the user is in right now.
+    let onNow: [Appearance]
     /// The locale the user is in, or nearest.
     let locale: AppLocale?
     /// Whether the user can join the locale's chat room: they're out in the
@@ -61,6 +63,7 @@ struct Now: Decodable, Hashable, Sendable {
         case recentMessages = "recent_messages"
         case coverCharge = "cover_charge"
         case viewerAdmission = "viewer_admission"
+        case onNow = "on_now"
     }
 
     private enum LocaleKeys: String, CodingKey {
@@ -83,10 +86,12 @@ struct Now: Decodable, Hashable, Sendable {
                 .map(VenueMessage.init(payload:))
             coverCharge = try venueContainer.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
             viewerAdmission = try venueContainer.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+            onNow = venueContainer.decodeAppearances(forKey: .onNow)
         } else {
             recentMessages = []
             coverCharge = nil
             viewerAdmission = nil
+            onNow = []
         }
         if (try? container.decodeNil(forKey: .locale)) == false,
            let localeContainer = try? container.nestedContainer(keyedBy: LocaleKeys.self, forKey: .locale),
@@ -116,6 +121,7 @@ struct Now: Decodable, Hashable, Sendable {
         recentMessages: [VenueMessage] = [],
         coverCharge: CoverCharge? = nil,
         viewerAdmission: Admission? = nil,
+        onNow: [Appearance] = [],
         locale: AppLocale? = nil,
         localeChatOpen: Bool = false,
         localeMessages: [VenueMessage] = [],
@@ -133,6 +139,7 @@ struct Now: Decodable, Hashable, Sendable {
         self.recentMessages = recentMessages
         self.coverCharge = coverCharge
         self.viewerAdmission = viewerAdmission
+        self.onNow = onNow
         self.locale = locale
         self.localeChatOpen = localeChatOpen
         self.localeMessages = localeMessages
