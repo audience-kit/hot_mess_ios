@@ -68,12 +68,20 @@ actor VenueChatConnection {
     private let identifier: String
     private var socket: URLSessionWebSocketTask?
     private var receiveTask: Task<Void, Never>?
+    private var watchdogTask: Task<Void, Never>?
+    /// When the server last sent anything. Action Cable pings every 3
+    /// seconds, so a long silence means the socket is dead even if it looks open
+    /// (a Wi-Fi to cellular handoff, say).
+    private var lastHeard = ContinuousClock.now
+
+    /// How long without a frame before the socket counts as gone.
+    static let silenceLimit: Duration = .seconds(12)
 
     /// Every frame this connection produces, in order. The stream finishes on
     /// `disconnect()`, so a reconnect means a new `VenueChatConnection`.
     nonisolated let events: AsyncStream<Event>
 
-    init(room: ChatRoom, url: URL, token: String?, session: URLSession = .hotMess) {
+    init(room: ChatRoom, url: URL, token: String?, session: URLSession = .realtime) {
         self.room = room
         identifier = Self.identifier(for: room)
         self.url = url
@@ -97,7 +105,9 @@ actor VenueChatConnection {
         self.socket = socket
         socket.resume()
 
+        lastHeard = .now
         receiveTask = Task { await self.receiveLoop() }
+        watchdogTask = Task { await self.watchForSilence() }
 
         Task { await self.subscribe() }
     }
@@ -105,6 +115,8 @@ actor VenueChatConnection {
     func disconnect() {
         receiveTask?.cancel()
         receiveTask = nil
+        watchdogTask?.cancel()
+        watchdogTask = nil
         socket?.cancel(with: .goingAway, reason: nil)
         socket = nil
         continuation.finish()
@@ -169,7 +181,25 @@ actor VenueChatConnection {
         }
     }
 
+    /// Ends a socket that has gone quiet, so the room can reconnect.
+    private func watchForSilence() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, socket != nil else { return }
+            guard ContinuousClock.now - lastHeard > Self.silenceLimit else { continue }
+
+            Log.realtime.error("Chat socket went quiet; closing it")
+            receiveTask?.cancel()
+            receiveTask = nil
+            socket?.cancel(with: .goingAway, reason: nil)
+            socket = nil
+            continuation.yield(.disconnected(nil))
+            return
+        }
+    }
+
     private func handle(_ message: URLSessionWebSocketTask.Message) {
+        lastHeard = .now
         let data: Data
 
         switch message {

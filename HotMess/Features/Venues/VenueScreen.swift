@@ -39,6 +39,10 @@ struct VenueScreen: View {
                                 venueName: venue.name
                             )
                         }
+                        if !overview.onNow.isEmpty {
+                            OnNowSection(appearances: overview.onNow)
+                        }
+
                         PingPlaceStrip(
                             pings: viewModel?.activePings ?? [],
                             isJoined: viewModel?.isJoinedHere(userID: model.session.userID) == true,

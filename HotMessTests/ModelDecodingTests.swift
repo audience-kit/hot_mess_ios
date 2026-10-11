@@ -268,6 +268,79 @@ struct VenueDetailTests {
     }
 }
 
+@Suite("On now")
+struct OnNowDecodingTests {
+    /// `onNow` as the `venue` query aliases it: GraphQL's uppercase roles and
+    /// UTC times, and the person's `pictureUrl` as `photo_url`.
+    static let onNow = """
+    "on_now": [
+      { "id": "4D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "DJ",
+        "starts_at": "2026-10-11T04:00:00Z", "ends_at": "2026-10-11T08:00:00Z",
+        "person": { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie Mattel",
+                    "photo_url": "https://cdn.hotmess.social/people/trixie.jpg" } },
+      { "id": "5D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "HOST",
+        "starts_at": "2026-10-11T03:00:00Z", "ends_at": null,
+        "person": { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Kiko Soirée", "photo_url": null } },
+      { "id": "6D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "HOST",
+        "starts_at": "2026-10-11T03:00:00Z",
+        "person": { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": null } }
+    ]
+    """
+
+    @Test("Reads who's on at a venue, dropping someone with no name yet")
+    func venue() throws {
+        let detail = try decode(VenueWithEvents.self, from: """
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", \(Self.onNow) }
+        """)
+
+        #expect(detail.onNow.map(\.person.name) == ["Trixie Mattel", "Kiko Soirée"])
+        #expect(detail.onNow.map(\.role) == [.dj, .host])
+        #expect(detail.onNow.first?.person.pictureURL?.lastPathComponent == "trixie.jpg")
+        let start = try instant("2026-10-11T04:00:00Z")
+        let end = try instant("2026-10-11T08:00:00Z")
+        #expect(detail.onNow.first?.startsAt == start)
+        #expect(detail.onNow.first?.endsAt == end)
+        #expect(detail.onNow.last?.endsAt == nil)
+        #expect(detail.onNow.last?.detail == "Hosting")
+    }
+
+    @Test("Reads who's on at the venue the user is in")
+    func now() throws {
+        let now = try decode(Now.self, from: """
+        { "title": "Now", "venue": { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", \(Self.onNow) } }
+        """)
+
+        #expect(now.venue?.name == "The Stud")
+        #expect(now.onNow.count == 2)
+    }
+
+    @Test("Nobody is on when the API leaves it out or sends something else")
+    func missing() throws {
+        let older = try decode(VenueWithEvents.self, from: Fixtures.minimalVenue)
+        let malformed = try decode(VenueWithEvents.self, from: """
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "on_now": "soon" }
+        """)
+        let away = try decode(Now.self, from: Fixtures.nowWithFriends)
+
+        #expect(older.onNow.isEmpty)
+        #expect(malformed.onNow.isEmpty)
+        #expect(away.onNow.isEmpty)
+    }
+
+    @Test("Keeps someone whose role this build doesn't know, without a label")
+    func unknownRole() throws {
+        let appearance = try decode(Appearance.self, from: """
+        { "id": "4D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "BARTENDER",
+          "person": { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Sam" } }
+        """)
+
+        #expect(appearance.role == nil)
+        #expect(appearance.startsAt == nil)
+        #expect(appearance.detail == nil)
+        #expect(Appearance.Role(wire: "performer")?.label == "Performing")
+    }
+}
+
 @Suite("Chat wire format")
 struct VenueMessageTests {
     @Test("Decodes an inbound Action Cable message")

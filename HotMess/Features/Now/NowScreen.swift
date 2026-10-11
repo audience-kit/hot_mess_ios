@@ -14,6 +14,9 @@ struct NowScreen: View {
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
     @State private var showingPingSheet = false
+    /// The Ping revision last loaded, so a change to Pings asks for a fresh
+    /// report while a new position or a return to the tab can share one.
+    @State private var loadedPingRevision: Int?
 
     /// Reloads when the position changes or Pings change elsewhere.
     private struct LoadKey: Hashable {
@@ -59,8 +62,9 @@ struct NowScreen: View {
                 .ignoresSafeArea(edges: .top)
                 .trackingHeroCollapse($heroCollapsed)
                 .refreshable {
+                    let started = Date.now
                     await model.location.refreshPosition()
-                    await viewModel?.load(near: model.location.coordinates)
+                    await viewModel?.load(from: model.location, sentAfter: started)
                 }
             }
             // Ignoring the top here too is what makes the proxy report the bars' height.
@@ -104,7 +108,9 @@ struct NowScreen: View {
         .task { await model.safety.load() }
         .task(id: LoadKey(coordinates: model.location.coordinates, pingRevision: model.pingRevision)) {
             ensureViewModel()
-            await viewModel?.load(near: model.location.coordinates)
+            let pingsChanged = loadedPingRevision.map { $0 != model.pingRevision } ?? false
+            loadedPingRevision = model.pingRevision
+            await viewModel?.load(from: model.location, sentAfter: pingsChanged ? .now : nil)
         }
         .onChange(of: model.checkout.revision) {
             reload()
@@ -192,6 +198,10 @@ struct NowScreen: View {
                 SkipTheLineCard(venue: venue, coverCharge: coverCharge)
             }
 
+            if !now.onNow.isEmpty {
+                OnNowSection(appearances: now.onNow)
+            }
+
             ChatPeek(
                 title: String(localized: "Small talk"),
                 roomName: venue.name,
@@ -215,14 +225,14 @@ struct NowScreen: View {
             ),
             ChatPeek.Participant(
                 id: "viewer", name: String(localized: "You"),
-                avatarURL: viewerID.map { model.configuration.avatarURL(forUserID: $0) }
+                avatarURL: model.session.user?.avatarURL
             )
         ]
         var seen = Set<UUID>()
         for friend in now.friends where friend.id != viewerID && seen.insert(friend.id).inserted {
             participants.append(ChatPeek.Participant(
                 id: friend.id.uuidString, name: friend.name,
-                avatarURL: model.configuration.avatarURL(forUserID: friend.id),
+                avatarURL: friend.avatarURL,
                 presence: friend.presence
             ))
         }
@@ -306,7 +316,7 @@ struct NowScreen: View {
     private func reload() {
         Task {
             ensureViewModel()
-            await viewModel?.load(near: model.location.coordinates)
+            await viewModel?.load(from: model.location, sentAfter: .now)
         }
     }
 }
@@ -329,7 +339,7 @@ struct FriendStrip: View {
                     } label: {
                         VStack(spacing: 6) {
                             Avatar(
-                                url: model.configuration.avatarURL(forUserID: friend.id),
+                                url: friend.avatarURL,
                                 initials: friend.name.initialsForDisplay,
                                 size: 56,
                                 presence: friend.presence

@@ -79,7 +79,7 @@ struct SettingsScreen: View {
         Section {
             HStack(spacing: 16) {
                 Avatar(
-                    url: model.session.userID.map(model.configuration.avatarURL(forUserID:)),
+                    url: model.session.user?.avatarURL,
                     initials: model.session.user?.initials,
                     size: 64
                 )

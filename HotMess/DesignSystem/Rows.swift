@@ -94,3 +94,46 @@ struct SocialLinkRow: View {
         }
     }
 }
+
+/// Someone on at a venue: their photo, their name, and what they're doing
+/// ("DJ · until 1 AM").
+struct AppearanceRow: View {
+    let appearance: Appearance
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Avatar(url: appearance.person.pictureURL, initials: appearance.person.name.initialsForDisplay, size: 40)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: appearance.person.name)
+                    .font(.hotMess(.body, semibold: true))
+                    .lineLimit(1)
+
+                if let detail = appearance.detail {
+                    Text(detail)
+                        .font(.hotMess(.subheadline))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Who's on at a venue right now, each opening their page. Like any
+/// `DetailSection`, it draws nothing when nobody is on.
+struct OnNowSection: View {
+    let appearances: [Appearance]
+
+    var body: some View {
+        DetailSection(String(localized: "On now")) {
+            ForEach(appearances) { appearance in
+                DetailLink(route: .person(appearance.person.id)) {
+                    AppearanceRow(appearance: appearance)
+                }
+            }
+        }
+    }
+}

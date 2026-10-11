@@ -167,6 +167,10 @@ The previous suite authenticated against Facebook with a token committed to the
 repository and then called the live API, so it could not run offline and could
 not distinguish a regression from an outage.
 
+There is no CI build: macOS runner minutes cost ten times Linux ones. Before merging,
+build on a Mac from the AudienceKit checkout with `scripts/verify-apple.sh hotmess`
+(see the AudienceKit README, "Verifying Apple targets").
+
 ## TestFlight
 
 `Scripts/testflight.sh` archives the "HotMess Release" scheme, exports it for

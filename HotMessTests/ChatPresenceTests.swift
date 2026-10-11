@@ -39,6 +39,36 @@ struct ChatPresenceFrameTests {
         #expect(message.isFromPlace)
     }
 
+    @Test("An automatic \"On now\" announcement shows as the venue's card")
+    func onNowAnnouncement() throws {
+        // As VenueAnnouncements broadcasts it: posted as the venue by its
+        // announcer, a venue-device user who is never in the room.
+        let announcer = UUID()
+        let data = frame("""
+        { "type": "incoming", "id": "\(UUID())", "user_id": "\(announcer)",
+          "message": "Announcement: On now\\nTrixie Mattel is on the decks", "body": "Trixie Mattel is on the decks",
+          "name": "The Stud", "avatar_url": null, "sent_at": "2026-10-11T04:00:00Z",
+          "role": "venue", "kind": "announcement", "title": "On now", "photo_url": null,
+          "event": null, "ends_at": null, "pinned": false, "automatic": true,
+          "posted_as_venue": true, "presence": null }
+        """)
+        guard case let .received(message) = try #require(VenueChatConnection.event(from: data)) else {
+            Issue.record("Expected a live message")
+            return
+        }
+        let thread = message.threadMessage(currentUserID: me, online: [me, aurora])
+
+        #expect(message.isFromPlace)
+        #expect(message.isShowing())
+        #expect(message.sentAt == Date(timeIntervalSince1970: 1_791_691_200))
+        #expect(thread.authorName == "The Stud")
+        #expect(thread.isOwn == false)
+        #expect(thread.presence == nil)
+        #expect(thread.rich == .announcement(
+            title: "On now", body: "Trixie Mattel is on the decks", photoURL: nil, isPinned: false
+        ))
+    }
+
     @Test("A roster names everyone in the room and lists every friend")
     func fullRoster() throws {
         let data = frame("""
@@ -344,5 +374,21 @@ struct HereNowTests {
         viewModel.applyClear()
         #expect(viewModel.messages.isEmpty)
         #expect(viewModel.pinnedAnnouncement == nil)
+    }
+}
+
+@Suite("Chat room reconnecting")
+struct ChatReconnectTests {
+    @Test("Waits a second after a joined room drops, then doubles up to half a minute")
+    func reconnectDelay() {
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 0) == .seconds(1))
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 1) == .seconds(2))
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 4) == .seconds(16))
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 9) == .seconds(30))
+    }
+
+    @Test("Chat sockets don't share the API's two-minute resource timeout")
+    func realtimeSession() {
+        #expect(URLSession.realtime.configuration.timeoutIntervalForResource > 3600)
     }
 }
