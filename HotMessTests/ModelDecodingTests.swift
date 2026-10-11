@@ -192,7 +192,9 @@ struct NowDecodingTests {
 
         #expect(now.isNearVenues)
         #expect(now.venues?.count == 1)
-        #expect(now.title == "Saturday in SoMa")
+        #expect(now.title == "Happening Now in SoMa")
+        #expect(now.imageURL?.absoluteString == "https://cdn.hotmess.social/now.jpg")
+        #expect(now.events.count == 1)
         #expect(now.region != nil)
     }
 }

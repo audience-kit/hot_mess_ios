@@ -81,3 +81,16 @@ extension KeyedDecodingContainer {
         return URL(string: text)
     }
 }
+
+/// A GraphQL connection read as `{ nodes { … } }`, which is how the app asks
+/// for every connection it doesn't page.
+struct Nodes<Element: Decodable & Sendable>: Decodable, Sendable {
+    let nodes: [Element]
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        nodes = try container.decodeIfPresent([Element].self, forKey: .nodes) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey { case nodes }
+}

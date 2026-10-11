@@ -134,7 +134,7 @@ enum Fixtures {
       "name": "The Stud",
       "chat_open": true,
       "events": { "upcoming": { "nodes": [\(sparseEvent)] } },
-      "friends": [],
+      "friends": { "list": { "nodes": [] } },
       "profile": {
         "address": "399 9th St",
         "facebook": { "facebook_id": null, "is_liked": false },
@@ -152,28 +152,34 @@ enum Fixtures {
     }
     """
 
-    /// The device is somewhere we know about, so `venues` is present.
+    /// The device is somewhere we know about, so `nearby_venues` is present.
     static let nowNearVenues = """
     {
-      "title": "Saturday in SoMa",
-      "venues": [\(venue)],
-      "envelope": {
-        "type": "Polygon",
-        "coordinates": [[[-122.42, 37.77], [-122.40, 37.77], [-122.40, 37.78], [-122.42, 37.78], [-122.42, 37.77]]]
-      },
-      "events": [\(sparseEvent)],
-      "image_url": "https://cdn.hotmess.social/now.jpg"
+      "venue": null,
+      "nearby_venues": [\(venue)],
+      "locale": {
+        "id": "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E",
+        "name": "SoMa",
+        "hero_url": "https://cdn.hotmess.social/now.jpg",
+        "events": { "upcoming": { "nodes": [\(sparseEvent)] } }
+      }
     }
     """
 
     /// No `venues` key at all — the friends-first variant of the same screen.
     static let nowWithFriends = """
     {
-      "title": "Now",
-      "friends": [
-        { "id": "5B3C8A72-4E19-4D06-B2F5-8C7A1E0D9B22", "name": "Ada Lovelace", "facebook_id": 42 }
-      ],
-      "events": []
+      "locale": {
+        "id": "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E",
+        "name": "SoMa",
+        "friends": {
+          "list": {
+            "nodes": [
+              { "id": "5B3C8A72-4E19-4D06-B2F5-8C7A1E0D9B22", "name": "Ada Lovelace", "facebook_id": 42 }
+            ]
+          }
+        }
+      }
     }
     """
 }
