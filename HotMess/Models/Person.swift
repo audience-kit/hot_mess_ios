@@ -16,10 +16,10 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
 
     var facebookURL: URL? { facebookID?.profileURL }
 
+    /// `facebook_id` and `is_liked` come in the person's profile facet (see
+    /// `ListingProfile`).
     enum CodingKeys: String, CodingKey {
-        case id, name, role
-        case facebookID = "facebook_id"
-        case isLiked = "is_liked"
+        case id, name, role, profile
         case pictureURL = "photo_url"
         case bannerURL = "banner_url"
     }
@@ -29,11 +29,24 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
 
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
         role = try container.decodeIfPresent(String.self, forKey: .role)
-        isLiked = try container.decodeIfPresent(Bool.self, forKey: .isLiked) ?? false
         pictureURL = try container.decodeURLIfPresent(forKey: .pictureURL)
         bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
+        // A missing profile facet reads as no Page, not liked.
+        let profile = try container.decodeIfPresent(ListingProfile.self, forKey: .profile) ?? ListingProfile()
+        facebookID = profile.facebookID
+        isLiked = profile.isLiked
+    }
+
+    /// Writes the shape `init(from:)` reads, with the profile facet.
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(role, forKey: .role)
+        try container.encodeIfPresent(pictureURL, forKey: .pictureURL)
+        try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
+        try container.encode(ListingProfile(facebookID: facebookID, isLiked: isLiked), forKey: .profile)
     }
 
     init(
@@ -75,8 +88,7 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
     var profileLinks: [SocialLink] { socialLinks.filter { $0.tipApp == nil } }
 
     enum CodingKeys: String, CodingKey {
-        case events, music, members, groups
-        case socialLinks = "social_links"
+        case events, music, members, groups, profile
     }
 
     init(from decoder: any Decoder) throws {
@@ -85,7 +97,8 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         // The person's events facet; tolerated when missing, which reads as none.
         events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
-        socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
+        // Their links come through the profile facet; missing reads as none.
+        socialLinks = try container.decodeIfPresent(ListingProfile.self, forKey: .profile)?.socialLinks ?? []
         // Their tracks come through the music facet; a missing one reads as none.
         tracks = try container.decodeIfPresent(MusicFacet.self, forKey: .music)?.tracks ?? []
         members = try container.decodeIfPresent([Person].self, forKey: .members) ?? []
@@ -97,7 +110,11 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
 
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(UpcomingEventsFacet(upcoming: events), forKey: .events)
-        try container.encode(socialLinks, forKey: .socialLinks)
+        // The whole profile facet again, as it replaces the person's own.
+        try container.encode(
+            ListingProfile(socialLinks: socialLinks, facebookID: person.facebookID, isLiked: person.isLiked),
+            forKey: .profile
+        )
         try container.encode(MusicFacet(tracks: tracks), forKey: .music)
         try container.encode(members, forKey: .members)
         try container.encode(groups, forKey: .groups)

@@ -74,9 +74,10 @@ struct GraphQLTests {
         let json = Data(#"""
         {"reportLocation":{"now":{
           "title":"Happening Now in Spokane","image_url":"https://cdn.example/spokane.jpg","venue":null,
-          "venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
-                     "phone":null,"distance":120.5,"point":"POINT (-117.414777 47.6575451)",
-                     "facebook_id":"123","photo_url":null,"hero_url":null,"is_liked":false}],
+          "venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
+                     "distance":120.5,"point":"POINT (-117.414777 47.6575451)","photo_url":null,"hero_url":null,
+                     "profile":{"address":"232 W Sprague","phone":null,
+                                "facebook":{"facebook_id":"123","is_liked":false}}}],
           "events":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
                      "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
                      "banner_url":null,"is_featured":false,"rsvp":"ATTENDING",
@@ -100,9 +101,10 @@ struct GraphQLTests {
         let json = Data(#"""
         {"reportLocation":{"now":{
           "title":"Nyne","image_url":null,"venues":null,"events":[],
-          "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
-                   "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,"hero_url":null,
-                   "is_liked":false,
+          "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
+                   "distance":null,"point":null,"photo_url":null,"hero_url":null,
+                   "profile":{"address":"232 W Sprague","phone":null,
+                              "facebook":{"facebook_id":null,"is_liked":false}},
                    "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"who's here?",
                                        "name":"Sam","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
                                        "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]},
@@ -157,9 +159,10 @@ struct GraphQLTests {
         let json = Data(#"""
         {"reportLocation":{"now":{
           "title":"Happening Now in Spokane","image_url":null,"venue":null,"venues":[],"events":[],"friends":[],
-          "friend_venues":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":null,
-                                     "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,
-                                     "hero_url":null,"is_liked":false},
+          "friend_venues":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
+                                     "distance":null,"point":null,"photo_url":null,"hero_url":null,
+                                     "profile":{"address":null,"phone":null,
+                                                "facebook":{"facebook_id":null,"is_liked":false}}},
                             "friend_count":2,
                             "friends":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend","facebook_id":null},
                                        {"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Sam Chatter","facebook_id":null}]}]

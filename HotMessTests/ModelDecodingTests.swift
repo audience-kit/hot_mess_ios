@@ -32,6 +32,15 @@ struct VenueDecodingTests {
         #expect(venue.distance == 412.5)
         #expect(venue.facebookID?.rawValue == "112233445566")
         #expect(venue.heroURL?.lastPathComponent == "stud-hero.jpg")
+        #expect(venue.phone == "+14158633373")
+    }
+
+    @Test("A venue written out reads back with its profile")
+    func roundTrip() throws {
+        let venue = try decode(Venue.self, from: Fixtures.venue)
+        let again = try JSONDecoder.hotMess.decode(Venue.self, from: JSONEncoder.hotMess.encode(venue))
+
+        #expect(again == venue)
     }
 
     @Test("`point` maps x to longitude and y to latitude")
@@ -196,6 +205,8 @@ struct PersonDetailTests {
 
         #expect(detail.name == "Rick Mark")
         #expect(detail.person.role == "Resident")
+        #expect(detail.person.facebookID != nil)
+        #expect(detail.person.isLiked == false)
         #expect(detail.socialLinks.count == 1)
         #expect(detail.socialLinks.first?.assetName == "Instagram")
         #expect(detail.tracks.count == 1)
@@ -206,18 +217,28 @@ struct PersonDetailTests {
     func tipLinks() throws {
         let detail = try decode(PersonDetail.self, from: """
         { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie",
-          "social_links": [
+          "profile": { "social_links": { "nodes": [
             { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie", "provider": "instagram",
               "url": "https://instagram.com/trixie" },
             { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "TrixieTips", "provider": "cashapp",
               "url": "https://cash.app/$TrixieTips" },
+            null,
             { "id": "3A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie-tips", "provider": "venmo",
               "url": "https://venmo.com/u/trixie-tips" }
-          ] }
+          ] } } }
         """)
 
         #expect(detail.tipLinks.compactMap(\.tipApp) == ["Cash App", "Venmo"])
         #expect(detail.profileLinks.map(\.provider) == ["instagram"])
+    }
+
+    @Test("A person written out reads back with their profile and links")
+    func roundTrip() throws {
+        let detail = try decode(PersonDetail.self, from: Fixtures.personDetail)
+        let again = try JSONDecoder.hotMess.decode(PersonDetail.self, from: JSONEncoder.hotMess.encode(detail))
+
+        #expect(again.person == detail.person)
+        #expect(again.socialLinks == detail.socialLinks)
     }
 
     @Test("Reads the people a person is made of and part of")
@@ -273,6 +294,9 @@ struct VenueDetailTests {
         #expect(detail.socialLinks.count == 1)
         #expect(detail.socialLinks.first?.assetName == "Instagram")
         #expect(detail.socialLinks.first?.url?.host() == "instagram.com")
+        // The venue's own profile fields come from the same facet.
+        #expect(detail.venue.address == "399 9th St")
+        #expect(detail.venue.facebookID == nil)
     }
 
     @Test("Leaves links empty when the API omits them")
