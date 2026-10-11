@@ -12,7 +12,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
     let role: String?
     let isLiked: Bool
     let pictureURL: URL?
-    let coverURL: URL?
+    let bannerURL: URL?
 
     var facebookURL: URL? { facebookID?.profileURL }
 
@@ -21,7 +21,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         case facebookID = "facebook_id"
         case isLiked = "is_liked"
         case pictureURL = "photo_url"
-        case coverURL = "cover_url"
+        case bannerURL = "banner_url"
     }
 
     init(from decoder: any Decoder) throws {
@@ -33,7 +33,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         role = try container.decodeIfPresent(String.self, forKey: .role)
         isLiked = try container.decodeIfPresent(Bool.self, forKey: .isLiked) ?? false
         pictureURL = try container.decodeURLIfPresent(forKey: .pictureURL)
-        coverURL = try container.decodeURLIfPresent(forKey: .coverURL)
+        bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
     }
 
     init(
@@ -43,7 +43,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         role: String? = nil,
         isLiked: Bool = false,
         pictureURL: URL? = nil,
-        coverURL: URL? = nil
+        bannerURL: URL? = nil
     ) {
         self.id = id
         self.name = name
@@ -51,7 +51,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         self.role = role
         self.isLiked = isLiked
         self.pictureURL = pictureURL
-        self.coverURL = coverURL
+        self.bannerURL = bannerURL
     }
 }
 
@@ -75,7 +75,7 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
     var profileLinks: [SocialLink] { socialLinks.filter { $0.tipApp == nil } }
 
     enum CodingKeys: String, CodingKey {
-        case events, tracks, members, groups
+        case events, music, members, groups
         case socialLinks = "social_links"
     }
 
@@ -83,9 +83,11 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         person = try Person(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
+        // The person's events facet; tolerated when missing, which reads as none.
+        events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
-        tracks = try container.decodeIfPresent([Track].self, forKey: .tracks) ?? []
+        // Their tracks come through the music facet; a missing one reads as none.
+        tracks = try container.decodeIfPresent(MusicFacet.self, forKey: .music)?.tracks ?? []
         members = try container.decodeIfPresent([Person].self, forKey: .members) ?? []
         groups = try container.decodeIfPresent([Person].self, forKey: .groups) ?? []
     }
@@ -94,9 +96,9 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         try person.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(events, forKey: .events)
+        try container.encode(UpcomingEventsFacet(upcoming: events), forKey: .events)
         try container.encode(socialLinks, forKey: .socialLinks)
-        try container.encode(tracks, forKey: .tracks)
+        try container.encode(MusicFacet(tracks: tracks), forKey: .music)
         try container.encode(members, forKey: .members)
         try container.encode(groups, forKey: .groups)
     }
@@ -115,5 +117,35 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         self.tracks = tracks
         self.members = members
         self.groups = groups
+    }
+}
+
+/// The `music` facet on a person, read as `music { tracks { nodes { … } } }`:
+/// their newest tracks, a connection. A missing or null connection reads as
+/// no tracks, and null nodes are dropped.
+private struct MusicFacet: Codable {
+    let tracks: [Track]
+
+    init(tracks: [Track]) {
+        self.tracks = tracks
+    }
+
+    enum CodingKeys: String, CodingKey { case tracks }
+    private enum ConnectionKeys: String, CodingKey { case nodes }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if (try? container.decodeNil(forKey: .tracks)) == false {
+            let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .tracks)
+            tracks = try connection.decodeIfPresent([Track?].self, forKey: .nodes)?.compactMap { $0 } ?? []
+        } else {
+            tracks = []
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        var connection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .tracks)
+        try connection.encode(tracks, forKey: .nodes)
     }
 }

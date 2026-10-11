@@ -19,7 +19,7 @@ struct PersonScreen: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(spacing: 24) {
-                        HeroHeader(url: detail.person.coverURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
+                        HeroHeader(url: detail.person.bannerURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
                             heroText(detail.person)
                         }
 

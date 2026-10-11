@@ -84,7 +84,7 @@ private struct PingComposerForm: View {
                             PingPickRow(
                                 title: event.name,
                                 detail: event.subtitle,
-                                imageURL: event.coverURL,
+                                imageURL: event.bannerURL,
                                 isSelected: composer.isSelected(.event(event.id))
                             ) {
                                 composer.toggle(.event(event.id))

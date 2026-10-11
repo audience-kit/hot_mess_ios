@@ -9,7 +9,7 @@ import SwiftUI
 /// A cached remote image with a consistent placeholder.
 ///
 /// Every image in the old app was a `UIImageView` plus a `kf.setImage` call
-/// with a force-unwrapped URL; a missing cover photo took the screen down.
+/// with a force-unwrapped URL; a missing banner took the screen down.
 struct RemoteImage: View {
     let url: URL?
     var contentMode: SwiftUI.ContentMode = .fill

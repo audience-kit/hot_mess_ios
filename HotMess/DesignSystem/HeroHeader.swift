@@ -11,7 +11,7 @@ enum HeroMetrics {
     static let bodyHeight: CGFloat = 256
 }
 
-/// A cover photo that runs edge to edge and up under the status bar, with its
+/// A banner that runs edge to edge and up under the status bar, with its
 /// title drawn over it in whichever colour the photo can carry.
 ///
 /// Put it first in a `ScrollView` that ignores the top safe area, and pass that

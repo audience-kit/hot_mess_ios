@@ -58,6 +58,31 @@ struct CoverCharge: Decodable, Hashable, Sendable {
     }
 }
 
+/// A venue's or an event's `cover` facet, as the documents alias it: the
+/// night's charge and, on a venue, the user's pass for tonight. The API sends
+/// the facet as null when the audience has cover turned off, so callers
+/// decode it with `decodeIfPresent`.
+struct CoverFacet: Decodable, Hashable, Sendable {
+    let coverCharge: CoverCharge?
+    let viewerAdmission: Admission?
+
+    enum CodingKeys: String, CodingKey {
+        case coverCharge = "cover_charge"
+        case viewerAdmission = "viewer_admission"
+    }
+
+    init(coverCharge: CoverCharge? = nil, viewerAdmission: Admission? = nil) {
+        self.coverCharge = coverCharge
+        self.viewerAdmission = viewerAdmission
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+        viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+    }
+}
+
 /// Where a cover payment stands.
 enum AdmissionStatus: String, Decodable, Hashable, Sendable {
     case pending = "PENDING"

@@ -109,11 +109,13 @@ struct CoverDecodingTests {
           "venue": {
             "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11",
             "name": "The Stud",
-            "cover_charge": {
-              "amount_cents": 1000, "total_cents": 1112, "currency": "usd",
-              "night": "2026-10-09", "from": "21:00", "payable": true
-            },
-            "viewer_admission": \(Self.admission)
+            "cover": {
+              "cover_charge": {
+                "amount_cents": 1000, "total_cents": 1112, "currency": "usd",
+                "night": "2026-10-09", "from": "21:00", "payable": true
+              },
+              "viewer_admission": \(Self.admission)
+            }
           }
         }
         """

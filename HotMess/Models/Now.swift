@@ -60,9 +60,8 @@ struct Now: Decodable, Hashable, Sendable {
     }
 
     private enum VenueKeys: String, CodingKey {
+        case cover
         case recentMessages = "recent_messages"
-        case coverCharge = "cover_charge"
-        case viewerAdmission = "viewer_admission"
         case onNow = "on_now"
     }
 
@@ -84,8 +83,10 @@ struct Now: Decodable, Hashable, Sendable {
            let venueContainer = try? container.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
             recentMessages = (try venueContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
                 .map(VenueMessage.init(payload:))
-            coverCharge = try venueContainer.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
-            viewerAdmission = try venueContainer.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+            // The venue's cover facet, null when the audience has cover off.
+            let cover = try venueContainer.decodeIfPresent(CoverFacet.self, forKey: .cover)
+            coverCharge = cover?.coverCharge
+            viewerAdmission = cover?.viewerAdmission
             onNow = venueContainer.decodeAppearances(forKey: .onNow)
         } else {
             recentMessages = []

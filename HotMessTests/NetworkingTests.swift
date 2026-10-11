@@ -79,7 +79,8 @@ struct GraphQLTests {
                      "facebook_id":"123","photo_url":null,"hero_url":null,"is_liked":false}],
           "events":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
                      "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
-                     "cover_photo_url":null,"is_featured":false,"rsvp":"ATTENDING","venue":null}]
+                     "banner_url":null,"is_featured":false,"rsvp":"ATTENDING",
+                     "venue":{"name":"To be announced","venue":null}}]
         }}}
         """#.utf8)
 
@@ -173,12 +174,12 @@ struct GraphQLTests {
         #expect(entry.friends.map(\.firstName) == ["Alex", "Sam"])
     }
 
-    @Test("Features up to two events with a cover photo")
+    @Test("Features up to two events with a banner")
     func featuredEvents() {
-        let cover = URL(string: "https://cdn.example/cover.jpg")
+        let banner = URL(string: "https://cdn.example/banner.jpg")
         let events = (0 ..< 4).map { index in
             Event(id: UUID(), name: "Event \(index)", startDate: Date(timeIntervalSince1970: Double(index)),
-                  coverURL: index == 3 ? nil : cover)
+                  bannerURL: index == 3 ? nil : banner)
         }
 
         let listing = EventListing(upcoming: events.reversed())
