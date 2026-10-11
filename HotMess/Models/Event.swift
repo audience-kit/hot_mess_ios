@@ -156,6 +156,36 @@ struct UpcomingEventsFacet: Codable, Hashable, Sendable {
     }
 }
 
+/// An event's `people` facet: who is hosting or playing, a connection the
+/// documents read as `people { lineup { nodes { … } } }`. A missing or null
+/// connection reads as no one.
+struct EventPeopleFacet: Codable, Hashable, Sendable {
+    let lineup: [Person]
+
+    init(lineup: [Person] = []) {
+        self.lineup = lineup
+    }
+
+    enum CodingKeys: String, CodingKey { case lineup }
+    private enum ConnectionKeys: String, CodingKey { case nodes }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if (try? container.decodeNil(forKey: .lineup)) == false {
+            let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .lineup)
+            lineup = try connection.decodeIfPresent([Person].self, forKey: .nodes) ?? []
+        } else {
+            lineup = []
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        var connection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .lineup)
+        try connection.encode(lineup, forKey: .nodes)
+    }
+}
+
 /// `/v1/events/{id}` — an event plus the people going.
 struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     var event: Event
@@ -195,7 +225,8 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         event = try Event(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        people = try container.decodeIfPresent([Person].self, forKey: .people) ?? []
+        // Who's on comes through the people facet; missing reads as no one.
+        people = try container.decodeIfPresent(EventPeopleFacet.self, forKey: .people)?.lineup ?? []
         coverCharge = try container.decodeIfPresent(CoverFacet.self, forKey: .cover)?.coverCharge
 
         var venueCover: CoverFacet?
@@ -216,7 +247,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         try event.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(people, forKey: .people)
+        try container.encode(EventPeopleFacet(lineup: people), forKey: .people)
     }
 
     init(

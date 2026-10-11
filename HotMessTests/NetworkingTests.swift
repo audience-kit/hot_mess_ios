@@ -79,7 +79,7 @@ struct GraphQLTests {
                      "profile":{"address":"232 W Sprague","phone":null,
                                 "facebook":{"facebook_id":"123","is_liked":false}}}],
           "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane",
-                    "hero_url":"https://cdn.example/spokane.jpg","chat_open":false,"recent_messages":[],
+                    "hero_url":"https://cdn.example/spokane.jpg","chat":{"open":false,"recent_messages":{"nodes":[]}},
                     "events":{"upcoming":{"nodes":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
                                "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
                                "banner_url":null,"is_featured":false,"rsvp":"ATTENDING",
@@ -109,9 +109,10 @@ struct GraphQLTests {
                    "distance":null,"point":null,"photo_url":null,"hero_url":null,
                    "profile":{"address":"232 W Sprague","phone":null,
                               "facebook":{"facebook_id":null,"is_liked":false}},
-                   "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"who's here?",
-                                       "name":"Sam","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
-                                       "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}],
+                   "chat":{"recent_messages":{"nodes":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
+                                       "message":"who's here?","name":"Sam",
+                                       "user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
+                                       "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}},
                    "events":{"upcoming":{"nodes":[]}},
                    "friends":{"list":{"nodes":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend",
                                        "facebook_id":"4242"}]}}},
@@ -137,10 +138,12 @@ struct GraphQLTests {
         let json = Data(#"""
         {"reportLocation":{
           "venue":null,"nearby_venues":[],
-          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Seattle","chat_open":true,
-                    "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"anyone out?",
-                                        "name":"Ada","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
-                                        "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Seattle",
+                    "chat":{"open":true,
+                            "recent_messages":{"nodes":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
+                                        "message":"anyone out?","name":"Ada",
+                                        "user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
+                                        "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}}}
         }}
         """#.utf8)
 

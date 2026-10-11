@@ -495,9 +495,10 @@ extension HotMessAPI {
         /// Enough of a person for a card that links to them.
         static let personSummaryFields = "id name photo_url: pictureUrl"
 
-        /// Who is on at a venue right now (see `Appearance`).
+        /// Who is on at a venue right now (see `Appearance`), under the
+        /// venue's people facet (see `VenuePeopleFacet`).
         static let onNowFields = """
-        on_now: onNow { id role starts_at: startsAt ends_at: endsAt person { \(personSummaryFields) } }
+        people { on_now: onNow { nodes { id role starts_at: startsAt ends_at: endsAt person { \(personSummaryFields) } } } }
         """
 
         static let socialLinkFields = "id handle provider url"
@@ -543,7 +544,7 @@ extension HotMessAPI {
           reportLocation(input: { position: $position }) {
             venue {
               \(venueFields)
-              recent_messages: recentMessages(limit: 3) { \(messageFields) }
+              chat { recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
               \(venueCoverFields)
               \(onNowFields)
               events { upcoming { nodes { \(eventFields) } } }
@@ -551,8 +552,8 @@ extension HotMessAPI {
             }
             nearby_venues: nearbyVenues { \(venueFields) }
             locale {
-              id name hero_url: heroUrl chat_open: chatOpen
-              recent_messages: recentMessages(limit: 3) { \(messageFields) }
+              id name hero_url: heroUrl
+              chat { open recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
               events { upcoming(first: \(Now.localeEventLimit)) { nodes { \(eventFields) } } }
               friends {
                 list { nodes { \(friendFields) } }
@@ -578,11 +579,11 @@ extension HotMessAPI {
         static let venue = """
         query Venue($id: ID!) {
           venue(id: $id) {
-            \(venueFields) chat_open: chatOpen
+            \(venueFields)
             events { upcoming { nodes { \(eventFields) } } }
             friends { list { nodes { \(friendFields) } } }
             \(profileSocialLinks)
-            recent_messages: recentMessages(limit: 3) { \(messageFields) }
+            chat { open recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
             \(venueCoverFields)
             \(onNowFields)
             ping { friend_pings: friendPings { \(pingFields) } }
@@ -599,7 +600,7 @@ extension HotMessAPI {
         static let event = """
         query Event($id: ID!) {
           event(id: $id) {
-            \(eventFields) people { \(personFields) }
+            \(eventFields) people { lineup { nodes { \(personFields) } } }
             ping { friend_pings: friendPings { \(pingFields) } }
             cover { cover_charge: charge { \(coverChargeFields) } }
             venue_cover: venue { venue { \(venueCoverFields) } }
@@ -801,10 +802,7 @@ struct VenueWithEvents: Decodable, Sendable {
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
-        case events, friends, cover, profile, ping
-        case chatOpen = "chat_open"
-        case recentMessages = "recent_messages"
-        case onNow = "on_now"
+        case events, friends, cover, profile, ping, chat, people
     }
 
     init(from decoder: any Decoder) throws {
@@ -816,13 +814,16 @@ struct VenueWithEvents: Decodable, Sendable {
         friends = try container.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
         // Links come through the profile facet; missing reads as none.
         socialLinks = try container.decodeIfPresent(ListingProfile.self, forKey: .profile)?.socialLinks ?? []
-        chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
-        recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
-            .map(VenueMessage.init(payload:))
+        // Whether the user can join the room, and its last lines, come
+        // through the chat facet; missing reads as closed.
+        let chat = try container.decodeIfPresent(ChatFacet.self, forKey: .chat)
+        chatOpen = chat?.open ?? false
+        recentMessages = chat?.recentMessages ?? []
         let cover = try container.decodeIfPresent(CoverFacet.self, forKey: .cover)
         coverCharge = cover?.coverCharge
         viewerAdmission = cover?.viewerAdmission
-        onNow = container.decodeAppearances(forKey: .onNow)
+        // Who's on comes through the people facet; missing reads as no one.
+        onNow = (try? container.decodeIfPresent(VenuePeopleFacet.self, forKey: .people))?.onNow ?? []
         // Friends' Pings come through the ping facet; missing reads as none.
         friendPings = try container.decodeIfPresent(PingsResponse.self, forKey: .ping)?.friendPings ?? []
     }
