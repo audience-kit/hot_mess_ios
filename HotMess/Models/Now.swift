@@ -63,10 +63,8 @@ struct Now: Decodable, Hashable, Sendable {
     }
 
     private enum VenueKeys: String, CodingKey {
-        case events, friends
+        case events, friends, cover
         case recentMessages = "recent_messages"
-        case coverCharge = "cover_charge"
-        case viewerAdmission = "viewer_admission"
         case onNow = "on_now"
     }
 
@@ -96,10 +94,12 @@ struct Now: Decodable, Hashable, Sendable {
            let venueContainer = try? container.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
             recentMessages = (try venueContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
                 .map(VenueMessage.init(payload:))
-            coverCharge = try venueContainer.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
-            viewerAdmission = try venueContainer.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+            // The venue's cover facet, null when the audience has cover off.
+            let cover = try venueContainer.decodeIfPresent(CoverFacet.self, forKey: .cover)
+            coverCharge = cover?.coverCharge
+            viewerAdmission = cover?.viewerAdmission
             onNow = venueContainer.decodeAppearances(forKey: .onNow)
-            venueEvents = try venueContainer.decodeIfPresent(EventsFacet.self, forKey: .events)?.upcoming ?? []
+            venueEvents = try venueContainer.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
             venueFriends = try venueContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
         } else {
             recentMessages = []
@@ -122,7 +122,7 @@ struct Now: Decodable, Hashable, Sendable {
             localeMessages = (try localeContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
                 .map(VenueMessage.init(payload:))
             localeHero = try localeContainer.decodeURLIfPresent(forKey: .heroURL)
-            localeEvents = try localeContainer.decodeIfPresent(EventsFacet.self, forKey: .events)?.upcoming ?? []
+            localeEvents = try localeContainer.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
             localeFriends = try localeContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)
         } else {
             locale = nil
@@ -193,15 +193,3 @@ struct Now: Decodable, Hashable, Sendable {
     }
 }
 
-/// The events module's facet on a venue or locale, read as
-/// `events { upcoming { nodes } }`.
-private struct EventsFacet: Decodable, Sendable {
-    let upcoming: [Event]
-
-    init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        upcoming = try container.decodeIfPresent(Nodes<Event>.self, forKey: .upcoming)?.nodes ?? []
-    }
-
-    private enum CodingKeys: String, CodingKey { case upcoming }
-}

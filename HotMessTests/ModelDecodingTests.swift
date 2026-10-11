@@ -232,6 +232,23 @@ struct PersonDetailTests {
         #expect(detail.groups.first?.pictureURL == nil)
     }
 
+    @Test("Reads tracks through the music facet, dropping null nodes")
+    func musicTracks() throws {
+        let detail = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "DJ",
+          "music": { "tracks": { "nodes": [
+            null,
+            { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "title": "Late Night", "provider": "soundcloud" }
+          ] } } }
+        """)
+        let empty = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "DJ", "music": { "tracks": null } }
+        """)
+
+        #expect(detail.tracks.map(\.title) == ["Late Night"])
+        #expect(empty.tracks.isEmpty)
+    }
+
     @Test("Leaves collections empty when the API omits them")
     func missingCollections() throws {
         let detail = try decode(PersonDetail.self, from: """
@@ -625,5 +642,104 @@ struct SafetyDecodingTests {
 
         #expect(!state.hasFacebook)
         #expect(state.canPretendLocation)
+    }
+}
+
+@Suite("Facets")
+struct FacetDecodingTests {
+    static let admission: String = CoverDecodingTests.admission
+
+    static let charge = """
+    { "amount_cents": 1000, "total_cents": 1112, "currency": "usd", "night": "2026-10-09", "from": "21:00", "payable": true }
+    """
+
+    @Test("Reads an event's venue from its venue facet")
+    func eventVenue() throws {
+        let event = try decode(Event.self, from: Fixtures.event)
+
+        #expect(event.venue?.id == UUID(uuidString: "1E0B9F3C-6F42-4B8E-9C7A-0D5E4A2B7C90"))
+        #expect(event.venue?.name == "Pop-up")
+    }
+
+    @Test("A to-be-announced venue or a null facet is no venue")
+    func eventWithoutVenue() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let announced = try decode(Event.self, from: base + #", "venue": { "name": "To be announced", "venue": null } }"#)
+        let off = try decode(Event.self, from: base + #", "venue": null }"#)
+
+        #expect(announced.venue == nil)
+        #expect(off.venue == nil)
+    }
+
+    @Test("An event written out reads back with its venue")
+    func eventRoundTrip() throws {
+        let event = try decode(Event.self, from: Fixtures.event)
+        let data = try JSONEncoder.hotMess.encode(event)
+        let again = try JSONDecoder.hotMess.decode(Event.self, from: data)
+
+        #expect(again.venue == event.venue)
+        #expect(again.id == event.id)
+    }
+
+    @Test("Null events and cover facets read as none")
+    func nullFacets() throws {
+        let venue = try decode(VenueWithEvents.self, from: """
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "events": null, "cover": null }
+        """)
+        let person = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Nobody", "events": null }
+        """)
+        let locale = try decode(LocaleEventsResponse.self, from: #"{ "locale": { "events": null } }"#)
+
+        #expect(venue.events.isEmpty)
+        #expect(venue.coverCharge == nil)
+        #expect(venue.viewerAdmission == nil)
+        #expect(person.events.isEmpty)
+        #expect(locale.locale?.events.isEmpty == true)
+    }
+
+    @Test("Reads a locale's upcoming events")
+    func localeEvents() throws {
+        let response = try decode(LocaleEventsResponse.self, from: """
+        { "locale": { "events": { "upcoming": { "nodes": [\(Fixtures.event), \(Fixtures.sparseEvent)] } } } }
+        """)
+
+        #expect(response.locale?.events.map(\.name) == ["Some Thing", "Afters"])
+    }
+
+    @Test("Reads a venue's cover facet")
+    func venueCover() throws {
+        let venue = try decode(VenueWithEvents.self, from: """
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud",
+          "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } }
+        """)
+
+        #expect(venue.coverCharge?.totalCents == 1112)
+        #expect(venue.viewerAdmission?.isPaid == true)
+    }
+
+    @Test("Reads an event's cover and its venue's cover tonight")
+    func eventCover() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let detail = try decode(EventDetail.self, from: base + """
+        , "cover": { "cover_charge": \(Self.charge) },
+          "venue_cover": { "venue": { "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } } } }
+        """)
+
+        #expect(detail.coverCharge?.night == "2026-10-09")
+        #expect(detail.venueCoverTonight?.night == "2026-10-09")
+        #expect(detail.isCoverTonight)
+        #expect(detail.viewerAdmission?.isPaid == true)
+    }
+
+    @Test("An event with no venue or no cover module has no venue cover")
+    func eventWithoutVenueCover() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let tba = try decode(EventDetail.self, from: base + #", "cover": null, "venue_cover": { "venue": null } }"#)
+        let off = try decode(EventDetail.self, from: base + #", "venue_cover": null }"#)
+
+        #expect(tba.coverCharge == nil)
+        #expect(tba.venueCoverTonight == nil)
+        #expect(off.viewerAdmission == nil)
     }
 }

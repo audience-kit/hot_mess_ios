@@ -45,8 +45,8 @@ enum Fixtures {
       "facebook_id": 998877665544,
       "is_featured": true,
       "rsvp": "decliend",
-      "cover_photo_url": "https://cdn.hotmess.social/events/some-thing.jpg",
-      "venue": \(minimalVenue)
+      "banner_url": "https://cdn.hotmess.social/events/some-thing.jpg",
+      "venue": { "name": "Pop-up", "venue": \(minimalVenue) }
     }
     """
 
@@ -94,16 +94,20 @@ enum Fixtures {
           "url": "https://instagram.com/hotmess"
         }
       ],
-      "tracks": [
-        {
-          "id": "2A8E5D13-7C90-4B6F-8D2A-5E1C9B0F3A66",
-          "title": "Set One",
-          "provider": "soundcloud",
-          "provider_url": "https://soundcloud.com/hotmess/set-one",
-          "waveform_url": "https://cdn.hotmess.social/wave.png",
-          "artwork_url": "https://cdn.hotmess.social/art.png"
+      "music": {
+        "tracks": {
+          "nodes": [
+            {
+              "id": "2A8E5D13-7C90-4B6F-8D2A-5E1C9B0F3A66",
+              "title": "Set One",
+              "provider": "soundcloud",
+              "provider_url": "https://soundcloud.com/hotmess/set-one",
+              "waveform_url": "https://cdn.hotmess.social/wave.png",
+              "artwork_url": "https://cdn.hotmess.social/art.png"
+            }
+          ]
         }
-      ],
+      },
       "members": [
         {
           "id": "6E1F3A92-0B4C-4D7E-8F15-3A9C2D6B1E77",
@@ -114,7 +118,7 @@ enum Fixtures {
       "groups": [
         { "id": "7F2A4B03-1C5D-4E8F-9A26-4B0D3E7C2F88", "name": "The Haus of Mess" }
       ],
-      "events": [\(sparseEvent)]
+      "events": { "upcoming": { "nodes": [\(sparseEvent)] } }
     }
     """
 
@@ -124,7 +128,7 @@ enum Fixtures {
       "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11",
       "name": "The Stud",
       "chat_open": true,
-      "events": [\(sparseEvent)],
+      "events": { "upcoming": { "nodes": [\(sparseEvent)] } },
       "friends": { "list": { "nodes": [] } },
       "social_links": [
         {
