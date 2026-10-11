@@ -72,20 +72,24 @@ struct GraphQLTests {
     @Test("Decodes reportLocation into Now through the aliased fields")
     func decodesNow() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Happening Now in Spokane","image_url":"https://cdn.example/spokane.jpg","venue":null,
-          "venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
+        {"reportLocation":{
+          "venue":null,
+          "nearby_venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
                      "phone":null,"distance":120.5,"point":"POINT (-117.414777 47.6575451)",
                      "facebook_id":"123","photo_url":null,"hero_url":null,"is_liked":false}],
-          "events":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
-                     "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
-                     "cover_photo_url":null,"is_featured":false,"rsvp":"ATTENDING","venue":null}]
-        }}}
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane",
+                    "hero_url":"https://cdn.example/spokane.jpg","chat_open":false,"recent_messages":[],
+                    "events":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
+                               "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
+                               "cover_photo_url":null,"is_featured":false,"rsvp":"ATTENDING","venue":null}]},
+          "audience":{"ping":null}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         #expect(now.title == "Happening Now in Spokane")
+        #expect(now.imageURL?.absoluteString == "https://cdn.example/spokane.jpg")
         #expect(now.isNearVenues)
         let venue = try #require(now.venues?.first)
         #expect(venue.name == "Nyne")
@@ -97,21 +101,26 @@ struct GraphQLTests {
     @Test("Decodes the venue's recent chat lines into Now")
     func decodesNowAtVenue() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Nyne","image_url":null,"venues":null,"events":[],
+        {"reportLocation":{
+          "nearby_venues":null,
           "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
                    "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,"hero_url":null,
                    "is_liked":false,
                    "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"who's here?",
                                        "name":"Sam","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
-                                       "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]},
-          "friends":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend","facebook_id":"4242"}]
-        }}}
+                                       "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}],
+                   "events":[],
+                   "friends":{"list":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend",
+                                       "facebook_id":"4242"}]}},
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane",
+                    "friends":{"list":[],"venues":[]}}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         #expect(now.venue?.name == "Nyne")
+        #expect(now.title == "Nyne")
         #expect(!now.isNearVenues)
         let line = try #require(now.recentMessages.first)
         #expect(line.body == "who's here?")
@@ -123,16 +132,16 @@ struct GraphQLTests {
     @Test("Decodes the locale's chat room into Now when you aren't in a venue")
     func decodesNowLocaleChat() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Happening Now in Seattle","image_url":null,"venue":null,"venues":[],"events":[],
+        {"reportLocation":{
+          "venue":null,"nearby_venues":[],
           "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Seattle","chat_open":true,
                     "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"anyone out?",
                                         "name":"Ada","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
                                         "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}
-        }}}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         #expect(now.locale == AppLocale(id: UUID(uuidString: "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E")!, name: "Seattle"))
         #expect(now.localeChatOpen)
@@ -154,18 +163,19 @@ struct GraphQLTests {
     @Test("Decodes where friends are when you aren't in a venue")
     func decodesFriendVenues() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Happening Now in Spokane","image_url":null,"venue":null,"venues":[],"events":[],"friends":[],
-          "friend_venues":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":null,
+        {"reportLocation":{
+          "venue":null,"nearby_venues":[],
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane","friends":{"list":[],
+          "venues":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":null,
                                      "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,
                                      "hero_url":null,"is_liked":false},
                             "friend_count":2,
                             "friends":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend","facebook_id":null},
-                                       {"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Sam Chatter","facebook_id":null}]}]
-        }}}
+                                       {"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Sam Chatter","facebook_id":null}]}]}}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         let entry = try #require(now.friendVenues.first)
         #expect(entry.venue.name == "Nyne")

@@ -108,11 +108,11 @@ struct PingDecodingTests {
     @Test("Decodes the user's Ping and friends' Pings into Now")
     func decodesNowPings() throws {
         let json = """
-        {"reportLocation":{"now":{"title":"Now","venue":null,"venues":[],"events":[],"friends":[],
-          "my_ping":\(PingFixtures.anywhere),"friend_pings":[\(PingFixtures.ping)]}}}
+        {"reportLocation":{"venue":null,"nearby_venues":[],"locale":null,
+          "audience":{"ping":{"my_ping":\(PingFixtures.anywhere),"friend_pings":[\(PingFixtures.ping)]}}}}
         """
 
-        let now = try PingFixtures.decode(ReportLocationResponse.self, json).reportLocation.now
+        let now = try PingFixtures.decode(ReportLocationResponse.self, json).reportLocation
 
         #expect(now.myPing?.id == "ping-2")
         #expect(now.friendPings.map(\.id) == ["ping-1"])
