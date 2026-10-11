@@ -63,16 +63,12 @@ struct Now: Decodable, Hashable, Sendable {
     }
 
     private enum VenueKeys: String, CodingKey {
-        case events, friends, cover
-        case recentMessages = "recent_messages"
-        case onNow = "on_now"
+        case events, friends, cover, chat, people
     }
 
     private enum LocaleKeys: String, CodingKey {
-        case id, name, events, friends
+        case id, name, events, friends, chat
         case heroURL = "hero_url"
-        case chatOpen = "chat_open"
-        case recentMessages = "recent_messages"
     }
 
     private enum AudienceKeys: String, CodingKey { case ping }
@@ -92,13 +88,13 @@ struct Now: Decodable, Hashable, Sendable {
         var venueFriends: [Friend] = []
         if (try? container.decodeNil(forKey: .venue)) == false,
            let venueContainer = try? container.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
-            recentMessages = (try venueContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
-                .map(VenueMessage.init(payload:))
+            // The chat and people facets; missing reads as no lines and no one on.
+            recentMessages = try venueContainer.decodeIfPresent(ChatFacet.self, forKey: .chat)?.recentMessages ?? []
             // The venue's cover facet, null when the audience has cover off.
             let cover = try venueContainer.decodeIfPresent(CoverFacet.self, forKey: .cover)
             coverCharge = cover?.coverCharge
             viewerAdmission = cover?.viewerAdmission
-            onNow = venueContainer.decodeAppearances(forKey: .onNow)
+            onNow = (try? venueContainer.decodeIfPresent(VenuePeopleFacet.self, forKey: .people))?.onNow ?? []
             venueEvents = try venueContainer.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
             venueFriends = try venueContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
         } else {
@@ -118,9 +114,9 @@ struct Now: Decodable, Hashable, Sendable {
             let name = try localeContainer.decodeIfPresent(String.self, forKey: .name) ?? ""
             locale = AppLocale(id: id, name: name)
             localeName = name
-            localeChatOpen = try localeContainer.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
-            localeMessages = (try localeContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
-                .map(VenueMessage.init(payload:))
+            let chat = try localeContainer.decodeIfPresent(ChatFacet.self, forKey: .chat)
+            localeChatOpen = chat?.open ?? false
+            localeMessages = chat?.recentMessages ?? []
             localeHero = try localeContainer.decodeURLIfPresent(forKey: .heroURL)
             localeEvents = try localeContainer.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
             localeFriends = try localeContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)

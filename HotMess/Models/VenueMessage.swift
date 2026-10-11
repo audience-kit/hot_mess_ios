@@ -141,7 +141,7 @@ extension PresenceState {
 
 extension VenueMessage {
     /// A chat line as the server broadcasts it, or as GraphQL's
-    /// `recentMessages` returns it (aliased to the same keys).
+    /// `chat { recentMessages }` returns it (aliased to the same keys).
     ///
     /// Only `message` and `user_id` are required: older frames carry nothing
     /// else, and a malformed optional field is dropped rather than failing
@@ -253,5 +253,28 @@ extension VenueMessage {
         postedAsVenue = payload.postedAsVenue
         personID = payload.personID
         presence = payload.presence
+    }
+}
+
+/// A venue's or locale's `chat` facet: whether the user can join its room
+/// (`open`), and the room's last few lines, oldest first, a connection the
+/// documents read as `recent_messages: recentMessages(limit: 3) { nodes { … } }`.
+/// A missing field reads as closed, with no lines.
+struct ChatFacet: Decodable, Sendable {
+    let open: Bool
+    let recentMessages: [VenueMessage]
+
+    private enum CodingKeys: String, CodingKey {
+        case open
+        case recentMessages = "recent_messages"
+    }
+
+    private struct Lines: Decodable, Sendable { let nodes: [VenueMessage.Payload]? }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        open = try container.decodeIfPresent(Bool.self, forKey: .open) ?? false
+        recentMessages = (try container.decodeIfPresent(Lines.self, forKey: .recentMessages)?.nodes ?? [])
+            .map(VenueMessage.init(payload:))
     }
 }

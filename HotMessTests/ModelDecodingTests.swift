@@ -313,10 +313,11 @@ struct VenueDetailTests {
 
 @Suite("On now")
 struct OnNowDecodingTests {
-    /// `onNow` as the `venue` query aliases it: GraphQL's uppercase roles and
-    /// UTC times, and the person's `pictureUrl` as `photo_url`.
+    /// `onNow` as the `venue` query aliases it, under the venue's people
+    /// facet: GraphQL's uppercase roles and UTC times, and the person's
+    /// `pictureUrl` as `photo_url`.
     static let onNow = """
-    "on_now": [
+    "people": { "on_now": { "nodes": [
       { "id": "4D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "DJ",
         "starts_at": "2026-10-11T04:00:00Z", "ends_at": "2026-10-11T08:00:00Z",
         "person": { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie Mattel",
@@ -327,7 +328,7 @@ struct OnNowDecodingTests {
       { "id": "6D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "HOST",
         "starts_at": "2026-10-11T03:00:00Z",
         "person": { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": null } }
-    ]
+    ] } }
     """
 
     @Test("Reads who's on at a venue, dropping someone with no name yet")
@@ -361,7 +362,7 @@ struct OnNowDecodingTests {
     func missing() throws {
         let older = try decode(VenueWithEvents.self, from: Fixtures.minimalVenue)
         let malformed = try decode(VenueWithEvents.self, from: """
-        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "on_now": "soon" }
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "people": { "on_now": "soon" } }
         """)
         let away = try decode(Now.self, from: Fixtures.nowWithFriends)
 

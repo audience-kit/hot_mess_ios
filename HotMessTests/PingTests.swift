@@ -136,11 +136,11 @@ struct PingDecodingTests {
 
     @Test("Decodes friends' Pings on a venue and an event")
     func decodesPlacePings() throws {
-        let venueJSON = PingFixtures.venue.dropLast(1) + #","chat_open":false,"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
+        let venueJSON = PingFixtures.venue.dropLast(1) + #","chat":{"open":false},"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
         let venue = try PingFixtures.decode(VenueResponse.self, #"{"venue":\#(venueJSON)}"#)
         #expect(venue.venue?.friendPings.first?.user.firstName == "Jordan")
 
-        let eventJSON = PingFixtures.event.dropLast(1) + #","people":[],"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
+        let eventJSON = PingFixtures.event.dropLast(1) + #","people":{"lineup":{"nodes":[]}},"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
         let event = try PingFixtures.decode(EventResponse.self, #"{"event":\#(eventJSON)}"#)
         #expect(event.event?.friendPings.count == 1)
         #expect(event.event?.event.name == "Drag Bingo")

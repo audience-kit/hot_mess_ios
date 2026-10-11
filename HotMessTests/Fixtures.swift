@@ -132,7 +132,7 @@ enum Fixtures {
     {
       "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11",
       "name": "The Stud",
-      "chat_open": true,
+      "chat": { "open": true, "recent_messages": { "nodes": [] } },
       "events": { "upcoming": { "nodes": [\(sparseEvent)] } },
       "friends": { "list": { "nodes": [] } },
       "profile": {
