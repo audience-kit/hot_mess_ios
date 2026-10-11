@@ -339,6 +339,40 @@ struct HotMessAPI: Sendable {
         )
     }
 
+    /// Says something in a chat room as the user. The line also reaches the
+    /// room's subscribers, the user's own included, as a `ChatMessagePosted`;
+    /// this returns it as the room sees it, so the app can settle its pending
+    /// line by ID.
+    func sendMyChatMessage(_ body: String, in room: ChatRoom) async throws -> VenueMessage {
+        let sent = try await query(
+            Documents.sendMyChatMessage,
+            variables: Self.sendMyChatMessageVariables(body, in: room),
+            as: SendMyChatMessageResponse.self
+        )
+        return VenueMessage(payload: sent.sendMyChatMessage.message)
+    }
+
+    /// `{ input: { venueId | localeId, message } }`.
+    static func sendMyChatMessageVariables(_ body: String, in room: ChatRoom) -> [String: GraphQLValue] {
+        [
+            "input": .object([
+                room.subscriptionKey: .string(room.id.uuidString.lowercased()),
+                "message": .string(body),
+            ]),
+        ]
+    }
+
+    /// The audience the app's GraphQL goes to: the build's pinned ID, the
+    /// session's, or the one that owns the configured host. Chat sockets name
+    /// it when they subscribe.
+    func audienceID() async throws -> String {
+        do {
+            return try await audienceKit.audienceID()
+        } catch let error as AudienceKitError {
+            throw APIError(error)
+        }
+    }
+
     func acceptTerms() async throws -> Date? {
         try await query(Documents.acceptTerms, variables: [:], as: AcceptTermsResponse.self)
             .acceptTerms.termsAcceptedAt
@@ -725,6 +759,21 @@ extension HotMessAPI {
         }
         """
 
+        /// A chat line as a room delivers it: `messageFields` without
+        /// `presence`, which in a room comes from the event's `senderPresence`.
+        static let roomMessageFields = """
+        id message body name user_id: userId avatar_url: avatarUrl sent_at: sentAt \
+        role kind title photo_url: photoUrl ends_at: endsAt pinned posted_as_venue: postedAsVenue \
+        posted_as_person: postedAsPerson person { id } \
+        event { id name start_at: startAt }
+        """
+
+        static let sendMyChatMessage = """
+        mutation SendMyChatMessage($input: ChatMessageSendOwnInput!) {
+          sendMyChatMessage(input: $input) { message { \(roomMessageFields) } }
+        }
+        """
+
         static let reportChatMessage = """
         mutation ReportChatMessage($messageId: ID!, $reason: String, $block: Boolean) {
           reportChatMessage(input: { messageId: $messageId, reason: $reason, block: $block }) { reported blocked }
@@ -994,6 +1043,11 @@ struct UnblockUserResponse: Decodable, Sendable { let unblockUser: BlockedUsersP
 struct ReportChatMessageResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let reported: Bool }
     let reportChatMessage: Payload
+}
+
+struct SendMyChatMessageResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let message: VenueMessage.Payload }
+    let sendMyChatMessage: Payload
 }
 
 struct RemoveMyChatMessageResponse: Decodable, Sendable {

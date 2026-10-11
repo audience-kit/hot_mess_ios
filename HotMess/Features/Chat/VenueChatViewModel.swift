@@ -18,12 +18,13 @@ final class VenueChatViewModel {
         case disconnected(String?)
     }
 
-    /// A line the user sent that the room hasn't echoed back yet.
+    /// A line the user sent that the room hasn't shown yet.
     struct PendingMessage: Identifiable, Equatable, Sendable {
         enum State: Equatable, Sendable {
-            /// Waiting to join the room, or sent and waiting for the echo.
+            /// Waiting to join the room, or sent and waiting for the API.
             case sending
-            /// No echo in time, or the room closed. The user can retry.
+            /// `sendMyChatMessage` failed or didn't answer in time, or the
+            /// room closed. The user can retry.
             case failed
         }
 
@@ -39,7 +40,7 @@ final class VenueChatViewModel {
     /// The API counts a position as present for 15 minutes.
     static let presenceInterval: Duration = .seconds(240)
 
-    /// How long a sent line waits for the room to echo it before it's shown as failed.
+    /// How long a sent line waits for the API (or the room's echo) before it's shown as failed.
     static let echoTimeout: Duration = .seconds(10)
 
     private(set) var messages: [VenueMessage] = []
@@ -79,6 +80,9 @@ final class VenueChatViewModel {
     /// there's no directory.
     private var rosterFriendNames: [UUID: String] = [:]
     private let reportPresence: @MainActor () async -> Void
+    /// Sends lines (`sendMyChatMessage`) and names the audience the room's
+    /// subscription runs in. Without it nothing can be sent.
+    private let api: HotMessAPI?
     private var connection: VenueChatConnection?
     private var presenceTask: Task<Void, Never>?
     /// Bumped by `stop()`, so a `run()` waiting to reconnect knows it's over.
@@ -92,9 +96,11 @@ final class VenueChatViewModel {
         userID: UUID?,
         token: String?,
         friends: FriendDirectory? = nil,
+        api: HotMessAPI? = nil,
         reportPresence: @escaping @MainActor () async -> Void = {}
     ) {
         self.room = room
+        self.api = api
         self.configuration = configuration
         self.userID = userID
         self.token = token
@@ -170,7 +176,17 @@ final class VenueChatViewModel {
             guard !Task.isCancelled, generation == self.generation else { return }
             startReportingPresence()
 
-            switch await follow(url: url) {
+            let outcome: Outcome
+            if let audienceID = await audienceID() {
+                outcome = await follow(url: url, audienceID: audienceID)
+            } else if api == nil {
+                connectionState = .disconnected(String(localized: "Chat isn't available for this build."))
+                return
+            } else {
+                outcome = .dropped
+            }
+
+            switch outcome {
             case .stopped, .notPresent:
                 return
             case .joined:
@@ -208,9 +224,24 @@ final class VenueChatViewModel {
         case dropped
     }
 
-    /// One socket's life: connects and applies its frames until it closes.
-    private func follow(url: URL) async -> Outcome {
-        let connection = VenueChatConnection(room: room, url: url, token: token)
+    /// The audience the room's subscription runs in: the build's pinned ID,
+    /// else the API's (from the session or the host). `nil`, with the room
+    /// shown as disconnected, when it can't be worked out now.
+    private func audienceID() async -> String? {
+        if let audienceID = configuration.audienceID { return audienceID }
+        guard let api else { return nil }
+
+        do {
+            return try await api.audienceID()
+        } catch {
+            connectionState = .disconnected(error.localizedDescription)
+            return nil
+        }
+    }
+
+    /// One socket's life: connects and applies its events until it closes.
+    private func follow(url: URL, audienceID: String) async -> Outcome {
+        let connection = VenueChatConnection(room: room, url: url, token: token, audienceID: audienceID)
         self.connection = connection
         await connection.connect()
 
@@ -221,7 +252,7 @@ final class VenueChatViewModel {
             case .connected:
                 joined = true
                 connectionState = .connected
-                await sendPending()
+                sendPending()
             case let .received(message):
                 receive(message)
             case let .range(outOfRange):
@@ -390,23 +421,29 @@ final class VenueChatViewModel {
         Task { await run() }
     }
 
-    private func sendPending() async {
-        for message in pending where message.state == .sending {
-            await deliver(message.id)
+    /// Sends the lines that waited for the room, in order, without holding
+    /// up the room's events while the API answers.
+    private func sendPending() {
+        let ids = pending.filter { $0.state == .sending }.map(\.id)
+        guard !ids.isEmpty else { return }
+
+        Task {
+            for id in ids {
+                await deliver(id)
+            }
         }
     }
 
-    /// Writes the line and fails it if the room hasn't echoed it in time.
+    /// Sends the line with `sendMyChatMessage`, and fails it if the API
+    /// refuses it or hasn't answered in time.
     private func deliver(_ id: UUID) async {
-        guard let connection, let index = pending.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = pending.firstIndex(where: { $0.id == id }) else { return }
 
         pending[index].attempt += 1
         let attempt = pending[index].attempt
         let body = pending[index].body
 
-        do {
-            try await connection.send(body)
-        } catch {
+        guard let api else {
             markFailed(id, attempt: attempt)
             return
         }
@@ -415,12 +452,32 @@ final class VenueChatViewModel {
             try? await Task.sleep(for: Self.echoTimeout)
             self?.markFailed(id, attempt: attempt)
         }
+
+        do {
+            settle(id, with: try await api.sendMyChatMessage(body, in: room))
+        } catch {
+            Log.realtime.error("Chat line not sent: \(error.localizedDescription, privacy: .public)")
+            markFailed(id, attempt: attempt)
+        }
     }
 
-    /// The server sends nothing to identify the sender's own copy beyond who
-    /// sent it, so the echo settles the oldest pending line with the same text.
-    private func receive(_ message: VenueMessage) {
-        if isOutgoing(message), let index = pending.firstIndex(where: { $0.body == message.body }) {
+    /// The API took the line: it leaves `pending` and shows as the room will
+    /// show it, unless the room's echo got here first.
+    func settle(_ id: UUID, with message: VenueMessage) {
+        pending.removeAll { $0.id == id }
+        if !messages.contains(where: { $0.id == message.id }) {
+            messages.append(message)
+        }
+    }
+
+    /// A line the API hasn't answered for yet can come back from the room
+    /// first. Nothing in it names the pending line beyond who sent it, so it
+    /// settles the oldest pending line with the same text. Once a line is
+    /// shown (the mutation answered first), its echo only updates it.
+    func receive(_ message: VenueMessage) {
+        if isOutgoing(message),
+           !messages.contains(where: { $0.id == message.id }),
+           let index = pending.firstIndex(where: { $0.body == message.body }) {
             pending.remove(at: index)
         }
 

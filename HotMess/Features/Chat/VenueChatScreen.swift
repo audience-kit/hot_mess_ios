@@ -344,6 +344,7 @@ struct VenueChatScreen: View {
             userID: model.session.userID,
             token: model.session.bearerToken,
             friends: model.friends,
+            api: model.api,
             reportPresence: { [location = model.location] in await location.reportCurrentPosition() }
         )
     }
