@@ -23,7 +23,7 @@ private enum PingFixtures {
 
     static let event = """
     {"id":"\(bingo)","name":"Drag Bingo","start_at":"2026-10-09T21:00:00-07:00","end_at":null,
-     "facebook_id":null,"cover_photo_url":null,"is_featured":false,"rsvp":"UNSURE","venue":{"name":"The Wildrose","venue":\(venue)}}
+     "facebook_id":null,"banner_url":null,"is_featured":false,"rsvp":"UNSURE","venue":{"name":"The Wildrose","venue":\(venue)}}
     """
 
     /// Jordan's Ping for Drag Bingo or The Wildrose: Sam is in for bingo,

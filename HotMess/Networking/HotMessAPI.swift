@@ -466,7 +466,7 @@ extension HotMessAPI {
         """
 
         static let personFields = """
-        id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl cover_url: coverUrl
+        id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl banner_url: bannerUrl
         """
 
         static let friendFields = "id name facebook_id: facebookId presence avatar_url: avatarUrl"
@@ -503,7 +503,7 @@ extension HotMessAPI {
         /// while it is to be announced (see `EventVenueFacet`).
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
-        cover_photo_url: coverPhotoUrl is_featured: isFeatured rsvp: viewerRsvp \
+        banner_url: bannerUrl is_featured: isFeatured rsvp: viewerRsvp \
         venue { name venue { \(venueFields) } }
         """
 

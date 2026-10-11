@@ -20,7 +20,7 @@ extension Person {
             id: id,
             name: person.name,
             pictureURL: resolve(page?.photoUrl),
-            coverURL: resolve(page?.coverImageUrl)
+            bannerURL: resolve(page?.bannerUrl)
         )
     }
 }

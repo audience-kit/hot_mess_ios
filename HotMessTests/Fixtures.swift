@@ -45,7 +45,7 @@ enum Fixtures {
       "facebook_id": 998877665544,
       "is_featured": true,
       "rsvp": "decliend",
-      "cover_photo_url": "https://cdn.hotmess.social/events/some-thing.jpg",
+      "banner_url": "https://cdn.hotmess.social/events/some-thing.jpg",
       "venue": { "name": "Pop-up", "venue": \(minimalVenue) }
     }
     """

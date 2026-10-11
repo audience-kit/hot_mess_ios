@@ -270,7 +270,7 @@ extension PingTarget {
         return venue?.summary
     }
 
-    var imageURL: URL? { event?.coverURL ?? venue?.photoURL }
+    var imageURL: URL? { event?.bannerURL ?? venue?.photoURL }
 }
 
 extension Now {

@@ -311,7 +311,7 @@ struct EventCard: View {
 
     var body: some View {
         PhotoCard(
-            url: event.coverURL,
+            url: event.bannerURL,
             minHeight: event.isFeatured ? CardMetrics.featuredHeight : CardMetrics.photoHeight,
             topClearance: 68
         ) {

@@ -13,7 +13,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
     let facebookID: FacebookID?
     let venue: Venue?
     let person: Person?
-    let coverURL: URL?
+    let bannerURL: URL?
     let isFeatured: Bool
     var rsvp: RSVP
 
@@ -44,7 +44,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         case startDate = "start_at"
         case endDate = "end_at"
         case facebookID = "facebook_id"
-        case coverURL = "cover_photo_url"
+        case bannerURL = "banner_url"
         case isFeatured = "is_featured"
     }
 
@@ -58,7 +58,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
         venue = try container.decodeIfPresent(EventVenueFacet.self, forKey: .venue)?.venue
         person = try container.decodeIfPresent(Person.self, forKey: .person)
-        coverURL = try container.decodeURLIfPresent(forKey: .coverURL)
+        bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
         isFeatured = try container.decodeIfPresent(Bool.self, forKey: .isFeatured) ?? false
         rsvp = try container.decodeIfPresent(RSVP.self, forKey: .rsvp) ?? .unsure
     }
@@ -74,7 +74,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         try container.encodeIfPresent(facebookID, forKey: .facebookID)
         try container.encode(EventVenueFacet(venue: venue), forKey: .venue)
         try container.encodeIfPresent(person, forKey: .person)
-        try container.encodeIfPresent(coverURL, forKey: .coverURL)
+        try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
         try container.encode(isFeatured, forKey: .isFeatured)
         try container.encode(rsvp, forKey: .rsvp)
     }
@@ -87,7 +87,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         facebookID: FacebookID? = nil,
         venue: Venue? = nil,
         person: Person? = nil,
-        coverURL: URL? = nil,
+        bannerURL: URL? = nil,
         isFeatured: Bool = false,
         rsvp: RSVP = .unsure
     ) {
@@ -98,7 +98,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         self.facebookID = facebookID
         self.venue = venue
         self.person = person
-        self.coverURL = coverURL
+        self.bannerURL = bannerURL
         self.isFeatured = isFeatured
         self.rsvp = rsvp
     }

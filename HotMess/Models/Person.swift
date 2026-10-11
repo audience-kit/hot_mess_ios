@@ -12,7 +12,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
     let role: String?
     let isLiked: Bool
     let pictureURL: URL?
-    let coverURL: URL?
+    let bannerURL: URL?
 
     var facebookURL: URL? { facebookID?.profileURL }
 
@@ -21,7 +21,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         case facebookID = "facebook_id"
         case isLiked = "is_liked"
         case pictureURL = "photo_url"
-        case coverURL = "cover_url"
+        case bannerURL = "banner_url"
     }
 
     init(from decoder: any Decoder) throws {
@@ -33,7 +33,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         role = try container.decodeIfPresent(String.self, forKey: .role)
         isLiked = try container.decodeIfPresent(Bool.self, forKey: .isLiked) ?? false
         pictureURL = try container.decodeURLIfPresent(forKey: .pictureURL)
-        coverURL = try container.decodeURLIfPresent(forKey: .coverURL)
+        bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
     }
 
     init(
@@ -43,7 +43,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         role: String? = nil,
         isLiked: Bool = false,
         pictureURL: URL? = nil,
-        coverURL: URL? = nil
+        bannerURL: URL? = nil
     ) {
         self.id = id
         self.name = name
@@ -51,7 +51,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         self.role = role
         self.isLiked = isLiked
         self.pictureURL = pictureURL
-        self.coverURL = coverURL
+        self.bannerURL = bannerURL
     }
 }
 
