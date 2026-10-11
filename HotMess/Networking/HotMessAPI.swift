@@ -731,7 +731,7 @@ extension HotMessAPI {
 
         static let removeMyChatMessage = """
         mutation RemoveMyChatMessage($messageId: ID!) {
-          removeMyChatMessage(input: { messageId: $messageId }) { removedMessageId }
+          removeMyChatMessage(input: { messageId: $messageId }) { deletedId }
         }
         """
 
@@ -960,7 +960,7 @@ struct ReportChatMessageResponse: Decodable, Sendable {
 }
 
 struct RemoveMyChatMessageResponse: Decodable, Sendable {
-    struct Payload: Decodable, Sendable { let removedMessageId: String }
+    struct Payload: Decodable, Sendable { let deletedId: String }
     let removeMyChatMessage: Payload
 }
 
