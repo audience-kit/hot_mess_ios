@@ -409,6 +409,42 @@ struct VenueMessageTests {
         #expect(caption == "Come through")
     }
 
+    @Test("Talent posting as their listing: a host with no presence or friend name")
+    func personFrame() throws {
+        let poster = UUID(uuidString: "6C4D2E80-3A19-4B7F-9E5C-1D0A8B2F3E44")!
+        let person = UUID(uuidString: "9E1D2C3B-4A5F-4607-8899-AABBCCDDEEFF")!
+        let frame = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
+        {
+          "type": "incoming",
+          "id": "2b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
+          "message": "Doors at nine",
+          "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44",
+          "name": "Miss Texas",
+          "sent_at": "2026-10-11T04:00:00Z",
+          "role": "host",
+          "kind": "text",
+          "presence": "online",
+          "posted_as_person": true,
+          "person_id": "9e1d2c3b-4a5f-4607-8899-aabbccddeeff"
+        }
+        """.utf8))
+        let message = VenueMessage(payload: frame)
+        #expect(message.personID == person)
+        #expect(message.isFromListing)
+        #expect(!message.isFromPlace)
+
+        let line = message.threadMessage(currentUserID: nil, friends: [poster: HotMess.Friend(id: poster, name: "Ty Lee")])
+        #expect(line.authorName == "Miss Texas")
+        #expect(line.authorID == "person:\(person.uuidString)")
+        #expect(line.presence == nil)
+
+        let graphQL = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
+        { "message": "Hi", "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44", "role": "HOST",
+          "posted_as_person": true, "person": { "id": "9e1d2c3b-4a5f-4607-8899-aabbccddeeff" } }
+        """.utf8))
+        #expect(VenueMessage(payload: graphQL).personID == person)
+    }
+
     @Test("Reads GraphQL's uppercase enums")
     func graphQLEnums() throws {
         let payload = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""

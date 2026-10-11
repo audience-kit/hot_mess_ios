@@ -40,6 +40,9 @@ struct VenueMessage: Hashable, Sendable, Identifiable {
     var isPinned = false
     /// Posted as the venue: `name` and `avatarURL` are the venue's.
     var postedAsVenue = false
+    /// Posted by talent as their listing (role `host`): `name` and `avatarURL`
+    /// are the person's, and this is which person.
+    var personID: UUID? = nil
     /// Whether the sender can be reached now, where the API says (GraphQL
     /// previews). Room frames don't carry it; the room's roster does.
     var presence: PresenceState? = nil
@@ -70,6 +73,13 @@ struct VenueMessage: Hashable, Sendable, Identifiable {
         postedAsVenue || role == .venue
     }
 
+    /// A listing, not the human who typed it: the venue, or talent posting as
+    /// themselves from Backstage. It has no presence, never takes a friend's
+    /// name, and groups apart from the sender's own lines.
+    var isFromListing: Bool {
+        isFromPlace || personID != nil
+    }
+
     /// Whether the room still shows it: a special stops at its end time.
     func isShowing(at date: Date = .now) -> Bool {
         guard kind == .special, let endsAt else { return true }
@@ -81,7 +91,8 @@ struct VenueMessage: Hashable, Sendable, Identifiable {
 enum ChatRole: String, Hashable, Sendable {
     /// Posting as the venue.
     case venue
-    /// A host or performer on tonight's event at the venue.
+    /// Talent posting as their listing: featured at the venue, or hosting
+    /// one of its events.
     case host
     /// One of the audience's admins.
     case staff
@@ -151,6 +162,7 @@ extension VenueMessage {
         let endsAt: Date?
         let pinned: Bool
         let postedAsVenue: Bool
+        let personID: UUID?
         let presence: PresenceState?
 
         enum CodingKeys: String, CodingKey {
@@ -161,6 +173,13 @@ extension VenueMessage {
             case photoURL = "photo_url"
             case endsAt = "ends_at"
             case postedAsVenue = "posted_as_venue"
+            case postedAsPerson = "posted_as_person"
+            case personID = "person_id"
+            case person
+        }
+
+        private enum PersonKeys: String, CodingKey {
+            case id
         }
 
         private enum EventKeys: String, CodingKey {
@@ -185,6 +204,12 @@ extension VenueMessage {
             endsAt = Self.date(in: container, forKey: .endsAt)
             pinned = (try? container.decodeIfPresent(Bool.self, forKey: .pinned)) ?? false
             postedAsVenue = (try? container.decodeIfPresent(Bool.self, forKey: .postedAsVenue)) ?? false
+            // Room frames send `person_id`; GraphQL a `person { id }`.
+            let postedAsPerson = (try? container.decodeIfPresent(Bool.self, forKey: .postedAsPerson)) ?? false
+            let framePerson = try? container.decodeIfPresent(UUID.self, forKey: .personID)
+            let nestedPerson = (try? container.nestedContainer(keyedBy: PersonKeys.self, forKey: .person))
+                .flatMap { try? $0.decode(UUID.self, forKey: .id) }
+            personID = postedAsPerson ? (framePerson ?? nestedPerson) : nil
             presence = (try? container.decodeIfPresent(String.self, forKey: .presence)).flatMap { PresenceState(wire: $0) }
 
             if (try? container.decodeNil(forKey: .event)) == false,
@@ -226,6 +251,7 @@ extension VenueMessage {
         endsAt = payload.endsAt
         isPinned = payload.pinned
         postedAsVenue = payload.postedAsVenue
+        personID = payload.personID
         presence = payload.presence
     }
 }

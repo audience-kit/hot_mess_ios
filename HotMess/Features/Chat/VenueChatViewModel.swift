@@ -137,7 +137,7 @@ final class VenueChatViewModel {
             let person = roomPeople[id]
             let friendName = rosterFriendNames[id] ?? directory[id]?.name
             let posted = person?.name == nil || person?.avatarURL == nil
-                ? messages.last(where: { $0.userID == id && !$0.isFromPlace })
+                ? messages.last(where: { $0.userID == id && !$0.isFromListing })
                 : nil
 
             return HereNowPerson(
@@ -345,7 +345,7 @@ final class VenueChatViewModel {
     func applyHistory(_ history: [VenueMessage], pinned: VenueMessage?) {
         messages = history
         self.pinned = pinned
-        reachableUserIDs = Set(history.filter { $0.presence == .push && !$0.isFromPlace }.map(\.userID))
+        reachableUserIDs = Set(history.filter { $0.presence == .push && !$0.isFromListing }.map(\.userID))
     }
 
     /// An announcement was pinned, replacing whichever was, or unpinned.
@@ -425,7 +425,7 @@ final class VenueChatViewModel {
         }
 
         switch message.presence {
-        case .push where !message.isFromPlace: reachableUserIDs.insert(message.userID)
+        case .push where !message.isFromListing: reachableUserIDs.insert(message.userID)
         case .online: reachableUserIDs.remove(message.userID)
         default: break
         }

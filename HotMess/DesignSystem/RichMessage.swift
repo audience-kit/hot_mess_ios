@@ -211,7 +211,7 @@ extension VenueMessage {
         reachable: Set<UUID> = [],
         rich: Bool = true
     ) -> ChatThreadMessage {
-        let presence: PresenceState? = if isFromPlace {
+        let presence: PresenceState? = if isFromListing {
             nil
         } else if let online {
             online.contains(userID) ? .online : (reachable.contains(userID) ? .push : nil)
@@ -221,9 +221,10 @@ extension VenueMessage {
 
         return ChatThreadMessage(
             id: id.uuidString,
-            // A post as the venue groups apart from the same person's own lines.
-            authorID: isFromPlace ? "place:\(userID.uuidString)" : userID.uuidString,
-            authorName: isFromPlace ? name : (friends[userID]?.name ?? name),
+            // A post as the venue or a listing groups apart from the same person's own lines.
+            authorID: personID.map { "person:\($0.uuidString)" }
+                ?? (isFromPlace ? "place:\(userID.uuidString)" : userID.uuidString),
+            authorName: isFromListing ? name : (friends[userID]?.name ?? name),
             avatarURL: avatarURL,
             text: body,
             sentAt: sentAt,

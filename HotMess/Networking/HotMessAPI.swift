@@ -485,6 +485,7 @@ extension HotMessAPI {
         static let messageFields = """
         id message body name user_id: userId avatar_url: avatarUrl sent_at: sentAt \
         role kind title photo_url: photoUrl ends_at: endsAt pinned posted_as_venue: postedAsVenue presence \
+        posted_as_person: postedAsPerson person { id } \
         event { id name start_at: startAt }
         """
 
