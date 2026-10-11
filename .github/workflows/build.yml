@@ -42,6 +42,10 @@ jobs:
           else
             echo "No audience-kit branch $BRANCH; building against next"
           fi
+          # Once the SDK is the public audience-kit-sdk-swift submodule, check it out too.
+          if git ls-files --stage -- sdk/audience-kit-sdk-swift | grep -q '^160000'; then
+            git submodule update --init sdk/audience-kit-sdk-swift
+          fi
 
       - uses: actions/checkout@v5
         with:
