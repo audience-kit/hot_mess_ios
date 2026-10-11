@@ -42,7 +42,7 @@ struct HotMessAPI: Sendable {
             Documents.reportLocation,
             variables: ["position": coordinates.audienceKit.graphQLValue],
             as: ReportLocationResponse.self
-        ).reportLocation.now
+        ).reportLocation
     }
 
     // MARK: - Geofences
@@ -534,28 +534,35 @@ extension HotMessAPI {
         static let reportLocation = """
         mutation ReportLocation($position: CoordinatesInput!) {
           reportLocation(input: { position: $position }) {
-            now {
-              title image_url: imageUrl
-              venue {
-                \(venueFields)
-                recent_messages: recentMessages(limit: 3) { \(messageFields) }
-                \(venueCoverFields)
-                \(onNowFields)
+            venue {
+              \(venueFields)
+              recent_messages: recentMessages(limit: 3) { \(messageFields) }
+              \(venueCoverFields)
+              \(onNowFields)
+              events { upcoming { nodes { \(eventFields) } } }
+              friends { list { nodes { \(friendFields) } } }
+            }
+            nearby_venues: nearbyVenues { \(venueFields) }
+            locale {
+              id name hero_url: heroUrl chat_open: chatOpen
+              recent_messages: recentMessages(limit: 3) { \(messageFields) }
+              events { upcoming(first: \(Now.localeEventLimit)) { nodes { \(eventFields) } } }
+              friends {
+                list { nodes { \(friendFields) } }
+                venues {
+                  nodes {
+                    venue { \(venueFields) }
+                    friend_count: friendCount
+                    friends { \(friendFields) }
+                  }
+                }
               }
-              venues { \(venueFields) }
-              locale {
-                id name chat_open: chatOpen
-                recent_messages: recentMessages(limit: 3) { \(messageFields) }
+            }
+            audience {
+              ping {
+                my_ping: myPing { \(pingFields) }
+                friend_pings: friendPings { \(pingFields) }
               }
-              events { \(eventFields) }
-              friends { \(friendFields) }
-              friend_venues: friendVenues {
-                venue { \(venueFields) }
-                friend_count: friendCount
-                friends { \(friendFields) }
-              }
-              my_ping: myPing { \(pingFields) }
-              friend_pings: friendPings { \(pingFields) }
             }
           }
         }
@@ -566,7 +573,7 @@ extension HotMessAPI {
           venue(id: $id) {
             \(venueFields) chat_open: chatOpen
             events { upcoming { nodes { \(eventFields) } } }
-            friends { \(friendFields) }
+            friends { list { nodes { \(friendFields) } } }
             social_links: socialLinks { \(socialLinkFields) }
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
             \(venueCoverFields)
@@ -743,8 +750,7 @@ extension HotMessAPI {
 }
 
 struct ReportLocationResponse: Decodable, Sendable {
-    struct Payload: Decodable, Sendable { let now: Now }
-    let reportLocation: Payload
+    let reportLocation: Now
 }
 
 struct VenueFencesResponse: Decodable, Sendable {
@@ -799,10 +805,8 @@ struct VenueWithEvents: Decodable, Sendable {
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // The cover facet is null when the audience has cover off, which
-        // reads as no cover. A missing events facet reads as no events.
-        events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
-        friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
+            events { upcoming { nodes { \(eventFields) } } }
+            friends { list { nodes { \(friendFields) } } }
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
         chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
         recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
