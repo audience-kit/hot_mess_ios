@@ -641,7 +641,7 @@ extension HotMessAPI {
             social_links: socialLinks { \(socialLinkFields) }
             members { \(personSummaryFields) }
             groups { \(personSummaryFields) }
-            tracks { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl }
+            music { tracks { nodes { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl } } }
           }
         }
         """

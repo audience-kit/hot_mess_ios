@@ -94,16 +94,20 @@ enum Fixtures {
           "url": "https://instagram.com/hotmess"
         }
       ],
-      "tracks": [
-        {
-          "id": "2A8E5D13-7C90-4B6F-8D2A-5E1C9B0F3A66",
-          "title": "Set One",
-          "provider": "soundcloud",
-          "provider_url": "https://soundcloud.com/hotmess/set-one",
-          "waveform_url": "https://cdn.hotmess.social/wave.png",
-          "artwork_url": "https://cdn.hotmess.social/art.png"
+      "music": {
+        "tracks": {
+          "nodes": [
+            {
+              "id": "2A8E5D13-7C90-4B6F-8D2A-5E1C9B0F3A66",
+              "title": "Set One",
+              "provider": "soundcloud",
+              "provider_url": "https://soundcloud.com/hotmess/set-one",
+              "waveform_url": "https://cdn.hotmess.social/wave.png",
+              "artwork_url": "https://cdn.hotmess.social/art.png"
+            }
+          ]
         }
-      ],
+      },
       "members": [
         {
           "id": "6E1F3A92-0B4C-4D7E-8F15-3A9C2D6B1E77",

@@ -230,6 +230,23 @@ struct PersonDetailTests {
         #expect(detail.groups.first?.pictureURL == nil)
     }
 
+    @Test("Reads tracks through the music facet, dropping null nodes")
+    func musicTracks() throws {
+        let detail = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "DJ",
+          "music": { "tracks": { "nodes": [
+            null,
+            { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "title": "Late Night", "provider": "soundcloud" }
+          ] } } }
+        """)
+        let empty = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "DJ", "music": { "tracks": null } }
+        """)
+
+        #expect(detail.tracks.map(\.title) == ["Late Night"])
+        #expect(empty.tracks.isEmpty)
+    }
+
     @Test("Leaves collections empty when the API omits them")
     func missingCollections() throws {
         let detail = try decode(PersonDetail.self, from: """
