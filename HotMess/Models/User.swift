@@ -30,10 +30,10 @@ struct User: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// AudienceKit GraphQL objects carry their record's UUID as `id`; `node(id:)`
-/// uses Relay global IDs. The REST endpoints and deep links take the UUID.
+/// AudienceKit GraphQL objects carry their record's UUID as `id`, the same value
+/// `node(id:)`, the REST endpoints and deep links take.
 enum RecordID {
     static func uuid(_ id: String) -> UUID? {
-        UUID(uuidString: id) ?? GlobalID(id).flatMap { UUID(uuidString: $0.modelID) }
+        UUID(uuidString: id)
     }
 }
