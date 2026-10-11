@@ -17,8 +17,8 @@ private enum PingFixtures {
     static let bingo = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
 
     static let venue = """
-    {"id":"\(wildrose)","name":"The Wildrose","address":"1021 E Pike St","phone":null,"distance":null,
-     "point":null,"facebook_id":null,"photo_url":null,"hero_url":null,"is_liked":false}
+    {"id":"\(wildrose)","name":"The Wildrose","distance":null,"point":null,"photo_url":null,"hero_url":null,
+     "profile":{"address":"1021 E Pike St","phone":null,"facebook":{"facebook_id":null,"is_liked":false}}}
     """
 
     static let event = """

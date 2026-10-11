@@ -460,13 +460,16 @@ struct ConnectFacebookRequest: Encodable, Sendable {
 extension HotMessAPI {
     /// The GraphQL documents, with fields aliased to the keys the models decode.
     enum Documents {
+        /// `profile` is the venue's profile facet (see `ListingProfile`).
         static let venueFields = """
-        id name address phone distance point \
-        facebook_id: facebookId photo_url: photoUrl hero_url: heroUrl is_liked: isLiked
+        id name distance point photo_url: photoUrl hero_url: heroUrl \
+        profile { address phone facebook { facebook_id: facebookId is_liked: isLiked } }
         """
 
+        /// `profile` is the person's profile facet (see `ListingProfile`).
         static let personFields = """
-        id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl banner_url: bannerUrl
+        id name photo_url: pictureUrl banner_url: bannerUrl \
+        profile { facebook { facebook_id: facebookId is_liked: isLiked } }
         """
 
         static let friendFields = "id name facebook_id: facebookId presence avatar_url: avatarUrl"
@@ -498,6 +501,10 @@ extension HotMessAPI {
         """
 
         static let socialLinkFields = "id handle provider url"
+
+        /// The social links connection, merged into the profile facet that
+        /// `venueFields` and `personFields` already select.
+        static let profileSocialLinks = "profile { social_links: socialLinks { nodes { \(socialLinkFields) } } }"
 
         /// `venue` is the event's venue facet: the venue under `venue`, null
         /// while it is to be announced (see `EventVenueFacet`).
@@ -574,7 +581,7 @@ extension HotMessAPI {
             \(venueFields) chat_open: chatOpen
             events { upcoming { nodes { \(eventFields) } } }
             friends { list { nodes { \(friendFields) } } }
-            social_links: socialLinks { \(socialLinkFields) }
+            \(profileSocialLinks)
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
             \(venueCoverFields)
             \(onNowFields)
@@ -645,7 +652,7 @@ extension HotMessAPI {
           person(id: $id) {
             \(personFields)
             events { upcoming { nodes { \(eventFields) } } }
-            social_links: socialLinks { \(socialLinkFields) }
+            \(profileSocialLinks)
             members { \(personSummaryFields) }
             groups { \(personSummaryFields) }
             music { tracks { nodes { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl } } }
@@ -794,8 +801,7 @@ struct VenueWithEvents: Decodable, Sendable {
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
-        case events, friends, cover
-        case socialLinks = "social_links"
+        case events, friends, cover, profile
         case chatOpen = "chat_open"
         case recentMessages = "recent_messages"
         case onNow = "on_now"
@@ -805,9 +811,12 @@ struct VenueWithEvents: Decodable, Sendable {
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
         let container = try decoder.container(keyedBy: CodingKeys.self)
-            events { upcoming { nodes { \(eventFields) } } }
-            friends { list { nodes { \(friendFields) } } }
-        socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
+        // The cover facet is null when the audience has cover off, which
+        // reads as no cover. A missing events or friends facet reads as none.
+        events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
+        friends = try container.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
+        // Links come through the profile facet; missing reads as none.
+        socialLinks = try container.decodeIfPresent(ListingProfile.self, forKey: .profile)?.socialLinks ?? []
         chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
         recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
             .map(VenueMessage.init(payload:))

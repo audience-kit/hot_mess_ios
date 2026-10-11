@@ -16,15 +16,16 @@ enum Fixtures {
     {
       "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11",
       "name": "The Stud",
-      "address": "399 9th St",
       "description": "Since 1966.",
-      "phone": "+14158633373",
-      "facebook_id": "112233445566",
       "distance": 412.5,
       "photo_url": "https://cdn.hotmess.social/venues/stud.jpg",
       "hero_url": "https://cdn.hotmess.social/venues/stud-hero.jpg",
       "point": { "x": -122.4099, "y": 37.7726 },
-      "is_liked": true
+      "profile": {
+        "address": "399 9th St",
+        "phone": "+14158633373",
+        "facebook": { "facebook_id": "112233445566", "is_liked": true }
+      }
     }
     """
 
@@ -83,17 +84,21 @@ enum Fixtures {
     {
       "id": "4D9A0C21-8E76-4A5B-B3C2-6F1D8E0A9B33",
       "name": "Rick Mark",
-      "facebook_id": 12345,
       "role": "Resident",
       "photo_url": "https://cdn.hotmess.social/people/rick.jpg",
-      "social_links": [
-        {
-          "id": "9F2B7C40-1A5E-4D83-9E6C-2B0A7D4F8C55",
-          "handle": "hotmess",
-          "provider": "instagram",
-          "url": "https://instagram.com/hotmess"
+      "profile": {
+        "facebook": { "facebook_id": 12345, "is_liked": false },
+        "social_links": {
+          "nodes": [
+            {
+              "id": "9F2B7C40-1A5E-4D83-9E6C-2B0A7D4F8C55",
+              "handle": "hotmess",
+              "provider": "instagram",
+              "url": "https://instagram.com/hotmess"
+            }
+          ]
         }
-      ],
+      },
       "music": {
         "tracks": {
           "nodes": [
@@ -130,14 +135,20 @@ enum Fixtures {
       "chat_open": true,
       "events": { "upcoming": { "nodes": [\(sparseEvent)] } },
       "friends": { "list": { "nodes": [] } },
-      "social_links": [
-        {
-          "id": "0C3B5D14-2E6F-4A90-8B37-5C1E4F8D3A99",
-          "handle": "thestudsf",
-          "provider": "instagram",
-          "url": "https://instagram.com/thestudsf"
+      "profile": {
+        "address": "399 9th St",
+        "facebook": { "facebook_id": null, "is_liked": false },
+        "social_links": {
+          "nodes": [
+            {
+              "id": "0C3B5D14-2E6F-4A90-8B37-5C1E4F8D3A99",
+              "handle": "thestudsf",
+              "provider": "instagram",
+              "url": "https://instagram.com/thestudsf"
+            }
+          ]
         }
-      ]
+      }
     }
     """
 
