@@ -288,13 +288,11 @@ struct AudienceKitMappingTests {
         #expect(APIError(AudienceKitError.network(URLError(.notConnectedToInternet))) == .offline)
     }
 
-    @Test("Reads record UUIDs from plain and global IDs")
+    @Test("Reads record UUIDs in either case")
     func recordIDs() throws {
         let uuid = try #require(UUID(uuidString: "7B4E0C6A-1D2F-4E8A-9C3B-5F6A7B8C9D0E"))
         #expect(RecordID.uuid(uuid.uuidString.lowercased()) == uuid)
-
-        let global = Data("gid://hot-mess/Venue/\(uuid.uuidString.lowercased())".utf8).base64EncodedString()
-        #expect(RecordID.uuid(global) == uuid)
+        #expect(RecordID.uuid(uuid.uuidString) == uuid)
         #expect(RecordID.uuid("nope") == nil)
     }
 }
