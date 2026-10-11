@@ -682,7 +682,7 @@ struct FacetDecodingTests {
     @Test("Reads a locale's upcoming events")
     func localeEvents() throws {
         let response = try decode(LocaleEventsResponse.self, from: """
-        { "locale": { "events": { "upcoming": [\(Fixtures.event), \(Fixtures.sparseEvent)] } } }
+        { "locale": { "events": { "upcoming": { "nodes": [\(Fixtures.event), \(Fixtures.sparseEvent)] } } } }
         """)
 
         #expect(response.locale?.events.map(\.name) == ["Some Thing", "Afters"])

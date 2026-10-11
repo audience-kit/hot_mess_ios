@@ -105,7 +105,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
 }
 
 /// An event's `venue` facet: its venue, or nil while it is to be announced.
-/// The facet itself is null when the audience has venues turned off.
+/// The API always sends the facet; a missing one reads as no venue.
 struct EventVenueFacet: Codable, Hashable, Sendable {
     /// The venue's name, or "To be announced".
     let name: String?
@@ -126,8 +126,9 @@ struct EventVenueFacet: Codable, Hashable, Sendable {
 }
 
 /// The `events` facet on a venue, locale or person: `upcoming`, soonest
-/// first. The facet is null when the audience has events turned off, which
-/// callers read as no events.
+/// first, a connection the documents read as `upcoming { nodes { … } }`.
+/// Without `first` the connection holds every upcoming event. A missing or
+/// null facet or connection reads as no events.
 struct UpcomingEventsFacet: Codable, Hashable, Sendable {
     let upcoming: [Event]
 
@@ -136,10 +137,22 @@ struct UpcomingEventsFacet: Codable, Hashable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey { case upcoming }
+    private enum ConnectionKeys: String, CodingKey { case nodes }
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        upcoming = try container.decodeIfPresent([Event].self, forKey: .upcoming) ?? []
+        if (try? container.decodeNil(forKey: .upcoming)) == false {
+            let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .upcoming)
+            upcoming = try connection.decodeIfPresent([Event].self, forKey: .nodes) ?? []
+        } else {
+            upcoming = []
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        var connection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .upcoming)
+        try connection.encode(upcoming, forKey: .nodes)
     }
 }
 

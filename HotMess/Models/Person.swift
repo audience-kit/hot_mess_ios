@@ -83,7 +83,7 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         person = try Person(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // The person's events facet; null when the audience has events off.
+        // The person's events facet; tolerated when missing, which reads as none.
         events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
         tracks = try container.decodeIfPresent([Track].self, forKey: .tracks) ?? []

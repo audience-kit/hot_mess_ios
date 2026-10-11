@@ -565,7 +565,7 @@ extension HotMessAPI {
         query Venue($id: ID!) {
           venue(id: $id) {
             \(venueFields) chat_open: chatOpen
-            events { upcoming { \(eventFields) } }
+            events { upcoming { nodes { \(eventFields) } } }
             friends { \(friendFields) }
             social_links: socialLinks { \(socialLinkFields) }
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
@@ -578,7 +578,7 @@ extension HotMessAPI {
 
         static let localeEvents = """
         query LocaleEvents($id: ID!) {
-          locale(id: $id) { events { upcoming { \(eventFields) } } }
+          locale(id: $id) { events { upcoming { nodes { \(eventFields) } } } }
         }
         """
 
@@ -637,7 +637,7 @@ extension HotMessAPI {
         query Person($id: ID!) {
           person(id: $id) {
             \(personFields)
-            events { upcoming { \(eventFields) } }
+            events { upcoming { nodes { \(eventFields) } } }
             social_links: socialLinks { \(socialLinkFields) }
             members { \(personSummaryFields) }
             groups { \(personSummaryFields) }
@@ -799,8 +799,8 @@ struct VenueWithEvents: Decodable, Sendable {
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // The events and cover facets are null when the audience has the
-        // module off, which reads as no events and no cover.
+        // The cover facet is null when the audience has cover off, which
+        // reads as no cover. A missing events facet reads as no events.
         events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
         friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
@@ -821,7 +821,7 @@ struct VenueResponse: Decodable, Sendable {
 
 struct LocaleEventsResponse: Decodable, Sendable {
     struct Locale: Decodable, Sendable {
-        /// The locale's upcoming events; empty when the audience has events off.
+        /// The locale's upcoming events; empty when the facet is missing.
         var events: [Event] { eventsFacet?.upcoming ?? [] }
 
         private let eventsFacet: UpcomingEventsFacet?

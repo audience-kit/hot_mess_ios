@@ -114,7 +114,7 @@ enum Fixtures {
       "groups": [
         { "id": "7F2A4B03-1C5D-4E8F-9A26-4B0D3E7C2F88", "name": "The Haus of Mess" }
       ],
-      "events": { "upcoming": [\(sparseEvent)] }
+      "events": { "upcoming": { "nodes": [\(sparseEvent)] } }
     }
     """
 
@@ -124,7 +124,7 @@ enum Fixtures {
       "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11",
       "name": "The Stud",
       "chat_open": true,
-      "events": { "upcoming": [\(sparseEvent)] },
+      "events": { "upcoming": { "nodes": [\(sparseEvent)] } },
       "friends": [],
       "social_links": [
         {
