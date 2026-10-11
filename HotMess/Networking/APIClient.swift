@@ -79,4 +79,14 @@ extension URLSession {
 
         return URLSession(configuration: configuration)
     }()
+
+    /// For chat sockets, which stay open as long as the room is on screen.
+    /// `hotMess`'s two-minute resource timeout ends a WebSocket task too, so a
+    /// room went quiet two minutes after it was opened.
+    static let realtime: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.waitsForConnectivity = true
+
+        return URLSession(configuration: configuration)
+    }()
 }

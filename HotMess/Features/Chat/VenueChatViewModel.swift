@@ -81,6 +81,8 @@ final class VenueChatViewModel {
     private let reportPresence: @MainActor () async -> Void
     private var connection: VenueChatConnection?
     private var presenceTask: Task<Void, Never>?
+    /// Bumped by `stop()`, so a `run()` waiting to reconnect knows it's over.
+    private var generation = 0
 
     /// - Parameter reportPresence: reports the device's position, so the API
     ///   lets the user into the room and keeps them in it.
@@ -151,26 +153,73 @@ final class VenueChatViewModel {
 
     /// Reports the position, connects, and streams messages until the room
     /// closes or the server says the user isn't in the room's place. While it's open,
-    /// the position is reported again every few minutes.
+    /// the position is reported again every few minutes. A dropped or silent
+    /// socket reconnects on its own, after a short wait that grows with each
+    /// failure in a row, so the room keeps hearing who arrives.
     func run() async {
         guard let url else {
             connectionState = .disconnected(String(localized: "Chat isn't available for this build."))
             return
         }
 
-        connectionState = .connecting
-        await reportPresence()
-        guard !Task.isCancelled else { return }
-        startReportingPresence()
+        let generation = self.generation
+        var failures = 0
+        while !Task.isCancelled, generation == self.generation {
+            connectionState = .connecting
+            await reportPresence()
+            guard !Task.isCancelled, generation == self.generation else { return }
+            startReportingPresence()
 
+            switch await follow(url: url) {
+            case .stopped, .notPresent:
+                return
+            case .joined:
+                failures = 0
+            case .dropped:
+                failures += 1
+            }
+
+            // Don't keep the dead socket around while waiting to reconnect.
+            if let connection {
+                self.connection = nil
+                await connection.disconnect()
+            }
+            do {
+                try await Task.sleep(for: Self.reconnectDelay(afterFailures: failures))
+            } catch {
+                return
+            }
+        }
+    }
+
+    /// How long to wait before reconnecting: a second after a room that was
+    /// joined, then doubling with each failure in a row, up to half a minute.
+    nonisolated static func reconnectDelay(afterFailures failures: Int) -> Duration {
+        .seconds(min(30, 1 << min(failures, 5)))
+    }
+
+    private enum Outcome {
+        /// `stop()` or a new run ended it.
+        case stopped
+        case notPresent
+        /// The socket closed after the room was joined.
+        case joined
+        /// The socket closed before the room was joined.
+        case dropped
+    }
+
+    /// One socket's life: connects and applies its frames until it closes.
+    private func follow(url: URL) async -> Outcome {
         let connection = VenueChatConnection(room: room, url: url, token: token)
         self.connection = connection
         await connection.connect()
 
+        var joined = false
         for await event in connection.events {
             guard !Task.isCancelled, self.connection === connection else { break }
             switch event {
             case .connected:
+                joined = true
                 connectionState = .connected
                 await sendPending()
             case let .received(message):
@@ -197,12 +246,15 @@ final class VenueChatViewModel {
                 clearRoom()
                 failPending()
                 await stop()
+                return .notPresent
             case let .disconnected(reason):
                 connectionState = .disconnected(reason)
                 clearRoom()
                 failPending()
+                return joined ? .joined : .dropped
             }
         }
+        return .stopped
     }
 
     /// After "only for people at …": report the position again and reconnect.
@@ -246,6 +298,7 @@ final class VenueChatViewModel {
     }
 
     func stop() async {
+        generation += 1
         presenceTask?.cancel()
         presenceTask = nil
         let previous = connection
