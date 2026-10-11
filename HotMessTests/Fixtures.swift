@@ -125,7 +125,7 @@ enum Fixtures {
       "name": "The Stud",
       "chat_open": true,
       "events": [\(sparseEvent)],
-      "friends": [],
+      "friends": { "list": { "nodes": [] } },
       "social_links": [
         {
           "id": "0C3B5D14-2E6F-4A90-8B37-5C1E4F8D3A99",
@@ -146,7 +146,7 @@ enum Fixtures {
         "id": "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E",
         "name": "SoMa",
         "hero_url": "https://cdn.hotmess.social/now.jpg",
-        "events": [\(sparseEvent)]
+        "events": { "upcoming": { "nodes": [\(sparseEvent)] } }
       }
     }
     """
@@ -158,9 +158,11 @@ enum Fixtures {
         "id": "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E",
         "name": "SoMa",
         "friends": {
-          "list": [
-            { "id": "5B3C8A72-4E19-4D06-B2F5-8C7A1E0D9B22", "name": "Ada Lovelace", "facebook_id": 42 }
-          ]
+          "list": {
+            "nodes": [
+              { "id": "5B3C8A72-4E19-4D06-B2F5-8C7A1E0D9B22", "name": "Ada Lovelace", "facebook_id": 42 }
+            ]
+          }
         }
       }
     }

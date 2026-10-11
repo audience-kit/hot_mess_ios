@@ -99,7 +99,7 @@ struct Now: Decodable, Hashable, Sendable {
             coverCharge = try venueContainer.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
             viewerAdmission = try venueContainer.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
             onNow = venueContainer.decodeAppearances(forKey: .onNow)
-            venueEvents = try venueContainer.decodeIfPresent([Event].self, forKey: .events) ?? []
+            venueEvents = try venueContainer.decodeIfPresent(EventsFacet.self, forKey: .events)?.upcoming ?? []
             venueFriends = try venueContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
         } else {
             recentMessages = []
@@ -122,7 +122,7 @@ struct Now: Decodable, Hashable, Sendable {
             localeMessages = (try localeContainer.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
                 .map(VenueMessage.init(payload:))
             localeHero = try localeContainer.decodeURLIfPresent(forKey: .heroURL)
-            localeEvents = try localeContainer.decodeIfPresent([Event].self, forKey: .events) ?? []
+            localeEvents = try localeContainer.decodeIfPresent(EventsFacet.self, forKey: .events)?.upcoming ?? []
             localeFriends = try localeContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)
         } else {
             locale = nil
@@ -191,4 +191,17 @@ struct Now: Decodable, Hashable, Sendable {
         self.myPing = myPing
         self.friendPings = friendPings
     }
+}
+
+/// The events module's facet on a venue or locale, read as
+/// `events { upcoming { nodes } }`.
+private struct EventsFacet: Decodable, Sendable {
+    let upcoming: [Event]
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        upcoming = try container.decodeIfPresent(Nodes<Event>.self, forKey: .upcoming)?.nodes ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey { case upcoming }
 }

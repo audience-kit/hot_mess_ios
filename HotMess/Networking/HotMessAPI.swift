@@ -534,20 +534,22 @@ extension HotMessAPI {
               recent_messages: recentMessages(limit: 3) { \(messageFields) }
               \(venueCoverFields)
               \(onNowFields)
-              events { \(eventFields) }
-              friends { list { \(friendFields) } }
+              events { upcoming { nodes { \(eventFields) } } }
+              friends { list { nodes { \(friendFields) } } }
             }
             nearby_venues: nearbyVenues { \(venueFields) }
             locale {
               id name hero_url: heroUrl chat_open: chatOpen
               recent_messages: recentMessages(limit: 3) { \(messageFields) }
-              events { \(eventFields) }
+              events { upcoming(first: \(Now.localeEventLimit)) { nodes { \(eventFields) } } }
               friends {
-                list { \(friendFields) }
+                list { nodes { \(friendFields) } }
                 venues {
-                  venue { \(venueFields) }
-                  friend_count: friendCount
-                  friends { \(friendFields) }
+                  nodes {
+                    venue { \(venueFields) }
+                    friend_count: friendCount
+                    friends { \(friendFields) }
+                  }
                 }
               }
             }
@@ -566,7 +568,7 @@ extension HotMessAPI {
           venue(id: $id) {
             \(venueFields) chat_open: chatOpen
             events { \(eventFields) }
-            friends { list { \(friendFields) } }
+            friends { list { nodes { \(friendFields) } } }
             social_links: socialLinks { \(socialLinkFields) }
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
             \(venueCoverFields)
