@@ -60,37 +60,13 @@ actor VenueChatConnection {
     }
 
     /// What one incoming frame means to the connection.
-    enum Incoming: Sendable {
-        /// The server confirmed `GraphQLChannel`: time to execute the subscription.
-        case confirmed
-        case events([Event])
-    }
+    typealias Incoming = GraphQLCable.Incoming<Event>
 
-    private let url: URL
-    private let room: ChatRoom
-    private let token: String?
-    private let session: URLSession
-    private let encoder = JSONEncoder()
-    private nonisolated let continuation: AsyncStream<Event>.Continuation
-
-    /// Built once: Action Cable matches every command to its subscription by
-    /// this exact string, and a Swift dictionary serializes its keys in a
-    /// different order from one instance to the next.
-    private let identifier: String
-    private var socket: URLSessionWebSocketTask?
-    private var receiveTask: Task<Void, Never>?
-    private var watchdogTask: Task<Void, Never>?
-    /// When the server last sent anything. Action Cable pings every 3
-    /// seconds, so a long silence means the socket is dead even if it looks open
-    /// (a Wi-Fi to cellular handoff, say).
-    private var lastHeard = ContinuousClock.now
-
-    /// How long without a frame before the socket counts as gone.
-    static let silenceLimit: Duration = .seconds(12)
+    private let socket: GraphQLCableSocket<Event>
 
     /// Every event this connection produces, in order. The stream finishes on
     /// `disconnect()`, so a reconnect means a new `VenueChatConnection`.
-    nonisolated let events: AsyncStream<Event>
+    nonisolated var events: AsyncStream<Event> { socket.events }
 
     /// - Parameters:
     ///   - audienceID: the audience the subscription runs in, as for
@@ -105,52 +81,29 @@ actor VenueChatConnection {
         channelID: String = UUID().uuidString.lowercased(),
         session: URLSession = .realtime
     ) {
-        self.room = room
-        identifier = Self.identifier(audienceID: audienceID, channelID: channelID)
-        self.url = url
-        self.token = token
-        self.session = session
-
-        let (stream, continuation) = AsyncStream<Event>.makeStream()
-        events = stream
-        self.continuation = continuation
+        socket = GraphQLCableSocket(
+            url: url,
+            token: token,
+            identifier: Self.identifier(audienceID: audienceID, channelID: channelID),
+            executeData: Self.executeData(for: room),
+            session: session,
+            name: "Chat",
+            closed: { .disconnected($0) },
+            parse: { Self.incoming(from: $0) }
+        )
     }
 
-    func connect() {
-        guard socket == nil else { return }
-
-        var request = URLRequest(url: url)
-        if let token {
-            request.setValue("JWT \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        let socket = session.webSocketTask(with: request)
-        self.socket = socket
-        socket.resume()
-
-        lastHeard = .now
-        receiveTask = Task { await self.receiveLoop() }
-        watchdogTask = Task { await self.watchForSilence() }
-
-        Task { await self.subscribe() }
+    func connect() async {
+        await socket.connect()
     }
 
-    func disconnect() {
-        receiveTask?.cancel()
-        receiveTask = nil
-        watchdogTask?.cancel()
-        watchdogTask = nil
-        socket?.cancel(with: .goingAway, reason: nil)
-        socket = nil
-        continuation.finish()
+    func disconnect() async {
+        await socket.disconnect()
     }
 
-    /// `GraphQLChannel`'s identifier. Action Cable identifies a subscription by
-    /// a JSON *string*, not an object, so the keys are sorted to make it the
-    /// same every time.
+    /// `GraphQLChannel`'s identifier (see `GraphQLCable`).
     static func identifier(audienceID: String, channelID: String) -> String {
-        let subscription = ["channel": "GraphQLChannel", "audience_id": audienceID, "channelId": channelID]
-        return json(subscription) ?? "{}"
+        GraphQLCable.identifier(audienceID: audienceID, channelID: channelID)
     }
 
     /// The room's subscription, aliased to `room` whichever field it is, with
@@ -185,102 +138,11 @@ actor VenueChatConnection {
     /// `execute`'s data, a JSON string inside the `message` command: the
     /// room's subscription and its variables.
     static func executeData(for room: ChatRoom) -> String {
-        let data: [String: Any] = [
-            "action": "execute",
-            "operationName": "ChatRoom",
-            "query": subscriptionDocument(for: room),
-            "variables": ["id": room.id.uuidString.lowercased()],
-        ]
-        return json(data) ?? "{}"
-    }
-
-    private static func json(_ object: Any) -> String? {
-        guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .withoutEscapingSlashes]) else {
-            return nil
-        }
-        return String(decoding: data, as: UTF8.self)
-    }
-
-    // MARK: - Private
-
-    private func subscribe() async {
-        do {
-            try await write(OutgoingFrame(command: "subscribe", identifier: identifier, data: nil))
-        } catch {
-            continuation.yield(.disconnected(error.localizedDescription))
-        }
-    }
-
-    /// Runs the room's subscription, once the channel is confirmed: the
-    /// server ignores commands for a subscription it hasn't confirmed.
-    private func execute() async {
-        do {
-            try await write(OutgoingFrame(command: "message", identifier: identifier, data: Self.executeData(for: room)))
-        } catch {
-            continuation.yield(.disconnected(error.localizedDescription))
-        }
-    }
-
-    private func write(_ frame: OutgoingFrame) async throws {
-        guard let socket else { return }
-
-        let data = try encoder.encode(frame)
-        try await socket.send(.string(String(decoding: data, as: UTF8.self)))
-    }
-
-    private func receiveLoop() async {
-        while !Task.isCancelled, let socket = self.socket {
-            do {
-                let message = try await socket.receive()
-                await handle(message)
-            } catch {
-                guard !Task.isCancelled else { return }
-
-                Log.realtime.error("Chat socket closed: \(error.localizedDescription, privacy: .public)")
-                continuation.yield(.disconnected(error.localizedDescription))
-                return
-            }
-        }
-    }
-
-    /// Ends a socket that has gone quiet, so the room can reconnect.
-    private func watchForSilence() async {
-        while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, socket != nil else { return }
-            guard ContinuousClock.now - lastHeard > Self.silenceLimit else { continue }
-
-            Log.realtime.error("Chat socket went quiet; closing it")
-            receiveTask?.cancel()
-            receiveTask = nil
-            socket?.cancel(with: .goingAway, reason: nil)
-            socket = nil
-            continuation.yield(.disconnected(nil))
-            return
-        }
-    }
-
-    private func handle(_ message: URLSessionWebSocketTask.Message) async {
-        lastHeard = .now
-        let data: Data
-
-        switch message {
-        case let .string(text):
-            data = Data(text.utf8)
-        case let .data(payload):
-            data = payload
-        @unknown default:
-            return
-        }
-
-        switch Self.incoming(from: data) {
-        case .confirmed:
-            await execute()
-        case let .events(events):
-            for event in events {
-                continuation.yield(event)
-            }
-        }
+        GraphQLCable.executeData(
+            operationName: "ChatRoom",
+            query: subscriptionDocument(for: room),
+            variables: ["id": room.id.uuidString.lowercased()]
+        )
     }
 
     /// The events one incoming frame means; none for a frame that means
@@ -294,20 +156,17 @@ actor VenueChatConnection {
     }
 
     static func incoming(from data: Data) -> Incoming {
-        guard let frame = try? JSONDecoder().decode(IncomingFrame.self, from: data) else { return .events([]) }
-
-        switch frame.type {
-        case "confirm_subscription":
+        switch GraphQLCable.Frame<GraphQLResult>(data: data) {
+        case .confirmed:
             return .confirmed
-        case "reject_subscription":
+        case .rejected:
             // Another audience's token, or someone the audience banned.
             return .events([.notPresent])
-        case "disconnect":
+        case .disconnect:
             return .events([.disconnected(nil)])
-        case .none:
-            guard let result = frame.result else { return .events([]) }
-            return .events(events(from: result, more: frame.more ?? true))
-        default:
+        case let .result(result, more):
+            return .events(events(from: result, more: more))
+        case .ignored:
             // "welcome", "ping".
             return .events([])
         }
@@ -336,37 +195,7 @@ actor VenueChatConnection {
 
     // MARK: - Wire format
 
-    private struct OutgoingFrame: Encodable {
-        let command: String
-        let identifier: String
-        let data: String?
-    }
-
-    /// An Action Cable frame. Its `message` is a GraphQL result for a frame
-    /// with no `type`, and Action Cable's keep-alive counter for a ping, so
-    /// it's decoded leniently.
-    private struct IncomingFrame: Decodable {
-        let type: String?
-        let result: GraphQLResult?
-        let more: Bool?
-
-        enum CodingKeys: String, CodingKey {
-            case type, message
-        }
-
-        private struct Envelope: Decodable {
-            let result: GraphQLResult?
-            let more: Bool?
-        }
-
-        init(from decoder: any Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            type = try? container.decodeIfPresent(String.self, forKey: .type)
-            let envelope = (try? container.decodeIfPresent(Envelope.self, forKey: .message)) ?? nil
-            result = envelope?.result
-            more = envelope?.more
-        }
-    }
+    private typealias Lenient<Value: Decodable> = GraphQLCable.Lenient<Value>
 
     /// `{ data: { room }, errors }`.
     private struct GraphQLResult: Decodable {
@@ -378,14 +207,12 @@ actor VenueChatConnection {
 
         enum CodingKeys: String, CodingKey { case data, errors }
         private enum DataKeys: String, CodingKey { case room }
-        private struct ErrorWire: Decodable { let message: String? }
 
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             let data = try? container.nestedContainer(keyedBy: DataKeys.self, forKey: .data)
             room = (try? data?.decodeIfPresent(RoomEvent.self, forKey: .room)) ?? nil
-            errors = ((try? container.decodeIfPresent([Lenient<ErrorWire>].self, forKey: .errors)) ?? nil)?
-                .map { $0.value?.message ?? "error" } ?? []
+            errors = GraphQLCable.errors(in: container, forKey: .errors)
         }
     }
 
@@ -500,16 +327,6 @@ actor VenueChatConnection {
             message?.presence = ((try? container.decodeIfPresent(String.self, forKey: .senderPresence)) ?? nil)
                 .flatMap { PresenceState(wire: $0) }
             self.message = message
-        }
-    }
-
-    /// Decodes as `nil` instead of throwing, so one malformed array element
-    /// doesn't fail the whole array.
-    private struct Lenient<Value: Decodable>: Decodable {
-        let value: Value?
-
-        init(from decoder: any Decoder) throws {
-            value = try? Value(from: decoder)
         }
     }
 
