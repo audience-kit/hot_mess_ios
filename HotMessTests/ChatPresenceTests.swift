@@ -376,3 +376,19 @@ struct HereNowTests {
         #expect(viewModel.pinnedAnnouncement == nil)
     }
 }
+
+@Suite("Chat room reconnecting")
+struct ChatReconnectTests {
+    @Test("Waits a second after a joined room drops, then doubles up to half a minute")
+    func reconnectDelay() {
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 0) == .seconds(1))
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 1) == .seconds(2))
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 4) == .seconds(16))
+        #expect(VenueChatViewModel.reconnectDelay(afterFailures: 9) == .seconds(30))
+    }
+
+    @Test("Chat sockets don't share the API's two-minute resource timeout")
+    func realtimeSession() {
+        #expect(URLSession.realtime.configuration.timeoutIntervalForResource > 3600)
+    }
+}
