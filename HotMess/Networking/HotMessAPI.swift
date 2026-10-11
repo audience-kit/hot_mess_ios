@@ -525,12 +525,12 @@ extension HotMessAPI {
         """
 
         /// Tonight's cover at a venue and the user's pass for it, under the
-        /// venue's cover facet (see `CoverFacet`).
+        /// venue's cover facet inside its tickets facet (see `TicketsFacet`).
         static let venueCoverFields = """
-        cover { \
+        tickets { cover { \
         cover_charge: charge { \(coverChargeFields) } \
         viewer_admission: viewerAdmission { \(admissionFields) } \
-        }
+        } }
         """
 
         static let venueFences = """
@@ -602,7 +602,7 @@ extension HotMessAPI {
           events { event(id: $id) {
             \(eventFields) people { lineup { nodes { \(personFields) } } }
             ping { friend_pings: friendPings { \(pingFields) } }
-            cover { cover_charge: charge { \(coverChargeFields) } }
+            tickets { cover { cover_charge: charge { \(coverChargeFields) } } }
             venue_cover: venue { venue { \(venueCoverFields) } }
           } }
         }
@@ -813,14 +813,15 @@ struct VenueWithEvents: Decodable, Sendable {
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
-        case events, friends, cover, profile, ping, chat, people
+        case events, friends, tickets, profile, ping, chat, people
     }
 
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // The cover facet is null when the audience has cover off, which
-        // reads as no cover. A missing events or friends facet reads as none.
+        // The tickets facet (holding the cover facet) is left out where the
+        // audience has neither module, which reads as no cover. A missing
+        // events or friends facet reads as none.
         events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
         friends = try container.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
         // Links come through the profile facet; missing reads as none.
@@ -830,7 +831,7 @@ struct VenueWithEvents: Decodable, Sendable {
         let chat = try container.decodeIfPresent(ChatFacet.self, forKey: .chat)
         chatOpen = chat?.open ?? false
         recentMessages = chat?.recentMessages ?? []
-        let cover = try container.decodeIfPresent(CoverFacet.self, forKey: .cover)
+        let cover = try container.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover
         coverCharge = cover?.coverCharge
         viewerAdmission = cover?.viewerAdmission
         // Who's on comes through the people facet; missing reads as no one.

@@ -706,10 +706,10 @@ struct FacetDecodingTests {
         #expect(again.id == event.id)
     }
 
-    @Test("Null events and cover facets read as none")
+    @Test("Null events and missing tickets facets read as none")
     func nullFacets() throws {
         let venue = try decode(VenueWithEvents.self, from: """
-        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "events": null, "cover": null }
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "events": null }
         """)
         let person = try decode(PersonDetail.self, from: """
         { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Nobody", "events": null }
@@ -736,7 +736,7 @@ struct FacetDecodingTests {
     func venueCover() throws {
         let venue = try decode(VenueWithEvents.self, from: """
         { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud",
-          "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } }
+          "tickets": { "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } } }
         """)
 
         #expect(venue.coverCharge?.totalCents == 1112)
@@ -747,8 +747,8 @@ struct FacetDecodingTests {
     func eventCover() throws {
         let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
         let detail = try decode(EventDetail.self, from: base + """
-        , "cover": { "cover_charge": \(Self.charge) },
-          "venue_cover": { "venue": { "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } } } }
+        , "tickets": { "cover": { "cover_charge": \(Self.charge) } },
+          "venue_cover": { "venue": { "tickets": { "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } } } } }
         """)
 
         #expect(detail.coverCharge?.night == "2026-10-09")
@@ -760,7 +760,7 @@ struct FacetDecodingTests {
     @Test("An event with no venue or no cover module has no venue cover")
     func eventWithoutVenueCover() throws {
         let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
-        let tba = try decode(EventDetail.self, from: base + #", "cover": null, "venue_cover": { "venue": null } }"#)
+        let tba = try decode(EventDetail.self, from: base + #", "tickets": { "cover": { "cover_charge": null } }, "venue_cover": { "venue": null } }"#)
         let off = try decode(EventDetail.self, from: base + #", "venue_cover": null }"#)
 
         #expect(tba.coverCharge == nil)

@@ -212,14 +212,14 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case people, cover, ping
+        case people, tickets, ping
         case venueCover = "venue_cover"
     }
 
     /// `venue_cover` is the event's venue facet again, holding only the
-    /// venue's cover facet.
+    /// venue's tickets facet and the cover facet inside it.
     private enum VenueFacetKeys: String, CodingKey { case venue }
-    private enum VenueKeys: String, CodingKey { case cover }
+    private enum VenueKeys: String, CodingKey { case tickets }
 
     init(from decoder: any Decoder) throws {
         event = try Event(from: decoder)
@@ -227,14 +227,14 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         // Who's on comes through the people facet; missing reads as no one.
         people = try container.decodeIfPresent(EventPeopleFacet.self, forKey: .people)?.lineup ?? []
-        coverCharge = try container.decodeIfPresent(CoverFacet.self, forKey: .cover)?.coverCharge
+        coverCharge = try container.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover?.coverCharge
 
         var venueCover: CoverFacet?
         if (try? container.decodeNil(forKey: .venueCover)) == false,
            let facet = try? container.nestedContainer(keyedBy: VenueFacetKeys.self, forKey: .venueCover),
            (try? facet.decodeNil(forKey: .venue)) == false,
            let venue = try? facet.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
-            venueCover = try venue.decodeIfPresent(CoverFacet.self, forKey: .cover)
+            venueCover = try venue.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover
         }
         venueCoverTonight = venueCover?.coverCharge
         viewerAdmission = venueCover?.viewerAdmission

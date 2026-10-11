@@ -63,7 +63,7 @@ struct Now: Decodable, Hashable, Sendable {
     }
 
     private enum VenueKeys: String, CodingKey {
-        case events, friends, cover, chat, people
+        case events, friends, tickets, chat, people
     }
 
     private enum LocaleKeys: String, CodingKey {
@@ -90,8 +90,9 @@ struct Now: Decodable, Hashable, Sendable {
            let venueContainer = try? container.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
             // The chat and people facets; missing reads as no lines and no one on.
             recentMessages = try venueContainer.decodeIfPresent(ChatFacet.self, forKey: .chat)?.recentMessages ?? []
-            // The venue's cover facet, null when the audience has cover off.
-            let cover = try venueContainer.decodeIfPresent(CoverFacet.self, forKey: .cover)
+            // The venue's cover facet, inside its tickets facet; missing reads
+            // as no cover.
+            let cover = try venueContainer.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover
             coverCharge = cover?.coverCharge
             viewerAdmission = cover?.viewerAdmission
             onNow = (try? venueContainer.decodeIfPresent(VenuePeopleFacet.self, forKey: .people))?.onNow ?? []
