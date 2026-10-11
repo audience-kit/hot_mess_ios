@@ -83,7 +83,8 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         person = try Person(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
+        // The person's events facet; null when the audience has events off.
+        events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
         tracks = try container.decodeIfPresent([Track].self, forKey: .tracks) ?? []
         members = try container.decodeIfPresent([Person].self, forKey: .members) ?? []
@@ -94,7 +95,7 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         try person.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(events, forKey: .events)
+        try container.encode(UpcomingEventsFacet(upcoming: events), forKey: .events)
         try container.encode(socialLinks, forKey: .socialLinks)
         try container.encode(tracks, forKey: .tracks)
         try container.encode(members, forKey: .members)

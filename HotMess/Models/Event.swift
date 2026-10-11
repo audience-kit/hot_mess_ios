@@ -56,11 +56,27 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         startDate = try container.decode(Date.self, forKey: .startDate)
         endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
         facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
-        venue = try container.decodeIfPresent(Venue.self, forKey: .venue)
+        venue = try container.decodeIfPresent(EventVenueFacet.self, forKey: .venue)?.venue
         person = try container.decodeIfPresent(Person.self, forKey: .person)
         coverURL = try container.decodeURLIfPresent(forKey: .coverURL)
         isFeatured = try container.decodeIfPresent(Bool.self, forKey: .isFeatured) ?? false
         rsvp = try container.decodeIfPresent(RSVP.self, forKey: .rsvp) ?? .unsure
+    }
+
+    /// Writes the shape `init(from:)` reads, with `venue` as the venue facet.
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(startDate, forKey: .startDate)
+        try container.encodeIfPresent(endDate, forKey: .endDate)
+        try container.encodeIfPresent(facebookID, forKey: .facebookID)
+        try container.encode(EventVenueFacet(venue: venue), forKey: .venue)
+        try container.encodeIfPresent(person, forKey: .person)
+        try container.encodeIfPresent(coverURL, forKey: .coverURL)
+        try container.encode(isFeatured, forKey: .isFeatured)
+        try container.encode(rsvp, forKey: .rsvp)
     }
 
     init(
@@ -85,6 +101,45 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         self.coverURL = coverURL
         self.isFeatured = isFeatured
         self.rsvp = rsvp
+    }
+}
+
+/// An event's `venue` facet: its venue, or nil while it is to be announced.
+/// The facet itself is null when the audience has venues turned off.
+struct EventVenueFacet: Codable, Hashable, Sendable {
+    /// The venue's name, or "To be announced".
+    let name: String?
+    let venue: Venue?
+
+    init(venue: Venue?) {
+        self.name = venue?.name ?? Event.toBeAnnounced
+        self.venue = venue
+    }
+
+    enum CodingKeys: String, CodingKey { case name, venue }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        venue = try container.decodeIfPresent(Venue.self, forKey: .venue)
+    }
+}
+
+/// The `events` facet on a venue, locale or person: `upcoming`, soonest
+/// first. The facet is null when the audience has events turned off, which
+/// callers read as no events.
+struct UpcomingEventsFacet: Codable, Hashable, Sendable {
+    let upcoming: [Event]
+
+    init(upcoming: [Event] = []) {
+        self.upcoming = upcoming
+    }
+
+    enum CodingKeys: String, CodingKey { case upcoming }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        upcoming = try container.decodeIfPresent([Event].self, forKey: .upcoming) ?? []
     }
 }
 
@@ -114,32 +169,32 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case people
+        case people, cover
         case friendPings = "friend_pings"
-        case coverCharge = "cover_charge"
         case venueCover = "venue_cover"
     }
 
-    private enum VenueCoverKeys: String, CodingKey {
-        case coverCharge = "cover_charge"
-        case viewerAdmission = "viewer_admission"
-    }
+    /// `venue_cover` is the event's venue facet again, holding only the
+    /// venue's cover facet.
+    private enum VenueFacetKeys: String, CodingKey { case venue }
+    private enum VenueKeys: String, CodingKey { case cover }
 
     init(from decoder: any Decoder) throws {
         event = try Event(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
         people = try container.decodeIfPresent([Person].self, forKey: .people) ?? []
-        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+        coverCharge = try container.decodeIfPresent(CoverFacet.self, forKey: .cover)?.coverCharge
 
+        var venueCover: CoverFacet?
         if (try? container.decodeNil(forKey: .venueCover)) == false,
-           let venue = try? container.nestedContainer(keyedBy: VenueCoverKeys.self, forKey: .venueCover) {
-            venueCoverTonight = try venue.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
-            viewerAdmission = try venue.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
-        } else {
-            venueCoverTonight = nil
-            viewerAdmission = nil
+           let facet = try? container.nestedContainer(keyedBy: VenueFacetKeys.self, forKey: .venueCover),
+           (try? facet.decodeNil(forKey: .venue)) == false,
+           let venue = try? facet.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
+            venueCover = try venue.decodeIfPresent(CoverFacet.self, forKey: .cover)
         }
+        venueCoverTonight = venueCover?.coverCharge
+        viewerAdmission = venueCover?.viewerAdmission
         friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
 

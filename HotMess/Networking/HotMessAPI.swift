@@ -499,10 +499,12 @@ extension HotMessAPI {
 
         static let socialLinkFields = "id handle provider url"
 
+        /// `venue` is the event's venue facet: the venue under `venue`, null
+        /// while it is to be announced (see `EventVenueFacet`).
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
         cover_photo_url: coverPhotoUrl is_featured: isFeatured rsvp: viewerRsvp \
-        venue { \(venueFields) }
+        venue { name venue { \(venueFields) } }
         """
 
         static let coverChargeFields = "amount_cents: amountCents total_cents: totalCents currency night from payable"
@@ -514,10 +516,13 @@ extension HotMessAPI {
         venue { id name photo_url: photoUrl } event { id name }
         """
 
-        /// Tonight's cover at a venue and the user's pass for it.
+        /// Tonight's cover at a venue and the user's pass for it, under the
+        /// venue's cover facet (see `CoverFacet`).
         static let venueCoverFields = """
-        cover_charge: coverCharge { \(coverChargeFields) } \
-        viewer_admission: viewerAdmission { \(admissionFields) }
+        cover { \
+        cover_charge: charge { \(coverChargeFields) } \
+        viewer_admission: viewerAdmission { \(admissionFields) } \
+        }
         """
 
         static let venueFences = """
@@ -560,7 +565,7 @@ extension HotMessAPI {
         query Venue($id: ID!) {
           venue(id: $id) {
             \(venueFields) chat_open: chatOpen
-            events { \(eventFields) }
+            events { upcoming { \(eventFields) } }
             friends { \(friendFields) }
             social_links: socialLinks { \(socialLinkFields) }
             recent_messages: recentMessages(limit: 3) { \(messageFields) }
@@ -573,7 +578,7 @@ extension HotMessAPI {
 
         static let localeEvents = """
         query LocaleEvents($id: ID!) {
-          locale(id: $id) { events { \(eventFields) } }
+          locale(id: $id) { events { upcoming { \(eventFields) } } }
         }
         """
 
@@ -582,8 +587,8 @@ extension HotMessAPI {
           event(id: $id) {
             \(eventFields) people { \(personFields) }
             friend_pings: friendPings { \(pingFields) }
-            cover_charge: coverCharge { \(coverChargeFields) }
-            venue_cover: venue { \(venueCoverFields) }
+            cover { cover_charge: charge { \(coverChargeFields) } }
+            venue_cover: venue { venue { \(venueCoverFields) } }
           }
         }
         """
@@ -632,7 +637,7 @@ extension HotMessAPI {
         query Person($id: ID!) {
           person(id: $id) {
             \(personFields)
-            events { \(eventFields) }
+            events { upcoming { \(eventFields) } }
             social_links: socialLinks { \(socialLinkFields) }
             members { \(personSummaryFields) }
             groups { \(personSummaryFields) }
@@ -783,12 +788,10 @@ struct VenueWithEvents: Decodable, Sendable {
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
-        case events, friends
+        case events, friends, cover
         case socialLinks = "social_links"
         case chatOpen = "chat_open"
         case recentMessages = "recent_messages"
-        case coverCharge = "cover_charge"
-        case viewerAdmission = "viewer_admission"
         case onNow = "on_now"
         case friendPings = "friend_pings"
     }
@@ -796,14 +799,17 @@ struct VenueWithEvents: Decodable, Sendable {
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
+        // The events and cover facets are null when the audience has the
+        // module off, which reads as no events and no cover.
+        events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
         friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
         socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
         chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
         recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
             .map(VenueMessage.init(payload:))
-        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
-        viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+        let cover = try container.decodeIfPresent(CoverFacet.self, forKey: .cover)
+        coverCharge = cover?.coverCharge
+        viewerAdmission = cover?.viewerAdmission
         onNow = container.decodeAppearances(forKey: .onNow)
         friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
     }
@@ -814,7 +820,15 @@ struct VenueResponse: Decodable, Sendable {
 }
 
 struct LocaleEventsResponse: Decodable, Sendable {
-    struct Locale: Decodable, Sendable { let events: [Event] }
+    struct Locale: Decodable, Sendable {
+        /// The locale's upcoming events; empty when the audience has events off.
+        var events: [Event] { eventsFacet?.upcoming ?? [] }
+
+        private let eventsFacet: UpcomingEventsFacet?
+
+        private enum CodingKeys: String, CodingKey { case eventsFacet = "events" }
+    }
+
     let locale: Locale?
 }
 
