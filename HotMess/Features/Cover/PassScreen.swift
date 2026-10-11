@@ -184,7 +184,7 @@ struct PassScreen: View {
     }
 
     private var photoURL: URL? {
-        admission.userPhotoURL ?? model.session.userID.map(model.configuration.avatarURL(forUserID:))
+        admission.userPhotoURL ?? model.session.user?.avatarURL
     }
 
     private var nightLine: String {

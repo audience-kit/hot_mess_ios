@@ -49,6 +49,23 @@ final class LocationProvider {
     private var venueFencesFetchedAt: Date?
     private var isPlanningGeofences = false
 
+    /// Fixes, beacons, geofences, chat and the Now screen all report the
+    /// position; they share one request per place. See `now(sentAfter:)`.
+    private var reportThrottle = ReportThrottle(
+        minimumDistance: LocationProvider.reportDistance,
+        maximumAge: LocationProvider.reportMaxAge
+    )
+    private var report: Report?
+    /// The locale is looked up once per place, however often it's asked.
+    private var localeThrottle = ReportThrottle(minimumDistance: LocationProvider.localeLookupDistance)
+    private var localeLookup: Task<Void, Never>?
+
+    /// The latest position report, in flight or answered.
+    private struct Report {
+        let sentAt: Date
+        let task: Task<Now, any Error>
+    }
+
     /// Remembered so the first launch after a cold start has a locale to work
     /// with before Core Location produces a fix.
     private static let storedLocaleIDKey = "localeId"
@@ -90,6 +107,13 @@ final class LocationProvider {
     static let freshFixAge: TimeInterval = 60
     /// Venue envelopes are downloaded again after this long.
     static let venueFencesMaxAge: TimeInterval = 6 * 60 * 60
+    /// The position is reported again once it's moved this far…
+    static let reportDistance: CLLocationDistance = 50
+    /// …or the last report is this old.
+    static let reportMaxAge: TimeInterval = 60
+    /// Locales are cities: the locale is looked up again once the position
+    /// has moved this far.
+    static let localeLookupDistance: CLLocationDistance = 500
 
     var isAuthorized: Bool {
         authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
@@ -144,8 +168,11 @@ final class LocationProvider {
         }
 
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            // One request answers everyone waiting: geofence events tend to
+            // arrive several at once, and each asked for its own fix.
+            let isAsking = !pendingFixes.isEmpty
             pendingFixes[id] = continuation
-            manager.requestLocation()
+            if !isAsking { manager.requestLocation() }
         }
     }
 
@@ -159,17 +186,30 @@ final class LocationProvider {
         waiting.forEach { $0.resume() }
     }
 
-    /// Asks the API which locale the current position belongs to.
+    /// Asks the API which locale the current position belongs to, once per
+    /// place: a lookup in flight is waited on rather than repeated, and the
+    /// position must move `localeLookupDistance` before it's asked again.
     func refreshLocale() async {
-        do {
-            guard let resolved = try await api.closestLocale(to: coordinates),
-                  resolved.id != locale?.id else { return }
+        if let localeLookup { await localeLookup.value }
+        guard let coordinates, localeThrottle.isDue(coordinates) else { return }
 
-            locale = resolved
-            Self.persist(resolved)
-        } catch {
-            Log.location.error("Locale lookup failed: \(error.localizedDescription, privacy: .public)")
+        localeThrottle.sent(coordinates)
+        let lookup = Task { @MainActor [api, weak self] in
+            do {
+                let resolved = try await api.closestLocale(to: coordinates)
+                guard let self, let resolved, resolved.id != locale?.id else { return }
+
+                locale = resolved
+                LocationProvider.persist(resolved)
+            } catch {
+                // Ask again next time rather than wait to move.
+                self?.localeThrottle.reset()
+                Log.location.error("Locale lookup failed: \(error.localizedDescription, privacy: .public)")
+            }
         }
+        localeLookup = lookup
+        await lookup.value
+        if localeLookup == lookup { localeLookup = nil }
     }
 
     // MARK: - Testing
@@ -186,7 +226,7 @@ final class LocationProvider {
 
         coordinates = tracker.current
         await refreshLocale()
-        await reportPosition()
+        await reportPosition(force: true)
     }
 
     /// Goes back to the device's real position.
@@ -197,7 +237,7 @@ final class LocationProvider {
         guard coordinates != nil else { return }
 
         await refreshLocale()
-        await reportPosition()
+        await reportPosition(force: true)
     }
 
     // MARK: - Delegate plumbing
@@ -223,8 +263,6 @@ final class LocationProvider {
         } else {
             Task { await refreshPosition() }
         }
-
-        Task { await refreshLocale() }
 
         refreshTask?.cancel()
         refreshTask = Task { @MainActor [weak self] in
@@ -282,17 +320,53 @@ final class LocationProvider {
         Task { await reportPosition() }
     }
 
-    /// Reports the current position now. Venue chat calls this so the API
-    /// knows the user is still at the venue.
+    /// Reports the current position, unless it was reported from about here
+    /// in the last minute. Venue chat calls this so the API knows the user is
+    /// still at the venue.
     func reportCurrentPosition() async {
         await reportPosition()
     }
 
-    private func reportPosition() async {
-        guard let coordinates else { return }
+    /// What's happening where the user is, from reporting the position, or
+    /// `nil` with no position yet.
+    ///
+    /// Everything that reports the position comes through here and shares
+    /// one request: a report sent from within `reportDistance` in the last
+    /// `reportMaxAge`, in flight or answered, is used again rather than sent
+    /// again or cancelled, unless it was sent before `sentAfter` (a pull to
+    /// refresh, or Pings that changed since).
+    func now(sentAfter: Date? = nil) async throws -> Now? {
+        guard let coordinates else { return nil }
 
+        if let report, !reportThrottle.isDue(coordinates),
+           sentAfter.map({ report.sentAt >= $0 }) ?? true {
+            return try await report.task.value
+        }
+
+        let sentAt = Date.now
+        reportThrottle.sent(coordinates, at: sentAt)
+        let task = Task { @MainActor [api, weak self] () throws -> Now in
+            do {
+                return try await api.now(near: coordinates)
+            } catch {
+                // The next caller tries again rather than sharing the failure.
+                if let self, report?.sentAt == sentAt {
+                    report = nil
+                    reportThrottle.reset()
+                }
+                throw error
+            }
+        }
+        report = Report(sentAt: sentAt, task: task)
+        return try await task.value
+    }
+
+    /// Reports the position. `force` sends it even if about here was reported
+    /// recently: pretending moves the user into a venue's envelope that may be
+    /// only metres away.
+    private func reportPosition(force: Bool = false) async {
         do {
-            try await api.reportLocation(coordinates)
+            _ = try await now(sentAfter: force ? .now : nil)
         } catch {
             Log.location.error("Location report failed: \(error.localizedDescription, privacy: .public)")
         }

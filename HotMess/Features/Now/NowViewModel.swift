@@ -19,11 +19,20 @@ final class NowViewModel {
         self.friends = friends
     }
 
-    func load(near coordinates: Coordinates?) async {
+    /// Loads what's happening where the user is. The position report behind
+    /// it is shared with everything else that reports the position, so a new
+    /// fix nearby or coming back to the tab reuses a recent one; pass
+    /// `sentAfter` to insist on one sent since then.
+    func load(from location: LocationProvider, sentAfter: Date? = nil) async {
         if state.value == nil { state = .loading }
 
         do {
-            let now = try await api.now(near: coordinates)
+            var now = try await location.now(sentAfter: sentAfter)
+            if now == nil {
+                // No position yet: Pings don't depend on one.
+                now = try await api.now(near: nil)
+            }
+            guard let now else { return }
             friends?.remember(now)
             state = .loaded(now)
         } catch is CancellationError {

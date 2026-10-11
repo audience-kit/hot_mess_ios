@@ -187,6 +187,14 @@ struct HotMessAPI: Sendable {
 
     // MARK: - Session
 
+    /// The signed-in user with their profile photo, which the SDK's `me`
+    /// leaves out. `nil` when the API has no current user. Errors stay
+    /// `AudienceKitError`s so the session can tell an ended session (401)
+    /// from a network blip.
+    func me() async throws -> User? {
+        try await audienceKit.graphQL(Documents.me, as: MeResponse.self, decoder: .hotMess).me?.user
+    }
+
     func serviceManifest(device: DeviceDescription) async throws -> VersionInfo {
         try await client.send(Endpoints.manifest(device: device)).apple
     }
@@ -282,11 +290,6 @@ struct HotMessAPI: Sendable {
             "localeId": localeID.map { GraphQLValue.string($0.uuidString.lowercased()) } ?? .null,
             "reach": .string(reach.rawValue),
         ]
-    }
-
-    /// Records where the device is, so the API knows which venue the user is in.
-    func reportLocation(_ coordinates: Coordinates) async throws {
-        _ = try await now(near: coordinates)
     }
 
     // MARK: - Safety
@@ -466,7 +469,7 @@ extension HotMessAPI {
         id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl cover_url: coverUrl
         """
 
-        static let friendFields = "id name facebook_id: facebookId presence"
+        static let friendFields = "id name facebook_id: facebookId presence avatar_url: avatarUrl"
 
         static let pingJoinFields = "id target_id: targetId user { \(friendFields) }"
 
@@ -670,6 +673,12 @@ extension HotMessAPI {
         }
         """
 
+        static let me = """
+        query Me {
+          me { id name first_name: firstName last_name: lastName photo { cdn_url: cdnUrl } }
+        }
+        """
+
         static let blockedUserFields = "id name avatar_url: avatarUrl"
 
         static let safety = """
@@ -868,6 +877,37 @@ struct LeavePingResponse: Decodable, Sendable { let leavePing: PingPayload }
 struct EndPingResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let ended: Bool }
     let endPing: Payload
+}
+
+struct MeResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable {
+        struct Photo: Decodable, Sendable {
+            let cdnURL: URL?
+
+            private enum CodingKeys: String, CodingKey { case cdnURL = "cdn_url" }
+        }
+
+        let id: String
+        let name: String?
+        let firstName: String?
+        let lastName: String?
+        let photo: Photo?
+
+        private enum CodingKeys: String, CodingKey {
+            case id, name, photo
+            case firstName = "first_name"
+            case lastName = "last_name"
+        }
+
+        var user: User? {
+            let name = self.name ?? [firstName, lastName].compactMap(\.self).joined(separator: " ")
+            guard var user = User(id: id, name: name) else { return nil }
+            user.avatarURL = photo?.cdnURL
+            return user
+        }
+    }
+
+    let me: Payload?
 }
 
 struct SafetyResponse: Decodable, Sendable {

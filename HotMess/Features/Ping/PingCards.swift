@@ -101,8 +101,6 @@ struct FriendPingCard: View {
     let join: (PingTarget?) -> Void
     let leave: () -> Void
 
-    @Environment(AppModel.self) private var model
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
@@ -134,7 +132,7 @@ struct FriendPingCard: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             Avatar(
-                url: model.configuration.avatarURL(forUserID: ping.user.id),
+                url: ping.user.avatarURL,
                 initials: ping.user.name.initialsForDisplay,
                 size: 44
             )

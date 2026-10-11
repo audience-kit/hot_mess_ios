@@ -12,6 +12,9 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
     /// Whether they can be reached now: in chat, by push, or neither (`nil`).
     /// The API only tells friends.
     var presence: PresenceState?
+    /// Their profile photo; `nil` when they have none, and the avatar shows
+    /// their initials.
+    var avatarURL: URL?
 
     var firstName: String { name.firstNameForDisplay }
 
@@ -22,13 +25,21 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, presence
         case facebookID = "facebook_id"
+        case avatarURL = "avatar_url"
     }
 
-    init(id: UUID, name: String, facebookID: FacebookID? = nil, presence: PresenceState? = nil) {
+    init(
+        id: UUID,
+        name: String,
+        facebookID: FacebookID? = nil,
+        presence: PresenceState? = nil,
+        avatarURL: URL? = nil
+    ) {
         self.id = id
         self.name = name
         self.facebookID = facebookID
         self.presence = presence
+        self.avatarURL = avatarURL
     }
 
     init(from decoder: any Decoder) throws {
@@ -38,6 +49,7 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
         name = try container.decode(String.self, forKey: .name)
         facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
         presence = (try? container.decodeIfPresent(String.self, forKey: .presence)).flatMap { PresenceState(wire: $0) }
+        avatarURL = try? container.decodeIfPresent(URL.self, forKey: .avatarURL)
     }
 }
 

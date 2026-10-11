@@ -127,11 +127,6 @@ struct AppConfiguration: Sendable, Hashable {
         }
     }
 
-    /// The API serves every user's avatar from the same path.
-    func avatarURL(forUserID id: UUID) -> URL {
-        baseURL.appendingPathComponent("users/\(id.uuidString)/picture")
-    }
-
     /// The websocket endpoint, derived from the HTTP base so the two can never
     /// drift apart. `URLSessionWebSocketTask` requires a `ws`/`wss` scheme,
     /// which the old Starscream-based client papered over.

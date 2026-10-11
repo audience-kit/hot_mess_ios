@@ -206,15 +206,33 @@ struct AppConfigurationTests {
         #expect(http.realtimeURL?.absoluteString == "ws://localhost:3000/connection")
     }
 
-    @Test("Builds avatar URLs against the configured host")
-    func avatarURL() throws {
-        let configuration = AppConfiguration(baseURL: URL(string: "https://api.hotmess.social")!)
-        let id = try #require(UUID(uuidString: "5B3C8A72-4E19-4D06-B2F5-8C7A1E0D9B22"))
+    @Test("Takes the signed-in user's avatar from me's photo")
+    func meAvatar() throws {
+        let json = Data("""
+        {"me":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":"Rick M.","first_name":"Rick","last_name":"M",
+        "photo":{"cdn_url":"https://cdn.hotmess.social/photos/rick.jpg"}}}
+        """.utf8)
+        let user = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: json).me?.user)
+        #expect(user.name == "Rick M.")
+        #expect(user.avatarURL?.absoluteString == "https://cdn.hotmess.social/photos/rick.jpg")
 
-        #expect(
-            configuration.avatarURL(forUserID: id).absoluteString
-                == "https://api.hotmess.social/users/5B3C8A72-4E19-4D06-B2F5-8C7A1E0D9B22/picture"
-        )
+        let withoutPhoto = Data("""
+        {"me":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":null,"first_name":"Rick","last_name":"M","photo":null}}
+        """.utf8)
+        let plain = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: withoutPhoto).me?.user)
+        #expect(plain.name == "Rick M")
+        #expect(plain.avatarURL == nil)
+    }
+
+    @Test("Decodes a friend's avatar, or none")
+    func friendAvatar() throws {
+        let json = Data("""
+        [{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":"Sam K","avatar_url":"https://cdn.hotmess.social/photos/sam.jpg"},
+         {"id":"6c4d9b83-5f2a-4e17-a3f6-9d8b2f1e0c33","name":"Jo P","avatar_url":null}]
+        """.utf8)
+        let friends = try JSONDecoder.hotMess.decode([HotMess.Friend].self, from: json)
+        let avatars: [String?] = friends.map { $0.avatarURL?.absoluteString }
+        #expect(avatars == ["https://cdn.hotmess.social/photos/sam.jpg", nil])
     }
 
     @Test("Falls back to production when the bundle carries no server key")

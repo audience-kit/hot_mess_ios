@@ -141,7 +141,7 @@ final class VenueChatViewModel {
             return HereNowPerson(
                 id: id,
                 name: friendName ?? person?.name ?? posted?.name,
-                avatarURL: person?.avatarURL ?? posted?.avatarURL ?? configuration.avatarURL(forUserID: id),
+                avatarURL: person?.avatarURL ?? posted?.avatarURL ?? directory[id]?.avatarURL,
                 isFriend: person?.isFriend == true || friendName != nil
             )
         }
