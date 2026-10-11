@@ -192,6 +192,10 @@ struct NowScreen: View {
                 SkipTheLineCard(venue: venue, coverCharge: coverCharge)
             }
 
+            if !now.onNow.isEmpty {
+                OnNowSection(appearances: now.onNow)
+            }
+
             ChatPeek(
                 title: String(localized: "Small talk"),
                 roomName: venue.name,
