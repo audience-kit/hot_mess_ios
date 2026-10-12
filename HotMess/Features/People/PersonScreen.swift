@@ -99,7 +99,7 @@ struct PersonScreen: View {
     private func heroText(_ person: Person) -> some View {
         HStack(alignment: .bottom, spacing: 14) {
             Avatar(
-                url: person.pictureURL,
+                url: person.avatarURL,
                 initials: person.name.initialsForDisplay,
                 size: 76
             )

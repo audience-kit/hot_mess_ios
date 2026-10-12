@@ -19,7 +19,7 @@ enum Fixtures {
       "description": "Since 1966.",
       "distance": 412.5,
       "photo_url": "https://cdn.hotmess.social/venues/stud.jpg",
-      "hero_url": "https://cdn.hotmess.social/venues/stud-hero.jpg",
+      "banner_url": "https://cdn.hotmess.social/venues/stud-hero.jpg",
       "point": { "x": -122.4099, "y": 37.7726 },
       "profile": {
         "address": "399 9th St",
@@ -45,7 +45,7 @@ enum Fixtures {
       "end_at": "2017-04-27T02:00:00.000-0700",
       "facebook_id": 998877665544,
       "is_featured": true,
-      "rsvp": "decliend",
+      "rsvp": { "mine": "decliend" },
       "banner_url": "https://cdn.hotmess.social/events/some-thing.jpg",
       "venue": { "name": "Pop-up", "venue": \(minimalVenue) }
     }
@@ -85,7 +85,7 @@ enum Fixtures {
       "id": "4D9A0C21-8E76-4A5B-B3C2-6F1D8E0A9B33",
       "name": "Rick Mark",
       "role": "Resident",
-      "photo_url": "https://cdn.hotmess.social/people/rick.jpg",
+      "avatar_url": "https://cdn.hotmess.social/people/rick.jpg",
       "profile": {
         "facebook": { "facebook_id": 12345, "is_liked": false },
         "social_links": {
@@ -117,7 +117,7 @@ enum Fixtures {
         {
           "id": "6E1F3A92-0B4C-4D7E-8F15-3A9C2D6B1E77",
           "name": "Ada Lovelace",
-          "photo_url": "https://cdn.hotmess.social/people/ada.jpg"
+          "avatar_url": "https://cdn.hotmess.social/people/ada.jpg"
         }
       ],
       "groups": [
@@ -160,7 +160,7 @@ enum Fixtures {
       "locale": {
         "id": "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E",
         "name": "SoMa",
-        "hero_url": "https://cdn.hotmess.social/now.jpg",
+        "banner_url": "https://cdn.hotmess.social/now.jpg",
         "events": { "upcoming": { "nodes": [\(sparseEvent)] } }
       }
     }

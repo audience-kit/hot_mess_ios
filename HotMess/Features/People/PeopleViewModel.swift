@@ -19,7 +19,7 @@ extension Person {
         self.init(
             id: id,
             name: person.name,
-            pictureURL: resolve(page?.photoUrl),
+            avatarURL: resolve(page?.photoUrl),
             bannerURL: resolve(page?.bannerUrl)
         )
     }

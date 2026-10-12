@@ -26,7 +26,7 @@ struct VenueScreen: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(spacing: 24) {
-                        HeroHeader(url: venue.heroURL ?? venue.photoURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
+                        HeroHeader(url: venue.bannerURL ?? venue.photoURL, topInset: proxy.safeAreaInsets.top, tone: $heroTone) {
                             heroText(venue)
                         }
 

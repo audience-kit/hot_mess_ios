@@ -31,7 +31,7 @@ struct VenueDecodingTests {
         #expect(venue.isLiked)
         #expect(venue.distance == 412.5)
         #expect(venue.facebookID?.rawValue == "112233445566")
-        #expect(venue.heroURL?.lastPathComponent == "stud-hero.jpg")
+        #expect(venue.bannerURL?.lastPathComponent == "stud-hero.jpg")
         #expect(venue.phone == "+14158633373")
     }
 
@@ -248,9 +248,9 @@ struct PersonDetailTests {
         let detail = try decode(PersonDetail.self, from: Fixtures.personDetail)
 
         #expect(detail.members.map(\.name) == ["Ada Lovelace"])
-        #expect(detail.members.first?.pictureURL?.lastPathComponent == "ada.jpg")
+        #expect(detail.members.first?.avatarURL?.lastPathComponent == "ada.jpg")
         #expect(detail.groups.map(\.name) == ["The Haus of Mess"])
-        #expect(detail.groups.first?.pictureURL == nil)
+        #expect(detail.groups.first?.avatarURL == nil)
     }
 
     @Test("Reads tracks through the music mixin, dropping null nodes")
@@ -315,16 +315,16 @@ struct VenueDetailTests {
 struct OnNowDecodingTests {
     /// `onNow` as the `venue` query aliases it, under the venue's people
     /// mixin: GraphQL's uppercase roles and UTC times, and the person's
-    /// `pictureUrl` as `photo_url`.
+    /// `avatarUrl` as `avatar_url`.
     static let onNow = """
     "people": { "on_now": { "nodes": [
       { "id": "4D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "DJ",
         "starts_at": "2026-10-11T04:00:00Z", "ends_at": "2026-10-11T08:00:00Z",
         "person": { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie Mattel",
-                    "photo_url": "https://cdn.hotmess.social/people/trixie.jpg" } },
+                    "avatar_url": "https://cdn.hotmess.social/people/trixie.jpg" } },
       { "id": "5D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "HOST",
         "starts_at": "2026-10-11T03:00:00Z", "ends_at": null,
-        "person": { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Kiko Soirée", "photo_url": null } },
+        "person": { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Kiko Soirée", "avatar_url": null } },
       { "id": "6D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "HOST",
         "starts_at": "2026-10-11T03:00:00Z",
         "person": { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": null } }
@@ -339,7 +339,7 @@ struct OnNowDecodingTests {
 
         #expect(detail.onNow.map(\.person.name) == ["Trixie Mattel", "Kiko Soirée"])
         #expect(detail.onNow.map(\.role) == [.dj, .host])
-        #expect(detail.onNow.first?.person.pictureURL?.lastPathComponent == "trixie.jpg")
+        #expect(detail.onNow.first?.person.avatarURL?.lastPathComponent == "trixie.jpg")
         let start = try instant("2026-10-11T04:00:00Z")
         let end = try instant("2026-10-11T08:00:00Z")
         #expect(detail.onNow.first?.startsAt == start)
@@ -675,7 +675,7 @@ struct MixinDecodingTests {
     static let admission: String = CoverDecodingTests.admission
 
     static let charge = """
-    { "amount_cents": 1000, "total_cents": 1112, "currency": "usd", "night": "2026-10-09", "from": "21:00", "payable": true }
+    { "amount": { "cents": 1000, "currency": "usd" }, "fee": { "cents": 112, "currency": "usd" }, "total": { "cents": 1112, "currency": "usd" }, "night": "2026-10-09", "from": "21:00", "payable": true }
     """
 
     @Test("Reads an event's venue from its venue mixin")
@@ -739,7 +739,7 @@ struct MixinDecodingTests {
           "tickets": { "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } } }
         """)
 
-        #expect(venue.coverCharge?.totalCents == 1112)
+        #expect(venue.coverCharge?.total.cents == 1112)
         #expect(venue.viewerAdmission?.isPaid == true)
     }
 

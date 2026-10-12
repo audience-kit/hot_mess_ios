@@ -30,6 +30,32 @@ struct User: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
+/// Someone as the API shows them to others: `Profile { id name avatarUrl }`,
+/// the buyer on a cover pass, a blocked user.
+struct Profile: Codable, Hashable, Sendable, Identifiable {
+    let id: UUID
+    let name: String
+    let avatarURL: URL?
+
+    init(id: UUID, name: String, avatarURL: URL? = nil) {
+        self.id = id
+        self.name = name
+        self.avatarURL = avatarURL
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name
+        case avatarURL = "avatar_url"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        avatarURL = try container.decodeURLIfPresent(forKey: .avatarURL)
+    }
+}
+
 /// AudienceKit GraphQL objects carry their record's UUID as `id`, the same value
 /// `node(id:)`, the REST endpoints and deep links take.
 enum RecordID {
