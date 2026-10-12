@@ -27,6 +27,7 @@ struct SocialLink: Codable, Hashable, Sendable, Identifiable {
     var systemImage: String {
         switch provider.lowercased() {
         case "spotify", "apple_music": "music.note"
+        case "apple_podcasts", "podcast_rss": "mic"
         default: "link"
         }
     }
@@ -37,6 +38,8 @@ struct SocialLink: Codable, Hashable, Sendable, Identifiable {
         switch provider.lowercased() {
         case "spotify": "Spotify"
         case "apple_music": "Apple Music"
+        case "apple_podcasts": "Apple Podcasts"
+        case "podcast_rss": "Podcast RSS"
         default: "/\(handle)"
         }
     }
