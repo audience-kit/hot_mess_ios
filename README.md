@@ -20,7 +20,7 @@ Dependencies resolve through Swift Package Manager on first open:
 | --- | --- |
 | [facebook-ios-sdk](https://github.com/facebook/facebook-ios-sdk) | Login |
 | [Kingfisher](https://github.com/onevcat/Kingfisher) | Remote image loading and caching |
-| [AudienceKit Swift SDK](https://github.com/audience-kit/audience-kit-sdk-swift) 0.18.0 | Sign-in, session, GraphQL and branding against the AudienceKit API |
+| [AudienceKit Swift SDK](https://github.com/audience-kit/audience-kit-sdk-swift) 0.19.0 | Sign-in, session, GraphQL and branding against the AudienceKit API |
 | [Stripe](https://github.com/stripe/stripe-ios-spm) (`StripePaymentSheet`) | Paying cover at Stripe venues |
 | [Square In-App Payments](https://github.com/square/in-app-payments-ios) (`SquareInAppPaymentsSDK`) | Paying cover at Square venues |
 
@@ -214,9 +214,9 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
 
 The shared Swift package is the AudienceKit Swift SDK, resolved from
 `https://github.com/audience-kit/audience-kit-sdk-swift.git`. It is pinned to the
-branch that carries 0.18.0 (`claude/project-thread-b1p0u4`, the SDK's pre-release
-sweep); once that pull request merges and the SDK tags `0.18.0`, change the
-requirement in `HotMess.xcodeproj` to `upToNextMinorVersion` from `0.18.0`. Consumer
+branch that carries 0.19.0 (`claude/project-thread-b1p0u4`, the SDK's pre-release
+sweep); once that pull request merges and the SDK tags `0.19.0`, change the
+requirement in `HotMess.xcodeproj` to `upToNextMinorVersion` from `0.19.0`. Consumer
 services come from `AudienceKit`; shared design tokens and UI come from
 `AudienceKitUI`, both built on `AudienceCore`. The app's realtime cable is the SDK's
 `AudienceCable`; `GraphQLCable.handshake` rewrites its handshake to the contract's
