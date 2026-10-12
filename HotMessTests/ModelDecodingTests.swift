@@ -253,7 +253,7 @@ struct PersonDetailTests {
         #expect(detail.groups.first?.pictureURL == nil)
     }
 
-    @Test("Reads tracks through the music facet, dropping null nodes")
+    @Test("Reads tracks through the music mixin, dropping null nodes")
     func musicTracks() throws {
         let detail = try decode(PersonDetail.self, from: """
         { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "DJ",
@@ -296,7 +296,7 @@ struct VenueDetailTests {
         #expect(detail.socialLinks.count == 1)
         #expect(detail.socialLinks.first?.assetName == "Instagram")
         #expect(detail.socialLinks.first?.url?.host() == "instagram.com")
-        // The venue's own profile fields come from the same facet.
+        // The venue's own profile fields come from the same mixin.
         #expect(detail.venue.address == "399 9th St")
         #expect(detail.venue.facebookID == nil)
     }
@@ -314,7 +314,7 @@ struct VenueDetailTests {
 @Suite("On now")
 struct OnNowDecodingTests {
     /// `onNow` as the `venue` query aliases it, under the venue's people
-    /// facet: GraphQL's uppercase roles and UTC times, and the person's
+    /// mixin: GraphQL's uppercase roles and UTC times, and the person's
     /// `pictureUrl` as `photo_url`.
     static let onNow = """
     "people": { "on_now": { "nodes": [
@@ -670,15 +670,15 @@ struct SafetyDecodingTests {
     }
 }
 
-@Suite("Facets")
-struct FacetDecodingTests {
+@Suite("Mixins")
+struct MixinDecodingTests {
     static let admission: String = CoverDecodingTests.admission
 
     static let charge = """
     { "amount_cents": 1000, "total_cents": 1112, "currency": "usd", "night": "2026-10-09", "from": "21:00", "payable": true }
     """
 
-    @Test("Reads an event's venue from its venue facet")
+    @Test("Reads an event's venue from its venue mixin")
     func eventVenue() throws {
         let event = try decode(Event.self, from: Fixtures.event)
 
@@ -686,7 +686,7 @@ struct FacetDecodingTests {
         #expect(event.venue?.name == "Pop-up")
     }
 
-    @Test("A to-be-announced venue or a null facet is no venue")
+    @Test("A to-be-announced venue or a null mixin is no venue")
     func eventWithoutVenue() throws {
         let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
         let announced = try decode(Event.self, from: base + #", "venue": { "name": "To be announced", "venue": null } }"#)
@@ -706,8 +706,8 @@ struct FacetDecodingTests {
         #expect(again.id == event.id)
     }
 
-    @Test("Null events and missing tickets facets read as none")
-    func nullFacets() throws {
+    @Test("Null events and missing tickets mixins read as none")
+    func nullMixins() throws {
         let venue = try decode(VenueWithEvents.self, from: """
         { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "events": null }
         """)
@@ -732,7 +732,7 @@ struct FacetDecodingTests {
         #expect(response.locale?.events.map(\.name) == ["Some Thing", "Afters"])
     }
 
-    @Test("Reads a venue's cover facet")
+    @Test("Reads a venue's cover mixin")
     func venueCover() throws {
         let venue = try decode(VenueWithEvents.self, from: """
         { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud",

@@ -32,7 +32,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
     var shareURL: URL? { URL(string: "https://hotmess.social/venues/\(id.uuidString.lowercased())") }
 
     /// `address`, `phone`, `facebook_id` and `is_liked` come in the venue's
-    /// profile facet (see `ListingProfile`).
+    /// profile mixin (see `ListingProfile`).
     enum CodingKeys: String, CodingKey {
         case id, name, point, distance, profile
         case subtitle = "description"
@@ -50,7 +50,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         photoURL = try container.decodeURLIfPresent(forKey: .photoURL)
         heroURL = try container.decodeURLIfPresent(forKey: .heroURL)
         point = try container.decodeIfPresent(GeoPoint.self, forKey: .point)
-        // A missing profile facet reads as no address, phone or Page.
+        // A missing profile mixin reads as no address, phone or Page.
         let profile = try container.decodeIfPresent(ListingProfile.self, forKey: .profile) ?? ListingProfile()
         address = profile.address
         phone = profile.phone
@@ -58,7 +58,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         isLiked = profile.isLiked
     }
 
-    /// Writes the shape `init(from:)` reads, with the profile facet.
+    /// Writes the shape `init(from:)` reads, with the profile mixin.
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -101,7 +101,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// A venue's or person's `profile` facet, as the documents alias it:
+/// A venue's or person's `profile` mixin, as the documents alias it:
 /// `profile { address phone social_links: socialLinks { nodes { … } }
 /// facebook { facebook_id: facebookId is_liked: isLiked } }`. Each document
 /// selects only what it shows, so a missing part reads as nil, no links or
@@ -111,7 +111,7 @@ struct ListingProfile: Codable, Hashable, Sendable {
     var phone: String?
     /// The social links connection's nodes; nil when the document didn't ask.
     var socialLinks: [SocialLink]?
-    /// From the facebook module's facet, like `isLiked`.
+    /// From the facebook module's mixin, like `isLiked`.
     var facebookID: FacebookID?
     var isLiked: Bool
 
