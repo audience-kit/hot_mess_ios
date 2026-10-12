@@ -31,7 +31,16 @@ struct VenueDecodingTests {
         #expect(venue.isLiked)
         #expect(venue.distance == 412.5)
         #expect(venue.facebookID?.rawValue == "112233445566")
-        #expect(venue.heroURL?.lastPathComponent == "stud-hero.jpg")
+        #expect(venue.bannerURL?.lastPathComponent == "stud-hero.jpg")
+        #expect(venue.phone == "+14158633373")
+    }
+
+    @Test("A venue written out reads back with its profile")
+    func roundTrip() throws {
+        let venue = try decode(Venue.self, from: Fixtures.venue)
+        let again = try JSONDecoder.hotMess.decode(Venue.self, from: JSONEncoder.hotMess.encode(venue))
+
+        #expect(again == venue)
     }
 
     @Test("`point` maps x to longitude and y to latitude")
@@ -183,7 +192,9 @@ struct NowDecodingTests {
 
         #expect(now.isNearVenues)
         #expect(now.venues?.count == 1)
-        #expect(now.title == "Saturday in SoMa")
+        #expect(now.title == "Happening Now in SoMa")
+        #expect(now.imageURL?.absoluteString == "https://cdn.hotmess.social/now.jpg")
+        #expect(now.events.count == 1)
         #expect(now.region != nil)
     }
 }
@@ -196,6 +207,8 @@ struct PersonDetailTests {
 
         #expect(detail.name == "Rick Mark")
         #expect(detail.person.role == "Resident")
+        #expect(detail.person.facebookID != nil)
+        #expect(detail.person.isLiked == false)
         #expect(detail.socialLinks.count == 1)
         #expect(detail.socialLinks.first?.assetName == "Instagram")
         #expect(detail.tracks.count == 1)
@@ -206,18 +219,28 @@ struct PersonDetailTests {
     func tipLinks() throws {
         let detail = try decode(PersonDetail.self, from: """
         { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie",
-          "social_links": [
+          "profile": { "social_links": { "nodes": [
             { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie", "provider": "instagram",
               "url": "https://instagram.com/trixie" },
             { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "TrixieTips", "provider": "cashapp",
               "url": "https://cash.app/$TrixieTips" },
+            null,
             { "id": "3A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "handle": "trixie-tips", "provider": "venmo",
               "url": "https://venmo.com/u/trixie-tips" }
-          ] }
+          ] } } }
         """)
 
         #expect(detail.tipLinks.compactMap(\.tipApp) == ["Cash App", "Venmo"])
         #expect(detail.profileLinks.map(\.provider) == ["instagram"])
+    }
+
+    @Test("A person written out reads back with their profile and links")
+    func roundTrip() throws {
+        let detail = try decode(PersonDetail.self, from: Fixtures.personDetail)
+        let again = try JSONDecoder.hotMess.decode(PersonDetail.self, from: JSONEncoder.hotMess.encode(detail))
+
+        #expect(again.person == detail.person)
+        #expect(again.socialLinks == detail.socialLinks)
     }
 
     @Test("Reads the people a person is made of and part of")
@@ -225,9 +248,26 @@ struct PersonDetailTests {
         let detail = try decode(PersonDetail.self, from: Fixtures.personDetail)
 
         #expect(detail.members.map(\.name) == ["Ada Lovelace"])
-        #expect(detail.members.first?.pictureURL?.lastPathComponent == "ada.jpg")
+        #expect(detail.members.first?.avatarURL?.lastPathComponent == "ada.jpg")
         #expect(detail.groups.map(\.name) == ["The Haus of Mess"])
-        #expect(detail.groups.first?.pictureURL == nil)
+        #expect(detail.groups.first?.avatarURL == nil)
+    }
+
+    @Test("Reads tracks through the music mixin, dropping null nodes")
+    func musicTracks() throws {
+        let detail = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "DJ",
+          "music": { "tracks": { "nodes": [
+            null,
+            { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "title": "Late Night", "provider": "soundcloud" }
+          ] } } }
+        """)
+        let empty = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "DJ", "music": { "tracks": null } }
+        """)
+
+        #expect(detail.tracks.map(\.title) == ["Late Night"])
+        #expect(empty.tracks.isEmpty)
     }
 
     @Test("Leaves collections empty when the API omits them")
@@ -256,6 +296,9 @@ struct VenueDetailTests {
         #expect(detail.socialLinks.count == 1)
         #expect(detail.socialLinks.first?.assetName == "Instagram")
         #expect(detail.socialLinks.first?.url?.host() == "instagram.com")
+        // The venue's own profile fields come from the same mixin.
+        #expect(detail.venue.address == "399 9th St")
+        #expect(detail.venue.facebookID == nil)
     }
 
     @Test("Leaves links empty when the API omits them")
@@ -270,21 +313,22 @@ struct VenueDetailTests {
 
 @Suite("On now")
 struct OnNowDecodingTests {
-    /// `onNow` as the `venue` query aliases it: GraphQL's uppercase roles and
-    /// UTC times, and the person's `pictureUrl` as `photo_url`.
+    /// `onNow` as the `venue` query aliases it, under the venue's people
+    /// mixin: GraphQL's uppercase roles and UTC times, and the person's
+    /// `avatarUrl` as `avatar_url`.
     static let onNow = """
-    "on_now": [
+    "people": { "on_now": { "nodes": [
       { "id": "4D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "DJ",
         "starts_at": "2026-10-11T04:00:00Z", "ends_at": "2026-10-11T08:00:00Z",
         "person": { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Trixie Mattel",
-                    "photo_url": "https://cdn.hotmess.social/people/trixie.jpg" } },
+                    "avatar_url": "https://cdn.hotmess.social/people/trixie.jpg" } },
       { "id": "5D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "HOST",
         "starts_at": "2026-10-11T03:00:00Z", "ends_at": null,
-        "person": { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Kiko Soirée", "photo_url": null } },
+        "person": { "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Kiko Soirée", "avatar_url": null } },
       { "id": "6D2C1B0A-9E8F-4A7B-8C6D-5E4F3A2B1C0D", "role": "HOST",
         "starts_at": "2026-10-11T03:00:00Z",
         "person": { "id": "2A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": null } }
-    ]
+    ] } }
     """
 
     @Test("Reads who's on at a venue, dropping someone with no name yet")
@@ -295,7 +339,7 @@ struct OnNowDecodingTests {
 
         #expect(detail.onNow.map(\.person.name) == ["Trixie Mattel", "Kiko Soirée"])
         #expect(detail.onNow.map(\.role) == [.dj, .host])
-        #expect(detail.onNow.first?.person.pictureURL?.lastPathComponent == "trixie.jpg")
+        #expect(detail.onNow.first?.person.avatarURL?.lastPathComponent == "trixie.jpg")
         let start = try instant("2026-10-11T04:00:00Z")
         let end = try instant("2026-10-11T08:00:00Z")
         #expect(detail.onNow.first?.startsAt == start)
@@ -318,7 +362,7 @@ struct OnNowDecodingTests {
     func missing() throws {
         let older = try decode(VenueWithEvents.self, from: Fixtures.minimalVenue)
         let malformed = try decode(VenueWithEvents.self, from: """
-        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "on_now": "soon" }
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "people": { "on_now": "soon" } }
         """)
         let away = try decode(Now.self, from: Fixtures.nowWithFriends)
 
@@ -407,6 +451,42 @@ struct VenueMessageTests {
         }
         #expect(event.id == UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
         #expect(caption == "Come through")
+    }
+
+    @Test("Talent posting as their listing: a host with no presence or friend name")
+    func personFrame() throws {
+        let poster = UUID(uuidString: "6C4D2E80-3A19-4B7F-9E5C-1D0A8B2F3E44")!
+        let person = UUID(uuidString: "9E1D2C3B-4A5F-4607-8899-AABBCCDDEEFF")!
+        let frame = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
+        {
+          "type": "incoming",
+          "id": "2b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
+          "message": "Doors at nine",
+          "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44",
+          "name": "Miss Texas",
+          "sent_at": "2026-10-11T04:00:00Z",
+          "role": "host",
+          "kind": "text",
+          "presence": "online",
+          "posted_as_person": true,
+          "person_id": "9e1d2c3b-4a5f-4607-8899-aabbccddeeff"
+        }
+        """.utf8))
+        let message = VenueMessage(payload: frame)
+        #expect(message.personID == person)
+        #expect(message.isFromListing)
+        #expect(!message.isFromPlace)
+
+        let line = message.threadMessage(currentUserID: nil, friends: [poster: HotMess.Friend(id: poster, name: "Ty Lee")])
+        #expect(line.authorName == "Miss Texas")
+        #expect(line.authorID == "person:\(person.uuidString)")
+        #expect(line.presence == nil)
+
+        let graphQL = try JSONDecoder().decode(VenueMessage.Payload.self, from: Data("""
+        { "message": "Hi", "user_id": "6c4d2e80-3a19-4b7f-9e5c-1d0a8b2f3e44", "role": "HOST",
+          "posted_as_person": true, "person": { "id": "9e1d2c3b-4a5f-4607-8899-aabbccddeeff" } }
+        """.utf8))
+        #expect(VenueMessage(payload: graphQL).personID == person)
     }
 
     @Test("Reads GraphQL's uppercase enums")
@@ -582,10 +662,109 @@ struct SafetyDecodingTests {
     @Test("Reads an Apple account without Facebook, in App Review")
     func appleAccount() throws {
         let state = try decode(SafetyState.self, from: """
-        { "terms_accepted_at": null, "blocked_users": [], "has_facebook": false, "can_pretend_location": true }
+        { "terms_accepted_at": null, "blocked_users": [], "can_pretend_location": true, "self": { "has_facebook": false } }
         """)
 
         #expect(!state.hasFacebook)
         #expect(state.canPretendLocation)
+    }
+}
+
+@Suite("Mixins")
+struct MixinDecodingTests {
+    static let admission: String = CoverDecodingTests.admission
+
+    static let charge = """
+    { "amount": { "cents": 1000, "currency": "usd" }, "fee": { "cents": 112, "currency": "usd" }, "total": { "cents": 1112, "currency": "usd" }, "night": "2026-10-09", "from": "21:00", "payable": true }
+    """
+
+    @Test("Reads an event's venue from its venue mixin")
+    func eventVenue() throws {
+        let event = try decode(Event.self, from: Fixtures.event)
+
+        #expect(event.venue?.id == UUID(uuidString: "1E0B9F3C-6F42-4B8E-9C7A-0D5E4A2B7C90"))
+        #expect(event.venue?.name == "Pop-up")
+    }
+
+    @Test("A to-be-announced venue or a null mixin is no venue")
+    func eventWithoutVenue() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let announced = try decode(Event.self, from: base + #", "venue": { "name": "To be announced", "venue": null } }"#)
+        let off = try decode(Event.self, from: base + #", "venue": null }"#)
+
+        #expect(announced.venue == nil)
+        #expect(off.venue == nil)
+    }
+
+    @Test("An event written out reads back with its venue")
+    func eventRoundTrip() throws {
+        let event = try decode(Event.self, from: Fixtures.event)
+        let data = try JSONEncoder.hotMess.encode(event)
+        let again = try JSONDecoder.hotMess.decode(Event.self, from: data)
+
+        #expect(again.venue == event.venue)
+        #expect(again.id == event.id)
+    }
+
+    @Test("Null events and missing tickets mixins read as none")
+    func nullMixins() throws {
+        let venue = try decode(VenueWithEvents.self, from: """
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "events": null }
+        """)
+        let person = try decode(PersonDetail.self, from: """
+        { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Nobody", "events": null }
+        """)
+        let locale = try decode(LocaleEventsResponse.self, from: #"{ "locale": { "events": null } }"#)
+
+        #expect(venue.events.isEmpty)
+        #expect(venue.coverCharge == nil)
+        #expect(venue.viewerAdmission == nil)
+        #expect(person.events.isEmpty)
+        #expect(locale.locale?.events.isEmpty == true)
+    }
+
+    @Test("Reads a locale's upcoming events")
+    func localeEvents() throws {
+        let response = try decode(LocaleEventsResponse.self, from: """
+        { "locale": { "events": { "upcoming": { "nodes": [\(Fixtures.event), \(Fixtures.sparseEvent)] } } } }
+        """)
+
+        #expect(response.locale?.events.map(\.name) == ["Some Thing", "Afters"])
+    }
+
+    @Test("Reads a venue's cover mixin")
+    func venueCover() throws {
+        let venue = try decode(VenueWithEvents.self, from: """
+        { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud",
+          "tickets": { "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } } }
+        """)
+
+        #expect(venue.coverCharge?.total.cents == 1112)
+        #expect(venue.viewerAdmission?.isPaid == true)
+    }
+
+    @Test("Reads an event's cover and its venue's cover tonight")
+    func eventCover() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let detail = try decode(EventDetail.self, from: base + """
+        , "tickets": { "cover": { "cover_charge": \(Self.charge) } },
+          "venue_cover": { "venue": { "tickets": { "cover": { "cover_charge": \(Self.charge), "viewer_admission": \(Self.admission) } } } } }
+        """)
+
+        #expect(detail.coverCharge?.night == "2026-10-09")
+        #expect(detail.venueCoverTonight?.night == "2026-10-09")
+        #expect(detail.isCoverTonight)
+        #expect(detail.viewerAdmission?.isPaid == true)
+    }
+
+    @Test("An event with no venue or no cover module has no venue cover")
+    func eventWithoutVenueCover() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let tba = try decode(EventDetail.self, from: base + #", "tickets": { "cover": { "cover_charge": null } }, "venue_cover": { "venue": null } }"#)
+        let off = try decode(EventDetail.self, from: base + #", "venue_cover": null }"#)
+
+        #expect(tba.coverCharge == nil)
+        #expect(tba.venueCoverTonight == nil)
+        #expect(off.viewerAdmission == nil)
     }
 }

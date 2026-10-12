@@ -64,7 +64,7 @@ extension Venue {
             name: venue.name,
             subtitle: venue.locale.name ?? venue.locale.label,
             photoURL: resolve(venue.page?.photoUrl ?? venue.photoUrl),
-            heroURL: resolve(venue.page?.coverImageUrl ?? venue.coverImageUrl),
+            bannerURL: resolve(venue.page?.bannerUrl ?? venue.bannerUrl),
             point: venue.location?.coordinate.map { GeoPoint(x: $0.longitude, y: $0.latitude) }
         )
     }

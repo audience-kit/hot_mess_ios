@@ -192,12 +192,12 @@ final class CoverCheckout {
             let request = PKPaymentRequest.squarePaymentRequest(
                 merchantIdentifier: merchantID,
                 countryCode: "US",
-                currencyCode: admission.currency.uppercased()
+                currencyCode: admission.total.currency.uppercased()
             )
             request.paymentSummaryItems = [
                 PKPaymentSummaryItem(
                     label: Self.merchantName(venueName),
-                    amount: NSDecimalNumber(decimal: admission.totalAmount)
+                    amount: NSDecimalNumber(decimal: admission.total.amount)
                 ),
             ]
             return await SquareApplePay(pay: pay).run(request)

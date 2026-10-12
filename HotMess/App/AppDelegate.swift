@@ -9,8 +9,8 @@ import os
 import UIKit
 import UserNotifications
 
-/// What is genuinely left for UIKit to do: boot the Facebook SDK and receive
-/// push tokens. Everything the old 160-line delegate did — deep links, version
+/// What is genuinely left for UIKit to do: boot the Facebook SDK, receive
+/// push tokens and pick location back up after a background launch. Everything the old 160-line delegate did — deep links, version
 /// gating, login presentation, location start/stop — now lives in SwiftUI or in
 /// a service.
 @MainActor
@@ -28,6 +28,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // the app is delivered here.
         UNUserNotificationCenter.current().delegate = self
         PushNotifications.registerCategories()
+
+        // A venue geofence or a significant change may have relaunched the
+        // app with nothing on screen, so SwiftUI won't start anything. A
+        // scene-based app often reads as background here on a normal launch
+        // too; that's fine, as starting is idempotent and needs Always and a
+        // stored session.
+        if launchOptions?[.location] != nil || application.applicationState == .background {
+            Task { await AppModel.shared.startInBackground() }
+        }
 
         return true
     }
@@ -52,19 +61,26 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 // MARK: - Notifications
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    /// Pings show as banners in the foreground too, and Now picks up the change.
+    /// Pings show as banners in the foreground too, and Now picks up the
+    /// change. A notification the app already showed itself (its in-app copy
+    /// came over `myNotifications`, now or within a moment) isn't shown again.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        if PingNotification(userInfo: notification.request.content.userInfo) != nil {
+        let userInfo = notification.request.content.userInfo
+        let notificationID = InAppNotification.notificationID(in: userInfo)
+
+        if PingNotification(userInfo: userInfo)?.isPing == true {
             await AppDelegate.pingsChanged()
         }
+        guard await AppDelegate.shouldPresentSystemCopy(notificationID: notificationID) else { return [] }
+
         return [.banner, .list, .sound]
     }
 
-    /// "I'm in" from a `ping` push joins the whole Ping in the background;
-    /// tapping a `ping` or `ping_join` push opens Now.
+    /// "I'm in" from a Ping push joins the whole Ping in the background;
+    /// tapping a push opens the `url` its payload carries.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
@@ -77,26 +93,23 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if action == PingNotification.joinAction {
             await AppDelegate.join(notification)
         } else if action == UNNotificationDefaultActionIdentifier {
-            await AppDelegate.openNow()
+            await AppDelegate.open(notification)
         }
     }
 
     @MainActor
     private static func join(_ notification: PingNotification) async {
-        guard let pingID = notification.pingID else { return }
-        let model = AppModel.shared
-
-        do {
-            _ = try await model.api.joinPing(pingID)
-        } catch {
-            Log.app.error("Joining a ping from a notification failed: \(error.localizedDescription, privacy: .public)")
-        }
-        model.pingsChanged()
+        await AppModel.shared.join(notification)
     }
 
     @MainActor
-    private static func openNow() {
-        AppModel.shared.openNow()
+    private static func open(_ notification: PingNotification) {
+        AppModel.shared.open(notification)
+    }
+
+    @MainActor
+    private static func shouldPresentSystemCopy(notificationID: String?) async -> Bool {
+        await AppModel.shared.notifications.shouldPresentSystemCopy(notificationID: notificationID)
     }
 
     @MainActor

@@ -42,8 +42,8 @@ struct ErrorReportingTests {
 
     @Test("GraphQL failures are named by their operation")
     func operationName() {
-        #expect(HotMessAPI.operationName("\n  query Venue($id: ID!) {\n venue { id } }") == "graphql query Venue")
-        #expect(HotMessAPI.operationName("{ me { id } }") == "graphql")
+        #expect(HotMessAPI.operationName("\n  query Venue($id: ID!) {\n venues { venue(id: $id) { id } } }") == "graphql query Venue")
+        #expect(HotMessAPI.operationName("{ me { self { id } } }") == "graphql")
     }
 
     @Test("Reports encode with the API's snake_case keys")

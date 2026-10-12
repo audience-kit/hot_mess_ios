@@ -20,7 +20,7 @@ Dependencies resolve through Swift Package Manager on first open:
 | --- | --- |
 | [facebook-ios-sdk](https://github.com/facebook/facebook-ios-sdk) | Login |
 | [Kingfisher](https://github.com/onevcat/Kingfisher) | Remote image loading and caching |
-| [AudienceKit](https://github.com/audience-kit/audience-kit) (`sdk/swift`) | Sign-in, session, GraphQL and branding against the AudienceKit API |
+| [AudienceKit Swift SDK](https://github.com/audience-kit/audience-kit-sdk-swift) 0.19.0 | Sign-in, session, GraphQL and branding against the AudienceKit API |
 | [Stripe](https://github.com/stripe/stripe-ios-spm) (`StripePaymentSheet`) | Paying cover at Stripe venues |
 | [Square In-App Payments](https://github.com/square/in-app-payments-ios) (`SquareInAppPaymentsSDK`) | Paying cover at Square venues |
 
@@ -56,9 +56,18 @@ empty and failure states are handled the same way everywhere.
   `AudienceKitClient` from the configuration. `SessionStore` runs Facebook
   Login and hands the token to `AudienceKitClient.signIn`, which sends
   `POST /v1/token` with the audience host, the build's Facebook app ID and
-  the device, then keeps the session JWT in the keychain. When the API ends
-  the session (401), the SDK drops the token and `SessionStore` returns to
-  the login screen. The Venues and People tabs read the audience over
+  the device, then keeps the credential the API answers (`token`, `userId`,
+  `audienceId`, `role`, `endpoint`) in the keychain as a `KeychainCredentialStore`
+  (`SessionStore.credentialStore`). Sign in with Apple and connecting Facebook
+  are the app's own REST calls; their credential goes to the SDK with
+  `adopt(credential:)`. The app never looks inside the token. When the API
+  ends the session (401), the SDK drops the credential and `SessionStore`
+  returns to the login screen, once, saying "Please sign in again". A realtime
+  socket the server closes as `unauthorized` does the same (`AppModel`'s cable
+  hands its token to `SessionStore.sessionRejected(token:)`); a 403 or a
+  dropped connection doesn't. Errors are told apart by `AudienceKitError.code`
+  (`UNAUTHENTICATED`, `NOT_FOUND`, `INVALID` with `fields`, …), never by
+  message (`APIError.init(_:)`). The Venues and People tabs read the audience over
   GraphQL, and `BrandStore` fetches `/v1/branding` and drives
   `Color.hotMessAccent` and the tint.
 - **GraphQL.** Every other screen also goes through the audience's GraphQL
@@ -66,7 +75,7 @@ empty and failure states are handled the same way everywhere.
   "Now" (`reportLocation`), the closest locale, venue, event and person
   detail, a locale's events, RSVPs (`rsvpEvent`), Pings (`sendPing`,
   `joinPing`, `leavePing`, `endPing`, and `myPing`/`friendPings` on Now,
-  venues and events) and push registration (`registerDevice`, with the bundle
+  and on venues' and events' `ping` mixin) and push registration (`registerDevice`, with the bundle
   ID and whether the build's `aps-environment` is the APNs sandbox).
 - **Ping.** "I want to go out tonight": a Ping names tonight's events or
   venues in the user's locale (or none), reaches the user's friends (or
@@ -74,9 +83,10 @@ empty and failure states are handled the same way everywhere.
   Now screen or "Ping here" on a venue or event, and friends answer with
   "I'm in", also from the `PING` push's `PING_JOIN` action. The documents alias fields to the snake_case keys the
   models decode, and failures map to `APIError`.
-- **REST.** Only the version manifest (`POST /`) is still REST, because it's
-  read before sign-in and isn't part of any audience. `APIClient` sends it
-  through the SDK.
+- **REST.** Only the client status (`GET /v1/status`, which says the oldest
+  version of the app the API still serves) and the two sign-ins the SDK has no
+  call for (`POST /v1/token/apple`, and `POST /v1/token` with `connect`) are
+  still REST. `APIClient` sends them through the SDK.
 - **Models.** Every payload is a `Sendable`, `Codable` struct. Dates accept both
   the API's `yyyy-MM-dd'T'HH:mm:ss.SSSZ` format and plain ISO 8601, and IDs that
   Facebook sends as either a string or a number decode from both.
@@ -169,7 +179,13 @@ not distinguish a regression from an outage.
 
 There is no CI build: macOS runner minutes cost ten times Linux ones. Before merging,
 build on a Mac from the AudienceKit checkout with `scripts/verify-apple.sh hotmess`
-(see the AudienceKit README, "Verifying Apple targets").
+(see the AudienceKit README, "Verifying Apple targets"). What CI does run is
+`.github/workflows/graphql-documents.yml`, which checks every GraphQL document in
+`HotMess/` and `HotMessTests/` against the published consumer schema (see
+[Validate your GraphQL documents](https://developer.audiencekit.com/api/validate-documents/)).
+The dumps publish from the API's `main`, so while this app tracks `next` the step
+is `continue-on-error`; locally, run the same check against
+`api/schema.graphql` in an `audience-kit` checkout on `next`.
 
 ## TestFlight
 
@@ -196,7 +212,16 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
 - Sign-in requests only `public_profile` while App Review is pending. Revisit
   additional permissions after approval.
 
-The shared Swift package is resolved from the AudienceKit repository root (`../../..`). Keep this iOS checkout at `apps/hot_mess/ios` when building. Consumer services come from `AudienceKit`; shared design tokens and UI come from `AudienceKitUI`, both built on `AudienceCore`.
+The shared Swift package is the AudienceKit Swift SDK, resolved from
+`https://github.com/audience-kit/audience-kit-sdk-swift.git`. It follows the SDK's
+`main` branch, which carries 0.19.0 (the pre-release sweep); the SDK repository has
+no tags yet, so when it starts tagging, change the requirement in `HotMess.xcodeproj`
+to `upToNextMinorVersion` from `0.19.0`. Consumer
+services come from `AudienceKit`; shared design tokens and UI come from
+`AudienceKitUI`, both built on `AudienceCore`. The app's realtime cable is the SDK's
+`AudienceCable`, which signs its handshake the way every call is signed
+(`Authorization: Bearer`, `X-AudienceKit-API-Version`); `GraphQLCable` only reads the
+subscription results.
 
 ## Shared App Group
 

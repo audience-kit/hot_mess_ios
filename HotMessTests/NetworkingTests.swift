@@ -28,12 +28,34 @@ struct EndpointTests {
         #expect(url.absoluteString == "https://api.hotmess.social/v1/me")
     }
 
-    @Test("Reads the version manifest without a session")
-    func manifestIsPublic() {
-        let manifest = HotMessAPI.Endpoints.manifest(device: DeviceDescription(identifier: "d"))
+    @Test("Reads the client status without a session")
+    func statusIsPublic() {
+        let status = HotMessAPI.Endpoints.status
 
-        #expect(manifest.method == .post)
-        #expect(manifest.requiresAuthentication == false)
+        #expect(status.path == "/v1/status")
+        #expect(status.method == .get)
+        #expect(status.requiresAuthentication == false)
+    }
+
+    @Test("Reads the oldest supported version from the status")
+    func clientStatus() throws {
+        let json = """
+        { "api": { "version": "2026-10-11", "sdk": { "ios": { "minimumVersion": "0.1.0" } } },
+          "clients": { "ios": { "minimumVersion": "1.0.15", "latestVersion": "1.1.0", "storeUrl": "https://apps.apple.com/app/id1" },
+                       "android": { "minimumVersion": "1.0.0", "latestVersion": "1.0.0", "storeUrl": null } } }
+        """
+        let status = try JSONDecoder.hotMess.decode(ServiceStatus.self, from: Data(json.utf8))
+        let ios = try #require(status.ios)
+
+        #expect(status.apiVersion == "2026-10-11")
+        #expect(ios.minimumVersion == "1.0.15")
+        #expect(ios.latestVersion == "1.1.0")
+        #expect(ios.storeURL?.host() == "apps.apple.com")
+        #expect(ios.allows(version: "1.0.15"))
+        #expect(ios.allows(version: "1.1"))
+        #expect(ios.allows(version: "2.0.0"))
+        #expect(!ios.allows(version: "1.0.9"))
+        #expect(!ios.allows(version: "0.9"))
     }
 
     @Test("Signs in with Apple without a session, and connects Facebook with one")
@@ -64,7 +86,7 @@ struct EndpointTests {
 struct GraphQLTests {
     @Test("Sends coordinates as a CoordinatesInput, leaving out a zero beacon")
     func coordinatesInput() {
-        let value = Coordinates(latitude: 1.5, longitude: -2.5, beaconMajor: 0, beaconMinor: 4).audienceKit.graphQLValue
+        let value = Coordinates(latitude: 1.5, longitude: -2.5, beaconMajor: 0, beaconMinor: 4).graphQLInput
 
         #expect(value == ["latitude": 1.5, "longitude": -2.5, "beaconMinor": 4])
     }
@@ -72,20 +94,26 @@ struct GraphQLTests {
     @Test("Decodes reportLocation into Now through the aliased fields")
     func decodesNow() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Happening Now in Spokane","image_url":"https://cdn.example/spokane.jpg","venue":null,
-          "venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
-                     "phone":null,"distance":120.5,"point":"POINT (-117.414777 47.6575451)",
-                     "facebook_id":"123","photo_url":null,"hero_url":null,"is_liked":false}],
-          "events":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
-                     "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
-                     "cover_photo_url":null,"is_featured":false,"rsvp":"ATTENDING","venue":null}]
-        }}}
+        {"reportLocation":{
+          "venue":null,
+          "nearby_venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
+                     "distance":120.5,"point":"POINT (-117.414777 47.6575451)","photo_url":null,"banner_url":null,
+                     "profile":{"address":"232 W Sprague","phone":null,
+                                "facebook":{"facebook_id":"123","is_liked":false}}}],
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane",
+                    "banner_url":"https://cdn.example/spokane.jpg","chat":{"open":false,"recent_messages":{"nodes":[]}},
+                    "events":{"upcoming":{"nodes":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
+                               "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
+                               "banner_url":null,"is_featured":false,"rsvp":{"mine":"ATTENDING"},
+                               "venue":{"name":"To be announced","venue":null}}]}}},
+          "audience":{"me":{"ping":null}}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         #expect(now.title == "Happening Now in Spokane")
+        #expect(now.imageURL?.absoluteString == "https://cdn.example/spokane.jpg")
         #expect(now.isNearVenues)
         let venue = try #require(now.venues?.first)
         #expect(venue.name == "Nyne")
@@ -97,21 +125,28 @@ struct GraphQLTests {
     @Test("Decodes the venue's recent chat lines into Now")
     func decodesNowAtVenue() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Nyne","image_url":null,"venues":null,"events":[],
-          "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":"232 W Sprague",
-                   "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,"hero_url":null,
-                   "is_liked":false,
-                   "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"who's here?",
-                                       "name":"Sam","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
-                                       "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]},
-          "friends":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend","facebook_id":"4242"}]
-        }}}
+        {"reportLocation":{
+          "nearby_venues":null,
+          "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
+                   "distance":null,"point":null,"photo_url":null,"banner_url":null,
+                   "profile":{"address":"232 W Sprague","phone":null,
+                              "facebook":{"facebook_id":null,"is_liked":false}},
+                   "chat":{"recent_messages":{"nodes":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
+                                       "message":"who's here?","name":"Sam",
+                                       "user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
+                                       "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}},
+                   "events":{"upcoming":{"nodes":[]}},
+                   "friends":{"list":{"nodes":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend",
+                                       "facebook_id":"4242"}]}}},
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane",
+                    "friends":{"list":{"nodes":[]},"venues":{"nodes":[]}}}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         #expect(now.venue?.name == "Nyne")
+        #expect(now.title == "Nyne")
         #expect(!now.isNearVenues)
         let line = try #require(now.recentMessages.first)
         #expect(line.body == "who's here?")
@@ -123,16 +158,18 @@ struct GraphQLTests {
     @Test("Decodes the locale's chat room into Now when you aren't in a venue")
     func decodesNowLocaleChat() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Happening Now in Seattle","image_url":null,"venue":null,"venues":[],"events":[],
-          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Seattle","chat_open":true,
-                    "recent_messages":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b","message":"anyone out?",
-                                        "name":"Ada","user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
-                                        "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}
-        }}}
+        {"reportLocation":{
+          "venue":null,"nearby_venues":[],
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Seattle",
+                    "chat":{"open":true,
+                            "recent_messages":{"nodes":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
+                                        "message":"anyone out?","name":"Ada",
+                                        "user_id":"2c3d4e5f-6071-4829-8b3c-4d5e6f7a8b9c",
+                                        "avatar_url":null,"sent_at":"2026-10-07T08:00:00Z"}]}}}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         #expect(now.locale == AppLocale(id: UUID(uuidString: "4E5F6071-8293-4A41-8D5E-6F7A8B9C0D1E")!, name: "Seattle"))
         #expect(now.localeChatOpen)
@@ -145,8 +182,8 @@ struct GraphQLTests {
         let locale = AppLocale(id: UUID(), name: "Seattle")
         let room = ChatRoom.locale(locale)
 
-        #expect(room.channelName == "LocaleChannel")
-        #expect(room.subscriptionKey == "locale_id")
+        #expect(room.channelName == "localeChat")
+        #expect(room.subscriptionKey == "localeId")
         #expect(room.name == "Seattle")
         #expect(AppRoute.localeChat(locale).tab == .now)
     }
@@ -154,18 +191,20 @@ struct GraphQLTests {
     @Test("Decodes where friends are when you aren't in a venue")
     func decodesFriendVenues() throws {
         let json = Data(#"""
-        {"reportLocation":{"now":{
-          "title":"Happening Now in Spokane","image_url":null,"venue":null,"venues":[],"events":[],"friends":[],
-          "friend_venues":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne","address":null,
-                                     "phone":null,"distance":null,"point":null,"facebook_id":null,"photo_url":null,
-                                     "hero_url":null,"is_liked":false},
+        {"reportLocation":{
+          "venue":null,"nearby_venues":[],
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane","friends":{"list":{"nodes":[]},
+          "venues":{"nodes":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
+                                     "distance":null,"point":null,"photo_url":null,"banner_url":null,
+                                     "profile":{"address":null,"phone":null,
+                                                "facebook":{"facebook_id":null,"is_liked":false}}},
                             "friend_count":2,
                             "friends":[{"id":"3d4e5f60-7182-4930-9c4d-5e6f7a8b9c0d","name":"Alex Friend","facebook_id":null},
-                                       {"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Sam Chatter","facebook_id":null}]}]
-        }}}
+                                       {"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Sam Chatter","facebook_id":null}]}]}}}
+        }}
         """#.utf8)
 
-        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation.now
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
 
         let entry = try #require(now.friendVenues.first)
         #expect(entry.venue.name == "Nyne")
@@ -173,12 +212,12 @@ struct GraphQLTests {
         #expect(entry.friends.map(\.firstName) == ["Alex", "Sam"])
     }
 
-    @Test("Features up to two events with a cover photo")
+    @Test("Features up to two events with a banner")
     func featuredEvents() {
-        let cover = URL(string: "https://cdn.example/cover.jpg")
+        let banner = URL(string: "https://cdn.example/banner.jpg")
         let events = (0 ..< 4).map { index in
             Event(id: UUID(), name: "Event \(index)", startDate: Date(timeIntervalSince1970: Double(index)),
-                  coverURL: index == 3 ? nil : cover)
+                  bannerURL: index == 3 ? nil : banner)
         }
 
         let listing = EventListing(upcoming: events.reversed())
@@ -209,17 +248,17 @@ struct AppConfigurationTests {
     @Test("Takes the signed-in user's avatar from me's photo")
     func meAvatar() throws {
         let json = Data("""
-        {"me":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":"Rick M.","first_name":"Rick","last_name":"M",
-        "photo":{"cdn_url":"https://cdn.hotmess.social/photos/rick.jpg"}}}
+        {"me":{"self":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":"Rick M.","first_name":"Rick","last_name":"M",
+        "photo":{"cdn_url":"https://cdn.hotmess.social/photos/rick.jpg"}}}}
         """.utf8)
-        let user = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: json).me?.user)
+        let user = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: json).me?.profile?.user)
         #expect(user.name == "Rick M.")
         #expect(user.avatarURL?.absoluteString == "https://cdn.hotmess.social/photos/rick.jpg")
 
         let withoutPhoto = Data("""
-        {"me":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":null,"first_name":"Rick","last_name":"M","photo":null}}
+        {"me":{"self":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":null,"first_name":"Rick","last_name":"M","photo":null}}}
         """.utf8)
-        let plain = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: withoutPhoto).me?.user)
+        let plain = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: withoutPhoto).me?.profile?.user)
         #expect(plain.name == "Rick M")
         #expect(plain.avatarURL == nil)
     }
@@ -286,15 +325,23 @@ struct AudienceKitMappingTests {
         #expect(APIError(AudienceKitError.notFound) == .notFound)
         #expect(APIError(AudienceKitError.http(status: 502)) == .server(status: 502))
         #expect(APIError(AudienceKitError.network(URLError(.notConnectedToInternet))) == .offline)
+
+        // The API's codes, as `extensions.code` or a REST envelope carry them.
+        #expect(APIError(AudienceKitError(code: "UNAUTHENTICATED", message: "Sign in", status: 401)) == .unauthorized)
+        #expect(APIError(AudienceKitError(code: "NOT_FOUND", message: "Gone", status: 404)) == .notFound)
+        #expect(APIError(AudienceKitError(code: "FORBIDDEN", message: "Not yours", status: 403)) == .transport("Not yours"))
+        #expect(APIError(AudienceKitError(code: "INVALID", message: "Note is too long", status: 400,
+                                          fields: ["note": ["is too long"]])) == .transport("Note is too long"))
+        #expect(APIError(AudienceKitError(code: "UNAVAILABLE", message: "Down", status: 503)) == .server(status: 503))
+        #expect(APIError(AudienceKitError(code: "INTERNAL", message: "Oops", status: 500)) == .server(status: 500))
+        #expect(APIError(AudienceKitError(code: "SOMETHING_NEW", message: "Hm", status: 418)) == .transport("Hm"))
     }
 
-    @Test("Reads record UUIDs from plain and global IDs")
+    @Test("Reads record UUIDs in either case")
     func recordIDs() throws {
         let uuid = try #require(UUID(uuidString: "7B4E0C6A-1D2F-4E8A-9C3B-5F6A7B8C9D0E"))
         #expect(RecordID.uuid(uuid.uuidString.lowercased()) == uuid)
-
-        let global = Data("gid://hot-mess/Venue/\(uuid.uuidString.lowercased())".utf8).base64EncodedString()
-        #expect(RecordID.uuid(global) == uuid)
+        #expect(RecordID.uuid(uuid.uuidString) == uuid)
         #expect(RecordID.uuid("nope") == nil)
     }
 }
@@ -331,18 +378,76 @@ struct APIErrorTests {
     }
 }
 
-@Suite("Chat subscription identifier")
+@Suite("Chat subscription")
 struct ChatIdentifierTests {
+    /// The `execute` command's data the cable sends for the room.
+    private func executeData(for room: ChatRoom) -> String {
+        AudienceCable.executeData(
+            query: VenueChatConnection.subscriptionDocument(for: room),
+            variables: VenueChatConnection.variables(for: room),
+            operationName: VenueChatConnection.operationName
+        )
+    }
+
     /// Action Cable finds a subscription by this exact string, so a key order
     /// that changes between calls loses messages.
-    @Test("Sorts its keys, so every frame names the same subscription")
-    func sortedKeys() throws {
+    @Test("Names GraphQLChannel, the audience and the operation, with sorted keys")
+    func sortedKeys() {
+        let identifier = AudienceCable.graphQLIdentifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123")
+
+        #expect(identifier == #"{"audience_id":"b0f8b66a-e636-495d-9475-0f5317ea08e0","channel":"GraphQLChannel","channelId":"abc123"}"#)
+        #expect((0..<20).allSatisfy { _ in
+            AudienceCable.graphQLIdentifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123") == identifier
+        })
+    }
+
+    @Test("Executes the room's subscription, aliased to room, with its ID")
+    func execute() throws {
         let id = try #require(UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
-        let room = ChatRoom(kind: .venue, id: id, name: "Why KiKi")
+        let venue = ChatRoom(kind: .venue, id: id, name: "Why KiKi")
+        let locale = ChatRoom(kind: .locale, id: id, name: "Seattle")
 
-        let identifier = VenueChatConnection.identifier(for: room)
+        let data = executeData(for: venue)
+        let object = try #require(try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any])
+        #expect(object["action"] as? String == "execute")
+        #expect(object["operationName"] as? String == "ChatRoom")
+        #expect(object["variables"] as? [String: String] == ["id": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0"])
 
-        #expect(identifier == #"{"channel":"RealtimeChannel","venue_id":"0a1e0aac-1d01-42d1-9de5-f0279842d9c0"}"#)
-        #expect((0..<20).allSatisfy { _ in VenueChatConnection.identifier(for: room) == identifier })
+        let query = try #require(object["query"] as? String)
+        #expect(query.split(separator: " ").first == "subscription")
+        #expect(query.contains("ChatRoom($id: ID!)"))
+        #expect(query.contains("room: venueChat(venueId: $id)"))
+        for type in ["ChatJoined", "ChatMessagePosted", "ChatMessageUpdated", "ChatMessageRemoved", "ChatPinChanged",
+                     "ChatRoomCleared", "ChatPresenceChanged", "ChatRangeChanged", "ChatLeft"] {
+            #expect(query.contains("... on \(type) "))
+        }
+        #expect(query.contains("sender_presence: senderPresence"))
+
+        #expect(VenueChatConnection.subscriptionDocument(for: locale).contains("room: localeChat(localeId: $id)"))
+        #expect(executeData(for: venue) == data)
+    }
+
+    @Test("Sends a line to the room it's in")
+    func sendVariables() throws {
+        let id = try #require(UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
+
+        #expect(HotMessAPI.sendMyChatMessageVariables("hi", in: ChatRoom(kind: .venue, id: id, name: "Why KiKi")) == [
+            "input": ["venueId": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "message": "hi"],
+        ])
+        #expect(HotMessAPI.sendMyChatMessageVariables("anyone out?", in: ChatRoom(kind: .locale, id: id, name: "Seattle")) == [
+            "input": ["localeId": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "message": "anyone out?"],
+        ])
+        #expect(HotMessAPI.Documents.sendMyChatMessage.contains("sendMyChatMessage(input: $input)"))
+    }
+
+    @Test("Decodes the mutation's line")
+    func sendResponse() throws {
+        let json = Data(#"{ "sendMyChatMessage": { "message": { "id": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "message": "hi", "body": "hi", "user_id": "00000000-0000-0000-0000-0000000000aa", "sent_at": "2026-10-11T04:00:00Z", "kind": "TEXT", "role": null, "pinned": false, "posted_as_venue": false, "posted_as_person": false } } }"#.utf8)
+        let message = VenueMessage(payload: try JSONDecoder.hotMess.decode(SendMyChatMessageResponse.self, from: json).sendMyChatMessage.message)
+
+        #expect(message.id == UUID(uuidString: "0A1E0AAC-1D01-42D1-9DE5-F0279842D9C0"))
+        #expect(message.body == "hi")
+        #expect(message.kind == .text)
+        #expect(message.sentAt == Date(timeIntervalSince1970: 1_791_691_200))
     }
 }

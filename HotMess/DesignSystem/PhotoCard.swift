@@ -311,7 +311,7 @@ struct EventCard: View {
 
     var body: some View {
         PhotoCard(
-            url: event.coverURL,
+            url: event.bannerURL,
             minHeight: event.isFeatured ? CardMetrics.featuredHeight : CardMetrics.photoHeight,
             topClearance: 68
         ) {
@@ -444,14 +444,14 @@ struct PersonCard: View {
 
     var body: some View {
         PhotoCard(
-            url: person.pictureURL,
+            url: person.avatarURL,
             minHeight: CardMetrics.personHeight,
             topClearance: 14,
             blur: 24,
             alignment: .leading
         ) {
             HStack(spacing: 14) {
-                Avatar(url: person.pictureURL, initials: person.name.initialsForDisplay, size: 56)
+                Avatar(url: person.avatarURL, initials: person.name.initialsForDisplay, size: 56)
                     .overlay { Circle().strokeBorder(Color.hotMessAvatarRing, lineWidth: 2) }
 
                 VStack(alignment: .leading, spacing: 2) {

@@ -26,3 +26,6 @@ xcuserdata/
 .idea/
 .vscode/
 Configurations/Local.*.xcconfig
+
+## GraphQL document check (scratch)
+.graphql-check/

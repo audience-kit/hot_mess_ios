@@ -287,7 +287,7 @@ struct VenueChatScreen: View {
         let blocked = model.safety.blockedIDs
         let sent = viewModel.messages
             .filter { $0.isShowing(at: date) }
-            .filter { $0.isFromPlace || !blocked.contains($0.userID) }
+            .filter { $0.isFromListing || !blocked.contains($0.userID) }
             .map { message in
                 message.threadMessage(
                     currentUserID: viewModel.userID,
@@ -342,8 +342,9 @@ struct VenueChatScreen: View {
             room: room,
             configuration: model.configuration,
             userID: model.session.userID,
-            token: model.session.bearerToken,
+            cable: model.cable,
             friends: model.friends,
+            api: model.api,
             reportPresence: { [location = model.location] in await location.reportCurrentPosition() }
         )
     }

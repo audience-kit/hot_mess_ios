@@ -18,15 +18,20 @@ enum HotMessDecoding {
             let container = try decoder.singleValueContainer()
             let text = try container.decode(String.self)
 
-            if let date = fractionalSeconds.date(from: text) { return date }
-            if let date = iso8601WithFractionalSeconds.date(from: text) { return date }
-            if let date = iso8601.date(from: text) { return date }
+            if let date = date(from: text) { return date }
 
             throw DecodingError.dataCorruptedError(
                 in: container,
                 debugDescription: "Unrecognised date format: \(text)"
             )
         }
+    }
+
+    /// A date in any of the shapes the API sends, or `nil`.
+    static func date(from text: String) -> Date? {
+        fractionalSeconds.date(from: text)
+            ?? iso8601WithFractionalSeconds.date(from: text)
+            ?? iso8601.date(from: text)
     }
 
     static var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy {
@@ -80,4 +85,17 @@ extension KeyedDecodingContainer {
               !text.isEmpty else { return nil }
         return URL(string: text)
     }
+}
+
+/// A GraphQL connection read as `{ nodes { … } }`, which is how the app asks
+/// for every connection it doesn't page.
+struct Nodes<Element: Decodable & Sendable>: Decodable, Sendable {
+    let nodes: [Element]
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        nodes = try container.decodeIfPresent([Element].self, forKey: .nodes) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey { case nodes }
 }

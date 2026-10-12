@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import Observation
 
@@ -18,12 +19,13 @@ final class VenueChatViewModel {
         case disconnected(String?)
     }
 
-    /// A line the user sent that the room hasn't echoed back yet.
+    /// A line the user sent that the room hasn't shown yet.
     struct PendingMessage: Identifiable, Equatable, Sendable {
         enum State: Equatable, Sendable {
-            /// Waiting to join the room, or sent and waiting for the echo.
+            /// Waiting to join the room, or sent and waiting for the API.
             case sending
-            /// No echo in time, or the room closed. The user can retry.
+            /// `sendMyChatMessage` failed or didn't answer in time, or the
+            /// room closed. The user can retry.
             case failed
         }
 
@@ -39,7 +41,7 @@ final class VenueChatViewModel {
     /// The API counts a position as present for 15 minutes.
     static let presenceInterval: Duration = .seconds(240)
 
-    /// How long a sent line waits for the room to echo it before it's shown as failed.
+    /// How long a sent line waits for the API (or the room's echo) before it's shown as failed.
     static let echoTimeout: Duration = .seconds(10)
 
     private(set) var messages: [VenueMessage] = []
@@ -68,9 +70,10 @@ final class VenueChatViewModel {
 
     let room: ChatRoom
 
-    private let url: URL?
+    /// The app's one cable, which the room's subscription rides with
+    /// everything else realtime. Without it there's no chat.
+    private let cable: AudienceCable?
     private let configuration: AppConfiguration
-    private let token: String?
     let userID: UUID?
     /// The app's friends so far. The roster's full list of friends goes in,
     /// so friends show by full name everywhere.
@@ -79,7 +82,11 @@ final class VenueChatViewModel {
     /// there's no directory.
     private var rosterFriendNames: [UUID: String] = [:]
     private let reportPresence: @MainActor () async -> Void
-    private var connection: VenueChatConnection?
+    /// Sends lines (`sendMyChatMessage`) and names the audience the room's
+    /// subscription runs in. Without it nothing can be sent.
+    private let api: HotMessAPI?
+    /// The room's subscription, while one is open.
+    private var following: Task<Outcome, Never>?
     private var presenceTask: Task<Void, Never>?
     /// Bumped by `stop()`, so a `run()` waiting to reconnect knows it's over.
     private var generation = 0
@@ -90,17 +97,18 @@ final class VenueChatViewModel {
         room: ChatRoom,
         configuration: AppConfiguration,
         userID: UUID?,
-        token: String?,
+        cable: AudienceCable? = nil,
         friends: FriendDirectory? = nil,
+        api: HotMessAPI? = nil,
         reportPresence: @escaping @MainActor () async -> Void = {}
     ) {
         self.room = room
+        self.api = api
         self.configuration = configuration
         self.userID = userID
-        self.token = token
+        self.cable = cable
         self.friends = friends
         self.reportPresence = reportPresence
-        url = configuration.realtimeURL
     }
 
     /// Lines typed while the room is still joining wait in `pending` and go out
@@ -137,7 +145,7 @@ final class VenueChatViewModel {
             let person = roomPeople[id]
             let friendName = rosterFriendNames[id] ?? directory[id]?.name
             let posted = person?.name == nil || person?.avatarURL == nil
-                ? messages.last(where: { $0.userID == id && !$0.isFromPlace })
+                ? messages.last(where: { $0.userID == id && !$0.isFromListing })
                 : nil
 
             return HereNowPerson(
@@ -151,13 +159,15 @@ final class VenueChatViewModel {
         return HereNowPerson.sorted(people)
     }
 
-    /// Reports the position, connects, and streams messages until the room
-    /// closes or the server says the user isn't in the room's place. While it's open,
-    /// the position is reported again every few minutes. A dropped or silent
-    /// socket reconnects on its own, after a short wait that grows with each
-    /// failure in a row, so the room keeps hearing who arrives.
+    /// Reports the position, subscribes to the room on the app's cable, and
+    /// streams messages until the room closes or the server says the user
+    /// isn't in the room's place. While it's open, the position is reported
+    /// again every few minutes. A dropped or silent socket is the cable's to
+    /// reconnect, and it rejoins the room when it does; if the server ends the
+    /// room's subscription, this subscribes again after a short wait that
+    /// grows with each failure in a row, so the room keeps hearing who arrives.
     func run() async {
-        guard let url else {
+        guard let cable else {
             connectionState = .disconnected(String(localized: "Chat isn't available for this build."))
             return
         }
@@ -170,7 +180,17 @@ final class VenueChatViewModel {
             guard !Task.isCancelled, generation == self.generation else { return }
             startReportingPresence()
 
-            switch await follow(url: url) {
+            let outcome: Outcome
+            if let audienceID = await audienceID() {
+                outcome = await follow(cable: cable, audienceID: audienceID)
+            } else if api == nil {
+                connectionState = .disconnected(String(localized: "Chat isn't available for this build."))
+                return
+            } else {
+                outcome = .dropped
+            }
+
+            switch outcome {
             case .stopped, .notPresent:
                 return
             case .joined:
@@ -179,11 +199,6 @@ final class VenueChatViewModel {
                 failures += 1
             }
 
-            // Don't keep the dead socket around while waiting to reconnect.
-            if let connection {
-                self.connection = nil
-                await connection.disconnect()
-            }
             do {
                 try await Task.sleep(for: Self.reconnectDelay(afterFailures: failures))
             } catch {
@@ -199,62 +214,96 @@ final class VenueChatViewModel {
     }
 
     private enum Outcome {
-        /// `stop()` or a new run ended it.
+        /// `stop()`, a new run or the session ending ended it.
         case stopped
         case notPresent
-        /// The socket closed after the room was joined.
+        /// The server ended the subscription after the room was joined.
         case joined
-        /// The socket closed before the room was joined.
+        /// It ended before the room was joined.
         case dropped
     }
 
-    /// One socket's life: connects and applies its frames until it closes.
-    private func follow(url: URL) async -> Outcome {
-        let connection = VenueChatConnection(room: room, url: url, token: token)
-        self.connection = connection
-        await connection.connect()
+    /// The audience the room's subscription runs in: the build's pinned ID,
+    /// else the API's (from the session or the host). `nil`, with the room
+    /// shown as disconnected, when it can't be worked out now.
+    private func audienceID() async -> String? {
+        if let audienceID = configuration.audienceID { return audienceID }
+        guard let api else { return nil }
 
+        do {
+            return try await api.audienceID()
+        } catch {
+            connectionState = .disconnected(error.localizedDescription)
+            return nil
+        }
+    }
+
+    /// One subscription's life: joins the room on the cable and applies its
+    /// events until it ends. It runs in a task of its own so `stop()` can end
+    /// it; ending the iteration leaves the room, and the cable closes its
+    /// socket once nothing else is on it.
+    private func follow(cable: AudienceCable, audienceID: String) async -> Outcome {
+        following?.cancel()
+        let task = Task { [room] in
+            let subscription = await VenueChatConnection.subscribe(to: room, on: cable, audienceID: audienceID)
+            return await self.apply(subscription)
+        }
+        following = task
+        let outcome = await task.value
+        if following == task { following = nil }
+        return outcome
+    }
+
+    private func apply(_ subscription: AsyncStream<AudienceCable.Event>) async -> Outcome {
         var joined = false
-        for await event in connection.events {
-            guard !Task.isCancelled, self.connection === connection else { break }
-            switch event {
-            case .connected:
-                joined = true
-                connectionState = .connected
-                await sendPending()
-            case let .received(message):
-                receive(message)
-            case let .range(outOfRange):
-                isOutOfRange = outOfRange
-            case let .roster(online, people, friends):
-                applyRoster(online: online, people: people, friends: friends)
-            case let .presence(userID, online, name, avatarURL):
-                applyPresence(userID: userID, online: online, name: name, avatarURL: avatarURL)
-            case let .reachable(userID):
-                applyPresence(userID: userID, online: false, name: nil, avatarURL: nil)
-                reachableUserIDs.insert(userID)
-            case let .history(messages, pinned):
-                applyHistory(messages, pinned: pinned)
-            case let .pin(id, announcement):
-                applyPin(id: id, announcement: announcement)
-            case let .removed(id):
-                applyRemoval(id: id)
-            case .cleared:
-                applyClear()
-            case .notPresent:
-                connectionState = .notPresent
-                clearRoom()
-                failPending()
-                await stop()
-                return .notPresent
-            case let .disconnected(reason):
-                connectionState = .disconnected(reason)
-                clearRoom()
-                failPending()
-                return joined ? .joined : .dropped
+        for await cableEvent in subscription {
+            guard !Task.isCancelled else { return .stopped }
+            for event in VenueChatConnection.events(from: cableEvent) {
+                switch event {
+                case .connected:
+                    joined = true
+                    connectionState = .connected
+                    sendPending()
+                case let .received(message):
+                    receive(message)
+                case let .range(outOfRange):
+                    isOutOfRange = outOfRange
+                case let .roster(online, people, friends):
+                    applyRoster(online: online, people: people, friends: friends)
+                case let .presence(userID, online, name, avatarURL):
+                    applyPresence(userID: userID, online: online, name: name, avatarURL: avatarURL)
+                case let .reachable(userID):
+                    applyPresence(userID: userID, online: false, name: nil, avatarURL: nil)
+                    reachableUserIDs.insert(userID)
+                case let .history(messages, pinned):
+                    applyHistory(messages, pinned: pinned)
+                case let .pin(id, announcement):
+                    applyPin(id: id, announcement: announcement)
+                case let .removed(id):
+                    applyRemoval(id: id)
+                case .cleared:
+                    applyClear()
+                case .notPresent:
+                    connectionState = .notPresent
+                    clearRoom()
+                    failPending()
+                    presenceTask?.cancel()
+                    presenceTask = nil
+                    generation += 1
+                    return .notPresent
+                case let .disconnected(reason, reconnects):
+                    connectionState = .disconnected(reason)
+                    clearRoom()
+                    failPending()
+                    guard reconnects else { return .stopped }
+                    // The cable rejoins on its own; tell the API the user is
+                    // still here first, so the room lets them back in.
+                    Task { [reportPresence] in await reportPresence() }
+                }
             }
         }
-        return .stopped
+        if Task.isCancelled { return .stopped }
+        return joined ? .joined : .dropped
     }
 
     /// After "only for people at …": report the position again and reconnect.
@@ -301,9 +350,8 @@ final class VenueChatViewModel {
         generation += 1
         presenceTask?.cancel()
         presenceTask = nil
-        let previous = connection
-        connection = nil
-        await previous?.disconnect()
+        following?.cancel()
+        following = nil
     }
 
     // MARK: - Who's here
@@ -345,7 +393,7 @@ final class VenueChatViewModel {
     func applyHistory(_ history: [VenueMessage], pinned: VenueMessage?) {
         messages = history
         self.pinned = pinned
-        reachableUserIDs = Set(history.filter { $0.presence == .push && !$0.isFromPlace }.map(\.userID))
+        reachableUserIDs = Set(history.filter { $0.presence == .push && !$0.isFromListing }.map(\.userID))
     }
 
     /// An announcement was pinned, replacing whichever was, or unpinned.
@@ -390,23 +438,29 @@ final class VenueChatViewModel {
         Task { await run() }
     }
 
-    private func sendPending() async {
-        for message in pending where message.state == .sending {
-            await deliver(message.id)
+    /// Sends the lines that waited for the room, in order, without holding
+    /// up the room's events while the API answers.
+    private func sendPending() {
+        let ids = pending.filter { $0.state == .sending }.map(\.id)
+        guard !ids.isEmpty else { return }
+
+        Task {
+            for id in ids {
+                await deliver(id)
+            }
         }
     }
 
-    /// Writes the line and fails it if the room hasn't echoed it in time.
+    /// Sends the line with `sendMyChatMessage`, and fails it if the API
+    /// refuses it or hasn't answered in time.
     private func deliver(_ id: UUID) async {
-        guard let connection, let index = pending.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = pending.firstIndex(where: { $0.id == id }) else { return }
 
         pending[index].attempt += 1
         let attempt = pending[index].attempt
         let body = pending[index].body
 
-        do {
-            try await connection.send(body)
-        } catch {
+        guard let api else {
             markFailed(id, attempt: attempt)
             return
         }
@@ -415,17 +469,37 @@ final class VenueChatViewModel {
             try? await Task.sleep(for: Self.echoTimeout)
             self?.markFailed(id, attempt: attempt)
         }
+
+        do {
+            settle(id, with: try await api.sendMyChatMessage(body, in: room))
+        } catch {
+            Log.realtime.error("Chat line not sent: \(error.localizedDescription, privacy: .public)")
+            markFailed(id, attempt: attempt)
+        }
     }
 
-    /// The server sends nothing to identify the sender's own copy beyond who
-    /// sent it, so the echo settles the oldest pending line with the same text.
-    private func receive(_ message: VenueMessage) {
-        if isOutgoing(message), let index = pending.firstIndex(where: { $0.body == message.body }) {
+    /// The API took the line: it leaves `pending` and shows as the room will
+    /// show it, unless the room's echo got here first.
+    func settle(_ id: UUID, with message: VenueMessage) {
+        pending.removeAll { $0.id == id }
+        if !messages.contains(where: { $0.id == message.id }) {
+            messages.append(message)
+        }
+    }
+
+    /// A line the API hasn't answered for yet can come back from the room
+    /// first. Nothing in it names the pending line beyond who sent it, so it
+    /// settles the oldest pending line with the same text. Once a line is
+    /// shown (the mutation answered first), its echo only updates it.
+    func receive(_ message: VenueMessage) {
+        if isOutgoing(message),
+           !messages.contains(where: { $0.id == message.id }),
+           let index = pending.firstIndex(where: { $0.body == message.body }) {
             pending.remove(at: index)
         }
 
         switch message.presence {
-        case .push where !message.isFromPlace: reachableUserIDs.insert(message.userID)
+        case .push where !message.isFromListing: reachableUserIDs.insert(message.userID)
         case .online: reachableUserIDs.remove(message.userID)
         default: break
         }

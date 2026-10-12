@@ -9,9 +9,10 @@ import Foundation
 /// The typed surface of the Hot Mess API.
 ///
 /// Everything goes through the audience's GraphQL endpoint on the AudienceKit
-/// SDK except the version manifest, which is read before sign-in and isn't
-/// part of any audience. The GraphQL documents alias fields to the snake_case
-/// keys the models already decode, so one set of models serves both.
+/// SDK except the client status, which is read before sign-in and isn't part
+/// of any audience, and the two REST sign-ins the SDK has no call for. The
+/// GraphQL documents alias fields to the snake_case keys the models already
+/// decode, so one set of models serves both.
 struct HotMessAPI: Sendable {
     let client: APIClient
 
@@ -40,9 +41,9 @@ struct HotMessAPI: Sendable {
 
         return try await query(
             Documents.reportLocation,
-            variables: ["position": coordinates.audienceKit.graphQLValue],
+            variables: ["position": coordinates.graphQLInput],
             as: ReportLocationResponse.self
-        ).reportLocation.now
+        ).reportLocation
     }
 
     // MARK: - Geofences
@@ -53,7 +54,7 @@ struct HotMessAPI: Sendable {
     func venueFences(near coordinates: Coordinates) async throws -> [VenueFence] {
         try await query(
             Documents.venueFences,
-            variables: ["near": coordinates.audienceKit.graphQLValue],
+            variables: ["near": coordinates.graphQLInput],
             as: VenueFencesResponse.self
         ).venues
     }
@@ -64,8 +65,9 @@ struct HotMessAPI: Sendable {
         guard let coordinates else { return nil }
 
         do {
-            guard let locale = try await audienceKit.closestLocale(near: coordinates.audienceKit),
-                  let id = RecordID.uuid(locale.id) else { return nil }
+            guard let locale = try await audienceKit.closestLocale(
+                near: coordinates.coordinate, beaconMajor: coordinates.beaconMajor
+            ), let id = RecordID.uuid(locale.id) else { return nil }
             return AppLocale(id: id, name: locale.name ?? locale.label ?? "")
         } catch let error as AudienceKitError {
             throw APIError(error)
@@ -192,43 +194,38 @@ struct HotMessAPI: Sendable {
     /// `AudienceKitError`s so the session can tell an ended session (401)
     /// from a network blip.
     func me() async throws -> User? {
-        try await audienceKit.graphQL(Documents.me, as: MeResponse.self, decoder: .hotMess).me?.user
+        try await audienceKit.graphQL(Documents.me, as: MeResponse.self, decoder: .hotMess).me?.profile?.user
     }
 
-    func serviceManifest(device: DeviceDescription) async throws -> VersionInfo {
-        try await client.send(Endpoints.manifest(device: device)).apple
+    /// What the API asks of this app: the oldest version it still serves.
+    /// `nil` when the status has no iOS row.
+    func clientRequirement() async throws -> VersionInfo? {
+        try await client.send(Endpoints.status).ios
     }
 
     /// Trades a Sign in with Apple identity token for a session. The caller
-    /// stores the token it returns.
-    func signInWithApple(_ request: AppleSignInRequest) async throws -> SignInResult {
+    /// hands the credential to the SDK (`adopt(credential:)`), which stores it.
+    func signInWithApple(_ request: AppleSignInRequest) async throws -> Credential {
         try await client.send(Endpoints.appleSignIn(request))
     }
 
     /// Connects Facebook to the signed-in account, with the code from
-    /// Facebook's login dialog, and returns a new session for the account.
-    /// The caller stores the token it returns.
-    func connectFacebook(_ request: ConnectFacebookRequest) async throws -> SignInResult {
+    /// Facebook's login dialog, and returns a new credential for the account.
+    /// The caller hands it to the SDK (`adopt(credential:)`), which stores it.
+    func connectFacebook(_ request: ConnectFacebookRequest) async throws -> Credential {
         try await client.send(Endpoints.connectFacebook(request))
     }
 
-    /// Stores the APNs token for this device. `appID` is the bundle
-    /// identifier, which the API sends pushes to as the APNs topic, and
-    /// `sandbox` says the token is for APNs' development environment.
+    /// Stores the APNs token for this device, through the SDK's
+    /// `registerDevice`. `appID` is the bundle identifier, which the API sends
+    /// pushes to as the APNs topic, and `sandbox` says the token is for APNs'
+    /// development environment.
     func registerForPush(deviceToken: Data, appID: String?, sandbox: Bool) async throws {
-        _ = try await query(
-            Documents.registerDevice,
-            variables: Self.registerDeviceVariables(token: deviceToken.hexEncodedString, appID: appID, sandbox: sandbox),
-            as: RegisterDeviceResponse.self
-        )
-    }
-
-    static func registerDeviceVariables(token: String, appID: String?, sandbox: Bool) -> [String: GraphQLValue] {
-        [
-            "notificationToken": .string(token),
-            "appId": appID.map(GraphQLValue.string) ?? .null,
-            "sandbox": .bool(sandbox),
-        ]
+        do {
+            try await audienceKit.registerDevice(token: deviceToken.hexEncodedString, appId: appID, sandbox: sandbox)
+        } catch let error as AudienceKitError {
+            throw await APIClient.recorded(APIError(error), operation: "graphql mutation RegisterDevice")
+        }
     }
 
     // MARK: - Pings
@@ -236,7 +233,7 @@ struct HotMessAPI: Sendable {
     /// The user's own active Ping and friends' active Pings, without
     /// reporting a location.
     func pings() async throws -> PingsResponse {
-        try await query(Documents.pings, variables: [:], as: PingsResponse.self)
+        try await query(Documents.pings, variables: [:], as: AudiencePingsResponse.self).pings
     }
 
     /// Sends a Ping for tonight, or edits the one already running.
@@ -339,6 +336,40 @@ struct HotMessAPI: Sendable {
         )
     }
 
+    /// Says something in a chat room as the user. The line also reaches the
+    /// room's subscribers, the user's own included, as a `ChatMessagePosted`;
+    /// this returns it as the room sees it, so the app can settle its pending
+    /// line by ID.
+    func sendMyChatMessage(_ body: String, in room: ChatRoom) async throws -> VenueMessage {
+        let sent = try await query(
+            Documents.sendMyChatMessage,
+            variables: Self.sendMyChatMessageVariables(body, in: room),
+            as: SendMyChatMessageResponse.self
+        )
+        return VenueMessage(payload: sent.sendMyChatMessage.message)
+    }
+
+    /// `{ input: { venueId | localeId, message } }`.
+    static func sendMyChatMessageVariables(_ body: String, in room: ChatRoom) -> [String: GraphQLValue] {
+        [
+            "input": .object([
+                room.subscriptionKey: .string(room.id.uuidString.lowercased()),
+                "message": .string(body),
+            ]),
+        ]
+    }
+
+    /// The audience the app's GraphQL goes to: the build's pinned ID, the
+    /// session's, or the one that owns the configured host. Chat sockets name
+    /// it when they subscribe.
+    func audienceID() async throws -> String {
+        do {
+            return try await audienceKit.audienceID()
+        } catch let error as AudienceKitError {
+            throw APIError(error)
+        }
+    }
+
     func acceptTerms() async throws -> Date? {
         try await query(Documents.acceptTerms, variables: [:], as: AcceptTermsResponse.self)
             .acceptTerms.termsAcceptedAt
@@ -390,32 +421,23 @@ struct HotMessAPI: Sendable {
 
 extension HotMessAPI {
     enum Endpoints {
-        /// The minimum supported build. It's read before sign-in and isn't
-        /// part of any audience, so it stays on REST.
-        static func manifest(device: DeviceDescription) -> Endpoint<ServiceManifest> {
-            Endpoint(
-                "/",
-                method: .post,
-                body: JSONBody(ManifestRequest(device: device)),
-                requiresAuthentication: false
-            )
-        }
+        /// The client requirements, read-only and open. Read before sign-in,
+        /// and not part of any audience, so it stays on REST.
+        static let status = Endpoint<ServiceStatus>("/v1/status", method: .get, requiresAuthentication: false)
 
-        /// Sign in with Apple. Sign-in mints the token, so none is sent.
-        static func appleSignIn(_ request: AppleSignInRequest) -> Endpoint<SignInResult> {
+        /// Sign in with Apple. Sign-in mints the token, so none is sent. The
+        /// response is the credential JSON (`token userId audienceId role
+        /// endpoint`), which the SDK's `Credential` decodes.
+        static func appleSignIn(_ request: AppleSignInRequest) -> Endpoint<Credential> {
             Endpoint("/v1/token/apple", method: .post, body: JSONBody(request), requiresAuthentication: false)
         }
 
         /// Facebook sign-in with `connect`, sent with the current session so
         /// the API knows which account Facebook joins.
-        static func connectFacebook(_ request: ConnectFacebookRequest) -> Endpoint<SignInResult> {
+        static func connectFacebook(_ request: ConnectFacebookRequest) -> Endpoint<Credential> {
             Endpoint("/v1/token", method: .post, body: JSONBody(request))
         }
     }
-}
-
-struct ManifestRequest: Encodable, Sendable {
-    let device: DeviceDescription
 }
 
 /// `POST /v1/token/apple`. Apple gives the name only the first time someone
@@ -460,13 +482,16 @@ struct ConnectFacebookRequest: Encodable, Sendable {
 extension HotMessAPI {
     /// The GraphQL documents, with fields aliased to the keys the models decode.
     enum Documents {
+        /// `profile` is the venue's profile mixin (see `ListingProfile`).
         static let venueFields = """
-        id name address phone distance point \
-        facebook_id: facebookId photo_url: photoUrl hero_url: heroUrl is_liked: isLiked
+        id name distance point photo_url: photoUrl banner_url: bannerUrl \
+        profile { address phone facebook { facebook_id: facebookId is_liked: isLiked } }
         """
 
+        /// `profile` is the person's profile mixin (see `ListingProfile`).
         static let personFields = """
-        id name facebook_id: facebookId is_liked: isLiked photo_url: pictureUrl cover_url: coverUrl
+        id name avatar_url: avatarUrl banner_url: bannerUrl \
+        profile { facebook { facebook_id: facebookId is_liked: isLiked } }
         """
 
         static let friendFields = "id name facebook_id: facebookId presence avatar_url: avatarUrl"
@@ -485,71 +510,101 @@ extension HotMessAPI {
         static let messageFields = """
         id message body name user_id: userId avatar_url: avatarUrl sent_at: sentAt \
         role kind title photo_url: photoUrl ends_at: endsAt pinned posted_as_venue: postedAsVenue presence \
+        posted_as_person: postedAsPerson person { id } \
         event { id name start_at: startAt }
         """
 
         /// Enough of a person for a card that links to them.
-        static let personSummaryFields = "id name photo_url: pictureUrl"
+        static let personSummaryFields = "id name avatar_url: avatarUrl"
 
-        /// Who is on at a venue right now (see `Appearance`).
+        /// Who is on at a venue right now (see `Appearance`), under the
+        /// venue's people mixin (see `VenuePeopleMixin`).
         static let onNowFields = """
-        on_now: onNow { id role starts_at: startsAt ends_at: endsAt person { \(personSummaryFields) } }
+        people { on_now: onNow { nodes { id role starts_at: startsAt ends_at: endsAt person { \(personSummaryFields) } } } }
         """
 
         static let socialLinkFields = "id handle provider url"
 
+        /// The social links connection, merged into the profile mixin that
+        /// `venueFields` and `personFields` already select.
+        static let profileSocialLinks = "profile { social_links: socialLinks { nodes { \(socialLinkFields) } } }"
+
+        /// `venue` is the event's venue mixin: the venue under `venue`, null
+        /// while it is to be announced (see `EventVenueMixin`).
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
-        cover_photo_url: coverPhotoUrl is_featured: isFeatured rsvp: viewerRsvp \
-        venue { \(venueFields) }
+        banner_url: bannerUrl is_featured: isFeatured rsvp { mine } \
+        venue { name venue { \(venueFields) } }
         """
 
-        static let coverChargeFields = "amount_cents: amountCents total_cents: totalCents currency night from payable"
+        /// `Money` is `{ cents currency }`; `total` is the all-in price.
+        static let moneyFields = "cents currency"
 
+        static let coverChargeFields = """
+        amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } night from until payable
+        """
+
+        /// `profile` is the buyer: the pass shows their name and avatar.
         static let admissionFields = """
-        id status night total_cents: totalCents currency is_refundable: isRefundable \
+        id status night total { \(moneyFields) } is_refundable: isRefundable \
         pass_secret: passSecret scan_count: scanCount checked_in_at: checkedInAt \
-        user_name: userName user_photo_url: userPhotoUrl \
+        profile { id name avatar_url: avatarUrl } \
         venue { id name photo_url: photoUrl } event { id name }
         """
 
-        /// Tonight's cover at a venue and the user's pass for it.
+        /// Tonight's cover at a venue and the user's pass for it, under the
+        /// venue's cover mixin inside its tickets mixin (see `TicketsMixin`).
         static let venueCoverFields = """
-        cover_charge: coverCharge { \(coverChargeFields) } \
-        viewer_admission: viewerAdmission { \(admissionFields) }
+        tickets { cover { \
+        cover_charge: charge { \(coverChargeFields) } \
+        viewer_admission: viewerAdmission { \(admissionFields) } \
+        } }
         """
+
+        /// How many of a locale's upcoming events Now shows (`Now.localeEventLimit`,
+        /// as the document's literal so it can be checked against the schema).
+        static let localeEventLimit = "5"
 
         static let venueFences = """
         query VenueFences($near: CoordinatesInput!) {
-          venues(near: $near) { id point distance_tolerance: distanceTolerance }
+          venues { list(near: $near) { nodes { id point distance_tolerance: distanceTolerance } } }
         }
         """
 
         static let reportLocation = """
         mutation ReportLocation($position: CoordinatesInput!) {
           reportLocation(input: { position: $position }) {
-            now {
-              title image_url: imageUrl
-              venue {
-                \(venueFields)
-                recent_messages: recentMessages(limit: 3) { \(messageFields) }
-                \(venueCoverFields)
-                \(onNowFields)
+            venue {
+              \(venueFields)
+              chat { recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
+              \(venueCoverFields)
+              \(onNowFields)
+              events { upcoming { nodes { \(eventFields) } } }
+              friends { list { nodes { \(friendFields) } } }
+            }
+            nearby_venues: nearbyVenues { \(venueFields) }
+            locale {
+              id name banner_url: bannerUrl
+              chat { open recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
+              events { upcoming(first: \(localeEventLimit)) { nodes { \(eventFields) } } }
+              friends {
+                list { nodes { \(friendFields) } }
+                venues {
+                  nodes {
+                    venue { \(venueFields) }
+                    friend_count: friendCount
+                    friends { \(friendFields) }
+                  }
+                }
               }
-              venues { \(venueFields) }
-              locale {
-                id name chat_open: chatOpen
-                recent_messages: recentMessages(limit: 3) { \(messageFields) }
+            }
+            audience {
+              me {
+                ping {
+                  my_ping: myPing { \(pingFields) }
+                  friend_pings: friendPings { \(pingFields) }
+                }
               }
-              events { \(eventFields) }
-              friends { \(friendFields) }
-              friend_venues: friendVenues {
-                venue { \(venueFields) }
-                friend_count: friendCount
-                friends { \(friendFields) }
-              }
-              my_ping: myPing { \(pingFields) }
-              friend_pings: friendPings { \(pingFields) }
             }
           }
         }
@@ -557,33 +612,33 @@ extension HotMessAPI {
 
         static let venue = """
         query Venue($id: ID!) {
-          venue(id: $id) {
-            \(venueFields) chat_open: chatOpen
-            events { \(eventFields) }
-            friends { \(friendFields) }
-            social_links: socialLinks { \(socialLinkFields) }
-            recent_messages: recentMessages(limit: 3) { \(messageFields) }
+          venues { venue(id: $id) {
+            \(venueFields)
+            events { upcoming { nodes { \(eventFields) } } }
+            friends { list { nodes { \(friendFields) } } }
+            \(profileSocialLinks)
+            chat { open recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
             \(venueCoverFields)
             \(onNowFields)
-            friend_pings: friendPings { \(pingFields) }
-          }
+            ping { friend_pings: friendPings { \(pingFields) } }
+          } }
         }
         """
 
         static let localeEvents = """
         query LocaleEvents($id: ID!) {
-          locale(id: $id) { events { \(eventFields) } }
+          locale(id: $id) { events { upcoming { nodes { \(eventFields) } } } }
         }
         """
 
         static let event = """
         query Event($id: ID!) {
-          event(id: $id) {
-            \(eventFields) people { \(personFields) }
-            friend_pings: friendPings { \(pingFields) }
-            cover_charge: coverCharge { \(coverChargeFields) }
-            venue_cover: venue { \(venueCoverFields) }
-          }
+          events { event(id: $id) {
+            \(eventFields) people { lineup { nodes { \(personFields) } } }
+            ping { friend_pings: friendPings { \(pingFields) } }
+            tickets { cover { cover_charge: charge { \(coverChargeFields) } } }
+            venue_cover: venue { venue { \(venueCoverFields) } }
+          } }
         }
         """
 
@@ -623,27 +678,31 @@ extension HotMessAPI {
 
         static let admissions = """
         query Admissions {
-          admissions { \(admissionFields) }
+          me { cover { admissions { nodes { \(admissionFields) } } } }
         }
         """
 
         static let person = """
         query Person($id: ID!) {
-          person(id: $id) {
+          people { person(id: $id) {
             \(personFields)
-            events { \(eventFields) }
-            social_links: socialLinks { \(socialLinkFields) }
+            events { upcoming { nodes { \(eventFields) } } }
+            \(profileSocialLinks)
             members { \(personSummaryFields) }
             groups { \(personSummaryFields) }
-            tracks { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl }
-          }
+            music { tracks { nodes { id title provider provider_url: providerUrl waveform_url: waveformUrl artwork_url: artworkUrl } } }
+          } }
         }
         """
 
         static let pings = """
         query Pings {
-          my_ping: myPing { \(pingFields) }
-          friend_pings: friendPings { \(pingFields) }
+          me {
+            ping {
+              my_ping: myPing { \(pingFields) }
+              friend_pings: friendPings { \(pingFields) }
+            }
+          }
         }
         """
 
@@ -675,7 +734,7 @@ extension HotMessAPI {
 
         static let me = """
         query Me {
-          me { id name first_name: firstName last_name: lastName photo { cdn_url: cdnUrl } }
+          me { self { id name first_name: firstName last_name: lastName avatar_url: avatarUrl photo { cdn_url: cdnUrl } } }
         }
         """
 
@@ -685,7 +744,8 @@ extension HotMessAPI {
         query Safety {
           me {
             terms_accepted_at: termsAcceptedAt blocked_users: blockedUsers { \(blockedUserFields) }
-            has_facebook: hasFacebook can_pretend_location: canPretendLocation
+            can_pretend_location: canPretendLocation
+            self { has_facebook: hasFacebook }
           }
         }
         """
@@ -702,6 +762,21 @@ extension HotMessAPI {
         }
         """
 
+        /// A chat line as a room delivers it: `messageFields` without
+        /// `presence`, which in a room comes from the event's `senderPresence`.
+        static let roomMessageFields = """
+        id message body name user_id: userId avatar_url: avatarUrl sent_at: sentAt \
+        role kind title photo_url: photoUrl ends_at: endsAt pinned posted_as_venue: postedAsVenue \
+        posted_as_person: postedAsPerson person { id } \
+        event { id name start_at: startAt }
+        """
+
+        static let sendMyChatMessage = """
+        mutation SendMyChatMessage($input: ChatMessageSendOwnInput!) {
+          sendMyChatMessage(input: $input) { message { \(roomMessageFields) } }
+        }
+        """
+
         static let reportChatMessage = """
         mutation ReportChatMessage($messageId: ID!, $reason: String, $block: Boolean) {
           reportChatMessage(input: { messageId: $messageId, reason: $reason, block: $block }) { reported blocked }
@@ -710,7 +785,7 @@ extension HotMessAPI {
 
         static let removeMyChatMessage = """
         mutation RemoveMyChatMessage($messageId: ID!) {
-          removeMyChatMessage(input: { messageId: $messageId }) { removedMessageId }
+          removeMyChatMessage(input: { messageId: $messageId }) { deletedId }
         }
         """
 
@@ -725,26 +800,18 @@ extension HotMessAPI {
           deleteAccount(input: { confirm: $confirm }) { deleted }
         }
         """
-
-        /// The app's own copy of the SDK's document, with the APNs topic and
-        /// environment the API needs to reach this build.
-        static let registerDevice = """
-        mutation RegisterDevice($notificationToken: String!, $appId: String, $sandbox: Boolean) {
-          registerDevice(input: { notificationToken: $notificationToken, appId: $appId, sandbox: $sandbox }) { registered }
-        }
-        """
     }
 }
 
 struct ReportLocationResponse: Decodable, Sendable {
-    struct Payload: Decodable, Sendable { let now: Now }
-    let reportLocation: Payload
+    let reportLocation: Now
 }
 
+/// `venues { list(near:) { nodes } }` on the root, the audience.
 struct VenueFencesResponse: Decodable, Sendable {
     let venues: [VenueFence]
 
-    private enum CodingKeys: String, CodingKey { case venues }
+    private enum CodingKeys: String, CodingKey { case venues, list, nodes }
 
     /// A venue whose location has no point can't be watched; it's skipped
     /// rather than failing the rest.
@@ -754,13 +821,20 @@ struct VenueFencesResponse: Decodable, Sendable {
     }
 
     init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        venues = try container.decode([Entry].self, forKey: .venues).compactMap(\.fence)
+        let list = try decoder.container(keyedBy: CodingKeys.self)
+            .nestedContainer(keyedBy: CodingKeys.self, forKey: .venues)
+            .nestedContainer(keyedBy: CodingKeys.self, forKey: .list)
+        venues = try list.decode([Entry].self, forKey: .nodes).compactMap(\.fence)
     }
 }
 
+/// `people { person(id:) }`.
 struct PersonResponse: Decodable, Sendable {
-    let person: PersonDetail?
+    struct People: Decodable, Sendable { let person: PersonDetail? }
+
+    let people: People?
+
+    var person: PersonDetail? { people?.person }
 }
 
 /// A venue and its events, which GraphQL returns as one object.
@@ -782,43 +856,63 @@ struct VenueWithEvents: Decodable, Sendable {
     let friendPings: [Ping]
 
     private enum CodingKeys: String, CodingKey {
-        case events, friends
-        case socialLinks = "social_links"
-        case chatOpen = "chat_open"
-        case recentMessages = "recent_messages"
-        case coverCharge = "cover_charge"
-        case viewerAdmission = "viewer_admission"
-        case onNow = "on_now"
-        case friendPings = "friend_pings"
+        case events, friends, tickets, profile, ping, chat, people
     }
 
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
-        friends = try container.decodeIfPresent([Friend].self, forKey: .friends) ?? []
-        socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
-        chatOpen = try container.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
-        recentMessages = (try container.decodeIfPresent([VenueMessage.Payload].self, forKey: .recentMessages) ?? [])
-            .map(VenueMessage.init(payload:))
-        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
-        viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
-        onNow = container.decodeAppearances(forKey: .onNow)
-        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
+        // The tickets mixin (holding the cover mixin) is left out where the
+        // audience has neither module, which reads as no cover. A missing
+        // events or friends mixin reads as none.
+        events = try container.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
+        friends = try container.decodeIfPresent(FriendsMixin.self, forKey: .friends)?.list ?? []
+        // Links come through the profile mixin; missing reads as none.
+        socialLinks = try container.decodeIfPresent(ListingProfile.self, forKey: .profile)?.socialLinks ?? []
+        // Whether the user can join the room, and its last lines, come
+        // through the chat mixin; missing reads as closed.
+        let chat = try container.decodeIfPresent(ChatMixin.self, forKey: .chat)
+        chatOpen = chat?.open ?? false
+        recentMessages = chat?.recentMessages ?? []
+        let cover = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
+        coverCharge = cover?.coverCharge
+        viewerAdmission = cover?.viewerAdmission
+        // Who's on comes through the people mixin; missing reads as no one.
+        onNow = (try? container.decodeIfPresent(VenuePeopleMixin.self, forKey: .people))?.onNow ?? []
+        // Friends' Pings come through the ping mixin; missing reads as none.
+        friendPings = try container.decodeIfPresent(PingsResponse.self, forKey: .ping)?.friendPings ?? []
     }
 }
 
+/// `venues { venue(id:) }`.
 struct VenueResponse: Decodable, Sendable {
-    let venue: VenueWithEvents?
+    struct Venues: Decodable, Sendable { let venue: VenueWithEvents? }
+
+    let venues: Venues?
+
+    var venue: VenueWithEvents? { venues?.venue }
 }
 
 struct LocaleEventsResponse: Decodable, Sendable {
-    struct Locale: Decodable, Sendable { let events: [Event] }
+    struct Locale: Decodable, Sendable {
+        /// The locale's upcoming events; empty when the mixin is missing.
+        var events: [Event] { eventsMixin?.upcoming ?? [] }
+
+        private let eventsMixin: UpcomingEventsMixin?
+
+        private enum CodingKeys: String, CodingKey { case eventsMixin = "events" }
+    }
+
     let locale: Locale?
 }
 
+/// `events { event(id:) }`.
 struct EventResponse: Decodable, Sendable {
-    let event: EventDetail?
+    struct Events: Decodable, Sendable { let event: EventDetail? }
+
+    let events: Events?
+
+    var event: EventDetail? { events?.event }
 }
 
 struct BuyCoverResponse: Decodable, Sendable {
@@ -841,8 +935,26 @@ struct RefundAdmissionResponse: Decodable, Sendable {
     let refundAdmission: AdmissionPayload
 }
 
+/// `cover { admissions { nodes } }`; no cover mixin reads as no passes.
+/// `me { cover { admissions } }`: the viewer's passes are theirs, under `me`.
 struct AdmissionsResponse: Decodable, Sendable {
-    let admissions: [Admission]
+    struct Nodes: Decodable, Sendable { let nodes: [Admission] }
+    struct Cover: Decodable, Sendable { let admissions: Nodes }
+    struct Me: Decodable, Sendable { let cover: Cover? }
+
+    let me: Me?
+
+    var admissions: [Admission] { me?.cover?.admissions.nodes ?? [] }
+}
+
+/// `ping { my_ping friend_pings }` on the root, the audience; no ping mixin reads as none.
+/// `me { ping }`: the viewer's own ping and their friends', under `me`.
+struct AudiencePingsResponse: Decodable, Sendable {
+    struct Me: Decodable, Sendable { let ping: PingsResponse? }
+
+    let me: Me?
+
+    var pings: PingsResponse { me?.ping ?? PingsResponse() }
 }
 
 struct PingsResponse: Decodable, Sendable {
@@ -907,7 +1019,14 @@ struct MeResponse: Decodable, Sendable {
         }
     }
 
-    let me: Payload?
+    /// `me` is the viewer's state; `self`, their own profile.
+    struct State: Decodable, Sendable {
+        let profile: Payload?
+
+        private enum CodingKeys: String, CodingKey { case profile = "self" }
+    }
+
+    let me: State?
 }
 
 struct SafetyResponse: Decodable, Sendable {
@@ -930,8 +1049,13 @@ struct ReportChatMessageResponse: Decodable, Sendable {
     let reportChatMessage: Payload
 }
 
+struct SendMyChatMessageResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable { let message: VenueMessage.Payload }
+    let sendMyChatMessage: Payload
+}
+
 struct RemoveMyChatMessageResponse: Decodable, Sendable {
-    struct Payload: Decodable, Sendable { let removedMessageId: String }
+    struct Payload: Decodable, Sendable { let deletedId: String }
     let removeMyChatMessage: Payload
 }
 
@@ -952,20 +1076,16 @@ struct DeleteAccountResponse: Decodable, Sendable {
     let deleteAccount: Payload
 }
 
-struct RegisterDeviceResponse: Decodable, Sendable {
-    struct Payload: Decodable, Sendable { let registered: Bool }
-    let registerDevice: Payload
-}
-
 extension Coordinates {
-    /// The position as the SDK's GraphQL `CoordinatesInput`.
-    var audienceKit: AudienceKit.Coordinates {
-        AudienceKit.Coordinates(
-            latitude: latitude,
-            longitude: longitude,
-            beaconMajor: beaconMajor,
-            beaconMinor: beaconMinor
-        )
+    /// The position as the SDK's `Coordinate`, without the beacon.
+    var coordinate: Coordinate {
+        Coordinate(latitude: latitude, longitude: longitude)
+    }
+
+    /// The position as the GraphQL `CoordinatesInput`, with the beacon when
+    /// there is one (the SDK leaves a zero beacon out).
+    var graphQLInput: GraphQLValue {
+        coordinate.coordinatesInput(beaconMajor: beaconMajor, beaconMinor: beaconMinor)
     }
 }
 

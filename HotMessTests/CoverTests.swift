@@ -53,10 +53,10 @@ struct CoverPassTests {
 
     @Test("Only paid passes with a secret have a code")
     func admissionCode() {
-        let paid = Admission(id: Self.admissionID, status: .paid, night: "2026-10-09", totalCents: 1112, passSecret: Self.secret)
+        let paid = Admission(id: Self.admissionID, status: .paid, night: "2026-10-09", total: Money(cents: 1112), passSecret: Self.secret)
         #expect(paid.passCode(at: Self.start)?.hasSuffix(".HOStwur5mLjF7zvb") == true)
 
-        let refunded = Admission(id: Self.admissionID, status: .refunded, night: "2026-10-09", totalCents: 1112, passSecret: Self.secret)
+        let refunded = Admission(id: Self.admissionID, status: .refunded, night: "2026-10-09", total: Money(cents: 1112), passSecret: Self.secret)
         #expect(refunded.passCode(at: Self.start) == nil)
     }
 }
@@ -68,14 +68,12 @@ struct CoverDecodingTests {
       "id": "7d9f2c1e-3b4a-4e5f-8a6b-1c2d3e4f5a6b",
       "status": "PAID",
       "night": "2026-10-09",
-      "total_cents": 1112,
-      "currency": "usd",
+      "total": { "cents": 1112, "currency": "usd" },
       "is_refundable": true,
       "pass_secret": "c2VjcmV0LWtleS1mb3ItaG90LW1lc3MtY292ZXI=",
       "scan_count": 0,
       "checked_in_at": null,
-      "user_name": "Rick Mark",
-      "user_photo_url": "https://cdn.hotmess.social/users/rick.jpg",
+      "profile": { "id": "0A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "Rick Mark", "avatar_url": "https://cdn.hotmess.social/users/rick.jpg" },
       "venue": { "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11", "name": "The Stud", "photo_url": null },
       "event": { "id": "e-1", "name": "Club Some Thing" }
     }
@@ -91,7 +89,9 @@ struct CoverDecodingTests {
         #expect(admission.venueName == "The Stud")
         #expect(admission.venueID == UUID(uuidString: "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11"))
         #expect(admission.eventName == "Club Some Thing")
-        #expect(admission.userName == "Rick Mark")
+        #expect(admission.total == Money(cents: 1112, currency: "usd"))
+        #expect(admission.profile?.name == "Rick Mark")
+        #expect(admission.profile?.avatarURL?.lastPathComponent == "rick.jpg")
     }
 
     @Test("A status from a newer API doesn't break the pass")
@@ -109,17 +109,23 @@ struct CoverDecodingTests {
           "venue": {
             "id": "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11",
             "name": "The Stud",
-            "cover_charge": {
-              "amount_cents": 1000, "total_cents": 1112, "currency": "usd",
-              "night": "2026-10-09", "from": "21:00", "payable": true
-            },
-            "viewer_admission": \(Self.admission)
+            "tickets": {
+              "cover": {
+                "cover_charge": {
+                  "amount": { "cents": 1000, "currency": "usd" }, "fee": { "cents": 112, "currency": "usd" },
+                  "total": { "cents": 1112, "currency": "usd" },
+                  "night": "2026-10-09", "from": "21:00", "until": null, "payable": true
+                },
+                "viewer_admission": \(Self.admission)
+              }
+            }
           }
         }
         """
         let now = try decode(Now.self, from: json)
 
-        #expect(now.coverCharge?.totalCents == 1112)
+        #expect(now.coverCharge?.total.cents == 1112)
+        #expect(now.coverCharge?.fee.cents == 112)
         #expect(now.coverCharge?.payable == true)
         #expect(now.viewerAdmission?.isPaid == true)
     }
@@ -216,8 +222,8 @@ struct CoverPaymentTests {
 
     @Test("Apple Pay charges the all-in price in currency units")
     func totalAmount() {
-        let admission = Admission(id: "a", status: .pending, night: "2026-10-09", totalCents: 1112)
-        #expect(admission.totalAmount == Decimal(string: "11.12"))
+        let admission = Admission(id: "a", status: .pending, night: "2026-10-09", total: Money(cents: 1112))
+        #expect(admission.total.amount == Decimal(string: "11.12"))
     }
 }
 
@@ -239,19 +245,19 @@ struct CoverFormattingTests {
 
     @Test("Says tonight, or the night, and when it starts")
     func summary() {
-        let cover = CoverCharge(amountCents: 1000, totalCents: 1112, night: "2026-10-09", from: "21:00", payable: true)
+        let cover = CoverCharge(amount: Money(cents: 1000), total: Money(cents: 1112), night: "2026-10-09", from: "21:00", payable: true)
 
         #expect(cover.summary(isTonight: true).hasPrefix("Cover \(cover.price) tonight · from "))
         #expect(cover.summary(isTonight: false).hasPrefix("Cover \(cover.price) · "))
 
-        let noStart = CoverCharge(amountCents: 1000, totalCents: 1000, night: "2026-10-09", payable: false)
+        let noStart = CoverCharge(amount: Money(cents: 1000), total: Money(cents: 1000), night: "2026-10-09", payable: false)
         #expect(noStart.summary(isTonight: true) == "Cover \(noStart.price) tonight")
     }
 
     @Test("Only tonight's event cover can be paid")
     func eventTonight() throws {
-        let tonight = CoverCharge(amountCents: 1000, totalCents: 1112, night: "2026-10-09", payable: true)
-        let friday = CoverCharge(amountCents: 1500, totalCents: 1650, night: "2026-10-10", payable: true)
+        let tonight = CoverCharge(amount: Money(cents: 1000), total: Money(cents: 1112), night: "2026-10-09", payable: true)
+        let friday = CoverCharge(amount: Money(cents: 1500), total: Money(cents: 1650), night: "2026-10-10", payable: true)
         let event = Event(id: UUID(), name: "Club Some Thing", startDate: .now)
 
         #expect(EventDetail(event: event, coverCharge: tonight, venueCoverTonight: tonight).isCoverTonight)

@@ -59,6 +59,19 @@ struct ReportThrottleTests {
         #expect(throttle.isDue(nyne, at: start.addingTimeInterval(1)), "leaving the beacon's range")
     }
 
+    @Test("A fix 50 m more accurate is due, even about the same place")
+    func sharperFix() {
+        var throttle = ReportThrottle(minimumDistance: 50, maximumAge: 60)
+        throttle.sent(nyne, accuracy: 120, at: start)
+
+        #expect(throttle.isDue(north(10), accuracy: 15, at: start.addingTimeInterval(2)))
+        #expect(!throttle.isDue(north(10), accuracy: 90, at: start.addingTimeInterval(2)))
+        #expect(!throttle.isDue(north(10), at: start.addingTimeInterval(2)), "not a device fix")
+
+        throttle.sent(north(10), accuracy: 15, at: start.addingTimeInterval(2))
+        #expect(!throttle.isDue(north(12), accuracy: 10, at: start.addingTimeInterval(3)))
+    }
+
     @Test("Without a maximum age only moving makes it due")
     func noMaximumAge() {
         var throttle = ReportThrottle(minimumDistance: 500)

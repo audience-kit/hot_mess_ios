@@ -17,13 +17,13 @@ private enum PingFixtures {
     static let bingo = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
 
     static let venue = """
-    {"id":"\(wildrose)","name":"The Wildrose","address":"1021 E Pike St","phone":null,"distance":null,
-     "point":null,"facebook_id":null,"photo_url":null,"hero_url":null,"is_liked":false}
+    {"id":"\(wildrose)","name":"The Wildrose","distance":null,"point":null,"photo_url":null,"banner_url":null,
+     "profile":{"address":"1021 E Pike St","phone":null,"facebook":{"facebook_id":null,"is_liked":false}}}
     """
 
     static let event = """
     {"id":"\(bingo)","name":"Drag Bingo","start_at":"2026-10-09T21:00:00-07:00","end_at":null,
-     "facebook_id":null,"cover_photo_url":null,"is_featured":false,"rsvp":"UNSURE","venue":\(venue)}
+     "facebook_id":null,"banner_url":null,"is_featured":false,"rsvp":{"mine":"UNSURE"},"venue":{"name":"The Wildrose","venue":\(venue)}}
     """
 
     /// Jordan's Ping for Drag Bingo or The Wildrose: Sam is in for bingo,
@@ -108,11 +108,11 @@ struct PingDecodingTests {
     @Test("Decodes the user's Ping and friends' Pings into Now")
     func decodesNowPings() throws {
         let json = """
-        {"reportLocation":{"now":{"title":"Now","venue":null,"venues":[],"events":[],"friends":[],
-          "my_ping":\(PingFixtures.anywhere),"friend_pings":[\(PingFixtures.ping)]}}}
+        {"reportLocation":{"venue":null,"nearby_venues":[],"locale":null,
+          "audience":{"me":{"ping":{"my_ping":\(PingFixtures.anywhere),"friend_pings":[\(PingFixtures.ping)]}}}}}
         """
 
-        let now = try PingFixtures.decode(ReportLocationResponse.self, json).reportLocation.now
+        let now = try PingFixtures.decode(ReportLocationResponse.self, json).reportLocation
 
         #expect(now.myPing?.id == "ping-2")
         #expect(now.friendPings.map(\.id) == ["ping-1"])
@@ -128,7 +128,10 @@ struct PingDecodingTests {
 
     @Test("Decodes the Pings query with no Ping of your own")
     func decodesPingsQuery() throws {
-        let response = try PingFixtures.decode(PingsResponse.self, #"{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}"#)
+        let response = try PingFixtures.decode(
+            AudiencePingsResponse.self,
+            #"{"me":{"ping":{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}}}"#
+        ).pings
 
         #expect(response.myPing == nil)
         #expect(response.friendPings.count == 1)
@@ -136,12 +139,12 @@ struct PingDecodingTests {
 
     @Test("Decodes friends' Pings on a venue and an event")
     func decodesPlacePings() throws {
-        let venueJSON = PingFixtures.venue.dropLast(1) + #","chat_open":false,"friend_pings":[\#(PingFixtures.ping)]}"#
-        let venue = try PingFixtures.decode(VenueResponse.self, #"{"venue":\#(venueJSON)}"#)
+        let venueJSON = PingFixtures.venue.dropLast(1) + #","chat":{"open":false},"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
+        let venue = try PingFixtures.decode(VenueResponse.self, #"{"venues":{"venue":\#(venueJSON)}}"#)
         #expect(venue.venue?.friendPings.first?.user.firstName == "Jordan")
 
-        let eventJSON = PingFixtures.event.dropLast(1) + #","people":[],"friend_pings":[\#(PingFixtures.ping)]}"#
-        let event = try PingFixtures.decode(EventResponse.self, #"{"event":\#(eventJSON)}"#)
+        let eventJSON = PingFixtures.event.dropLast(1) + #","people":{"lineup":{"nodes":[]}},"ping":{"friend_pings":[\#(PingFixtures.ping)]}}"#
+        let event = try PingFixtures.decode(EventResponse.self, #"{"events":{"event":\#(eventJSON)}}"#)
         #expect(event.event?.friendPings.count == 1)
         #expect(event.event?.event.name == "Drag Bingo")
     }
@@ -327,28 +330,36 @@ struct PingSendingTests {
 
 @Suite("Ping push")
 struct PingPushTests {
-    @Test("Reads the kind and Ping ID from a push payload")
+    @Test("Reads the route and Ping ID from a push payload, never its kind")
     func parsesPayload() {
-        let ping = PingNotification(userInfo: ["aps": ["category": "PING"], "kind": "ping", "ping_id": "ping-1"])
-        #expect(ping == PingNotification(kind: .ping, pingID: "ping-1"))
+        let url = URL(string: "https://hotmess.social/pings/ping-1")
+        let ping = PingNotification(userInfo: [
+            "aps": ["category": "PING"], "url": "https://hotmess.social/pings/ping-1", "kind": "ping", "ping_id": "ping-1",
+        ])
+        #expect(ping == PingNotification(url: url, pingID: "ping-1"))
+        #expect(ping?.isPing == true)
 
         let join = PingNotification(userInfo: ["kind": "ping_join", "ping_id": 42])
-        #expect(join == PingNotification(kind: .pingJoin, pingID: "42"))
+        #expect(join == PingNotification(pingID: "42"))
+        #expect(join?.isPing == true)
+
+        // A route the app has a screen for, from a kind it has never heard of.
+        let venue = PingNotification(userInfo: ["kind": "chat", "url": "https://hotmess.social/venues/8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11"])
+        #expect(venue?.url?.path() == "/venues/8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11")
+        #expect(venue?.isPing == false)
 
         #expect(PingNotification(userInfo: ["kind": "chat"]) == nil)
         #expect(PingNotification(userInfo: [:]) == nil)
     }
 
-    @Test("Registers the device with its bundle ID and APNs environment")
-    func registerDeviceVariables() {
-        let variables = HotMessAPI.registerDeviceVariables(token: "0aff01", appID: "social.hotmess.Development", sandbox: true)
-
-        #expect(variables == [
-            "notificationToken": "0aff01",
-            "appId": "social.hotmess.Development",
-            "sandbox": true,
-        ])
-        #expect(HotMessAPI.registerDeviceVariables(token: "0a", appID: nil, sandbox: false)["appId"] == .null)
+    @Test("A push's url leads to a screen, or to Now for a Ping")
+    func destinations() throws {
+        let venueID = try #require(UUID(uuidString: "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11"))
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/venues/\(venueID.uuidString)")) == .route(.venue(venueID)))
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/pings/ping-1")) == .now)
+        #expect(DeepLink.destination(for: URL(string: "hotmess://pings/ping-1")) == .now)
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/settings")) == nil)
+        #expect(DeepLink.destination(for: nil) == nil)
     }
 
     @Test("Takes the APNs environment from the build's entitlement")

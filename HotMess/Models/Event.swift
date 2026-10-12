@@ -13,7 +13,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
     let facebookID: FacebookID?
     let venue: Venue?
     let person: Person?
-    let coverURL: URL?
+    let bannerURL: URL?
     let isFeatured: Bool
     var rsvp: RSVP
 
@@ -44,7 +44,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         case startDate = "start_at"
         case endDate = "end_at"
         case facebookID = "facebook_id"
-        case coverURL = "cover_photo_url"
+        case bannerURL = "banner_url"
         case isFeatured = "is_featured"
     }
 
@@ -56,11 +56,28 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         startDate = try container.decode(Date.self, forKey: .startDate)
         endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
         facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
-        venue = try container.decodeIfPresent(Venue.self, forKey: .venue)
+        venue = try container.decodeIfPresent(EventVenueMixin.self, forKey: .venue)?.venue
         person = try container.decodeIfPresent(Person.self, forKey: .person)
-        coverURL = try container.decodeURLIfPresent(forKey: .coverURL)
+        bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
         isFeatured = try container.decodeIfPresent(Bool.self, forKey: .isFeatured) ?? false
-        rsvp = try container.decodeIfPresent(RSVP.self, forKey: .rsvp) ?? .unsure
+        // The event's rsvp mixin, read as `rsvp { mine }`; missing reads as undecided.
+        rsvp = try container.decodeIfPresent(RSVPMixin.self, forKey: .rsvp)?.mine ?? .unsure
+    }
+
+    /// Writes the shape `init(from:)` reads, with `venue` as the venue mixin.
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(startDate, forKey: .startDate)
+        try container.encodeIfPresent(endDate, forKey: .endDate)
+        try container.encodeIfPresent(facebookID, forKey: .facebookID)
+        try container.encode(EventVenueMixin(venue: venue), forKey: .venue)
+        try container.encodeIfPresent(person, forKey: .person)
+        try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
+        try container.encode(isFeatured, forKey: .isFeatured)
+        try container.encode(RSVPMixin(mine: rsvp), forKey: .rsvp)
     }
 
     init(
@@ -71,7 +88,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         facebookID: FacebookID? = nil,
         venue: Venue? = nil,
         person: Person? = nil,
-        coverURL: URL? = nil,
+        bannerURL: URL? = nil,
         isFeatured: Bool = false,
         rsvp: RSVP = .unsure
     ) {
@@ -82,9 +99,91 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         self.facebookID = facebookID
         self.venue = venue
         self.person = person
-        self.coverURL = coverURL
+        self.bannerURL = bannerURL
         self.isFeatured = isFeatured
         self.rsvp = rsvp
+    }
+}
+
+/// An event's `venue` mixin: its venue, or nil while it is to be announced.
+/// The API always sends the mixin; a missing one reads as no venue.
+struct EventVenueMixin: Codable, Hashable, Sendable {
+    /// The venue's name, or "To be announced".
+    let name: String?
+    let venue: Venue?
+
+    init(venue: Venue?) {
+        self.name = venue?.name ?? Event.toBeAnnounced
+        self.venue = venue
+    }
+
+    enum CodingKeys: String, CodingKey { case name, venue }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        venue = try container.decodeIfPresent(Venue.self, forKey: .venue)
+    }
+}
+
+/// The `events` mixin on a venue, locale or person: `upcoming`, soonest
+/// first, a connection the documents read as `upcoming { nodes { … } }`.
+/// Without `first` the connection holds every upcoming event. A missing or
+/// null mixin or connection reads as no events.
+struct UpcomingEventsMixin: Codable, Hashable, Sendable {
+    let upcoming: [Event]
+
+    init(upcoming: [Event] = []) {
+        self.upcoming = upcoming
+    }
+
+    enum CodingKeys: String, CodingKey { case upcoming }
+    private enum ConnectionKeys: String, CodingKey { case nodes }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if (try? container.decodeNil(forKey: .upcoming)) == false {
+            let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .upcoming)
+            upcoming = try connection.decodeIfPresent([Event].self, forKey: .nodes) ?? []
+        } else {
+            upcoming = []
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        var connection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .upcoming)
+        try connection.encode(upcoming, forKey: .nodes)
+    }
+}
+
+/// An event's `people` mixin: who is hosting or playing, a connection the
+/// documents read as `people { lineup { nodes { … } } }`. A missing or null
+/// connection reads as no one.
+struct EventPeopleMixin: Codable, Hashable, Sendable {
+    let lineup: [Person]
+
+    init(lineup: [Person] = []) {
+        self.lineup = lineup
+    }
+
+    enum CodingKeys: String, CodingKey { case lineup }
+    private enum ConnectionKeys: String, CodingKey { case nodes }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if (try? container.decodeNil(forKey: .lineup)) == false {
+            let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .lineup)
+            lineup = try connection.decodeIfPresent([Person].self, forKey: .nodes) ?? []
+        } else {
+            lineup = []
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        var connection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .lineup)
+        try connection.encode(lineup, forKey: .nodes)
     }
 }
 
@@ -100,8 +199,8 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     let venueCoverTonight: CoverCharge?
     /// The user's cover tonight at its venue, paid or being paid.
     let viewerAdmission: Admission?
-    /// Friends' Pings that pick this event. Read from GraphQL only, so it
-    /// isn't encoded.
+    /// Friends' Pings that pick this event, from its ping mixin. Read from
+    /// GraphQL only, so it isn't encoded.
     var friendPings: [Ping]
 
     var id: UUID { event.id }
@@ -114,40 +213,42 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case people
-        case friendPings = "friend_pings"
-        case coverCharge = "cover_charge"
+        case people, tickets, ping
         case venueCover = "venue_cover"
     }
 
-    private enum VenueCoverKeys: String, CodingKey {
-        case coverCharge = "cover_charge"
-        case viewerAdmission = "viewer_admission"
-    }
+    /// `venue_cover` is the event's venue mixin again, holding only the
+    /// venue's tickets mixin and the cover mixin inside it.
+    private enum VenueMixinKeys: String, CodingKey { case venue }
+    private enum VenueKeys: String, CodingKey { case tickets }
 
     init(from decoder: any Decoder) throws {
         event = try Event(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        people = try container.decodeIfPresent([Person].self, forKey: .people) ?? []
-        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+        // Who's on comes through the people mixin; missing reads as no one.
+        people = try container.decodeIfPresent(EventPeopleMixin.self, forKey: .people)?.lineup ?? []
+        coverCharge = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover?.coverCharge
 
+        var venueCover: CoverMixin?
         if (try? container.decodeNil(forKey: .venueCover)) == false,
-           let venue = try? container.nestedContainer(keyedBy: VenueCoverKeys.self, forKey: .venueCover) {
-            venueCoverTonight = try venue.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
-            viewerAdmission = try venue.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
-        } else {
-            venueCoverTonight = nil
-            viewerAdmission = nil
+           let mixin = try? container.nestedContainer(keyedBy: VenueMixinKeys.self, forKey: .venueCover),
+           (try? mixin.decodeNil(forKey: .venue)) == false,
+           let venue = try? mixin.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
+            venueCover = try venue.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
         }
-        friendPings = try container.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
+        venueCoverTonight = venueCover?.coverCharge
+        viewerAdmission = venueCover?.viewerAdmission
+        // The ping mixin is null without a viewer or the ping module, which
+        // reads as no Pings.
+        friendPings = try container.decodeIfPresent(PingsResponse.self, forKey: .ping)?.friendPings ?? []
     }
 
     func encode(to encoder: any Encoder) throws {
         try event.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(people, forKey: .people)
+        try container.encode(EventPeopleMixin(lineup: people), forKey: .people)
     }
 
     init(
@@ -164,5 +265,20 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         self.venueCoverTonight = venueCoverTonight
         self.viewerAdmission = viewerAdmission
         self.friendPings = friendPings
+    }
+}
+
+/// An event's `rsvp` mixin, as the documents select it: `rsvp { mine }`, the
+/// signed-in user's answer (`UNSURE` when signed out).
+struct RSVPMixin: Codable, Hashable, Sendable {
+    let mine: RSVP
+
+    init(mine: RSVP) {
+        self.mine = mine
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        mine = try container.decodeIfPresent(RSVP.self, forKey: .mine) ?? .unsure
     }
 }

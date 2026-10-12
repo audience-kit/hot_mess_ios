@@ -5,46 +5,84 @@
 
 import Foundation
 
-/// What it costs to get into a venue on a night. The app shows `totalCents`,
-/// the all-in price, and takes it in the app when `payable`; otherwise it's
-/// paid at the door.
-struct CoverCharge: Decodable, Hashable, Sendable {
-    /// The cover the venue receives, in cents.
-    let amountCents: Int
-    /// What the buyer pays, all in, in cents.
-    let totalCents: Int
+/// An amount of money as the API sends it: `Money { cents currency }`.
+struct Money: Codable, Hashable, Sendable {
+    let cents: Int
     /// An ISO 4217 code in lower case, e.g. `usd`.
     let currency: String
+
+    init(cents: Int, currency: String = "usd") {
+        self.cents = cents
+        self.currency = currency
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        cents = try container.decode(Int.self, forKey: .cents)
+        currency = try container.decodeIfPresent(String.self, forKey: .currency) ?? "usd"
+    }
+
+    /// The amount in the currency's units, for Apple Pay.
+    var amount: Decimal { Decimal(cents) / 100 }
+
+    /// "$11.12", or "$10" for whole amounts.
+    var formatted: String { CoverFormat.price(cents: cents, currency: currency) }
+}
+
+/// What it costs to get into a venue on a night. The app shows `total`, the
+/// all-in price, and takes it in the app when `payable`; otherwise it's paid
+/// at the door.
+struct CoverCharge: Decodable, Hashable, Sendable {
+    /// The cover the venue receives.
+    let amount: Money
+    /// The service fee on top of `amount`.
+    let fee: Money
+    /// What the buyer pays, all in.
+    let total: Money
     /// The night it is for, `yyyy-MM-dd`. A night runs 6am to 6am.
     let night: String
-    /// When the cover starts, `HH:MM` local time.
+    /// When the cover starts, `HH:MM` local time (the API's `TimeOfDay`).
     let from: String?
+    /// When it ends, `HH:MM` local time.
+    let until: String?
     /// Whether it can be paid in the app.
     let payable: Bool
 
     enum CodingKeys: String, CodingKey {
-        case currency, night, from, payable
-        case amountCents = "amount_cents"
-        case totalCents = "total_cents"
+        case amount, fee, total, night, from, until, payable
     }
 
     init(
-        amountCents: Int,
-        totalCents: Int,
-        currency: String = "usd",
+        amount: Money,
+        fee: Money = Money(cents: 0),
+        total: Money,
         night: String,
         from: String? = nil,
+        until: String? = nil,
         payable: Bool
     ) {
-        self.amountCents = amountCents
-        self.totalCents = totalCents
-        self.currency = currency
+        self.amount = amount
+        self.fee = fee
+        self.total = total
         self.night = night
         self.from = from
+        self.until = until
         self.payable = payable
     }
 
-    var price: String { CoverFormat.price(cents: totalCents, currency: currency) }
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        amount = try container.decode(Money.self, forKey: .amount)
+        total = try container.decode(Money.self, forKey: .total)
+        fee = try container.decodeIfPresent(Money.self, forKey: .fee)
+            ?? Money(cents: total.cents - amount.cents, currency: total.currency)
+        night = try container.decode(String.self, forKey: .night)
+        from = try container.decodeIfPresent(String.self, forKey: .from)
+        until = try container.decodeIfPresent(String.self, forKey: .until)
+        payable = try container.decodeIfPresent(Bool.self, forKey: .payable) ?? false
+    }
+
+    var price: String { total.formatted }
 
     /// "Cover $11.12 tonight · from 9 PM", or with the night instead of
     /// "tonight" for another night.
@@ -55,6 +93,37 @@ struct CoverCharge: Decodable, Hashable, Sendable {
 
         guard let start = from.flatMap(CoverFormat.time) else { return cover }
         return String(localized: "\(cover) · from \(start)")
+    }
+}
+
+/// A venue's or an event's `tickets` mixin, read for the `cover` mixin the
+/// cover module nests inside it: `tickets { cover { … } }`. Either is left out
+/// where the audience doesn't have its module, so callers decode both with
+/// `decodeIfPresent`.
+struct TicketsMixin: Decodable, Hashable, Sendable {
+    let cover: CoverMixin?
+}
+
+/// A venue's or an event's `cover` mixin, as the documents alias it: the
+/// night's charge and, on a venue, the user's pass for tonight.
+struct CoverMixin: Decodable, Hashable, Sendable {
+    let coverCharge: CoverCharge?
+    let viewerAdmission: Admission?
+
+    enum CodingKeys: String, CodingKey {
+        case coverCharge = "cover_charge"
+        case viewerAdmission = "viewer_admission"
+    }
+
+    init(coverCharge: CoverCharge? = nil, viewerAdmission: Admission? = nil) {
+        self.coverCharge = coverCharge
+        self.viewerAdmission = viewerAdmission
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
+        viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
     }
 }
 
@@ -93,17 +162,16 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
     var status: AdmissionStatus
     /// `yyyy-MM-dd`.
     let night: String
-    /// What the buyer paid, in cents.
-    let totalCents: Int
-    let currency: String
+    /// What the buyer paid, all in.
+    let total: Money
     /// Paid, not scanned in, and the night isn't over.
     var isRefundable: Bool
     /// The Base64 key the pass QR code is made with. Only the buyer gets it.
     let passSecret: String?
     let scanCount: Int
     let checkedInAt: Date?
-    let userName: String?
-    let userPhotoURL: URL?
+    /// The buyer, as the API's `Profile { id name avatarUrl }`.
+    let profile: Profile?
     let venueID: UUID?
     let venueName: String
     let venuePhotoURL: URL?
@@ -111,23 +179,17 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
 
     var isPaid: Bool { status == .paid }
 
-    var price: String { CoverFormat.price(cents: totalCents, currency: currency) }
-
-    /// What the buyer pays, in the currency's units, for Apple Pay.
-    var totalAmount: Decimal { Decimal(totalCents) / 100 }
+    var price: String { total.formatted }
 
     /// "Fri, Oct 9".
     var nightTitle: String { CoverFormat.night(night) }
 
     enum CodingKeys: String, CodingKey {
-        case id, status, night, currency, venue, event
-        case totalCents = "total_cents"
+        case id, status, night, total, profile, venue, event
         case isRefundable = "is_refundable"
         case passSecret = "pass_secret"
         case scanCount = "scan_count"
         case checkedInAt = "checked_in_at"
-        case userName = "user_name"
-        case userPhotoURL = "user_photo_url"
     }
 
     private enum PlaceKeys: String, CodingKey {
@@ -141,14 +203,13 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
         id = try container.decode(String.self, forKey: .id)
         status = try container.decode(AdmissionStatus.self, forKey: .status)
         night = try container.decode(String.self, forKey: .night)
-        totalCents = try container.decode(Int.self, forKey: .totalCents)
-        currency = try container.decodeIfPresent(String.self, forKey: .currency) ?? "usd"
+        total = try container.decode(Money.self, forKey: .total)
         isRefundable = try container.decodeIfPresent(Bool.self, forKey: .isRefundable) ?? false
         passSecret = try container.decodeIfPresent(String.self, forKey: .passSecret)
         scanCount = try container.decodeIfPresent(Int.self, forKey: .scanCount) ?? 0
         checkedInAt = try? container.decodeIfPresent(Date.self, forKey: .checkedInAt)
-        userName = try container.decodeIfPresent(String.self, forKey: .userName)
-        userPhotoURL = try container.decodeURLIfPresent(forKey: .userPhotoURL)
+        // A document that didn't select the buyer reads as none.
+        profile = try? container.decodeIfPresent(Profile.self, forKey: .profile)
 
         if (try? container.decodeNil(forKey: .venue)) == false {
             let venue = try container.nestedContainer(keyedBy: PlaceKeys.self, forKey: .venue)
@@ -173,14 +234,12 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
         id: String,
         status: AdmissionStatus,
         night: String,
-        totalCents: Int,
-        currency: String = "usd",
+        total: Money,
         isRefundable: Bool = false,
         passSecret: String? = nil,
         scanCount: Int = 0,
         checkedInAt: Date? = nil,
-        userName: String? = nil,
-        userPhotoURL: URL? = nil,
+        profile: Profile? = nil,
         venueID: UUID? = nil,
         venueName: String = "",
         venuePhotoURL: URL? = nil,
@@ -189,14 +248,12 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
         self.id = id
         self.status = status
         self.night = night
-        self.totalCents = totalCents
-        self.currency = currency
+        self.total = total
         self.isRefundable = isRefundable
         self.passSecret = passSecret
         self.scanCount = scanCount
         self.checkedInAt = checkedInAt
-        self.userName = userName
-        self.userPhotoURL = userPhotoURL
+        self.profile = profile
         self.venueID = venueID
         self.venueName = venueName
         self.venuePhotoURL = venuePhotoURL

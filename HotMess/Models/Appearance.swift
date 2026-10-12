@@ -6,7 +6,7 @@
 import Foundation
 
 /// Someone on at a venue: hosting, DJing, performing or MCing, with or
-/// without an event. GraphQL's `Venue.onNow` lists the ones on right now.
+/// without an event. GraphQL's `Venue.people.onNow` lists the ones on right now.
 struct Appearance: Hashable, Sendable, Identifiable {
     let id: UUID
     let person: Person
@@ -73,6 +73,26 @@ extension Appearance: Decodable {
     private static func date(in container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) -> Date? {
         (try? container.decodeIfPresent(String.self, forKey: key))
             .flatMap { try? Date($0, strategy: .iso8601) }
+    }
+}
+
+/// A venue's `people` mixin as the app asks for it: who is on there right
+/// now, a connection the documents read as `people { on_now: onNow { nodes
+/// { … } } }`. A missing or malformed connection reads as no one.
+struct VenuePeopleMixin: Decodable {
+    let onNow: [Appearance]
+
+    private enum CodingKeys: String, CodingKey { case onNow = "on_now" }
+    private enum ConnectionKeys: String, CodingKey { case nodes }
+
+    init(onNow: [Appearance] = []) {
+        self.onNow = onNow
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let connection = try? container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .onNow)
+        onNow = connection?.decodeAppearances(forKey: .nodes) ?? []
     }
 }
 

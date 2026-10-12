@@ -11,17 +11,17 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
     let facebookID: FacebookID?
     let role: String?
     let isLiked: Bool
-    let pictureURL: URL?
-    let coverURL: URL?
+    let avatarURL: URL?
+    let bannerURL: URL?
 
     var facebookURL: URL? { facebookID?.profileURL }
 
+    /// `facebook_id` and `is_liked` come in the person's profile mixin (see
+    /// `ListingProfile`).
     enum CodingKeys: String, CodingKey {
-        case id, name, role
-        case facebookID = "facebook_id"
-        case isLiked = "is_liked"
-        case pictureURL = "photo_url"
-        case coverURL = "cover_url"
+        case id, name, role, profile
+        case avatarURL = "avatar_url"
+        case bannerURL = "banner_url"
     }
 
     init(from decoder: any Decoder) throws {
@@ -29,11 +29,24 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
 
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
         role = try container.decodeIfPresent(String.self, forKey: .role)
-        isLiked = try container.decodeIfPresent(Bool.self, forKey: .isLiked) ?? false
-        pictureURL = try container.decodeURLIfPresent(forKey: .pictureURL)
-        coverURL = try container.decodeURLIfPresent(forKey: .coverURL)
+        avatarURL = try container.decodeURLIfPresent(forKey: .avatarURL)
+        bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
+        // A missing profile mixin reads as no Page, not liked.
+        let profile = try container.decodeIfPresent(ListingProfile.self, forKey: .profile) ?? ListingProfile()
+        facebookID = profile.facebookID
+        isLiked = profile.isLiked
+    }
+
+    /// Writes the shape `init(from:)` reads, with the profile mixin.
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(role, forKey: .role)
+        try container.encodeIfPresent(avatarURL, forKey: .avatarURL)
+        try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
+        try container.encode(ListingProfile(facebookID: facebookID, isLiked: isLiked), forKey: .profile)
     }
 
     init(
@@ -42,16 +55,16 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         facebookID: FacebookID? = nil,
         role: String? = nil,
         isLiked: Bool = false,
-        pictureURL: URL? = nil,
-        coverURL: URL? = nil
+        avatarURL: URL? = nil,
+        bannerURL: URL? = nil
     ) {
         self.id = id
         self.name = name
         self.facebookID = facebookID
         self.role = role
         self.isLiked = isLiked
-        self.pictureURL = pictureURL
-        self.coverURL = coverURL
+        self.avatarURL = avatarURL
+        self.bannerURL = bannerURL
     }
 }
 
@@ -75,17 +88,19 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
     var profileLinks: [SocialLink] { socialLinks.filter { $0.tipApp == nil } }
 
     enum CodingKeys: String, CodingKey {
-        case events, tracks, members, groups
-        case socialLinks = "social_links"
+        case events, music, members, groups, profile
     }
 
     init(from decoder: any Decoder) throws {
         person = try Person(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        events = try container.decodeIfPresent([Event].self, forKey: .events) ?? []
-        socialLinks = try container.decodeIfPresent([SocialLink].self, forKey: .socialLinks) ?? []
-        tracks = try container.decodeIfPresent([Track].self, forKey: .tracks) ?? []
+        // The person's events mixin; tolerated when missing, which reads as none.
+        events = try container.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
+        // Their links come through the profile mixin; missing reads as none.
+        socialLinks = try container.decodeIfPresent(ListingProfile.self, forKey: .profile)?.socialLinks ?? []
+        // Their tracks come through the music mixin; a missing one reads as none.
+        tracks = try container.decodeIfPresent(MusicMixin.self, forKey: .music)?.tracks ?? []
         members = try container.decodeIfPresent([Person].self, forKey: .members) ?? []
         groups = try container.decodeIfPresent([Person].self, forKey: .groups) ?? []
     }
@@ -94,9 +109,13 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         try person.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(events, forKey: .events)
-        try container.encode(socialLinks, forKey: .socialLinks)
-        try container.encode(tracks, forKey: .tracks)
+        try container.encode(UpcomingEventsMixin(upcoming: events), forKey: .events)
+        // The whole profile mixin again, as it replaces the person's own.
+        try container.encode(
+            ListingProfile(socialLinks: socialLinks, facebookID: person.facebookID, isLiked: person.isLiked),
+            forKey: .profile
+        )
+        try container.encode(MusicMixin(tracks: tracks), forKey: .music)
         try container.encode(members, forKey: .members)
         try container.encode(groups, forKey: .groups)
     }
@@ -115,5 +134,35 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         self.tracks = tracks
         self.members = members
         self.groups = groups
+    }
+}
+
+/// The `music` mixin on a person, read as `music { tracks { nodes { … } } }`:
+/// their newest tracks, a connection. A missing or null connection reads as
+/// no tracks, and null nodes are dropped.
+private struct MusicMixin: Codable {
+    let tracks: [Track]
+
+    init(tracks: [Track]) {
+        self.tracks = tracks
+    }
+
+    enum CodingKeys: String, CodingKey { case tracks }
+    private enum ConnectionKeys: String, CodingKey { case nodes }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if (try? container.decodeNil(forKey: .tracks)) == false {
+            let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .tracks)
+            tracks = try connection.decodeIfPresent([Track?].self, forKey: .nodes)?.compactMap { $0 } ?? []
+        } else {
+            tracks = []
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        var connection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .tracks)
+        try connection.encode(tracks, forKey: .nodes)
     }
 }

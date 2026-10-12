@@ -24,10 +24,10 @@ struct EventListing: Decodable, Hashable, Sendable {
     }
 
     /// Splits upcoming events the way the REST API did: up to two events with
-    /// a cover photo as "Featured", then every event as "Upcoming".
+    /// a banner as "Featured", then every event as "Upcoming".
     init(upcoming events: [Event]) {
         let upcoming = events.sorted { $0.startDate < $1.startDate }
-        let featured = Array(upcoming.filter { $0.coverURL != nil }.prefix(2))
+        let featured = Array(upcoming.filter { $0.bannerURL != nil }.prefix(2))
 
         sections = [
             EventSection(id: "recommended", title: String(localized: "Featured"), events: featured),

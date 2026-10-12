@@ -3,38 +3,44 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import os
 
-/// A live connection to one chat room: a venue's, or a locale's (see `ChatRoom`).
+/// One chat room's subscription on the app's cable: a venue's room, or a
+/// locale's (see `ChatRoom`).
+///
+/// Realtime on the API is GraphQL subscriptions carried over the app's one
+/// Action Cable connection (`AppModel.cable`). The room's `venueChat` /
+/// `localeChat` subscription runs there beside every other one, and every
+/// result it sends is one `ChatRoomEvent`, which this turns into the room's
+/// `Event`s.
 ///
 /// A venue's room is only open to people at the venue, and a locale's to people
-/// out in the locale away from its venues: the server rejects the
-/// subscription otherwise, and sends `{"type":"left"}` when someone's presence
-/// lapses. Either way the connection reports `.notPresent` instead of retrying.
-/// Admins can join from anywhere; the server tells everyone whether they're
-/// out of range when they join, and admins again whenever that changes.
-/// The server adds the sender's ID, name, avatar and time to each line itself.
+/// out in the locale away from its venues: the server refuses the subscription
+/// otherwise (an error and no data), and ends it with `ChatLeft` when someone's
+/// presence lapses. Either way the room reports `.notPresent` instead of
+/// retrying. Admins can join from anywhere; `ChatJoined` says whether they're
+/// out of range, and `ChatRangeChanged` whenever that changes.
 ///
-/// Speaks the Action Cable protocol over `URLSessionWebSocketTask`, replacing
-/// the Starscream dependency and the `RealtimeService` singleton whose
-/// `didReceive(event:client:)` was an empty stub — meaning no message had
-/// actually arrived since the Starscream 4 upgrade.
-actor VenueChatConnection {
+/// Lines are sent with the `sendMyChatMessage` mutation (see `HotMessAPI`),
+/// not over the cable; they come back here as `ChatMessagePosted` like
+/// everyone else's.
+enum VenueChatConnection {
     enum Event: Sendable {
-        /// The server confirmed the subscription; lines can be sent.
+        /// The room was joined (its `ChatJoined` arrived); lines can be sent.
         case connected
         case received(VenueMessage)
         /// The server turned the subscription away, or ended it, because the
-        /// user isn't in the room's place (by the last position they reported).
+        /// user isn't in the room's place (by the last position they reported),
+        /// or was banned or removed from it.
         case notPresent
         /// Whether the user is outside the room's place. Only admins are let in
         /// from outside, so `true` means they're there because they're an admin.
         case range(outOfRange: Bool)
         /// Everyone in the room now, the user included, sent on joining.
-        /// `people` names them (empty from servers that only send IDs), and
-        /// `friends` is every one of the user's friends, by full name, in the
-        /// room or not.
+        /// `people` names them, and `friends` is every one of the user's
+        /// friends, by full name, in the room or not.
         case roster(online: Set<UUID>, people: [RoomPerson], friends: [Friend])
         /// Someone's first socket joined the room (`true`) or their last one
         /// left. A join carries their name and avatar when the server sends them.
@@ -52,427 +58,270 @@ actor VenueChatConnection {
         case removed(id: UUID)
         /// An admin cleared the room: every message so far is gone.
         case cleared
-        case disconnected(String?)
+        /// The socket dropped or went quiet. The cable rejoins the room on its
+        /// own (a fresh `ChatJoined`) unless `reconnects` is false: the
+        /// session ended.
+        case disconnected(String?, reconnects: Bool)
     }
 
-    private let url: URL
-    private let room: ChatRoom
-    private let token: String?
-    private let session: URLSession
-    private let encoder = JSONEncoder()
-    private nonisolated let continuation: AsyncStream<Event>.Continuation
+    static let operationName = "ChatRoom"
 
-    /// Built once: Action Cable matches every command to its subscription by
-    /// this exact string, and a Swift dictionary serializes its keys in a
-    /// different order from one instance to the next.
-    private let identifier: String
-    private var socket: URLSessionWebSocketTask?
-    private var receiveTask: Task<Void, Never>?
-    private var watchdogTask: Task<Void, Never>?
-    /// When the server last sent anything. Action Cable pings every 3
-    /// seconds, so a long silence means the socket is dead even if it looks open
-    /// (a Wi-Fi to cellular handoff, say).
-    private var lastHeard = ContinuousClock.now
-
-    /// How long without a frame before the socket counts as gone.
-    static let silenceLimit: Duration = .seconds(12)
-
-    /// Every frame this connection produces, in order. The stream finishes on
-    /// `disconnect()`, so a reconnect means a new `VenueChatConnection`.
-    nonisolated let events: AsyncStream<Event>
-
-    init(room: ChatRoom, url: URL, token: String?, session: URLSession = .realtime) {
-        self.room = room
-        identifier = Self.identifier(for: room)
-        self.url = url
-        self.token = token
-        self.session = session
-
-        let (stream, continuation) = AsyncStream<Event>.makeStream()
-        events = stream
-        self.continuation = continuation
-    }
-
-    func connect() {
-        guard socket == nil else { return }
-
-        var request = URLRequest(url: url)
-        if let token {
-            request.setValue("JWT \(token)", forHTTPHeaderField: "Authorization")
+    /// The room's subscription, aliased to `room` whichever field it is, with
+    /// its fields aliased to the keys the app's models decode.
+    static func subscriptionDocument(for room: ChatRoom) -> String {
+        let line = HotMessAPI.Documents.roomMessageFields
+        return """
+        subscription ChatRoom($id: ID!) {
+          room: \(room.channelName)(\(room.subscriptionKey): $id) {
+            __typename
+            ... on ChatJoined {
+              out_of_range: outOfRange
+              roster { people { user_id: userId name avatar_url: avatarUrl friend } friends { user_id: userId name } }
+              history { ...Posted }
+              pinnedMessage { ...Posted }
+            }
+            ... on ChatMessagePosted { ...Posted }
+            ... on ChatMessageUpdated { message { ...Line } }
+            ... on ChatMessageRemoved { message_id: messageId }
+            ... on ChatPinChanged { message_id: messageId is_pinned: pinned announcement { ...Line } }
+            ... on ChatRoomCleared { cleared_at: clearedAt }
+            ... on ChatPresenceChanged { user_id: userId presence name avatar_url: avatarUrl }
+            ... on ChatRangeChanged { out_of_range: outOfRange }
+            ... on ChatLeft { reason }
+          }
         }
-
-        let socket = session.webSocketTask(with: request)
-        self.socket = socket
-        socket.resume()
-
-        lastHeard = .now
-        receiveTask = Task { await self.receiveLoop() }
-        watchdogTask = Task { await self.watchForSilence() }
-
-        Task { await self.subscribe() }
+        fragment Posted on ChatMessagePosted { sender_presence: senderPresence message { ...Line } }
+        fragment Line on ChatMessage { \(line) }
+        """
     }
 
-    func disconnect() {
-        receiveTask?.cancel()
-        receiveTask = nil
-        watchdogTask?.cancel()
-        watchdogTask = nil
-        socket?.cancel(with: .goingAway, reason: nil)
-        socket = nil
-        continuation.finish()
+    /// The subscription's variables: the room's ID.
+    static func variables(for room: ChatRoom) -> [String: GraphQLValue] {
+        ["id": .string(room.id.uuidString.lowercased())]
     }
 
-    /// Sends a line to the room. The server echoes it back to everyone in the
-    /// room, the sender included. Call it only after `.connected`: the server
-    /// silently drops a line for a subscription it hasn't confirmed.
-    func send(_ body: String) async throws {
-        let data = try encoder.encode(OutgoingMessage(message: body))
-
-        try await write(
-            OutgoingFrame(
-                command: "message",
-                identifier: identifier,
-                data: String(decoding: data, as: UTF8.self)
-            )
+    /// The room's operation on the cable.
+    static func subscribe(to room: ChatRoom, on cable: AudienceCable, audienceID: String) async
+        -> AsyncStream<AudienceCable.Event> {
+        await cable.subscribe(
+            query: subscriptionDocument(for: room),
+            variables: variables(for: room),
+            operationName: operationName,
+            audienceID: audienceID
         )
     }
 
-    /// Action Cable identifies a subscription by a JSON *string*, not an object,
-    /// so the keys are sorted to make it the same every time.
-    static func identifier(for room: ChatRoom) -> String {
-        let subscription = ["channel": room.channelName, room.subscriptionKey: room.id.uuidString.lowercased()]
-
-        guard let data = try? JSONSerialization.data(withJSONObject: subscription, options: .sortedKeys) else {
-            return "{}"
-        }
-
-        return String(decoding: data, as: UTF8.self)
-    }
-
-    // MARK: - Private
-
-    private func subscribe() async {
-        do {
-            try await write(OutgoingFrame(command: "subscribe", identifier: identifier, data: nil))
-        } catch {
-            continuation.yield(.disconnected(error.localizedDescription))
+    /// The events one of the cable's events means to the room.
+    static func events(from event: AudienceCable.Event) -> [Event] {
+        switch event {
+        case .subscribed:
+            // The room says it's joined with `ChatJoined`, its first result.
+            []
+        case let .result(data):
+            events(fromResult: data)
+        case .rejected:
+            // Another audience's token, or someone the audience banned.
+            [.notPresent]
+        case let .disconnected(reason, reconnects):
+            [.disconnected(reason, reconnects: reconnects)]
         }
     }
 
-    private func write(_ frame: OutgoingFrame) async throws {
-        guard let socket else { return }
-
-        let data = try encoder.encode(frame)
-        try await socket.send(.string(String(decoding: data, as: UTF8.self)))
-    }
-
-    private func receiveLoop() async {
-        while !Task.isCancelled, let socket = self.socket {
-            do {
-                let message = try await socket.receive()
-                handle(message)
-            } catch {
-                guard !Task.isCancelled else { return }
-
-                Log.realtime.error("Chat socket closed: \(error.localizedDescription, privacy: .public)")
-                continuation.yield(.disconnected(error.localizedDescription))
-                return
-            }
+    /// What one `{ data, errors }` result means. A result with errors and no
+    /// event is the server refusing the subscription (not at the venue,
+    /// banned); one for an event this build doesn't know means nothing.
+    static func events(fromResult data: Data) -> [Event] {
+        guard let result = try? JSONDecoder().decode(GraphQLResult.self, from: data) else { return [] }
+        if let room = result.room {
+            return room.events
         }
-    }
-
-    /// Ends a socket that has gone quiet, so the room can reconnect.
-    private func watchForSilence() async {
-        while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, socket != nil else { return }
-            guard ContinuousClock.now - lastHeard > Self.silenceLimit else { continue }
-
-            Log.realtime.error("Chat socket went quiet; closing it")
-            receiveTask?.cancel()
-            receiveTask = nil
-            socket?.cancel(with: .goingAway, reason: nil)
-            socket = nil
-            continuation.yield(.disconnected(nil))
-            return
+        if result.hasErrors {
+            Log.realtime.error("Chat subscription refused: \(result.errorSummary, privacy: .public)")
+            return [.notPresent]
         }
-    }
-
-    private func handle(_ message: URLSessionWebSocketTask.Message) {
-        lastHeard = .now
-        let data: Data
-
-        switch message {
-        case let .string(text):
-            data = Data(text.utf8)
-        case let .data(payload):
-            data = payload
-        @unknown default:
-            return
-        }
-
-        if let event = Self.event(from: data) {
-            continuation.yield(event)
-        }
-    }
-
-    /// The event one incoming frame means, or `nil` for one that means
-    /// nothing to the room (a welcome, a ping, something unreadable).
-    static func event(from data: Data) -> Event? {
-        guard let frame = try? JSONDecoder().decode(IncomingFrame.self, from: data) else { return nil }
-
-        switch frame.type {
-        case "welcome":
-            // The socket is open, but the room isn't joined until the server
-            // confirms the subscription.
-            return nil
-        case "confirm_subscription":
-            return .connected
-        case "reject_subscription":
-            return .notPresent
-        case "disconnect":
-            return .disconnected(nil)
-        case "ping":
-            return nil
-        case .none:
-            // A frame with no `type` carries what the channel sent in `message`:
-            // a chat line, `{"type":"left"}` once the user's presence lapses,
-            // `{"type":"range","out_of_range":…}`, the `roster` of who's in the
-            // room on joining, a `presence` change, or an admin's `removed` or
-            // `cleared`.
-            if frame.messageType == "left" {
-                return .notPresent
-            } else if frame.messageType == "range" {
-                return .range(outOfRange: frame.outOfRange ?? false)
-            } else if frame.messageType == "roster" {
-                return .roster(
-                    online: Set(frame.online ?? []),
-                    people: frame.people ?? [],
-                    friends: frame.friends ?? []
-                )
-            } else if frame.messageType == "history" {
-                return .history(messages: frame.history ?? [], pinned: frame.pinned)
-            } else if frame.messageType == "pin" {
-                guard let id = frame.pinID else { return nil }
-                return .pin(id: id, announcement: frame.pinnedFlag == true ? frame.pinned : nil)
-            } else if frame.messageType == "removed" {
-                guard let id = frame.removedID else { return nil }
-                return .removed(id: id)
-            } else if frame.messageType == "cleared" {
-                return .cleared
-            } else if frame.messageType == "presence" {
-                guard let userID = frame.presenceUserID, let presence = frame.presence else { return nil }
-                if presence == "push" { return .reachable(userID: userID) }
-                return .presence(
-                    userID: userID,
-                    online: presence == "online",
-                    name: frame.presenceName,
-                    avatarURL: frame.presenceAvatarURL
-                )
-            } else if let payload = frame.message {
-                return .received(VenueMessage(payload: payload))
-            }
-            return nil
-        default:
-            return nil
-        }
+        return []
     }
 
     // MARK: - Wire format
 
-    /// The chat line itself, nested inside a frame's `data` field as a string.
-    /// The server fills in who sent it.
-    private struct OutgoingMessage: Encodable {
-        let message: String
+    private typealias Lenient<Value: Decodable> = GraphQLCable.Lenient<Value>
+
+    /// `{ data: { room }, errors }`.
+    private struct GraphQLResult: Decodable {
+        let room: RoomEvent?
+        let errors: [String]
+
+        var hasErrors: Bool { !errors.isEmpty }
+        var errorSummary: String { errors.joined(separator: "; ") }
+
+        enum CodingKeys: String, CodingKey { case data, errors }
+        private enum DataKeys: String, CodingKey { case room }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let data = try? container.nestedContainer(keyedBy: DataKeys.self, forKey: .data)
+            room = (try? data?.decodeIfPresent(RoomEvent.self, forKey: .room)) ?? nil
+            errors = GraphQLCable.errors(in: container, forKey: .errors)
+        }
     }
 
-    private struct OutgoingFrame: Encodable {
-        let command: String
-        let identifier: String
-        let data: String?
-    }
-
-    /// Action Cable reuses the `message` key for both chat payloads and its own
-    /// keep-alive counter, so every field is decoded leniently.
-    private struct IncomingFrame: Decodable {
-        let type: String?
-        let identifier: String?
-        let message: VenueMessage.Payload?
-        /// The `type` inside `message`, e.g. `left`.
-        let messageType: String?
-        /// `out_of_range` inside a `range` message.
-        let outOfRange: Bool?
-        /// `online` inside a `roster` message.
-        let online: [UUID]?
-        /// `people` and `friends` inside a `roster` message, from servers that send them.
-        let people: [RoomPerson]?
-        let friends: [Friend]?
-        /// `user_id`, `presence`, `name` and `avatar_url` inside a `presence` message.
-        let presenceUserID: UUID?
-        let presence: String?
-        let presenceName: String?
-        let presenceAvatarURL: URL?
-        /// `messages` and `pinned` inside a `history` message.
-        let history: [VenueMessage]?
-        /// `pinned` inside a `history` message, or `announcement` inside a `pin` one.
-        let pinned: VenueMessage?
-        /// `id` and `pinned` inside a `pin` message.
-        let pinID: UUID?
-        let pinnedFlag: Bool?
-        /// `id` inside a `removed` message.
-        let removedID: UUID?
+    /// One `ChatRoomEvent`, by its `__typename`, as the events it means.
+    private struct RoomEvent: Decodable {
+        let events: [Event]
 
         enum CodingKeys: String, CodingKey {
-            case type, identifier, message
+            case typename = "__typename"
+            case outOfRange = "out_of_range"
+            case roster, history, pinnedMessage, message, announcement, presence, name, reason
+            case isPinned = "is_pinned"
+            case messageID = "message_id"
+            case clearedAt = "cleared_at"
+            case userID = "user_id"
+            case avatarURL = "avatar_url"
         }
 
-        /// The fields of `history` and `pin` messages. Each message decodes on
-        /// its own, so one malformed line drops only itself.
-        private struct Backlog: Decodable {
-            let type: String?
-            let messages: [VenueMessage]?
-            let pinned: VenueMessage?
-            let id: UUID?
-            let isPinned: Bool?
+        private enum RosterKeys: String, CodingKey { case people, friends }
 
-            enum CodingKeys: String, CodingKey {
-                case type, messages, pinned, id, announcement
-            }
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let typename = (try? container.decodeIfPresent(String.self, forKey: .typename)) ?? nil
 
-            init(from decoder: any Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                type = try? container.decodeIfPresent(String.self, forKey: .type)
-                messages = (try? container.decodeIfPresent([Lenient<VenueMessage.Payload>].self, forKey: .messages))
-                    .map { $0.compactMap { $0.value.map(VenueMessage.init(payload:)) } }
-                id = try? container.decodeIfPresent(UUID.self, forKey: .id)
-                // `pinned` is a message in a history frame and a flag in a pin frame.
-                isPinned = try? container.decodeIfPresent(Bool.self, forKey: .pinned)
-                let payload = (try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .pinned))
-                    ?? (try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .announcement))
-                pinned = payload.map(VenueMessage.init(payload:))
-            }
-        }
+            switch typename {
+            case "ChatJoined":
+                let roster = try? container.nestedContainer(keyedBy: RosterKeys.self, forKey: .roster)
+                // Each person, friend and line on its own, so one bad entry drops only itself.
+                let people = ((try? roster?.decodeIfPresent([Lenient<PersonWire>].self, forKey: .people)) ?? nil)?
+                    .compactMap { $0.value?.person } ?? []
+                let friends = ((try? roster?.decodeIfPresent([Lenient<FriendWire>].self, forKey: .friends)) ?? nil)?
+                    .compactMap { $0.value?.friend } ?? []
+                let history = ((try? container.decodeIfPresent([Lenient<Posted>].self, forKey: .history)) ?? nil)?
+                    .compactMap { $0.value?.message } ?? []
+                let pinned = ((try? container.decodeIfPresent(Posted.self, forKey: .pinnedMessage)) ?? nil)?.message
+                let outOfRange = ((try? container.decodeIfPresent(Bool.self, forKey: .outOfRange)) ?? nil) ?? false
 
-        private struct Typed: Decodable {
-            let type: String?
-            let id: UUID?
-            let outOfRange: Bool?
-            let online: [UUID]?
-            let userID: UUID?
-            let presence: String?
-            let name: String?
-            let avatarURL: URL?
-            let people: [RoomPerson]?
-            let friends: [Friend]?
-
-            enum CodingKeys: String, CodingKey {
-                case type, id, online, presence, name, people, friends
-                case outOfRange = "out_of_range"
-                case userID = "user_id"
-                case avatarURL = "avatar_url"
-            }
-
-            init(from decoder: any Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                type = try? container.decodeIfPresent(String.self, forKey: .type)
-                id = try? container.decodeIfPresent(UUID.self, forKey: .id)
-                outOfRange = try? container.decodeIfPresent(Bool.self, forKey: .outOfRange)
-                // One malformed ID shouldn't drop everyone else.
-                online = (try? container.decodeIfPresent([String].self, forKey: .online))
-                    .map { $0.compactMap(UUID.init(uuidString:)) }
-                userID = try? container.decodeIfPresent(UUID.self, forKey: .userID)
-                presence = try? container.decodeIfPresent(String.self, forKey: .presence)
-                name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank })
-                avatarURL = (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap({ $0.nonBlankURL })
-                // Each person and friend on their own, so one bad entry drops only itself.
-                people = (try? container.decodeIfPresent([Lenient<PersonWire>].self, forKey: .people))
-                    .map { $0.compactMap { $0.value?.person } }
-                friends = (try? container.decodeIfPresent([Lenient<FriendWire>].self, forKey: .friends))
-                    .map { $0.compactMap { $0.value?.friend } }
-            }
-        }
-
-        /// Decodes as `nil` instead of throwing, so one malformed array element
-        /// doesn't fail the whole array.
-        private struct Lenient<Value: Decodable>: Decodable {
-            let value: Value?
-
-            init(from decoder: any Decoder) throws {
-                value = try? Value(from: decoder)
-            }
-        }
-
-        /// One of `people` in a roster.
-        private struct PersonWire: Decodable {
-            let person: RoomPerson?
-
-            enum CodingKeys: String, CodingKey {
-                case name, friend
-                case userID = "user_id"
-                case avatarURL = "avatar_url"
-            }
-
-            init(from decoder: any Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID) else {
-                    person = nil
+                events = [
+                    .connected,
+                    .range(outOfRange: outOfRange),
+                    .roster(online: Set(people.map(\.id)), people: people, friends: friends),
+                    .history(messages: history, pinned: pinned),
+                ]
+            case "ChatMessagePosted":
+                events = (try? Posted(from: decoder).message).map { [.received($0)] } ?? []
+            case "ChatMessageUpdated":
+                events = Self.message(in: container, forKey: .message).map { [.received($0)] } ?? []
+            case "ChatMessageRemoved":
+                events = Self.id(in: container, forKey: .messageID).map { [.removed(id: $0)] } ?? []
+            case "ChatPinChanged":
+                guard let id = Self.id(in: container, forKey: .messageID) else {
+                    events = []
                     return
                 }
-                person = RoomPerson(
-                    id: id,
-                    name: (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank }),
-                    avatarURL: (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap({ $0.nonBlankURL }),
-                    isFriend: (try? container.decodeIfPresent(Bool.self, forKey: .friend)) ?? false
-                )
-            }
-        }
-
-        /// One of `friends` in a roster: an ID and a full name.
-        private struct FriendWire: Decodable {
-            let friend: Friend?
-
-            enum CodingKeys: String, CodingKey {
-                case name
-                case userID = "user_id"
-            }
-
-            init(from decoder: any Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID),
-                      let name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank })
+                let isPinned = ((try? container.decodeIfPresent(Bool.self, forKey: .isPinned)) ?? nil) ?? false
+                let announcement = isPinned ? Self.message(in: container, forKey: .announcement) : nil
+                events = [.pin(id: id, announcement: announcement)]
+            case "ChatRoomCleared":
+                events = [.cleared]
+            case "ChatPresenceChanged":
+                guard let userID = Self.id(in: container, forKey: .userID),
+                      let presence = ((try? container.decodeIfPresent(String.self, forKey: .presence)) ?? nil)?.uppercased()
                 else {
-                    friend = nil
+                    events = []
                     return
                 }
-                friend = Friend(id: id, name: name)
+                if presence == "PUSH" {
+                    events = [.reachable(userID: userID)]
+                } else {
+                    events = [.presence(
+                        userID: userID,
+                        online: presence == "ONLINE",
+                        name: ((try? container.decodeIfPresent(String.self, forKey: .name)) ?? nil)?.nonBlank,
+                        avatarURL: ((try? container.decodeIfPresent(String.self, forKey: .avatarURL)) ?? nil)?.nonBlankURL
+                    )]
+                }
+            case "ChatRangeChanged":
+                let outOfRange = ((try? container.decodeIfPresent(Bool.self, forKey: .outOfRange)) ?? nil) ?? false
+                events = [.range(outOfRange: outOfRange)]
+            case "ChatLeft":
+                // AWAY, BANNED or REMOVED: out of the room either way.
+                events = [.notPresent]
+            default:
+                events = []
             }
+        }
+
+        private static func id(in container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) -> UUID? {
+            ((try? container.decodeIfPresent(String.self, forKey: key)) ?? nil).flatMap(UUID.init(uuidString:))
+        }
+
+        private static func message(in container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) -> VenueMessage? {
+            ((try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: key)) ?? nil)
+                .map(VenueMessage.init(payload:))
+        }
+    }
+
+    /// A `ChatMessagePosted`: the line, with its sender's presence in the
+    /// room (`ONLINE`, `PUSH`, or null) as the line's `presence`.
+    private struct Posted: Decodable {
+        let message: VenueMessage?
+
+        enum CodingKeys: String, CodingKey {
+            case message
+            case senderPresence = "sender_presence"
         }
 
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
+            var message = ((try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .message)) ?? nil)
+                .map(VenueMessage.init(payload:))
+            message?.presence = ((try? container.decodeIfPresent(String.self, forKey: .senderPresence)) ?? nil)
+                .flatMap { PresenceState(wire: $0) }
+            self.message = message
+        }
+    }
 
-            type = try? container.decodeIfPresent(String.self, forKey: .type)
-            identifier = try? container.decodeIfPresent(String.self, forKey: .identifier)
-            message = try? container.decodeIfPresent(VenueMessage.Payload.self, forKey: .message)
-            let typed = (try? container.decodeIfPresent(Typed.self, forKey: .message)) ?? nil
-            messageType = typed?.type
-            outOfRange = typed?.outOfRange
-            online = typed?.online
-            people = typed?.people
-            friends = typed?.friends
-            presenceUserID = typed?.userID
-            presence = typed?.presence
-            presenceName = typed?.name
-            presenceAvatarURL = typed?.avatarURL
+    /// One of the roster's `people`.
+    private struct PersonWire: Decodable {
+        let person: RoomPerson?
 
-            let backlog = (typed?.type == "history" || typed?.type == "pin")
-                ? (try? container.decodeIfPresent(Backlog.self, forKey: .message)) ?? nil
-                : nil
-            history = backlog?.messages
-            pinned = backlog?.pinned
-            pinID = backlog?.id
-            pinnedFlag = backlog?.isPinned
-            removedID = typed?.type == "removed" ? typed?.id : nil
+        enum CodingKeys: String, CodingKey {
+            case name, friend
+            case userID = "user_id"
+            case avatarURL = "avatar_url"
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID) else {
+                person = nil
+                return
+            }
+            person = RoomPerson(
+                id: id,
+                name: (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank }),
+                avatarURL: (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap({ $0.nonBlankURL }),
+                isFriend: (try? container.decodeIfPresent(Bool.self, forKey: .friend)) ?? false
+            )
+        }
+    }
+
+    /// One of the roster's `friends`: an ID and a full name.
+    private struct FriendWire: Decodable {
+        let friend: Friend?
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case userID = "user_id"
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID),
+                  let name = (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank })
+            else {
+                friend = nil
+                return
+            }
+            friend = Friend(id: id, name: name)
         }
     }
 }

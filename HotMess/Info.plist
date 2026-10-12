@@ -85,7 +85,7 @@
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Hot Mess listens for beacons in venues so it can tell which room you are in.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Hot Mess uses your location in the background to estimate how busy a venue is and to recommend places based on who else is out.</string>
+	<string>Hot Mess notices when you arrive at or leave a venue, even with the app closed, so your friends see where you are and venues can tell how busy they are.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Hot Mess uses your location to recommend venues and events near you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

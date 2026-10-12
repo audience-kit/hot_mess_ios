@@ -102,7 +102,7 @@ struct AppearanceRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Avatar(url: appearance.person.pictureURL, initials: appearance.person.name.initialsForDisplay, size: 40)
+            Avatar(url: appearance.person.avatarURL, initials: appearance.person.name.initialsForDisplay, size: 40)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {

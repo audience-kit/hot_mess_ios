@@ -55,6 +55,23 @@ struct Friend: Codable, Hashable, Sendable, Identifiable {
 
 /// A venue where some of your friends have been lately, with how many, for
 /// Now when you aren't in a venue yourself.
+/// The friends module's mixin on a venue or locale
+/// (`friends { list { nodes } venues { nodes } }`):
+/// the viewer's friends out there lately, and on a locale, how many at each of
+/// its venues. The API leaves it out when the module is off for the audience.
+struct FriendsMixin: Decodable, Sendable {
+    let list: [Friend]
+    let venues: [FriendVenue]
+
+    enum CodingKeys: String, CodingKey { case list, venues }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        list = try container.decodeIfPresent(Nodes<Friend>.self, forKey: .list)?.nodes ?? []
+        venues = try container.decodeIfPresent(Nodes<FriendVenue>.self, forKey: .venues)?.nodes ?? []
+    }
+}
+
 struct FriendVenue: Decodable, Hashable, Sendable, Identifiable {
     let venue: Venue
     let friendCount: Int
