@@ -213,10 +213,10 @@ Scripts/testflight.sh --export-only   # stop at build/testflight/export/HotMess.
   additional permissions after approval.
 
 The shared Swift package is the AudienceKit Swift SDK, resolved from
-`https://github.com/audience-kit/audience-kit-sdk-swift.git`. It is pinned to the
-branch that carries 0.19.0 (`claude/project-thread-b1p0u4`, the SDK's pre-release
-sweep); once that pull request merges and the SDK tags `0.19.0`, change the
-requirement in `HotMess.xcodeproj` to `upToNextMinorVersion` from `0.19.0`. Consumer
+`https://github.com/audience-kit/audience-kit-sdk-swift.git`. It follows the SDK's
+`main` branch, which carries 0.19.0 (the pre-release sweep); the SDK repository has
+no tags yet, so when it starts tagging, change the requirement in `HotMess.xcodeproj`
+to `upToNextMinorVersion` from `0.19.0`. Consumer
 services come from `AudienceKit`; shared design tokens and UI come from
 `AudienceKitUI`, both built on `AudienceCore`. The app's realtime cable is the SDK's
 `AudienceCable`; `GraphQLCable.handshake` rewrites its handshake to the contract's
