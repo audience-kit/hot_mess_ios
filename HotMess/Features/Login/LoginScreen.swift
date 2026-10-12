@@ -92,6 +92,15 @@ struct LoginScreen: View {
 
     private var signIn: some View {
         VStack(spacing: 16) {
+            if model.session.state == .signedOut, let notice = model.session.endedNotice {
+                Text(notice)
+                    .font(.hotMess(.subheadline, semibold: true))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("login.sessionEnded")
+            }
+
             Button {
                 Task { await model.session.signIn() }
             } label: {

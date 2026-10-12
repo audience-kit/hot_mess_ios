@@ -108,6 +108,28 @@ enum GraphQLCable {
         }
     }
 
+    /// Whether a frame is Action Cable refusing the connection itself
+    /// (`reject_unauthorized_connection`: `{"type":"disconnect","reason":"unauthorized"}`).
+    /// The token is no good any more, so the session has ended. A rejected
+    /// *subscription* (another audience, a ban) isn't this.
+    static func isUnauthorizedDisconnect(_ data: Data) -> Bool {
+        struct Wire: Decodable {
+            let type: String?
+            let reason: String?
+        }
+        guard let frame = try? JSONDecoder().decode(Wire.self, from: data) else { return false }
+        return frame.type == "disconnect" && frame.reason == "unauthorized"
+    }
+
+    /// Told the token of any socket the server refused as unauthorized.
+    /// `AppModel` points it at `SessionStore.sessionRejected(token:)`, so a
+    /// refused socket signs out the way an HTTP 401 does.
+    static let unauthorizedHandler = OSAllocatedUnfairLock<(@Sendable (String) -> Void)?>(initialState: nil)
+
+    static func reportUnauthorized(token: String) {
+        unauthorizedHandler.withLock { $0 }?(token)
+    }
+
     /// A result's `errors`, as their messages. Empty when there are none.
     static func errors<Key: CodingKey>(in container: KeyedDecodingContainer<Key>, forKey key: Key) -> [String] {
         ((try? container.decodeIfPresent([Lenient<ErrorWire>].self, forKey: key)) ?? nil)?
@@ -278,6 +300,11 @@ actor GraphQLCableSocket<Event: Sendable> {
             data = payload
         @unknown default:
             return
+        }
+
+        if let token, GraphQLCable.isUnauthorizedDisconnect(data) {
+            Log.realtime.error("\(self.name, privacy: .public) socket refused the session")
+            GraphQLCable.reportUnauthorized(token: token)
         }
 
         switch parse(data) {

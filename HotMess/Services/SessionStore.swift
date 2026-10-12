@@ -71,6 +71,12 @@ final class SessionStore {
 
     private(set) var state: AuthenticationState = .restoring
     private(set) var user: User?
+    /// Why the login screen is showing, when the API ended the session rather
+    /// than the person signing out. Cleared by the next sign-in.
+    private(set) var endedNotice: String?
+    /// Called when the API ends the session, so the app forgets what it
+    /// loaded for that user (as signing out does).
+    @ObservationIgnored var onSessionEnded: (@MainActor () -> Void)?
     private(set) var versionRequirement: VersionInfo?
 
     private let api: HotMessAPI
@@ -128,6 +134,7 @@ final class SessionStore {
                 return
             } catch AudienceKitError.unauthorized {
                 // The SDK has already dropped the token.
+                endedNotice = Self.endedMessage
             } catch {
                 // A network blip shouldn't sign the user out; keep the token
                 // and let the screens show their own error state.
@@ -292,6 +299,7 @@ final class SessionStore {
         do {
             let session = try await signIn(device)
             user = User(id: session.user.id, name: session.user.name)
+            endedNotice = nil
             state = .signedIn
 
             // The sign-in response has no profile photo; `me` does.
@@ -337,10 +345,28 @@ final class SessionStore {
         }
     }
 
+    /// A realtime socket's server refused `token` (Action Cable's
+    /// `unauthorized` disconnect): the session ends as it does when an HTTP
+    /// call gets a 401. Ignored unless `token` is still the stored one, so a
+    /// refusal from before a new sign-in, or a second socket's, changes nothing.
+    func sessionRejected(token: String) async {
+        guard bearerToken == token else { return }
+
+        await audienceKit.signOut()
+        handleEndedSession()
+    }
+
+    static let endedMessage = String(localized: "Your session has ended. Please sign in again.")
+
+    /// Back to the login screen, once, saying why. Only from a signed-in
+    /// state: a refusal of the old token during a new sign-in, or while
+    /// `restoreSession()` is working (it handles its own), changes nothing.
     private func handleEndedSession() {
-        guard state != .signedOut else { return }
+        guard state == .signedIn else { return }
 
         user = nil
+        endedNotice = Self.endedMessage
         state = .signedOut
+        onSessionEnded?()
     }
 }
