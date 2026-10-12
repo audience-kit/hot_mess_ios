@@ -3,28 +3,30 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import os
 
-/// A live connection to one chat room: a venue's, or a locale's (see `ChatRoom`).
+/// One chat room's subscription on the app's cable: a venue's room, or a
+/// locale's (see `ChatRoom`).
 ///
-/// Realtime on the API is GraphQL subscriptions carried over Action Cable
-/// (`GraphQLChannel`). The connection subscribes the channel with the
-/// audience and an ID of its own, and once the server confirms it, executes
-/// the room's `venueChat` / `localeChat` subscription. Every result that
-/// follows is one `ChatRoomEvent`, which this turns into the room's `Event`s.
+/// Realtime on the API is GraphQL subscriptions carried over the app's one
+/// Action Cable connection (`AppModel.cable`). The room's `venueChat` /
+/// `localeChat` subscription runs there beside every other one, and every
+/// result it sends is one `ChatRoomEvent`, which this turns into the room's
+/// `Event`s.
 ///
 /// A venue's room is only open to people at the venue, and a locale's to people
 /// out in the locale away from its venues: the server refuses the subscription
 /// otherwise (an error and no data), and ends it with `ChatLeft` when someone's
-/// presence lapses. Either way the connection reports `.notPresent` instead of
+/// presence lapses. Either way the room reports `.notPresent` instead of
 /// retrying. Admins can join from anywhere; `ChatJoined` says whether they're
 /// out of range, and `ChatRangeChanged` whenever that changes.
 ///
 /// Lines are sent with the `sendMyChatMessage` mutation (see `HotMessAPI`),
-/// not over this socket; they come back here as `ChatMessagePosted` like
+/// not over the cable; they come back here as `ChatMessagePosted` like
 /// everyone else's.
-actor VenueChatConnection {
+enum VenueChatConnection {
     enum Event: Sendable {
         /// The room was joined (its `ChatJoined` arrived); lines can be sent.
         case connected
@@ -56,55 +58,13 @@ actor VenueChatConnection {
         case removed(id: UUID)
         /// An admin cleared the room: every message so far is gone.
         case cleared
-        case disconnected(String?)
+        /// The socket dropped or went quiet. The cable rejoins the room on its
+        /// own (a fresh `ChatJoined`) unless `reconnects` is false: the
+        /// session ended.
+        case disconnected(String?, reconnects: Bool)
     }
 
-    /// What one incoming frame means to the connection.
-    typealias Incoming = GraphQLCable.Incoming<Event>
-
-    private let socket: GraphQLCableSocket<Event>
-
-    /// Every event this connection produces, in order. The stream finishes on
-    /// `disconnect()`, so a reconnect means a new `VenueChatConnection`.
-    nonisolated var events: AsyncStream<Event> { socket.events }
-
-    /// - Parameters:
-    ///   - audienceID: the audience the subscription runs in, as for
-    ///     `/v1/audience/<id>/graphql`.
-    ///   - channelID: keeps this operation's identifier apart from others on
-    ///     the same account; random unless a test pins it.
-    init(
-        room: ChatRoom,
-        url: URL,
-        token: String?,
-        audienceID: String,
-        channelID: String = UUID().uuidString.lowercased(),
-        session: URLSession = .realtime
-    ) {
-        socket = GraphQLCableSocket(
-            url: url,
-            token: token,
-            identifier: Self.identifier(audienceID: audienceID, channelID: channelID),
-            executeData: Self.executeData(for: room),
-            session: session,
-            name: "Chat",
-            closed: { .disconnected($0) },
-            parse: { Self.incoming(from: $0) }
-        )
-    }
-
-    func connect() async {
-        await socket.connect()
-    }
-
-    func disconnect() async {
-        await socket.disconnect()
-    }
-
-    /// `GraphQLChannel`'s identifier (see `GraphQLCable`).
-    static func identifier(audienceID: String, channelID: String) -> String {
-        GraphQLCable.identifier(audienceID: audienceID, channelID: channelID)
-    }
+    static let operationName = "ChatRoom"
 
     /// The room's subscription, aliased to `room` whichever field it is, with
     /// its fields aliased to the keys the app's models decode.
@@ -135,62 +95,51 @@ actor VenueChatConnection {
         """
     }
 
-    /// `execute`'s data, a JSON string inside the `message` command: the
-    /// room's subscription and its variables.
-    static func executeData(for room: ChatRoom) -> String {
-        GraphQLCable.executeData(
-            operationName: "ChatRoom",
+    /// The subscription's variables: the room's ID.
+    static func variables(for room: ChatRoom) -> [String: GraphQLValue] {
+        ["id": .string(room.id.uuidString.lowercased())]
+    }
+
+    /// The room's operation on the cable.
+    static func subscribe(to room: ChatRoom, on cable: AudienceCable, audienceID: String) async
+        -> AsyncStream<AudienceCable.Event> {
+        await cable.subscribe(
             query: subscriptionDocument(for: room),
-            variables: ["id": room.id.uuidString.lowercased()]
+            variables: variables(for: room),
+            operationName: operationName,
+            audienceID: audienceID
         )
     }
 
-    /// The events one incoming frame means; none for a frame that means
-    /// nothing to the room (a welcome, a ping, the confirmation, something
-    /// unreadable).
-    static func events(from data: Data) -> [Event] {
-        switch incoming(from: data) {
-        case .confirmed: []
-        case let .events(events): events
-        }
-    }
-
-    static func incoming(from data: Data) -> Incoming {
-        switch GraphQLCable.Frame<GraphQLResult>(data: data) {
-        case .confirmed:
-            return .confirmed
+    /// The events one of the cable's events means to the room.
+    static func events(from event: AudienceCable.Event) -> [Event] {
+        switch event {
+        case .subscribed:
+            // The room says it's joined with `ChatJoined`, its first result.
+            []
+        case let .result(data):
+            events(fromResult: data)
         case .rejected:
             // Another audience's token, or someone the audience banned.
-            return .events([.notPresent])
-        case .disconnect:
-            return .events([.disconnected(nil)])
-        case let .result(result, more):
-            return .events(events(from: result, more: more))
-        case .ignored:
-            // "welcome", "ping".
-            return .events([])
+            [.notPresent]
+        case let .disconnected(reason, reconnects):
+            [.disconnected(reason, reconnects: reconnects)]
         }
     }
 
-    /// One `{ result: { data, errors }, more }`. A result with errors and no
+    /// What one `{ data, errors }` result means. A result with errors and no
     /// event is the server refusing the subscription (not at the venue,
-    /// banned). `more: false` ends it; anything but `ChatLeft` or a refusal
-    /// ending it counts as the socket dropping, so the room reconnects.
-    private static func events(from result: GraphQLResult, more: Bool) -> [Event] {
-        var events: [Event]
+    /// banned); one for an event this build doesn't know means nothing.
+    static func events(fromResult data: Data) -> [Event] {
+        guard let result = try? JSONDecoder().decode(GraphQLResult.self, from: data) else { return [] }
         if let room = result.room {
-            events = room.events
-        } else if result.hasErrors {
+            return room.events
+        }
+        if result.hasErrors {
             Log.realtime.error("Chat subscription refused: \(result.errorSummary, privacy: .public)")
-            events = [.notPresent]
-        } else {
-            events = []
+            return [.notPresent]
         }
-
-        if !more, !events.contains(where: \.isTerminal) {
-            events.append(.disconnected(nil))
-        }
-        return events
+        return []
     }
 
     // MARK: - Wire format
@@ -373,16 +322,6 @@ actor VenueChatConnection {
                 return
             }
             friend = Friend(id: id, name: name)
-        }
-    }
-}
-
-private extension VenueChatConnection.Event {
-    /// The room is over for this connection.
-    var isTerminal: Bool {
-        switch self {
-        case .notPresent, .disconnected: true
-        default: false
         }
     }
 }

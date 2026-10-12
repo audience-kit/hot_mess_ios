@@ -3,6 +3,7 @@
 //  HotMessTests
 //
 
+import AudienceKit
 import Foundation
 import Testing
 
@@ -14,13 +15,13 @@ private let sam = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
 private let jo = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
 private let alex = UUID(uuidString: "00000000-0000-0000-0000-000000000004")!
 
-/// One subscription result, the way `GraphQLChannel` sends it over Action Cable.
-private func result(_ room: String, more: Bool = true) -> Data {
-    Data(#"{ "identifier": "{\"channel\":\"GraphQLChannel\"}", "message": { "result": { "data": { "room": \#(room) } }, "more": \#(more) } }"#.utf8)
+/// One subscription result, the way the cable hands it on.
+private func result(_ room: String) -> AudienceCable.Event {
+    .result(Data(#"{ "data": { "room": \#(room) } }"#.utf8))
 }
 
-private func events(_ room: String, more: Bool = true) -> [VenueChatConnection.Event] {
-    VenueChatConnection.events(from: result(room, more: more))
+private func events(_ room: String) -> [VenueChatConnection.Event] {
+    VenueChatConnection.events(from: result(room))
 }
 
 /// A `ChatMessagePosted`'s line, aliased as the subscription selects it.
@@ -318,7 +319,7 @@ struct ChatPresenceFrameTests {
     @Test("Leaving the room, for any reason, is not being there")
     func left() throws {
         for reason in ["AWAY", "BANNED", "REMOVED"] {
-            let events = events(#"{ "__typename": "ChatLeft", "reason": "\#(reason)" }"#, more: false)
+            let events = events(#"{ "__typename": "ChatLeft", "reason": "\#(reason)" }"#)
             #expect(events.count == 1)
             guard case .notPresent = try #require(events.first) else {
                 Issue.record("Expected notPresent for \(reason)")
@@ -329,7 +330,7 @@ struct ChatPresenceFrameTests {
 
     @Test("A refused subscription, or a rejected channel, is not being there")
     func refused() throws {
-        let refused = Data(#"{ "identifier": "{}", "message": { "result": { "data": null, "errors": [{ "message": "You're not at this venue" }] }, "more": false } }"#.utf8)
+        let refused = AudienceCable.Event.result(Data(#"{ "data": null, "errors": [{ "message": "You're not at this venue" }] }"#.utf8))
         let refusedEvents = VenueChatConnection.events(from: refused)
         #expect(refusedEvents.count == 1)
         guard case .notPresent = try #require(refusedEvents.first) else {
@@ -337,50 +338,32 @@ struct ChatPresenceFrameTests {
             return
         }
 
-        let rejected = Data(#"{ "identifier": "{}", "type": "reject_subscription" }"#.utf8)
-        guard case .notPresent = try #require(VenueChatConnection.events(from: rejected).first) else {
+        guard case .notPresent = try #require(VenueChatConnection.events(from: .rejected).first) else {
             Issue.record("Expected notPresent")
             return
         }
     }
 
-    @Test("The server ending the subscription otherwise counts as a drop")
-    func ended() throws {
-        let events = events(#"{ "__typename": "ChatRangeChanged", "out_of_range": false }"#, more: false)
-
-        #expect(events.count == 2)
-        guard events.count == 2, case .range = events[0], case .disconnected = events[1] else {
-            Issue.record("Expected the range, then a drop")
-            return
-        }
-    }
-
-    @Test("The confirmation runs the subscription; welcomes, pings and unknown events mean nothing")
-    func housekeeping() throws {
-        let confirm = Data(#"{ "identifier": "{}", "type": "confirm_subscription" }"#.utf8)
-        guard case .confirmed = VenueChatConnection.incoming(from: confirm) else {
-            Issue.record("Expected the confirmation")
-            return
-        }
-        #expect(VenueChatConnection.events(from: confirm).isEmpty)
-        #expect(VenueChatConnection.events(from: Data(#"{ "type": "welcome" }"#.utf8)).isEmpty)
-        #expect(VenueChatConnection.events(from: Data(#"{ "type": "ping", "message": 1791691200 }"#.utf8)).isEmpty)
-        #expect(VenueChatConnection.events(from: Data("not json".utf8)).isEmpty)
-        #expect(events(#"{ "__typename": "ChatSomethingNew" }"#).isEmpty)
-
-        guard case .disconnected = try #require(VenueChatConnection.events(from: Data(#"{ "type": "disconnect", "reason": "unauthorized" }"#.utf8)).first) else {
+    @Test("A dropped socket is a drop the cable recovers from; a refused session isn't")
+    func dropped() throws {
+        guard case let .disconnected(_, reconnects) = try #require(VenueChatConnection.events(from: .disconnected(reason: "lost", reconnects: true)).first) else {
             Issue.record("Expected disconnected")
             return
         }
+        #expect(reconnects)
+
+        guard case let .disconnected(reason, again) = try #require(VenueChatConnection.events(from: .disconnected(reason: "unauthorized", reconnects: false)).first) else {
+            Issue.record("Expected disconnected")
+            return
+        }
+        #expect(reason == "unauthorized" && !again)
     }
 
-    @Test("Only a connection refused as unauthorized ends the session")
-    func unauthorizedDisconnect() {
-        #expect(GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "disconnect", "reason": "unauthorized", "reconnect": false }"#.utf8)))
-        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "disconnect", "reason": "server_restart", "reconnect": true }"#.utf8)))
-        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "reject_subscription", "identifier": "{}" }"#.utf8)))
-        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "ping", "message": 1791691200 }"#.utf8)))
-        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data("not json".utf8)))
+    @Test("The confirmation, unknown events and unreadable results mean nothing")
+    func housekeeping() {
+        #expect(VenueChatConnection.events(from: .subscribed).isEmpty)
+        #expect(VenueChatConnection.events(from: .result(Data("not json".utf8))).isEmpty)
+        #expect(events(#"{ "__typename": "ChatSomethingNew" }"#).isEmpty)
     }
 }
 
@@ -411,7 +394,6 @@ struct HereNowTests {
             room: ChatRoom(kind: .venue, id: UUID(), name: "The Eagle"),
             configuration: AppConfiguration(baseURL: URL(string: "https://api.hotmess.social")!),
             userID: me,
-            token: nil,
             friends: friends
         )
     }
@@ -513,8 +495,7 @@ struct ChatSendTests {
         VenueChatViewModel(
             room: ChatRoom(kind: .venue, id: UUID(), name: "The Eagle"),
             configuration: AppConfiguration(baseURL: URL(string: "https://api.hotmess.social")!),
-            userID: me,
-            token: nil
+            userID: me
         )
     }
 

@@ -348,15 +348,24 @@ struct APIErrorTests {
 
 @Suite("Chat subscription")
 struct ChatIdentifierTests {
+    /// The `execute` command's data the cable sends for the room.
+    private func executeData(for room: ChatRoom) -> String {
+        AudienceCable.executeData(
+            query: VenueChatConnection.subscriptionDocument(for: room),
+            variables: VenueChatConnection.variables(for: room),
+            operationName: VenueChatConnection.operationName
+        )
+    }
+
     /// Action Cable finds a subscription by this exact string, so a key order
     /// that changes between calls loses messages.
     @Test("Names GraphQLChannel, the audience and the operation, with sorted keys")
     func sortedKeys() {
-        let identifier = VenueChatConnection.identifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123")
+        let identifier = AudienceCable.graphQLIdentifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123")
 
         #expect(identifier == #"{"audience_id":"b0f8b66a-e636-495d-9475-0f5317ea08e0","channel":"GraphQLChannel","channelId":"abc123"}"#)
         #expect((0..<20).allSatisfy { _ in
-            VenueChatConnection.identifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123") == identifier
+            AudienceCable.graphQLIdentifier(audienceID: "b0f8b66a-e636-495d-9475-0f5317ea08e0", channelID: "abc123") == identifier
         })
     }
 
@@ -366,7 +375,7 @@ struct ChatIdentifierTests {
         let venue = ChatRoom(kind: .venue, id: id, name: "Why KiKi")
         let locale = ChatRoom(kind: .locale, id: id, name: "Seattle")
 
-        let data = VenueChatConnection.executeData(for: venue)
+        let data = executeData(for: venue)
         let object = try #require(try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any])
         #expect(object["action"] as? String == "execute")
         #expect(object["operationName"] as? String == "ChatRoom")
@@ -382,7 +391,7 @@ struct ChatIdentifierTests {
         #expect(query.contains("sender_presence: senderPresence"))
 
         #expect(VenueChatConnection.subscriptionDocument(for: locale).contains("room: localeChat(localeId: $id)"))
-        #expect(VenueChatConnection.executeData(for: venue) == data)
+        #expect(executeData(for: venue) == data)
     }
 
     @Test("Sends a line to the room it's in")

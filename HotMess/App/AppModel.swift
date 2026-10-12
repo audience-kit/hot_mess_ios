@@ -28,6 +28,11 @@ final class AppModel {
     let safety: SafetyStore
     /// The user's notifications while the app is in front, shown in the app.
     let notifications: NotificationStream
+    /// The app's one realtime connection: every GraphQL subscription (the
+    /// notifications above, the chat room on screen) rides this socket. It's
+    /// open while any of them runs, which is while the app is in front and
+    /// signed in, and closes once they've all ended.
+    let cable: AudienceCable
 
     var selectedTab: AppTab = .now
 
@@ -62,13 +67,26 @@ final class AppModel {
         location = LocationProvider(api: api, configuration: configuration)
         checkout = CoverCheckout(api: api, configuration: configuration)
         safety = SafetyStore(api: api)
+        // A socket the server refuses as unauthorized signs out the way an
+        // HTTP 401 does.
+        let tokenStore = SessionStore.tokenStore
+        let cable = AudienceCable(
+            url: GraphQLCable.url(for: configuration),
+            session: .realtime,
+            token: { try? tokenStore.loadToken() },
+            unauthorized: { [session] token in
+                guard let token else { return }
+                Task { @MainActor in await session.sessionRejected(token: token) }
+            }
+        )
+        self.cable = cable
         notifications = NotificationStream(
-            url: configuration.realtimeURL,
+            cable: cable,
             audienceID: { [configuration, api] in
                 if let audienceID = configuration.audienceID { return audienceID }
                 return try? await api.audienceID()
             },
-            token: { [session] in session.isSignedIn ? session.bearerToken : nil }
+            isSignedIn: { [session] in session.isSignedIn }
         )
         notifications.onReceive = { [weak self] notification in
             if notification.ping != nil { self?.pingsChanged() }
@@ -77,9 +95,6 @@ final class AppModel {
         // The API ended the session (a 401, or a socket refused as
         // unauthorized): forget the user's things as signing out does.
         session.onSessionEnded = { [weak self] in self?.forgetUser() }
-        GraphQLCable.unauthorizedHandler.withLock { [session] handler in
-            handler = { token in Task { @MainActor in await session.sessionRejected(token: token) } }
-        }
     }
 
     func start() async {
@@ -113,6 +128,7 @@ final class AppModel {
         friends.forget()
         safety.forget()
         notifications.reset()
+        Task { [cable] in await cable.disconnect() }
     }
 
     /// Deletes the account on the server, then signs out here. The API

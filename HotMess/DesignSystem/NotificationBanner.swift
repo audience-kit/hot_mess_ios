@@ -45,8 +45,8 @@ private struct NotificationBannerHost: ViewModifier {
                 }
             }
             .animation(HotMessMotion.quick, value: stream.banner)
-            // Cancelled, which closes the socket, on going to the background
-            // and when the signed-in UI goes away.
+            // Cancelled on going to the background and when the signed-in UI goes
+            // away; once chat has left too, the cable closes its socket.
             .task(id: scenePhase != .background) {
                 guard scenePhase != .background else { return }
                 await stream.run()

@@ -3,19 +3,15 @@
 //  HotMessTests
 //
 
+import AudienceKit
 import Foundation
 import Testing
 
 @testable import HotMess
 
-/// A `GraphQLChannel` result frame carrying `notification`.
-private func frame(_ notification: String, more: Bool = true) -> Data {
-    Data("""
-    {
-      "identifier": "{\\"audience_id\\":\\"a\\",\\"channel\\":\\"GraphQLChannel\\",\\"channelId\\":\\"c\\"}",
-      "message": { "result": { "data": { "notification": \(notification) } }, "more": \(more) }
-    }
-    """.utf8)
+/// A `myNotifications` result, as the cable hands it on.
+private func frame(_ notification: String) -> AudienceCable.Event {
+    .result(Data(#"{ "data": { "notification": \#(notification) } }"#.utf8))
 }
 
 private let ping = """
@@ -69,28 +65,26 @@ struct NotificationStreamTests {
         #expect(notification.ping == PingNotification(kind: .pingJoin, pingID: "42"))
     }
 
-    @Test("A refusal stops it; the end of the subscription drops it; frames for nobody mean nothing")
+    @Test("A refusal stops it; a drop says whether the cable reconnects; results for nobody mean nothing")
     func controlFrames() throws {
-        let refused = Data(#"{ "identifier": "x", "message": { "result": { "data": null, "errors": [{ "message": "Not allowed" }] }, "more": false } }"#.utf8)
+        let refused = AudienceCable.Event.result(Data(#"{ "data": null, "errors": [{ "message": "Not allowed" }] }"#.utf8))
         #expect(NotificationStreamConnection.events(from: refused) == [.refused])
-        #expect(NotificationStreamConnection.events(from: Data(#"{ "type": "reject_subscription" }"#.utf8)) == [.refused])
-        #expect(NotificationStreamConnection.events(from: frame(ping, more: false)).last == .disconnected(nil))
-        #expect(NotificationStreamConnection.events(from: Data(#"{ "type": "disconnect" }"#.utf8)) == [.disconnected(nil)])
-
-        guard case .confirmed = NotificationStreamConnection.incoming(from: Data(#"{ "type": "confirm_subscription" }"#.utf8)) else {
-            Issue.record("Expected the confirmation")
-            return
-        }
-        #expect(NotificationStreamConnection.events(from: Data(#"{ "type": "welcome" }"#.utf8)).isEmpty)
-        #expect(NotificationStreamConnection.events(from: Data(#"{ "type": "ping", "message": 1791691200 }"#.utf8)).isEmpty)
-        #expect(NotificationStreamConnection.events(from: Data("not json".utf8)).isEmpty)
+        #expect(NotificationStreamConnection.events(from: .rejected) == [.refused])
+        #expect(NotificationStreamConnection.events(from: .subscribed) == [.listening])
+        #expect(NotificationStreamConnection.events(from: .disconnected(reason: nil, reconnects: true)) == [.disconnected(nil, reconnects: true)])
+        #expect(NotificationStreamConnection.events(from: .disconnected(reason: "unauthorized", reconnects: false)) == [.disconnected("unauthorized", reconnects: false)])
+        #expect(NotificationStreamConnection.events(from: .result(Data("not json".utf8))).isEmpty)
         // No ID: nothing to dedupe it by, so it isn't shown.
         #expect(NotificationStreamConnection.events(from: frame(#"{ "title": "?" }"#)).isEmpty)
     }
 
     @Test("Executes MyNotifications with no variables, on GraphQLChannel")
     func execute() throws {
-        let data = NotificationStreamConnection.executeData()
+        let data = AudienceCable.executeData(
+            query: NotificationStreamConnection.document,
+            variables: [:],
+            operationName: NotificationStreamConnection.operationName
+        )
         let object = try #require(try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any])
 
         #expect(object["action"] as? String == "execute")
@@ -101,7 +95,7 @@ struct NotificationStreamTests {
         #expect(query.hasPrefix("subscription MyNotifications {"))
         #expect(query.contains("notification: myNotifications { notificationId title body category data sentAt }"))
 
-        #expect(GraphQLCable.identifier(audienceID: "aud", channelID: "c1") == #"{"audience_id":"aud","channel":"GraphQLChannel","channelId":"c1"}"#)
+        #expect(AudienceCable.graphQLIdentifier(audienceID: "aud", channelID: "c1") == #"{"audience_id":"aud","channel":"GraphQLChannel","channelId":"c1"}"#)
     }
 
     @Test("Reads a push's notification_id")
@@ -134,7 +128,7 @@ struct NotificationStreamTests {
 struct NotificationDedupeTests {
     @Test("The system copy of a notification shown in the app is suppressed")
     func seenSuppressed() async {
-        let stream = NotificationStream(url: nil)
+        let stream = NotificationStream(cable: nil)
         stream.receive(notification("41"))
 
         #expect(stream.banner?.id == "41")
@@ -143,7 +137,7 @@ struct NotificationDedupeTests {
 
     @Test("An unseen one is presented, and its late in-app copy isn't shown again")
     func unseenPresented() async {
-        let stream = NotificationStream(url: nil)
+        let stream = NotificationStream(cable: nil)
 
         #expect(await stream.shouldPresentSystemCopy(notificationID: "42"))
         stream.receive(notification("42"))
@@ -152,14 +146,14 @@ struct NotificationDedupeTests {
 
     @Test("A push without an ID is always presented")
     func noID() async {
-        let stream = NotificationStream(url: nil)
+        let stream = NotificationStream(cable: nil)
         #expect(await stream.shouldPresentSystemCopy(notificationID: nil))
         #expect(await stream.shouldPresentSystemCopy(notificationID: nil))
     }
 
     @Test("While listening, the system copy waits a moment for the in-app copy")
     func window() async {
-        let stream = NotificationStream(url: nil)
+        let stream = NotificationStream(cable: nil)
         stream.isListening = true
         stream.systemCopyWindow = .seconds(2)
 
@@ -175,7 +169,7 @@ struct NotificationDedupeTests {
 
     @Test("Each notification is shown once, and Now hears about Pings")
     func shownOnce() {
-        let stream = NotificationStream(url: nil)
+        let stream = NotificationStream(cable: nil)
         var received: [String] = []
         stream.onReceive = { received.append($0.id) }
 
