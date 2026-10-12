@@ -342,7 +342,7 @@ struct VenueChatScreen: View {
             room: room,
             configuration: model.configuration,
             userID: model.session.userID,
-            token: model.session.bearerToken,
+            cable: model.cable,
             friends: model.friends,
             api: model.api,
             reportPresence: { [location = model.location] in await location.reportCurrentPosition() }

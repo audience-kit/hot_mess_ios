@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import Observation
 
@@ -69,8 +70,8 @@ struct RecentNotificationIDs: Sendable {
     }
 }
 
-/// `Subscription.myNotifications` over `GraphQLChannel`: the document, and
-/// what its frames mean.
+/// `Subscription.myNotifications` on the app's cable: the document, and
+/// what its events mean.
 enum NotificationStreamConnection {
     enum Event: Sendable, Equatable {
         /// The subscription went out: notifications arrive from now on. (The
@@ -80,7 +81,9 @@ enum NotificationStreamConnection {
         /// The server turned the subscription away (a build without the
         /// permission, a server without the field). Retrying won't help.
         case refused
-        case disconnected(String?)
+        /// The socket dropped or went quiet; the cable subscribes again on its
+        /// own unless `reconnects` is false (the session ended).
+        case disconnected(String?, reconnects: Bool)
     }
 
     static let operationName = "MyNotifications"
@@ -91,57 +94,32 @@ enum NotificationStreamConnection {
     }
     """
 
-    static func executeData() -> String {
-        GraphQLCable.executeData(operationName: operationName, query: document)
-    }
-
-    static func socket(
-        url: URL,
-        token: String?,
-        audienceID: String,
-        channelID: String = UUID().uuidString.lowercased()
-    ) -> GraphQLCableSocket<Event> {
-        GraphQLCableSocket(
-            url: url,
-            token: token,
-            identifier: GraphQLCable.identifier(audienceID: audienceID, channelID: channelID),
-            executeData: executeData(),
-            name: "Notifications",
-            confirmed: .listening,
-            closed: { .disconnected($0) },
-            parse: { incoming(from: $0) }
-        )
-    }
-
-    static func incoming(from data: Data) -> GraphQLCable.Incoming<Event> {
-        switch GraphQLCable.Frame<Result>(data: data) {
-        case .confirmed:
-            return .confirmed
+    /// The events one of the cable's events means.
+    static func events(from event: AudienceCable.Event) -> [Event] {
+        switch event {
+        case .subscribed:
+            [.listening]
+        case let .result(data):
+            events(fromResult: data)
         case .rejected:
-            return .events([.refused])
-        case .disconnect:
-            return .events([.disconnected(nil)])
-        case let .result(result, more):
-            var events: [Event] = []
-            if let notification = result.notification {
-                events.append(.received(notification))
-            } else if !result.errors.isEmpty {
-                Log.realtime.error("Notifications subscription refused: \(result.errors.joined(separator: "; "), privacy: .public)")
-                return .events([.refused])
-            }
-            if !more { events.append(.disconnected(nil)) }
-            return .events(events)
-        case .ignored:
-            return .events([])
+            [.refused]
+        case let .disconnected(reason, reconnects):
+            [.disconnected(reason, reconnects: reconnects)]
         }
     }
 
-    /// The events one frame means, ignoring the confirmation.
-    static func events(from data: Data) -> [Event] {
-        switch incoming(from: data) {
-        case .confirmed: []
-        case let .events(events): events
+    /// What one `{ data, errors }` result means: the notification, a refusal,
+    /// or nothing (one without an ID, which can't be deduped).
+    static func events(fromResult data: Data) -> [Event] {
+        guard let result = try? JSONDecoder().decode(Result.self, from: data) else { return [] }
+        if let notification = result.notification {
+            return [.received(notification)]
         }
+        if !result.errors.isEmpty {
+            Log.realtime.error("Notifications subscription refused: \(result.errors.joined(separator: "; "), privacy: .public)")
+            return [.refused]
+        }
+        return []
     }
 
     /// `{ data: { notification }, errors }`.
@@ -234,10 +212,11 @@ enum NotificationStreamConnection {
 /// `myNotifications`, shows each one as an in-app banner, and tells the
 /// notification centre to skip the system copy of one already shown.
 ///
-/// `run()` follows the subscription until its task is cancelled, which the
-/// signed-in UI does when the app goes to the background or the user signs out
-/// (see `NotificationBannerHost`). A dropped or silent socket reconnects on its
-/// own, after a wait that grows with each failure in a row, like chat's.
+/// `run()` follows the subscription on the app's one cable until its task is
+/// cancelled, which the signed-in UI does when the app goes to the background
+/// or the user signs out (see `NotificationBannerHost`); with chat's rooms it's
+/// what keeps the cable open. A dropped or silent socket is the cable's to
+/// reconnect, and it subscribes this again when it does.
 @MainActor
 @Observable
 final class NotificationStream {
@@ -253,32 +232,35 @@ final class NotificationStream {
     @ObservationIgnored var onReceive: @MainActor (InAppNotification) -> Void = { _ in }
 
     @ObservationIgnored private var recent = RecentNotificationIDs()
-    @ObservationIgnored private let url: URL?
+    @ObservationIgnored private let cable: AudienceCable?
     @ObservationIgnored private let audienceID: @MainActor () async -> String?
-    @ObservationIgnored private let token: @MainActor () -> String?
+    @ObservationIgnored private let isSignedIn: @MainActor () -> Bool
 
     /// - Parameters:
-    ///   - url: the Action Cable endpoint (`AppConfiguration.realtimeURL`).
+    ///   - cable: the app's one cable (`AppModel.cable`).
     ///   - audienceID: the audience the subscription runs in, or `nil` when
     ///     it can't be worked out now.
-    ///   - token: the session token, or `nil` when signed out.
+    ///   - isSignedIn: whether there's a session to follow it with.
     init(
-        url: URL?,
+        cable: AudienceCable?,
         audienceID: @escaping @MainActor () async -> String? = { nil },
-        token: @escaping @MainActor () -> String? = { nil }
+        isSignedIn: @escaping @MainActor () -> Bool = { false }
     ) {
-        self.url = url
+        self.cable = cable
         self.audienceID = audienceID
-        self.token = token
+        self.isSignedIn = isSignedIn
     }
 
-    /// Follows `myNotifications` until cancelled, or until the server refuses it.
+    /// Follows `myNotifications` until cancelled, signed out, or refused.
+    /// The cable reconnects a dropped socket itself; this only subscribes
+    /// again when the server ends the subscription, or the audience couldn't
+    /// be worked out.
     func run() async {
-        guard let url else { return }
+        guard let cable else { return }
 
         var failures = 0
         while !Task.isCancelled {
-            switch await follow(url: url) {
+            switch await follow(cable: cable) {
             case .stopped, .refused:
                 return
             case .listened:
@@ -288,7 +270,7 @@ final class NotificationStream {
             }
 
             do {
-                try await Task.sleep(for: VenueChatViewModel.reconnectDelay(afterFailures: failures))
+                try await Task.sleep(for: AudienceCable.reconnectDelay(afterFailures: failures))
             } catch {
                 return
             }
@@ -345,43 +327,54 @@ final class NotificationStream {
     private enum Outcome {
         case stopped
         case refused
-        /// The socket closed after the subscription went out.
+        /// The server ended the subscription after it went out.
         case listened
-        /// The socket closed before it did.
+        /// It ended before it went out.
         case dropped
     }
 
-    /// One socket's life.
-    private func follow(url: URL) async -> Outcome {
-        guard let token = token() else { return .stopped }
+    /// One subscription's life on the cable. Ending the loop (cancelled,
+    /// refused) ends the subscription, and the cable closes its socket once
+    /// nothing else is on it.
+    private func follow(cable: AudienceCable) async -> Outcome {
+        guard isSignedIn() else { return .stopped }
         guard let audienceID = await audienceID() else { return .dropped }
         guard !Task.isCancelled else { return .stopped }
 
-        let socket = NotificationStreamConnection.socket(url: url, token: token, audienceID: audienceID)
-        await socket.connect()
+        let subscription = await cable.subscribe(
+            query: NotificationStreamConnection.document,
+            operationName: NotificationStreamConnection.operationName,
+            audienceID: audienceID
+        )
 
-        var outcome = Outcome.stopped
+        var outcome = Outcome.dropped
         var listened = false
-        loop: for await event in socket.events {
+        loop: for await cableEvent in subscription {
             guard !Task.isCancelled else { break }
 
-            switch event {
-            case .listening:
-                listened = true
-                isListening = true
-            case let .received(notification):
-                receive(notification)
-            case .refused:
-                outcome = .refused
-                break loop
-            case .disconnected:
-                outcome = listened ? .listened : .dropped
-                break loop
+            for event in NotificationStreamConnection.events(from: cableEvent) {
+                switch event {
+                case .listening:
+                    listened = true
+                    isListening = true
+                case let .received(notification):
+                    receive(notification)
+                case .refused:
+                    outcome = .refused
+                    break loop
+                case let .disconnected(_, reconnects):
+                    isListening = false
+                    if !reconnects {
+                        outcome = .stopped
+                        break loop
+                    }
+                }
             }
         }
 
         isListening = false
-        await socket.disconnect()
-        return Task.isCancelled ? .stopped : outcome
+        if Task.isCancelled { return .stopped }
+        if outcome == .dropped, listened { return .listened }
+        return outcome
     }
 }

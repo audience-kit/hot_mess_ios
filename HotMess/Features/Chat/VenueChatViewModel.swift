@@ -3,6 +3,7 @@
 //  HotMess
 //
 
+import AudienceKit
 import Foundation
 import Observation
 
@@ -69,9 +70,10 @@ final class VenueChatViewModel {
 
     let room: ChatRoom
 
-    private let url: URL?
+    /// The app's one cable, which the room's subscription rides with
+    /// everything else realtime. Without it there's no chat.
+    private let cable: AudienceCable?
     private let configuration: AppConfiguration
-    private let token: String?
     let userID: UUID?
     /// The app's friends so far. The roster's full list of friends goes in,
     /// so friends show by full name everywhere.
@@ -83,7 +85,8 @@ final class VenueChatViewModel {
     /// Sends lines (`sendMyChatMessage`) and names the audience the room's
     /// subscription runs in. Without it nothing can be sent.
     private let api: HotMessAPI?
-    private var connection: VenueChatConnection?
+    /// The room's subscription, while one is open.
+    private var following: Task<Outcome, Never>?
     private var presenceTask: Task<Void, Never>?
     /// Bumped by `stop()`, so a `run()` waiting to reconnect knows it's over.
     private var generation = 0
@@ -94,7 +97,7 @@ final class VenueChatViewModel {
         room: ChatRoom,
         configuration: AppConfiguration,
         userID: UUID?,
-        token: String?,
+        cable: AudienceCable? = nil,
         friends: FriendDirectory? = nil,
         api: HotMessAPI? = nil,
         reportPresence: @escaping @MainActor () async -> Void = {}
@@ -103,10 +106,9 @@ final class VenueChatViewModel {
         self.api = api
         self.configuration = configuration
         self.userID = userID
-        self.token = token
+        self.cable = cable
         self.friends = friends
         self.reportPresence = reportPresence
-        url = configuration.realtimeURL
     }
 
     /// Lines typed while the room is still joining wait in `pending` and go out
@@ -157,13 +159,15 @@ final class VenueChatViewModel {
         return HereNowPerson.sorted(people)
     }
 
-    /// Reports the position, connects, and streams messages until the room
-    /// closes or the server says the user isn't in the room's place. While it's open,
-    /// the position is reported again every few minutes. A dropped or silent
-    /// socket reconnects on its own, after a short wait that grows with each
-    /// failure in a row, so the room keeps hearing who arrives.
+    /// Reports the position, subscribes to the room on the app's cable, and
+    /// streams messages until the room closes or the server says the user
+    /// isn't in the room's place. While it's open, the position is reported
+    /// again every few minutes. A dropped or silent socket is the cable's to
+    /// reconnect, and it rejoins the room when it does; if the server ends the
+    /// room's subscription, this subscribes again after a short wait that
+    /// grows with each failure in a row, so the room keeps hearing who arrives.
     func run() async {
-        guard let url else {
+        guard let cable else {
             connectionState = .disconnected(String(localized: "Chat isn't available for this build."))
             return
         }
@@ -178,7 +182,7 @@ final class VenueChatViewModel {
 
             let outcome: Outcome
             if let audienceID = await audienceID() {
-                outcome = await follow(url: url, audienceID: audienceID)
+                outcome = await follow(cable: cable, audienceID: audienceID)
             } else if api == nil {
                 connectionState = .disconnected(String(localized: "Chat isn't available for this build."))
                 return
@@ -195,11 +199,6 @@ final class VenueChatViewModel {
                 failures += 1
             }
 
-            // Don't keep the dead socket around while waiting to reconnect.
-            if let connection {
-                self.connection = nil
-                await connection.disconnect()
-            }
             do {
                 try await Task.sleep(for: Self.reconnectDelay(afterFailures: failures))
             } catch {
@@ -215,12 +214,12 @@ final class VenueChatViewModel {
     }
 
     private enum Outcome {
-        /// `stop()` or a new run ended it.
+        /// `stop()`, a new run or the session ending ended it.
         case stopped
         case notPresent
-        /// The socket closed after the room was joined.
+        /// The server ended the subscription after the room was joined.
         case joined
-        /// The socket closed before the room was joined.
+        /// It ended before the room was joined.
         case dropped
     }
 
@@ -239,53 +238,72 @@ final class VenueChatViewModel {
         }
     }
 
-    /// One socket's life: connects and applies its events until it closes.
-    private func follow(url: URL, audienceID: String) async -> Outcome {
-        let connection = VenueChatConnection(room: room, url: url, token: token, audienceID: audienceID)
-        self.connection = connection
-        await connection.connect()
+    /// One subscription's life: joins the room on the cable and applies its
+    /// events until it ends. It runs in a task of its own so `stop()` can end
+    /// it; ending the iteration leaves the room, and the cable closes its
+    /// socket once nothing else is on it.
+    private func follow(cable: AudienceCable, audienceID: String) async -> Outcome {
+        following?.cancel()
+        let task = Task { [room] in
+            let subscription = await VenueChatConnection.subscribe(to: room, on: cable, audienceID: audienceID)
+            return await self.apply(subscription)
+        }
+        following = task
+        let outcome = await task.value
+        if following == task { following = nil }
+        return outcome
+    }
 
+    private func apply(_ subscription: AsyncStream<AudienceCable.Event>) async -> Outcome {
         var joined = false
-        for await event in connection.events {
-            guard !Task.isCancelled, self.connection === connection else { break }
-            switch event {
-            case .connected:
-                joined = true
-                connectionState = .connected
-                sendPending()
-            case let .received(message):
-                receive(message)
-            case let .range(outOfRange):
-                isOutOfRange = outOfRange
-            case let .roster(online, people, friends):
-                applyRoster(online: online, people: people, friends: friends)
-            case let .presence(userID, online, name, avatarURL):
-                applyPresence(userID: userID, online: online, name: name, avatarURL: avatarURL)
-            case let .reachable(userID):
-                applyPresence(userID: userID, online: false, name: nil, avatarURL: nil)
-                reachableUserIDs.insert(userID)
-            case let .history(messages, pinned):
-                applyHistory(messages, pinned: pinned)
-            case let .pin(id, announcement):
-                applyPin(id: id, announcement: announcement)
-            case let .removed(id):
-                applyRemoval(id: id)
-            case .cleared:
-                applyClear()
-            case .notPresent:
-                connectionState = .notPresent
-                clearRoom()
-                failPending()
-                await stop()
-                return .notPresent
-            case let .disconnected(reason):
-                connectionState = .disconnected(reason)
-                clearRoom()
-                failPending()
-                return joined ? .joined : .dropped
+        for await cableEvent in subscription {
+            guard !Task.isCancelled else { return .stopped }
+            for event in VenueChatConnection.events(from: cableEvent) {
+                switch event {
+                case .connected:
+                    joined = true
+                    connectionState = .connected
+                    sendPending()
+                case let .received(message):
+                    receive(message)
+                case let .range(outOfRange):
+                    isOutOfRange = outOfRange
+                case let .roster(online, people, friends):
+                    applyRoster(online: online, people: people, friends: friends)
+                case let .presence(userID, online, name, avatarURL):
+                    applyPresence(userID: userID, online: online, name: name, avatarURL: avatarURL)
+                case let .reachable(userID):
+                    applyPresence(userID: userID, online: false, name: nil, avatarURL: nil)
+                    reachableUserIDs.insert(userID)
+                case let .history(messages, pinned):
+                    applyHistory(messages, pinned: pinned)
+                case let .pin(id, announcement):
+                    applyPin(id: id, announcement: announcement)
+                case let .removed(id):
+                    applyRemoval(id: id)
+                case .cleared:
+                    applyClear()
+                case .notPresent:
+                    connectionState = .notPresent
+                    clearRoom()
+                    failPending()
+                    presenceTask?.cancel()
+                    presenceTask = nil
+                    generation += 1
+                    return .notPresent
+                case let .disconnected(reason, reconnects):
+                    connectionState = .disconnected(reason)
+                    clearRoom()
+                    failPending()
+                    guard reconnects else { return .stopped }
+                    // The cable rejoins on its own; tell the API the user is
+                    // still here first, so the room lets them back in.
+                    Task { [reportPresence] in await reportPresence() }
+                }
             }
         }
-        return .stopped
+        if Task.isCancelled { return .stopped }
+        return joined ? .joined : .dropped
     }
 
     /// After "only for people at …": report the position again and reconnect.
@@ -332,9 +350,8 @@ final class VenueChatViewModel {
         generation += 1
         presenceTask?.cancel()
         presenceTask = nil
-        let previous = connection
-        connection = nil
-        await previous?.disconnect()
+        following?.cancel()
+        following = nil
     }
 
     // MARK: - Who's here
