@@ -128,7 +128,17 @@ final class AppModel {
         friends.forget()
         safety.forget()
         notifications.reset()
+        location.forget()
         Task { [cable] in await cable.disconnect() }
+    }
+
+    /// Core Location launched the app in the background for a venue geofence
+    /// or a significant change. Picking the monitor back up is what delivers
+    /// the event, which is then reported with the stored session; nothing
+    /// else (branding, the version check, the user) is loaded.
+    func startInBackground() async {
+        guard location.tracksInBackground, await session.hasStoredSession else { return }
+        location.startInBackground()
     }
 
     /// Deletes the account on the server, then signs out here. The API

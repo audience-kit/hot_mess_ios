@@ -9,8 +9,8 @@ import os
 import UIKit
 import UserNotifications
 
-/// What is genuinely left for UIKit to do: boot the Facebook SDK and receive
-/// push tokens. Everything the old 160-line delegate did — deep links, version
+/// What is genuinely left for UIKit to do: boot the Facebook SDK, receive
+/// push tokens and pick location back up after a background launch. Everything the old 160-line delegate did — deep links, version
 /// gating, login presentation, location start/stop — now lives in SwiftUI or in
 /// a service.
 @MainActor
@@ -28,6 +28,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // the app is delivered here.
         UNUserNotificationCenter.current().delegate = self
         PushNotifications.registerCategories()
+
+        // A venue geofence or a significant change relaunched the app with
+        // nothing on screen, so SwiftUI won't start anything.
+        if launchOptions?[.location] != nil || application.applicationState == .background {
+            Task { await AppModel.shared.startInBackground() }
+        }
 
         return true
     }
