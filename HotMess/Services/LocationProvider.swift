@@ -18,6 +18,9 @@ import os
 @Observable
 final class LocationProvider {
     private(set) var coordinates: Coordinates?
+    /// How accurate the device fix behind `coordinates` is, in metres; `nil`
+    /// while pretending to be at a venue.
+    private var accuracy: CLLocationAccuracy?
     private(set) var locale: AppLocale?
     private(set) var authorizationStatus: CLAuthorizationStatus
     /// Test builds and App Review only: the venue the app is pretending to be
@@ -144,6 +147,9 @@ final class LocationProvider {
         refreshTask?.cancel()
         refreshTask = nil
         manager.stopMonitoringSignificantLocationChanges()
+        // Nobody is left waiting on a fix asked for before the app went away,
+        // so coming back asks Core Location again rather than wait on it.
+        resumePendingFixes()
 
         if let beaconConstraint {
             manager.stopRangingBeacons(satisfying: beaconConstraint)
@@ -225,6 +231,7 @@ final class LocationProvider {
         else { return }
 
         coordinates = tracker.current
+        accuracy = nil
         await refreshLocale()
         await reportPosition(force: true)
     }
@@ -255,14 +262,13 @@ final class LocationProvider {
             manager.startRangingBeacons(satisfying: beaconConstraint)
         }
 
-        // A recent cached fix shows something at once; an old one would be
-        // reported as where the user is now, so it waits for a fresh one.
-        if let location = manager.location,
-           Date.now.timeIntervalSince(location.timestamp) < Self.freshFixAge {
+        // A recent cached fix shows something at once, but it may be a coarse
+        // one (a cell tower, another app's), so a fresh fix is always asked for
+        // too; opening the app shouldn't need a pull to refresh to find the venue.
+        if let location = manager.location {
             update(with: location)
-        } else {
-            Task { await refreshPosition() }
         }
+        Task { await refreshPosition() }
 
         refreshTask?.cancel()
         refreshTask = Task { @MainActor [weak self] in
@@ -285,6 +291,12 @@ final class LocationProvider {
     }
 
     fileprivate func update(with location: CLLocation) {
+        // Starting significant-change monitoring hands back the last fix the
+        // system had, however old; reporting it would put the user wherever
+        // they were then. A refresh waits on for the fix it asked for.
+        guard location.horizontalAccuracy >= 0,
+              Date.now.timeIntervalSince(location.timestamp) < Self.freshFixAge else { return }
+
         // Geofences follow the device, even while pretending to be elsewhere.
         Task { await planGeofences(around: location) }
 
@@ -295,6 +307,7 @@ final class LocationProvider {
         }
 
         coordinates = tracker.current
+        accuracy = location.horizontalAccuracy
         // A refresh waits for the locale too, so a pulled list reloads in the right city.
         Task {
             await refreshLocale()
@@ -338,13 +351,13 @@ final class LocationProvider {
     func now(sentAfter: Date? = nil) async throws -> Now? {
         guard let coordinates else { return nil }
 
-        if let report, !reportThrottle.isDue(coordinates),
+        if let report, !reportThrottle.isDue(coordinates, accuracy: accuracy),
            sentAfter.map({ report.sentAt >= $0 }) ?? true {
             return try await report.task.value
         }
 
         let sentAt = Date.now
-        reportThrottle.sent(coordinates, at: sentAt)
+        reportThrottle.sent(coordinates, accuracy: accuracy, at: sentAt)
         let task = Task { @MainActor [api, weak self] () throws -> Now in
             do {
                 return try await api.now(near: coordinates)
