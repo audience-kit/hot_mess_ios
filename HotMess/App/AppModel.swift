@@ -6,6 +6,7 @@
 import AudienceKit
 import Foundation
 import Observation
+import os
 
 /// The app's composition root: it builds the services once and holds the
 /// navigation state the rest of the UI reads.
@@ -72,6 +73,13 @@ final class AppModel {
         notifications.onReceive = { [weak self] notification in
             if notification.ping != nil { self?.pingsChanged() }
         }
+
+        // The API ended the session (a 401, or a socket refused as
+        // unauthorized): forget the user's things as signing out does.
+        session.onSessionEnded = { [weak self] in self?.forgetUser() }
+        GraphQLCable.unauthorizedHandler.withLock { [session] handler in
+            handler = { token in Task { @MainActor in await session.sessionRejected(token: token) } }
+        }
     }
 
     func start() async {
@@ -96,10 +104,15 @@ final class AppModel {
 
     /// Signs out and forgets what was loaded for the user.
     func signOut() {
+        forgetUser()
+        session.signOut()
+    }
+
+    /// Forgets what was loaded for the signed-in user.
+    private func forgetUser() {
         friends.forget()
         safety.forget()
         notifications.reset()
-        session.signOut()
     }
 
     /// Deletes the account on the server, then signs out here. The API

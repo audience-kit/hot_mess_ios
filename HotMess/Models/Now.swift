@@ -71,7 +71,9 @@ struct Now: Decodable, Hashable, Sendable {
         case heroURL = "hero_url"
     }
 
-    private enum AudienceKeys: String, CodingKey { case ping }
+    private enum AudienceKeys: String, CodingKey { case me }
+
+    private enum MeKeys: String, CodingKey { case ping }
 
     private enum PingKeys: String, CodingKey {
         case myPing = "my_ping"
@@ -143,8 +145,10 @@ struct Now: Decodable, Hashable, Sendable {
 
         if (try? container.decodeNil(forKey: .audience)) == false,
            let audience = try? container.nestedContainer(keyedBy: AudienceKeys.self, forKey: .audience),
-           (try? audience.decodeNil(forKey: .ping)) == false,
-           let ping = try? audience.nestedContainer(keyedBy: PingKeys.self, forKey: .ping) {
+           (try? audience.decodeNil(forKey: .me)) == false,
+           let me = try? audience.nestedContainer(keyedBy: MeKeys.self, forKey: .me),
+           (try? me.decodeNil(forKey: .ping)) == false,
+           let ping = try? me.nestedContainer(keyedBy: PingKeys.self, forKey: .ping) {
             myPing = try ping.decodeIfPresent(Ping.self, forKey: .myPing)
             friendPings = try ping.decodeIfPresent([Ping].self, forKey: .friendPings) ?? []
         } else {

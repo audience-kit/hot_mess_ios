@@ -58,7 +58,10 @@ empty and failure states are handled the same way everywhere.
   `POST /v1/token` with the audience host, the build's Facebook app ID and
   the device, then keeps the session JWT in the keychain. When the API ends
   the session (401), the SDK drops the token and `SessionStore` returns to
-  the login screen. The Venues and People tabs read the audience over
+  the login screen, once, saying "Please sign in again". A realtime socket the
+  server closes as `unauthorized` does the same (`GraphQLCableSocket` hands
+  its token to `SessionStore.sessionRejected(token:)`); a 403 or a dropped
+  connection doesn't. The Venues and People tabs read the audience over
   GraphQL, and `BrandStore` fetches `/v1/branding` and drives
   `Color.hotMessAccent` and the tint.
 - **GraphQL.** Every other screen also goes through the audience's GraphQL

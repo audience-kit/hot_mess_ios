@@ -109,7 +109,7 @@ struct PingDecodingTests {
     func decodesNowPings() throws {
         let json = """
         {"reportLocation":{"venue":null,"nearby_venues":[],"locale":null,
-          "audience":{"ping":{"my_ping":\(PingFixtures.anywhere),"friend_pings":[\(PingFixtures.ping)]}}}}
+          "audience":{"me":{"ping":{"my_ping":\(PingFixtures.anywhere),"friend_pings":[\(PingFixtures.ping)]}}}}}
         """
 
         let now = try PingFixtures.decode(ReportLocationResponse.self, json).reportLocation
@@ -130,7 +130,7 @@ struct PingDecodingTests {
     func decodesPingsQuery() throws {
         let response = try PingFixtures.decode(
             AudiencePingsResponse.self,
-            #"{"ping":{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}}"#
+            #"{"me":{"ping":{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}}}"#
         ).pings
 
         #expect(response.myPing == nil)

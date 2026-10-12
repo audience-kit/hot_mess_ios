@@ -373,6 +373,15 @@ struct ChatPresenceFrameTests {
             return
         }
     }
+
+    @Test("Only a connection refused as unauthorized ends the session")
+    func unauthorizedDisconnect() {
+        #expect(GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "disconnect", "reason": "unauthorized", "reconnect": false }"#.utf8)))
+        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "disconnect", "reason": "server_restart", "reconnect": true }"#.utf8)))
+        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "reject_subscription", "identifier": "{}" }"#.utf8)))
+        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data(#"{ "type": "ping", "message": 1791691200 }"#.utf8)))
+        #expect(!GraphQLCable.isUnauthorizedDisconnect(Data("not json".utf8)))
+    }
 }
 
 @Suite("Here now")
