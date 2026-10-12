@@ -192,7 +192,7 @@ struct HotMessAPI: Sendable {
     /// `AudienceKitError`s so the session can tell an ended session (401)
     /// from a network blip.
     func me() async throws -> User? {
-        try await audienceKit.graphQL(Documents.me, as: MeResponse.self, decoder: .hotMess).me?.user
+        try await audienceKit.graphQL(Documents.me, as: MeResponse.self, decoder: .hotMess).me?.profile?.user
     }
 
     func serviceManifest(device: DeviceDescription) async throws -> VersionInfo {
@@ -601,9 +601,11 @@ extension HotMessAPI {
               }
             }
             audience {
-              ping {
-                my_ping: myPing { \(pingFields) }
-                friend_pings: friendPings { \(pingFields) }
+              me {
+                ping {
+                  my_ping: myPing { \(pingFields) }
+                  friend_pings: friendPings { \(pingFields) }
+                }
               }
             }
           }
@@ -678,7 +680,7 @@ extension HotMessAPI {
 
         static let admissions = """
         query Admissions {
-          cover { admissions { nodes { \(admissionFields) } } }
+          me { cover { admissions { nodes { \(admissionFields) } } } }
         }
         """
 
@@ -697,9 +699,11 @@ extension HotMessAPI {
 
         static let pings = """
         query Pings {
-          ping {
-            my_ping: myPing { \(pingFields) }
-            friend_pings: friendPings { \(pingFields) }
+          me {
+            ping {
+              my_ping: myPing { \(pingFields) }
+              friend_pings: friendPings { \(pingFields) }
+            }
           }
         }
         """
@@ -732,7 +736,7 @@ extension HotMessAPI {
 
         static let me = """
         query Me {
-          me { id name first_name: firstName last_name: lastName photo { cdn_url: cdnUrl } }
+          me { self { id name first_name: firstName last_name: lastName photo { cdn_url: cdnUrl } } }
         }
         """
 
@@ -742,7 +746,8 @@ extension HotMessAPI {
         query Safety {
           me {
             terms_accepted_at: termsAcceptedAt blocked_users: blockedUsers { \(blockedUserFields) }
-            has_facebook: hasFacebook can_pretend_location: canPretendLocation
+            can_pretend_location: canPretendLocation
+            self { has_facebook: hasFacebook }
           }
         }
         """
@@ -941,20 +946,25 @@ struct RefundAdmissionResponse: Decodable, Sendable {
 }
 
 /// `cover { admissions { nodes } }`; no cover mixin reads as no passes.
+/// `me { cover { admissions } }`: the viewer's passes are theirs, under `me`.
 struct AdmissionsResponse: Decodable, Sendable {
     struct Nodes: Decodable, Sendable { let nodes: [Admission] }
     struct Cover: Decodable, Sendable { let admissions: Nodes }
+    struct Me: Decodable, Sendable { let cover: Cover? }
 
-    let cover: Cover?
+    let me: Me?
 
-    var admissions: [Admission] { cover?.admissions.nodes ?? [] }
+    var admissions: [Admission] { me?.cover?.admissions.nodes ?? [] }
 }
 
 /// `ping { my_ping friend_pings }` on the root, the audience; no ping mixin reads as none.
+/// `me { ping }`: the viewer's own ping and their friends', under `me`.
 struct AudiencePingsResponse: Decodable, Sendable {
-    let ping: PingsResponse?
+    struct Me: Decodable, Sendable { let ping: PingsResponse? }
 
-    var pings: PingsResponse { ping ?? PingsResponse() }
+    let me: Me?
+
+    var pings: PingsResponse { me?.ping ?? PingsResponse() }
 }
 
 struct PingsResponse: Decodable, Sendable {
@@ -1019,7 +1029,14 @@ struct MeResponse: Decodable, Sendable {
         }
     }
 
-    let me: Payload?
+    /// `me` is the viewer's state; `self`, their own profile.
+    struct State: Decodable, Sendable {
+        let profile: Payload?
+
+        private enum CodingKeys: String, CodingKey { case profile = "self" }
+    }
+
+    let me: State?
 }
 
 struct SafetyResponse: Decodable, Sendable {

@@ -84,7 +84,7 @@ struct GraphQLTests {
                                "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
                                "banner_url":null,"is_featured":false,"rsvp":"ATTENDING",
                                "venue":{"name":"To be announced","venue":null}}]}}},
-          "audience":{"ping":null}
+          "audience":{"me":{"ping":null}}
         }}
         """#.utf8)
 
@@ -226,17 +226,17 @@ struct AppConfigurationTests {
     @Test("Takes the signed-in user's avatar from me's photo")
     func meAvatar() throws {
         let json = Data("""
-        {"me":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":"Rick M.","first_name":"Rick","last_name":"M",
-        "photo":{"cdn_url":"https://cdn.hotmess.social/photos/rick.jpg"}}}
+        {"me":{"self":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":"Rick M.","first_name":"Rick","last_name":"M",
+        "photo":{"cdn_url":"https://cdn.hotmess.social/photos/rick.jpg"}}}}
         """.utf8)
-        let user = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: json).me?.user)
+        let user = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: json).me?.profile?.user)
         #expect(user.name == "Rick M.")
         #expect(user.avatarURL?.absoluteString == "https://cdn.hotmess.social/photos/rick.jpg")
 
         let withoutPhoto = Data("""
-        {"me":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":null,"first_name":"Rick","last_name":"M","photo":null}}
+        {"me":{"self":{"id":"5b3c8a72-4e19-4d06-b2f5-8c7a1e0d9b22","name":null,"first_name":"Rick","last_name":"M","photo":null}}}
         """.utf8)
-        let plain = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: withoutPhoto).me?.user)
+        let plain = try #require(try JSONDecoder.hotMess.decode(MeResponse.self, from: withoutPhoto).me?.profile?.user)
         #expect(plain.name == "Rick M")
         #expect(plain.avatarURL == nil)
     }
