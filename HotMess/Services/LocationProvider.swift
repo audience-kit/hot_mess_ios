@@ -7,6 +7,7 @@ import CoreLocation
 import Foundation
 import Observation
 import os
+import UIKit
 
 /// Tracks where the device is and which locale (city) that maps to.
 ///
@@ -36,7 +37,17 @@ final class LocationProvider {
     private let delegate = Delegate()
     private var beaconConstraint: CLBeaconIdentityConstraint?
     private var beaconRegion: CLBeaconRegion?
+    /// Significant changes, beacon regions and geofences: what keeps running
+    /// in the background once the user allows Always.
     private var isMonitoring = false
+    /// The 5-minute refresh and beacon ranging: only while the app is open.
+    private var isInForeground = false
+    /// Set when When In Use is asked for in this launch, so the upgrade to
+    /// Always waits for a later launch instead of stacking a second prompt.
+    private var askedWhenInUseThisLaunch = false
+    /// True between `start()` or `startInBackground()` and `forget()`: only a
+    /// signed-in app tracks, even when the authorization changes underneath it.
+    private var isEnabled = false
 
     /// Callers waiting on `refreshPosition()`, resumed by the next fix, a
     /// failure, or their timeout.
@@ -73,6 +84,8 @@ final class LocationProvider {
     /// with before Core Location produces a fix.
     private static let storedLocaleIDKey = "localeId"
     private static let storedLocaleNameKey = "localeName"
+    /// iOS shows the Always prompt once; this keeps the app from asking again.
+    private static let askedForAlwaysKey = "askedForAlwaysLocation"
 
     init(api: HotMessAPI, configuration: AppConfiguration) {
         self.api = api
@@ -118,6 +131,11 @@ final class LocationProvider {
     /// has moved this far.
     static let localeLookupDistance: CLLocationDistance = 500
 
+    /// Geofences and significant changes wake the app only with Always.
+    var tracksInBackground: Bool {
+        authorizationStatus == .authorizedAlways
+    }
+
     var isAuthorized: Bool {
         authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
     }
@@ -130,35 +148,87 @@ final class LocationProvider {
 
     // MARK: - Control
 
+    /// The app came to the foreground: track the device, refresh the
+    /// position every `refreshInterval` and range beacons.
     func start() {
+        isEnabled = true
         switch authorizationStatus {
         case .notDetermined:
+            askedWhenInUseThisLaunch = true
             manager.requestWhenInUseAuthorization()
-        case .authorizedAlways, .authorizedWhenInUse:
+        case .authorizedWhenInUse:
+            askForAlwaysIfDue()
             beginMonitoring()
+            beginForeground()
+        case .authorizedAlways:
+            beginMonitoring()
+            beginForeground()
         default:
             break
         }
     }
 
+    /// The app was launched or woken in the background, by a geofence or a
+    /// significant change. Re-creating the monitor is what delivers the event.
+    func startInBackground() {
+        guard tracksInBackground else { return }
+        isEnabled = true
+        beginMonitoring()
+    }
+
+    /// The app went to the background. With Always, significant changes and
+    /// venue geofences keep running so entering or leaving a venue is still
+    /// reported; otherwise everything stops until the app comes back.
     func stop() {
+        endForeground()
+        guard !tracksInBackground else { return }
+        endMonitoring()
+    }
+
+    /// Signing out: stop everything, background included, and drop the
+    /// venue geofences so a signed-out app is never woken for them.
+    func forget() {
+        isEnabled = false
+        endForeground()
+        endMonitoring()
+
+        // The monitor itself stays: only one may exist per name, and signing
+        // in again picks it up. Without conditions it never wakes the app.
+        geofencePlan = nil
+        venueFences = []
+        venueFencesFetchedAt = nil
+        if let monitor {
+            Task {
+                for identifier in await monitor.identifiers {
+                    await monitor.remove(identifier)
+                }
+            }
+        }
+    }
+
+    private func endMonitoring() {
         guard isMonitoring else { return }
 
-        refreshTask?.cancel()
-        refreshTask = nil
         manager.stopMonitoringSignificantLocationChanges()
         // Nobody is left waiting on a fix asked for before the app went away,
         // so coming back asks Core Location again rather than wait on it.
         resumePendingFixes()
 
-        if let beaconConstraint {
-            manager.stopRangingBeacons(satisfying: beaconConstraint)
-        }
         if let beaconRegion {
             manager.stopMonitoring(for: beaconRegion)
         }
 
         isMonitoring = false
+    }
+
+    /// Asks once to upgrade When In Use to Always, on a launch after the first
+    /// prompt, so venue arrivals and departures count with the app closed.
+    private func askForAlwaysIfDue() {
+        let defaults = UserDefaults.standard
+        guard !askedWhenInUseThisLaunch, !defaults.bool(forKey: Self.askedForAlwaysKey) else { return }
+
+        defaults.set(true, forKey: Self.askedForAlwaysKey)
+        manager.requestAlwaysAuthorization()
     }
 
     /// Asks Core Location for a fresh fix and returns once it's in and
@@ -258,6 +328,14 @@ final class LocationProvider {
         if let beaconRegion {
             manager.startMonitoring(for: beaconRegion)
         }
+
+        startGeofencing()
+    }
+
+    private func beginForeground() {
+        guard !isInForeground else { return }
+        isInForeground = true
+
         if let beaconConstraint {
             manager.startRangingBeacons(satisfying: beaconConstraint)
         }
@@ -278,15 +356,26 @@ final class LocationProvider {
                 await self?.refreshPosition()
             }
         }
+    }
 
-        startGeofencing()
+    private func endForeground() {
+        guard isInForeground else { return }
+        isInForeground = false
+
+        refreshTask?.cancel()
+        refreshTask = nil
+        if let beaconConstraint {
+            manager.stopRangingBeacons(satisfying: beaconConstraint)
+        }
     }
 
     fileprivate func authorizationChanged(to status: CLAuthorizationStatus) {
         authorizationStatus = status
 
-        if isAuthorized {
-            beginMonitoring()
+        guard isAuthorized, isEnabled else { return }
+        beginMonitoring()
+        if UIApplication.shared.applicationState != .background {
+            beginForeground()
         }
     }
 
@@ -298,7 +387,7 @@ final class LocationProvider {
               Date.now.timeIntervalSince(location.timestamp) < Self.freshFixAge else { return }
 
         // Geofences follow the device, even while pretending to be elsewhere.
-        Task { await planGeofences(around: location) }
+        Task { await withBackgroundTime("Plan venue geofences") { await planGeofences(around: location) } }
 
         guard tracker.deviceFix(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
         else {
@@ -310,8 +399,10 @@ final class LocationProvider {
         accuracy = location.horizontalAccuracy
         // A refresh waits for the locale too, so a pulled list reloads in the right city.
         Task {
-            await refreshLocale()
-            await reportPosition()
+            await withBackgroundTime("Report position") {
+                await refreshLocale()
+                await reportPosition()
+            }
             resumePendingFixes()
         }
     }
@@ -396,6 +487,13 @@ final class LocationProvider {
         monitorTask = Task { @MainActor [weak self] in
             let monitor = await CLMonitor(Self.monitorName)
             self?.monitor = monitor
+            // Signed out while the monitor was being created: drop last
+            // session's regions rather than wake for them.
+            if self?.isEnabled != true {
+                for identifier in await monitor.identifiers {
+                    await monitor.remove(identifier)
+                }
+            }
             if let location = self?.manager.location {
                 await self?.planGeofences(around: location)
             }
@@ -422,7 +520,9 @@ final class LocationProvider {
         }
 
         Log.location.info("Geofence \(identifier, privacy: .public) \(inside ? "entered" : "left", privacy: .public)")
-        await refreshPosition()
+        // Woken in the background, iOS gives the app seconds before suspending
+        // it again; ask for enough to get a fix and report it.
+        await withBackgroundTime("Venue geofence") { await refreshPosition() }
     }
 
     /// Picks the regions to watch from `location`, downloading the venues'
@@ -504,6 +604,36 @@ final class LocationProvider {
         let defaults = UserDefaults.standard
         defaults.set(locale.id.uuidString, forKey: storedLocaleIDKey)
         defaults.set(locale.name, forKey: storedLocaleNameKey)
+    }
+}
+
+// MARK: - Background time
+
+/// Keeps the app running until `work` finishes when a geofence or a
+/// significant change woke it in the background; without this iOS can
+/// suspend it again before the position reaches the API. In the foreground
+/// it costs nothing.
+@MainActor
+private func withBackgroundTime(_ name: String, _ work: @MainActor () async -> Void) async {
+    let time = BackgroundTime(name)
+    await work()
+    time.end()
+}
+
+@MainActor
+private final class BackgroundTime {
+    private var id: UIBackgroundTaskIdentifier = .invalid
+
+    init(_ name: String) {
+        id = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in
+            MainActor.assumeIsolated { self?.end() }
+        }
+    }
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
     }
 }
 

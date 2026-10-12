@@ -97,6 +97,12 @@ final class SessionStore {
 
     var isSignedIn: Bool { state == .signedIn }
 
+    /// Whether a session token is stored, before `start()` has checked it.
+    /// Enough for a background launch to report the position.
+    var hasStoredSession: Bool {
+        get async { await audienceKit.isSignedIn }
+    }
+
     var userID: UUID? { user?.id }
 
     /// The session token. Needed outside the SDK in exactly one place: the
