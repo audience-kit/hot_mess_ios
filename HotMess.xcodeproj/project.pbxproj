@@ -772,7 +772,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/audience-kit/audience-kit-sdk-swift.git";
 			requirement = {
-				branch = "claude/project-thread-b1p0u4";
+				branch = main;
 				kind = branch;
 			};
 		};

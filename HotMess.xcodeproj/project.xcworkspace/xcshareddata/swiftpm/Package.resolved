@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/audience-kit/audience-kit-sdk-swift.git",
       "state" : {
-        "branch" : "claude/project-thread-b1p0u4",
-        "revision" : "09ac3376c3702a4da38ab9ebe0016d37e523ab82"
+        "branch" : "main",
+        "revision" : "a794707b8a4e8c2b3a8603a901d96dd389bf5600"
       }
     },
     {
