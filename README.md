@@ -219,9 +219,9 @@ no tags yet, so when it starts tagging, change the requirement in `HotMess.xcode
 to `upToNextMinorVersion` from `0.19.0`. Consumer
 services come from `AudienceKit`; shared design tokens and UI come from
 `AudienceKitUI`, both built on `AudienceCore`. The app's realtime cable is the SDK's
-`AudienceCable`; `GraphQLCable.handshake` rewrites its handshake to the contract's
-`Authorization: Bearer` and adds `X-AudienceKit-API-Version` until the SDK's cable
-does so itself.
+`AudienceCable`, which signs its handshake the way every call is signed
+(`Authorization: Bearer`, `X-AudienceKit-API-Version`); `GraphQLCable` only reads the
+subscription results.
 
 ## Shared App Group
 

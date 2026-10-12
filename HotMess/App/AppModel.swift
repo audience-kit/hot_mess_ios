@@ -68,18 +68,20 @@ final class AppModel {
         checkout = CoverCheckout(api: api, configuration: configuration)
         safety = SafetyStore(api: api)
         // A socket the server refuses as unauthorized signs out the way an
-        // HTTP 401 does. The cable reads the session token from the SDK's
-        // store whenever it (re)opens, so a new sign-in is picked up.
+        // HTTP 401 does. The cable reads the credential from the SDK's store
+        // whenever it (re)opens, so a new sign-in is picked up, and signs the
+        // handshake the way every call is signed (Bearer, API version).
         let credentialStore = SessionStore.credentialStore
         let cable = AudienceCable(
+            configuration: configuration.audienceKit,
             url: GraphQLCable.url(for: configuration),
-            token: { try? credentialStore.load()?.token },
+            credential: { try? credentialStore.load() },
             unauthorized: { [session] token in
                 guard let token else { return }
                 Task { @MainActor in await session.sessionRejected(token: token) }
             },
             openSocket: { request in
-                WebSocketTaskSocket(URLSession.realtime.webSocketTask(with: GraphQLCable.handshake(request)))
+                WebSocketTaskSocket(URLSession.realtime.webSocketTask(with: request))
             }
         )
         self.cable = cable

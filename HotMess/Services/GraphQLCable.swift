@@ -17,25 +17,6 @@ enum GraphQLCable {
         configuration.realtimeURL ?? AudienceCable.url(for: configuration.baseURL)
     }
 
-    /// The cable's handshake as the API contract has it: `Authorization:
-    /// Bearer <token>` (the SDK's cable still writes the `JWT` scheme, which
-    /// the API no longer accepts) and the API version header every call
-    /// carries. The token itself is passed through untouched.
-    static func handshake(_ request: URLRequest) -> URLRequest {
-        var request = request
-        if let authorization = request.value(forHTTPHeaderField: "Authorization") {
-            let token = authorization.hasPrefix("JWT ") ? String(authorization.dropFirst(4)) : authorization
-            request.setValue(bearer(token), forHTTPHeaderField: "Authorization")
-        }
-        request.setValue(AudienceKitSDK.apiVersion, forHTTPHeaderField: AudienceKitSDK.apiVersionHeaderName)
-        return request
-    }
-
-    /// `Bearer <token>`, for a token with or without a scheme already.
-    static func bearer(_ token: String) -> String {
-        token.hasPrefix("Bearer ") ? token : "Bearer \(token)"
-    }
-
     /// A result's `errors`, as their messages. Empty when there are none.
     static func errors<Key: CodingKey>(in container: KeyedDecodingContainer<Key>, forKey key: Key) -> [String] {
         ((try? container.decodeIfPresent([Lenient<ErrorWire>].self, forKey: key)) ?? nil)?
