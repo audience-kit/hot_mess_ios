@@ -569,7 +569,7 @@ extension HotMessAPI {
 
         static let venueFences = """
         query VenueFences($near: CoordinatesInput!) {
-          audience { venues { list(near: $near) { nodes { id point distance_tolerance: distanceTolerance } } } }
+          venues { list(near: $near) { nodes { id point distance_tolerance: distanceTolerance } } }
         }
         """
 
@@ -697,10 +697,10 @@ extension HotMessAPI {
 
         static let pings = """
         query Pings {
-          audience { ping {
+          ping {
             my_ping: myPing { \(pingFields) }
             friend_pings: friendPings { \(pingFields) }
-          } }
+          }
         }
         """
 
@@ -812,11 +812,11 @@ struct ReportLocationResponse: Decodable, Sendable {
     let reportLocation: Now
 }
 
-/// `audience { venues { list(near:) { nodes } } }`.
+/// `venues { list(near:) { nodes } }` on the root, the audience.
 struct VenueFencesResponse: Decodable, Sendable {
     let venues: [VenueFence]
 
-    private enum CodingKeys: String, CodingKey { case audience, venues, list, nodes }
+    private enum CodingKeys: String, CodingKey { case venues, list, nodes }
 
     /// A venue whose location has no point can't be watched; it's skipped
     /// rather than failing the rest.
@@ -827,7 +827,6 @@ struct VenueFencesResponse: Decodable, Sendable {
 
     init(from decoder: any Decoder) throws {
         let list = try decoder.container(keyedBy: CodingKeys.self)
-            .nestedContainer(keyedBy: CodingKeys.self, forKey: .audience)
             .nestedContainer(keyedBy: CodingKeys.self, forKey: .venues)
             .nestedContainer(keyedBy: CodingKeys.self, forKey: .list)
         venues = try list.decode([Entry].self, forKey: .nodes).compactMap(\.fence)
@@ -951,13 +950,11 @@ struct AdmissionsResponse: Decodable, Sendable {
     var admissions: [Admission] { cover?.admissions.nodes ?? [] }
 }
 
-/// `audience { ping { my_ping friend_pings } }`; no ping facet reads as none.
+/// `ping { my_ping friend_pings }` on the root, the audience; no ping facet reads as none.
 struct AudiencePingsResponse: Decodable, Sendable {
-    struct Audience: Decodable, Sendable { let ping: PingsResponse? }
+    let ping: PingsResponse?
 
-    let audience: Audience
-
-    var pings: PingsResponse { audience.ping ?? PingsResponse() }
+    var pings: PingsResponse { ping ?? PingsResponse() }
 }
 
 struct PingsResponse: Decodable, Sendable {
