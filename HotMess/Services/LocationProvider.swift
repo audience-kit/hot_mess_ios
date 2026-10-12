@@ -45,6 +45,9 @@ final class LocationProvider {
     /// Set when When In Use is asked for in this launch, so the upgrade to
     /// Always waits for a later launch instead of stacking a second prompt.
     private var askedWhenInUseThisLaunch = false
+    /// True between `start()` or `startInBackground()` and `forget()`: only a
+    /// signed-in app tracks, even when the authorization changes underneath it.
+    private var isEnabled = false
 
     /// Callers waiting on `refreshPosition()`, resumed by the next fix, a
     /// failure, or their timeout.
@@ -148,6 +151,7 @@ final class LocationProvider {
     /// The app came to the foreground: track the device, refresh the
     /// position every `refreshInterval` and range beacons.
     func start() {
+        isEnabled = true
         switch authorizationStatus {
         case .notDetermined:
             askedWhenInUseThisLaunch = true
@@ -168,6 +172,7 @@ final class LocationProvider {
     /// significant change. Re-creating the monitor is what delivers the event.
     func startInBackground() {
         guard tracksInBackground else { return }
+        isEnabled = true
         beginMonitoring()
     }
 
@@ -183,6 +188,7 @@ final class LocationProvider {
     /// Signing out: stop everything, background included, and drop the
     /// venue geofences so a signed-out app is never woken for them.
     func forget() {
+        isEnabled = false
         endForeground()
         endMonitoring()
 
@@ -366,7 +372,7 @@ final class LocationProvider {
     fileprivate func authorizationChanged(to status: CLAuthorizationStatus) {
         authorizationStatus = status
 
-        guard isAuthorized else { return }
+        guard isAuthorized, isEnabled else { return }
         beginMonitoring()
         if UIApplication.shared.applicationState != .background {
             beginForeground()
@@ -481,6 +487,13 @@ final class LocationProvider {
         monitorTask = Task { @MainActor [weak self] in
             let monitor = await CLMonitor(Self.monitorName)
             self?.monitor = monitor
+            // Signed out while the monitor was being created: drop last
+            // session's regions rather than wake for them.
+            if self?.isEnabled != true {
+                for identifier in await monitor.identifiers {
+                    await monitor.remove(identifier)
+                }
+            }
             if let location = self?.manager.location {
                 await self?.planGeofences(around: location)
             }

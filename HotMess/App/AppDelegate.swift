@@ -29,8 +29,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().delegate = self
         PushNotifications.registerCategories()
 
-        // A venue geofence or a significant change relaunched the app with
-        // nothing on screen, so SwiftUI won't start anything.
+        // A venue geofence or a significant change may have relaunched the
+        // app with nothing on screen, so SwiftUI won't start anything. A
+        // scene-based app often reads as background here on a normal launch
+        // too; that's fine, as starting is idempotent and needs Always and a
+        // stored session.
         if launchOptions?[.location] != nil || application.applicationState == .background {
             Task { await AppModel.shared.startInBackground() }
         }
