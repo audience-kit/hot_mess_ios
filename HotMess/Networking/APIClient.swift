@@ -15,9 +15,10 @@ struct EmptyResponse: Decodable, Sendable {
 /// The app's HTTP layer for the REST endpoints GraphQL doesn't cover yet (now,
 /// events, RSVPs, locales, location reports).
 ///
-/// Requests go through the AudienceKit SDK, which owns the session token: it
-/// signs each call with `Authorization: JWT …` and, when the API rejects the
-/// session, forgets it and tells `SessionStore` through `sessionEvents`.
+/// Requests go through the AudienceKit SDK, which owns the session
+/// credential: it signs each call with `Authorization: Bearer …` and the
+/// `X-AudienceKit-API-Version` header and, when the API rejects the session,
+/// forgets it and tells `SessionStore` through `sessionEvents`.
 actor APIClient {
     nonisolated let audienceKit: AudienceKitClient
     private let decoder = JSONDecoder.hotMess

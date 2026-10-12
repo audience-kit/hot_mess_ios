@@ -16,13 +16,32 @@ struct InAppNotification: Identifiable, Equatable, Sendable {
     let body: String?
     /// The iOS category its push has (`PING`), if any.
     let category: String?
-    /// What the push payload carries next to `aps` (`kind`, `ping_id`,
+    /// What the push payload carries next to `aps` (`url`, `kind`, `ping_id`,
     /// `notification_id`), each value as a string.
     let data: [String: String]
     let sentAt: Date?
+    /// The route to open for it, the same `url` the push carries; `nil` when
+    /// it leads nowhere in particular.
+    let url: URL?
 
-    /// The Ping it's about, read the way a push's payload is.
-    var ping: PingNotification? { PingNotification(userInfo: data) }
+    init(id: String, title: String?, body: String?, category: String?, data: [String: String], sentAt: Date?,
+         url: URL? = nil) {
+        self.id = id
+        self.title = title
+        self.body = body
+        self.category = category
+        self.data = data
+        self.sentAt = sentAt
+        self.url = url ?? data["url"].flatMap(URL.init(string:))
+    }
+
+    /// What to act on, read the way a push's payload is, with the typed `url`
+    /// standing in when `data` has none.
+    var ping: PingNotification? {
+        var userInfo: [AnyHashable: Any] = data
+        if userInfo["url"] == nil, let url { userInfo["url"] = url.absoluteString }
+        return PingNotification(userInfo: userInfo)
+    }
 
     /// The `notification_id` a push's payload (or `data`) carries, if any.
     static func notificationID(in userInfo: [AnyHashable: Any]) -> String? {
@@ -90,7 +109,7 @@ enum NotificationStreamConnection {
 
     static let document = """
     subscription MyNotifications {
-      notification: myNotifications { notificationId title body category data sentAt }
+      notification: myNotifications { notificationId title body category data sentAt url }
     }
     """
 
@@ -144,7 +163,7 @@ enum NotificationStreamConnection {
         let notification: InAppNotification?
 
         enum CodingKeys: String, CodingKey {
-            case notificationId, title, body, category, data, sentAt
+            case notificationId, title, body, category, data, sentAt, url
         }
 
         init(from decoder: any Decoder) throws {
@@ -164,7 +183,8 @@ enum NotificationStreamConnection {
                 body: Self.text(in: container, forKey: .body),
                 category: Self.text(in: container, forKey: .category),
                 data: data,
-                sentAt: Self.text(in: container, forKey: .sentAt).flatMap(HotMessDecoding.date(from:))
+                sentAt: Self.text(in: container, forKey: .sentAt).flatMap(HotMessDecoding.date(from:)),
+                url: Self.text(in: container, forKey: .url).flatMap(URL.init(string:))
             )
         }
 

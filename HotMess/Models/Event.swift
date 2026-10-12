@@ -60,7 +60,8 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         person = try container.decodeIfPresent(Person.self, forKey: .person)
         bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
         isFeatured = try container.decodeIfPresent(Bool.self, forKey: .isFeatured) ?? false
-        rsvp = try container.decodeIfPresent(RSVP.self, forKey: .rsvp) ?? .unsure
+        // The event's rsvp mixin, read as `rsvp { mine }`; missing reads as undecided.
+        rsvp = try container.decodeIfPresent(RSVPMixin.self, forKey: .rsvp)?.mine ?? .unsure
     }
 
     /// Writes the shape `init(from:)` reads, with `venue` as the venue mixin.
@@ -76,7 +77,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         try container.encodeIfPresent(person, forKey: .person)
         try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
         try container.encode(isFeatured, forKey: .isFeatured)
-        try container.encode(rsvp, forKey: .rsvp)
+        try container.encode(RSVPMixin(mine: rsvp), forKey: .rsvp)
     }
 
     init(
@@ -264,5 +265,20 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         self.venueCoverTonight = venueCoverTonight
         self.viewerAdmission = viewerAdmission
         self.friendPings = friendPings
+    }
+}
+
+/// An event's `rsvp` mixin, as the documents select it: `rsvp { mine }`, the
+/// signed-in user's answer (`UNSURE` when signed out).
+struct RSVPMixin: Codable, Hashable, Sendable {
+    let mine: RSVP
+
+    init(mine: RSVP) {
+        self.mine = mine
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        mine = try container.decodeIfPresent(RSVP.self, forKey: .mine) ?? .unsure
     }
 }

@@ -46,7 +46,7 @@ extension PersonEntry {
                     .compactMap { $0.flatMap(RecordID.uuid) }
             ),
             gigs: (person.events ?? []).compactMap { event in
-                guard let date = event.startDate else { return nil }
+                guard let date = event.startAt else { return nil }
                 return Gig(
                     date: date,
                     localeID: (event.venue?.locale?.id ?? event.locale?.id).flatMap(RecordID.uuid),

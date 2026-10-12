@@ -11,7 +11,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
     let facebookID: FacebookID?
     let role: String?
     let isLiked: Bool
-    let pictureURL: URL?
+    let avatarURL: URL?
     let bannerURL: URL?
 
     var facebookURL: URL? { facebookID?.profileURL }
@@ -20,7 +20,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
     /// `ListingProfile`).
     enum CodingKeys: String, CodingKey {
         case id, name, role, profile
-        case pictureURL = "photo_url"
+        case avatarURL = "avatar_url"
         case bannerURL = "banner_url"
     }
 
@@ -30,7 +30,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         role = try container.decodeIfPresent(String.self, forKey: .role)
-        pictureURL = try container.decodeURLIfPresent(forKey: .pictureURL)
+        avatarURL = try container.decodeURLIfPresent(forKey: .avatarURL)
         bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
         // A missing profile mixin reads as no Page, not liked.
         let profile = try container.decodeIfPresent(ListingProfile.self, forKey: .profile) ?? ListingProfile()
@@ -44,7 +44,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
         try container.encodeIfPresent(role, forKey: .role)
-        try container.encodeIfPresent(pictureURL, forKey: .pictureURL)
+        try container.encodeIfPresent(avatarURL, forKey: .avatarURL)
         try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
         try container.encode(ListingProfile(facebookID: facebookID, isLiked: isLiked), forKey: .profile)
     }
@@ -55,7 +55,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         facebookID: FacebookID? = nil,
         role: String? = nil,
         isLiked: Bool = false,
-        pictureURL: URL? = nil,
+        avatarURL: URL? = nil,
         bannerURL: URL? = nil
     ) {
         self.id = id
@@ -63,7 +63,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         self.facebookID = facebookID
         self.role = role
         self.isLiked = isLiked
-        self.pictureURL = pictureURL
+        self.avatarURL = avatarURL
         self.bannerURL = bannerURL
     }
 }

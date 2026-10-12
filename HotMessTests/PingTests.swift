@@ -17,13 +17,13 @@ private enum PingFixtures {
     static let bingo = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
 
     static let venue = """
-    {"id":"\(wildrose)","name":"The Wildrose","distance":null,"point":null,"photo_url":null,"hero_url":null,
+    {"id":"\(wildrose)","name":"The Wildrose","distance":null,"point":null,"photo_url":null,"banner_url":null,
      "profile":{"address":"1021 E Pike St","phone":null,"facebook":{"facebook_id":null,"is_liked":false}}}
     """
 
     static let event = """
     {"id":"\(bingo)","name":"Drag Bingo","start_at":"2026-10-09T21:00:00-07:00","end_at":null,
-     "facebook_id":null,"banner_url":null,"is_featured":false,"rsvp":"UNSURE","venue":{"name":"The Wildrose","venue":\(venue)}}
+     "facebook_id":null,"banner_url":null,"is_featured":false,"rsvp":{"mine":"UNSURE"},"venue":{"name":"The Wildrose","venue":\(venue)}}
     """
 
     /// Jordan's Ping for Drag Bingo or The Wildrose: Sam is in for bingo,
@@ -330,28 +330,36 @@ struct PingSendingTests {
 
 @Suite("Ping push")
 struct PingPushTests {
-    @Test("Reads the kind and Ping ID from a push payload")
+    @Test("Reads the route and Ping ID from a push payload, never its kind")
     func parsesPayload() {
-        let ping = PingNotification(userInfo: ["aps": ["category": "PING"], "kind": "ping", "ping_id": "ping-1"])
-        #expect(ping == PingNotification(kind: .ping, pingID: "ping-1"))
+        let url = URL(string: "https://hotmess.social/pings/ping-1")
+        let ping = PingNotification(userInfo: [
+            "aps": ["category": "PING"], "url": "https://hotmess.social/pings/ping-1", "kind": "ping", "ping_id": "ping-1",
+        ])
+        #expect(ping == PingNotification(url: url, pingID: "ping-1"))
+        #expect(ping?.isPing == true)
 
         let join = PingNotification(userInfo: ["kind": "ping_join", "ping_id": 42])
-        #expect(join == PingNotification(kind: .pingJoin, pingID: "42"))
+        #expect(join == PingNotification(pingID: "42"))
+        #expect(join?.isPing == true)
+
+        // A route the app has a screen for, from a kind it has never heard of.
+        let venue = PingNotification(userInfo: ["kind": "chat", "url": "https://hotmess.social/venues/8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11"])
+        #expect(venue?.url?.path() == "/venues/8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11")
+        #expect(venue?.isPing == false)
 
         #expect(PingNotification(userInfo: ["kind": "chat"]) == nil)
         #expect(PingNotification(userInfo: [:]) == nil)
     }
 
-    @Test("Registers the device with its bundle ID and APNs environment")
-    func registerDeviceVariables() {
-        let variables = HotMessAPI.registerDeviceVariables(token: "0aff01", appID: "social.hotmess.Development", sandbox: true)
-
-        #expect(variables == [
-            "notificationToken": "0aff01",
-            "appId": "social.hotmess.Development",
-            "sandbox": true,
-        ])
-        #expect(HotMessAPI.registerDeviceVariables(token: "0a", appID: nil, sandbox: false)["appId"] == .null)
+    @Test("A push's url leads to a screen, or to Now for a Ping")
+    func destinations() throws {
+        let venueID = try #require(UUID(uuidString: "8B4F1B60-9A5D-4D0E-9B3F-2C6B3E5D8A11"))
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/venues/\(venueID.uuidString)")) == .route(.venue(venueID)))
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/pings/ping-1")) == .now)
+        #expect(DeepLink.destination(for: URL(string: "hotmess://pings/ping-1")) == .now)
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/settings")) == nil)
+        #expect(DeepLink.destination(for: nil) == nil)
     }
 
     @Test("Takes the APNs environment from the build's entitlement")

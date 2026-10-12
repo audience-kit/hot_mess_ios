@@ -20,8 +20,9 @@ private let ping = """
   "title": "Alex pinged you",
   "body": "Drinks at The Stud?",
   "category": "PING",
-  "data": { "kind": "ping", "ping_id": "ping-1", "notification_id": "41" },
-  "sentAt": "2026-10-11T03:12:45.123Z"
+  "data": { "url": "https://hotmess.social/pings/ping-1", "kind": "ping", "ping_id": "ping-1", "notification_id": "41" },
+  "sentAt": "2026-10-11T03:12:45.123Z",
+  "url": "https://hotmess.social/pings/ping-1"
 }
 """
 
@@ -44,8 +45,11 @@ struct NotificationStreamTests {
         #expect(notification.title == "Alex pinged you")
         #expect(notification.body == "Drinks at The Stud?")
         #expect(notification.category == "PING")
-        #expect(notification.data == ["kind": "ping", "ping_id": "ping-1", "notification_id": "41"])
-        #expect(notification.ping == PingNotification(kind: .ping, pingID: "ping-1"))
+        #expect(notification.data == [
+            "url": "https://hotmess.social/pings/ping-1", "kind": "ping", "ping_id": "ping-1", "notification_id": "41",
+        ])
+        #expect(notification.url == URL(string: "https://hotmess.social/pings/ping-1"))
+        #expect(notification.ping == PingNotification(url: URL(string: "https://hotmess.social/pings/ping-1"), pingID: "ping-1"))
         #expect(abs((notification.sentAt?.timeIntervalSince1970 ?? 0) - 1_791_688_365.123) < 0.01)
     }
 
@@ -62,7 +66,8 @@ struct NotificationStreamTests {
         #expect(notification.id == "7")
         #expect(notification.title == nil)
         #expect(notification.sentAt == nil)
-        #expect(notification.ping == PingNotification(kind: .pingJoin, pingID: "42"))
+        #expect(notification.url == nil)
+        #expect(notification.ping == PingNotification(pingID: "42"))
     }
 
     @Test("A refusal stops it; a drop says whether the cable reconnects; results for nobody mean nothing")
@@ -92,8 +97,9 @@ struct NotificationStreamTests {
         #expect((object["variables"] as? [String: Any])?.isEmpty == true)
 
         let query = try #require(object["query"] as? String)
-        #expect(query.hasPrefix("subscription MyNotifications {"))
-        #expect(query.contains("notification: myNotifications { notificationId title body category data sentAt }"))
+        #expect(query.split(separator: " ").first == "subscription")
+        #expect(query.contains("MyNotifications {"))
+        #expect(query.contains("notification: myNotifications { notificationId title body category data sentAt url }"))
 
         #expect(AudienceCable.graphQLIdentifier(audienceID: "aud", channelID: "c1") == #"{"audience_id":"aud","channel":"GraphQLChannel","channelId":"c1"}"#)
     }

@@ -180,11 +180,11 @@ struct PassScreen: View {
 
     /// The buyer's name as the API has it, falling back to the signed-in user.
     private var holderName: String {
-        admission.userName ?? model.session.user?.name ?? ""
+        admission.profile?.name ?? model.session.user?.name ?? ""
     }
 
     private var photoURL: URL? {
-        admission.userPhotoURL ?? model.session.user?.avatarURL
+        admission.profile?.avatarURL ?? model.session.user?.avatarURL
     }
 
     private var nightLine: String {

@@ -16,7 +16,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
     /// Metres from the device, when the request carried a location.
     let distance: Double?
     let photoURL: URL?
-    let heroURL: URL?
+    let bannerURL: URL?
     let point: GeoPoint?
     let isLiked: Bool
 
@@ -37,7 +37,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         case id, name, point, distance, profile
         case subtitle = "description"
         case photoURL = "photo_url"
-        case heroURL = "hero_url"
+        case bannerURL = "banner_url"
     }
 
     init(from decoder: any Decoder) throws {
@@ -48,7 +48,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
         distance = try container.decodeIfPresent(Double.self, forKey: .distance)
         photoURL = try container.decodeURLIfPresent(forKey: .photoURL)
-        heroURL = try container.decodeURLIfPresent(forKey: .heroURL)
+        bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
         point = try container.decodeIfPresent(GeoPoint.self, forKey: .point)
         // A missing profile mixin reads as no address, phone or Page.
         let profile = try container.decodeIfPresent(ListingProfile.self, forKey: .profile) ?? ListingProfile()
@@ -66,7 +66,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         try container.encodeIfPresent(subtitle, forKey: .subtitle)
         try container.encodeIfPresent(distance, forKey: .distance)
         try container.encodeIfPresent(photoURL, forKey: .photoURL)
-        try container.encodeIfPresent(heroURL, forKey: .heroURL)
+        try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
         try container.encodeIfPresent(point, forKey: .point)
         try container.encode(
             ListingProfile(address: address, phone: phone, facebookID: facebookID, isLiked: isLiked),
@@ -83,7 +83,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         facebookID: FacebookID? = nil,
         distance: Double? = nil,
         photoURL: URL? = nil,
-        heroURL: URL? = nil,
+        bannerURL: URL? = nil,
         point: GeoPoint? = nil,
         isLiked: Bool = false
     ) {
@@ -95,7 +95,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         self.facebookID = facebookID
         self.distance = distance
         self.photoURL = photoURL
-        self.heroURL = heroURL
+        self.bannerURL = bannerURL
         self.point = point
         self.isLiked = isLiked
     }

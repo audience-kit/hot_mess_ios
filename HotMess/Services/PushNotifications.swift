@@ -7,38 +7,45 @@ import Foundation
 import UIKit
 import UserNotifications
 
-/// What a push says about a Ping, read from its payload: top-level `kind`
-/// and `ping_id` next to `aps`.
+/// What a push carries for the app to act on, read from its payload next to
+/// `aps`: `url`, the route to open (a universal link on the audience's web
+/// origin, such as `https://hotmess.social/pings/<id>`), and `ping_id` for
+/// the "I'm in" action. The payload's `kind` is for analytics only; the app
+/// never branches on it.
 struct PingNotification: Equatable, Sendable {
-    enum Kind: String, Sendable {
-        /// A friend sent a Ping (category `PING`).
-        case ping
-        /// Someone is in on the user's own Ping.
-        case pingJoin = "ping_join"
-    }
-
-    /// The notification category of a `ping` push.
+    /// The notification category of a Ping push, which carries "I'm in".
     static let category = "PING"
     /// The category's one action, "I'm in", which joins in the background.
     static let joinAction = "PING_JOIN"
 
-    let kind: Kind
+    /// Where the notification leads. `nil` when the payload has no route.
+    let url: URL?
     let pingID: String?
 
-    init(kind: Kind, pingID: String?) {
-        self.kind = kind
+    init(url: URL? = nil, pingID: String?) {
+        self.url = url
         self.pingID = pingID
     }
 
+    /// `nil` when the payload has neither a route nor a Ping.
     init?(userInfo: [AnyHashable: Any]) {
-        guard let raw = userInfo["kind"] as? String, let kind = Kind(rawValue: raw) else { return nil }
-        self.kind = kind
+        let url = (userInfo["url"] as? String).flatMap(URL.init(string:))
 
+        let pingID: String?
         switch userInfo["ping_id"] {
         case let id as String where !id.isEmpty: pingID = id
         case let id as NSNumber: pingID = id.stringValue
         default: pingID = nil
         }
+
+        guard url != nil || pingID != nil else { return nil }
+        self.url = url
+        self.pingID = pingID
+    }
+
+    /// Whether it is about a Ping (one was sent, or joined), so Now reloads.
+    var isPing: Bool {
+        pingID != nil || DeepLink.destination(for: url) == .now
     }
 }
 

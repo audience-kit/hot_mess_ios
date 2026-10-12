@@ -65,9 +65,12 @@ final class SessionStore {
     /// Permissions requested at sign-in, on the Hot Mess Consumer app.
     static let requestedPermissions = ["public_profile"] + (asksForReviewedPermissions ? ["email", "user_friends"] : [])
 
-    /// Where the session token lives. Same service and account as the app's
-    /// previous keychain wrapper, so existing installs stay signed in.
-    static let tokenStore = KeychainTokenStore(service: "social.hotmess.account", account: "token")
+    /// Where the session credential lives: the SDK's keychain store, under
+    /// the app's own service. A new account name, because the SDK keeps the
+    /// credential JSON there (`token userId audienceId role endpoint`), not
+    /// the raw token the previous wrapper stored under `token`; an install
+    /// from before reads as signed out and signs in again through Facebook.
+    static let credentialStore = KeychainCredentialStore(service: "social.hotmess.account", account: "credential")
 
     private(set) var state: AuthenticationState = .restoring
     private(set) var user: User?
@@ -106,19 +109,19 @@ final class SessionStore {
     var userID: UUID? { user?.id }
 
     /// The session token. Needed outside the SDK in exactly one place: the
-    /// chat websocket handshake.
-    var bearerToken: String? { try? Self.tokenStore.loadToken() }
+    /// realtime cable's handshake.
+    var bearerToken: String? { try? Self.credentialStore.load()?.token }
 
     /// True when the API refuses to serve this build any more.
     var requiresUpdate: Bool {
         guard let versionRequirement else { return false }
-        return configuration.build < versionRequirement.minimumBuild
+        return !versionRequirement.allows(version: configuration.version)
     }
 
     // MARK: - Lifecycle
 
-    /// Called once at launch: checks the minimum supported build, then tries to
-    /// turn an existing Facebook token into an API session.
+    /// Called once at launch: checks the minimum supported version, then tries
+    /// to turn an existing Facebook token into an API session.
     func start() async {
         await refreshVersionRequirement()
 
@@ -138,8 +141,8 @@ final class SessionStore {
                 user = try await currentUser()
                 state = .signedIn
                 return
-            } catch AudienceKitError.unauthorized {
-                // The SDK has already dropped the token.
+            } catch let error as AudienceKitError where error.isUnauthenticated {
+                // The SDK has already dropped the credential.
                 endedNotice = Self.endedMessage
             } catch {
                 // A network blip shouldn't sign the user out; keep the token
@@ -215,7 +218,7 @@ final class SessionStore {
             await exchange { device in
                 let request = AppleSignInRequest(identityToken: identityToken, firstName: firstName,
                                                  lastName: lastName, host: host, device: device)
-                return try await self.storing(self.api.signInWithApple(request))
+                return try await self.adopting(self.api.signInWithApple(request))
             }
         }
     }
@@ -239,9 +242,13 @@ final class SessionStore {
             facebookAppID: audienceKit.configuration.facebookAppID,
             device: DeviceInfo.description(for: configuration)
         )
-        let session = try await storing(api.connectFacebook(request))
-        user = User(id: session.user.id, name: session.user.name) ?? user
-        if let refreshed = try? await currentUser() { user = refreshed }
+        let session = try await adopting(api.connectFacebook(request))
+        // The credential names the account; `me` has the name and photo.
+        if let refreshed = try? await currentUser() {
+            user = refreshed
+        } else if let switched = User(id: session.userId, name: user?.name), switched.id != user?.id {
+            user = switched
+        }
         return true
     }
 
@@ -251,7 +258,9 @@ final class SessionStore {
         user = nil
         state = .signedOut
 
-        Task { await audienceKit.signOut() }
+        // Forgets the credential here first, then revokes it on the API; a
+        // failed revocation (offline) still leaves this device signed out.
+        Task { try? await audienceKit.signOut() }
     }
 
     /// Wipes cached defaults and images, leaving credentials alone.
@@ -287,10 +296,12 @@ final class SessionStore {
         try await api.me()
     }
 
-    /// Keeps a session minted outside the SDK where the SDK reads it.
-    private func storing(_ session: SignInResult) throws -> SignInResult {
-        try Self.tokenStore.saveToken(session.token)
-        return session
+    /// Hands a credential minted outside the SDK (the app's own REST
+    /// sign-ins) to the SDK, which stores it and uses it from now on. The
+    /// token is kept as the API sent it; the app never reads inside it.
+    private func adopting(_ credential: Credential) async throws -> SignInResult {
+        try await audienceKit.adopt(credential: credential)
+        return SignInResult(credential: credential)
     }
 
     private func exchange(facebookToken: String) async {
@@ -304,11 +315,12 @@ final class SessionStore {
 
         do {
             let session = try await signIn(device)
-            user = User(id: session.user.id, name: session.user.name)
+            // The credential carries only the user's ID; `me` has their name
+            // and photo. Until it answers, the ID alone keeps `userID` right.
+            user = User(id: session.userId, name: "")
             endedNotice = nil
             state = .signedIn
 
-            // The sign-in response has no profile photo; `me` does.
             if let refreshed = try? await currentUser() { user = refreshed }
 
             await PushNotifications.requestAuthorizationAndRegister()
@@ -318,9 +330,10 @@ final class SessionStore {
         }
     }
 
+    /// `GET /v1/status`: the oldest version the API still serves. Unreachable
+    /// reads as no requirement, so an offline launch isn't a hard stop.
     private func refreshVersionRequirement() async {
-        let device = DeviceInfo.description(for: configuration)
-        versionRequirement = try? await api.serviceManifest(device: device)
+        versionRequirement = (try? await api.clientRequirement()) ?? nil
     }
 
     /// Facebook's login dialog for this build's Facebook app. A Business-type
@@ -356,10 +369,10 @@ final class SessionStore {
     /// call gets a 401. Ignored unless `token` is still the stored one, so a
     /// refusal from before a new sign-in, or a second socket's, changes nothing.
     func sessionRejected(token: String) async {
-        guard bearerToken == token else { return }
-
-        await audienceKit.signOut()
-        handleEndedSession()
+        // The SDK forgets the credential only when `token` is still the
+        // stored one, and yields `.sessionEnded` once, which
+        // `watchForEndedSessions()` turns into the login screen.
+        _ = await audienceKit.sessionRejected(token: token)
     }
 
     static let endedMessage = String(localized: "Your session has ended. Please sign in again.")

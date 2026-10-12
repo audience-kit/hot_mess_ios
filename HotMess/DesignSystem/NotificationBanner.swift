@@ -31,7 +31,7 @@ private struct NotificationBannerHost: ViewModifier {
                     NotificationBanner(
                         notification: notification,
                         open: { open(notification) },
-                        join: notification.ping?.kind == .ping && notification.category == PingNotification.category
+                        join: notification.ping?.pingID != nil && notification.category == PingNotification.category
                             ? { join(notification) }
                             : nil,
                         dismiss: { withAnimation(HotMessMotion.quick) { stream.dismiss(notification.id) } }

@@ -18,7 +18,8 @@ import MapKit
 /// there is nothing nearby". The two cases render differently.
 struct Now: Decodable, Hashable, Sendable {
     /// How many of the locale's upcoming events the screen lists.
-    static let localeEventLimit = 5
+    /// The document asks for this many (`HotMessAPI.Documents.localeEventLimit`).
+    static let localeEventLimit = Int(HotMessAPI.Documents.localeEventLimit) ?? 5
 
     let title: String
     let venue: Venue?
@@ -68,7 +69,7 @@ struct Now: Decodable, Hashable, Sendable {
 
     private enum LocaleKeys: String, CodingKey {
         case id, name, events, friends, chat
-        case heroURL = "hero_url"
+        case bannerURL = "banner_url"
     }
 
     private enum AudienceKeys: String, CodingKey { case me }
@@ -108,7 +109,7 @@ struct Now: Decodable, Hashable, Sendable {
         }
 
         var localeName: String?
-        var localeHero: URL?
+        var localeBanner: URL?
         var localeEvents: [Event] = []
         var localeFriends: FriendsMixin?
         if (try? container.decodeNil(forKey: .locale)) == false,
@@ -120,7 +121,7 @@ struct Now: Decodable, Hashable, Sendable {
             let chat = try localeContainer.decodeIfPresent(ChatMixin.self, forKey: .chat)
             localeChatOpen = chat?.open ?? false
             localeMessages = chat?.recentMessages ?? []
-            localeHero = try localeContainer.decodeURLIfPresent(forKey: .heroURL)
+            localeBanner = try localeContainer.decodeURLIfPresent(forKey: .bannerURL)
             localeEvents = try localeContainer.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
             localeFriends = try localeContainer.decodeIfPresent(FriendsMixin.self, forKey: .friends)
         } else {
@@ -131,13 +132,13 @@ struct Now: Decodable, Hashable, Sendable {
 
         if let venue {
             title = venue.name
-            imageURL = venue.heroURL
+            imageURL = venue.bannerURL
             events = venueEvents
             friends = venueFriends
             friendVenues = []
         } else {
             title = localeName.map { String(localized: "Happening Now in \($0)") } ?? String(localized: "Happening Now")
-            imageURL = localeHero
+            imageURL = localeBanner
             events = Array(localeEvents.prefix(Self.localeEventLimit))
             friends = localeFriends?.list ?? []
             friendVenues = localeFriends?.venues ?? []

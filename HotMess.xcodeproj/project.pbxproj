@@ -235,7 +235,7 @@
 			packageReferences = (
 				AC0000000000000000000080 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 				AC0000000000000000000081 /* XCRemoteSwiftPackageReference "Kingfisher" */,
-				AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */,
+				AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit-sdk-swift" */,
 				AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */,
 				AC0000000000000000000084 /* XCRemoteSwiftPackageReference "in-app-payments-ios" */,
 			);
@@ -768,10 +768,14 @@
 				minimumVersion = 8.0.0;
 			};
 		};
-		AC0000000000000000000082 /* AudienceKit local package */ = {
-            isa = XCLocalSwiftPackageReference;
-            relativePath = ../../../sdk/audience_kit/swift;
-        };
+		AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/audience-kit/audience-kit-sdk-swift.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/stripe/stripe-ios-spm";
@@ -808,7 +812,7 @@
 		};
 		AC0000000000000000000093 /* AudienceKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit" */;
+			package = AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit-sdk-swift" */;
 			productName = AudienceKit;
 		};
 		AC0000000000000000000094 /* StripePaymentSheet */ = {

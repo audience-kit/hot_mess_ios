@@ -9,9 +9,10 @@ import Foundation
 /// The typed surface of the Hot Mess API.
 ///
 /// Everything goes through the audience's GraphQL endpoint on the AudienceKit
-/// SDK except the version manifest, which is read before sign-in and isn't
-/// part of any audience. The GraphQL documents alias fields to the snake_case
-/// keys the models already decode, so one set of models serves both.
+/// SDK except the client status, which is read before sign-in and isn't part
+/// of any audience, and the two REST sign-ins the SDK has no call for. The
+/// GraphQL documents alias fields to the snake_case keys the models already
+/// decode, so one set of models serves both.
 struct HotMessAPI: Sendable {
     let client: APIClient
 
@@ -40,7 +41,7 @@ struct HotMessAPI: Sendable {
 
         return try await query(
             Documents.reportLocation,
-            variables: ["position": coordinates.audienceKit.graphQLValue],
+            variables: ["position": coordinates.graphQLInput],
             as: ReportLocationResponse.self
         ).reportLocation
     }
@@ -53,7 +54,7 @@ struct HotMessAPI: Sendable {
     func venueFences(near coordinates: Coordinates) async throws -> [VenueFence] {
         try await query(
             Documents.venueFences,
-            variables: ["near": coordinates.audienceKit.graphQLValue],
+            variables: ["near": coordinates.graphQLInput],
             as: VenueFencesResponse.self
         ).venues
     }
@@ -64,8 +65,9 @@ struct HotMessAPI: Sendable {
         guard let coordinates else { return nil }
 
         do {
-            guard let locale = try await audienceKit.closestLocale(near: coordinates.audienceKit),
-                  let id = RecordID.uuid(locale.id) else { return nil }
+            guard let locale = try await audienceKit.closestLocale(
+                near: coordinates.coordinate, beaconMajor: coordinates.beaconMajor
+            ), let id = RecordID.uuid(locale.id) else { return nil }
             return AppLocale(id: id, name: locale.name ?? locale.label ?? "")
         } catch let error as AudienceKitError {
             throw APIError(error)
@@ -195,40 +197,35 @@ struct HotMessAPI: Sendable {
         try await audienceKit.graphQL(Documents.me, as: MeResponse.self, decoder: .hotMess).me?.profile?.user
     }
 
-    func serviceManifest(device: DeviceDescription) async throws -> VersionInfo {
-        try await client.send(Endpoints.manifest(device: device)).apple
+    /// What the API asks of this app: the oldest version it still serves.
+    /// `nil` when the status has no iOS row.
+    func clientRequirement() async throws -> VersionInfo? {
+        try await client.send(Endpoints.status).ios
     }
 
     /// Trades a Sign in with Apple identity token for a session. The caller
-    /// stores the token it returns.
-    func signInWithApple(_ request: AppleSignInRequest) async throws -> SignInResult {
+    /// hands the credential to the SDK (`adopt(credential:)`), which stores it.
+    func signInWithApple(_ request: AppleSignInRequest) async throws -> Credential {
         try await client.send(Endpoints.appleSignIn(request))
     }
 
     /// Connects Facebook to the signed-in account, with the code from
-    /// Facebook's login dialog, and returns a new session for the account.
-    /// The caller stores the token it returns.
-    func connectFacebook(_ request: ConnectFacebookRequest) async throws -> SignInResult {
+    /// Facebook's login dialog, and returns a new credential for the account.
+    /// The caller hands it to the SDK (`adopt(credential:)`), which stores it.
+    func connectFacebook(_ request: ConnectFacebookRequest) async throws -> Credential {
         try await client.send(Endpoints.connectFacebook(request))
     }
 
-    /// Stores the APNs token for this device. `appID` is the bundle
-    /// identifier, which the API sends pushes to as the APNs topic, and
-    /// `sandbox` says the token is for APNs' development environment.
+    /// Stores the APNs token for this device, through the SDK's
+    /// `registerDevice`. `appID` is the bundle identifier, which the API sends
+    /// pushes to as the APNs topic, and `sandbox` says the token is for APNs'
+    /// development environment.
     func registerForPush(deviceToken: Data, appID: String?, sandbox: Bool) async throws {
-        _ = try await query(
-            Documents.registerDevice,
-            variables: Self.registerDeviceVariables(token: deviceToken.hexEncodedString, appID: appID, sandbox: sandbox),
-            as: RegisterDeviceResponse.self
-        )
-    }
-
-    static func registerDeviceVariables(token: String, appID: String?, sandbox: Bool) -> [String: GraphQLValue] {
-        [
-            "notificationToken": .string(token),
-            "appId": appID.map(GraphQLValue.string) ?? .null,
-            "sandbox": .bool(sandbox),
-        ]
+        do {
+            try await audienceKit.registerDevice(token: deviceToken.hexEncodedString, appId: appID, sandbox: sandbox)
+        } catch let error as AudienceKitError {
+            throw await APIClient.recorded(APIError(error), operation: "graphql mutation RegisterDevice")
+        }
     }
 
     // MARK: - Pings
@@ -424,32 +421,23 @@ struct HotMessAPI: Sendable {
 
 extension HotMessAPI {
     enum Endpoints {
-        /// The minimum supported build. It's read before sign-in and isn't
-        /// part of any audience, so it stays on REST.
-        static func manifest(device: DeviceDescription) -> Endpoint<ServiceManifest> {
-            Endpoint(
-                "/",
-                method: .post,
-                body: JSONBody(ManifestRequest(device: device)),
-                requiresAuthentication: false
-            )
-        }
+        /// The client requirements, read-only and open. Read before sign-in,
+        /// and not part of any audience, so it stays on REST.
+        static let status = Endpoint<ServiceStatus>("/v1/status", method: .get, requiresAuthentication: false)
 
-        /// Sign in with Apple. Sign-in mints the token, so none is sent.
-        static func appleSignIn(_ request: AppleSignInRequest) -> Endpoint<SignInResult> {
+        /// Sign in with Apple. Sign-in mints the token, so none is sent. The
+        /// response is the credential JSON (`token userId audienceId role
+        /// endpoint`), which the SDK's `Credential` decodes.
+        static func appleSignIn(_ request: AppleSignInRequest) -> Endpoint<Credential> {
             Endpoint("/v1/token/apple", method: .post, body: JSONBody(request), requiresAuthentication: false)
         }
 
         /// Facebook sign-in with `connect`, sent with the current session so
         /// the API knows which account Facebook joins.
-        static func connectFacebook(_ request: ConnectFacebookRequest) -> Endpoint<SignInResult> {
+        static func connectFacebook(_ request: ConnectFacebookRequest) -> Endpoint<Credential> {
             Endpoint("/v1/token", method: .post, body: JSONBody(request))
         }
     }
-}
-
-struct ManifestRequest: Encodable, Sendable {
-    let device: DeviceDescription
 }
 
 /// `POST /v1/token/apple`. Apple gives the name only the first time someone
@@ -496,13 +484,13 @@ extension HotMessAPI {
     enum Documents {
         /// `profile` is the venue's profile mixin (see `ListingProfile`).
         static let venueFields = """
-        id name distance point photo_url: photoUrl hero_url: heroUrl \
+        id name distance point photo_url: photoUrl banner_url: bannerUrl \
         profile { address phone facebook { facebook_id: facebookId is_liked: isLiked } }
         """
 
         /// `profile` is the person's profile mixin (see `ListingProfile`).
         static let personFields = """
-        id name photo_url: pictureUrl banner_url: bannerUrl \
+        id name avatar_url: avatarUrl banner_url: bannerUrl \
         profile { facebook { facebook_id: facebookId is_liked: isLiked } }
         """
 
@@ -527,7 +515,7 @@ extension HotMessAPI {
         """
 
         /// Enough of a person for a card that links to them.
-        static let personSummaryFields = "id name photo_url: pictureUrl"
+        static let personSummaryFields = "id name avatar_url: avatarUrl"
 
         /// Who is on at a venue right now (see `Appearance`), under the
         /// venue's people mixin (see `VenuePeopleMixin`).
@@ -545,16 +533,22 @@ extension HotMessAPI {
         /// while it is to be announced (see `EventVenueMixin`).
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
-        banner_url: bannerUrl is_featured: isFeatured rsvp: viewerRsvp \
+        banner_url: bannerUrl is_featured: isFeatured rsvp { mine } \
         venue { name venue { \(venueFields) } }
         """
 
-        static let coverChargeFields = "amount_cents: amountCents total_cents: totalCents currency night from payable"
+        /// `Money` is `{ cents currency }`; `total` is the all-in price.
+        static let moneyFields = "cents currency"
 
+        static let coverChargeFields = """
+        amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } night from until payable
+        """
+
+        /// `profile` is the buyer: the pass shows their name and avatar.
         static let admissionFields = """
-        id status night total_cents: totalCents currency is_refundable: isRefundable \
+        id status night total { \(moneyFields) } is_refundable: isRefundable \
         pass_secret: passSecret scan_count: scanCount checked_in_at: checkedInAt \
-        user_name: userName user_photo_url: userPhotoUrl \
+        profile { id name avatar_url: avatarUrl } \
         venue { id name photo_url: photoUrl } event { id name }
         """
 
@@ -566,6 +560,10 @@ extension HotMessAPI {
         viewer_admission: viewerAdmission { \(admissionFields) } \
         } }
         """
+
+        /// How many of a locale's upcoming events Now shows (`Now.localeEventLimit`,
+        /// as the document's literal so it can be checked against the schema).
+        static let localeEventLimit = "5"
 
         static let venueFences = """
         query VenueFences($near: CoordinatesInput!) {
@@ -586,9 +584,9 @@ extension HotMessAPI {
             }
             nearby_venues: nearbyVenues { \(venueFields) }
             locale {
-              id name hero_url: heroUrl
+              id name banner_url: bannerUrl
               chat { open recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
-              events { upcoming(first: \(Now.localeEventLimit)) { nodes { \(eventFields) } } }
+              events { upcoming(first: \(localeEventLimit)) { nodes { \(eventFields) } } }
               friends {
                 list { nodes { \(friendFields) } }
                 venues {
@@ -736,7 +734,7 @@ extension HotMessAPI {
 
         static let me = """
         query Me {
-          me { self { id name first_name: firstName last_name: lastName photo { cdn_url: cdnUrl } } }
+          me { self { id name first_name: firstName last_name: lastName avatar_url: avatarUrl photo { cdn_url: cdnUrl } } }
         }
         """
 
@@ -800,14 +798,6 @@ extension HotMessAPI {
         static let deleteAccount = """
         mutation DeleteAccount($confirm: Boolean!) {
           deleteAccount(input: { confirm: $confirm }) { deleted }
-        }
-        """
-
-        /// The app's own copy of the SDK's document, with the APNs topic and
-        /// environment the API needs to reach this build.
-        static let registerDevice = """
-        mutation RegisterDevice($notificationToken: String!, $appId: String, $sandbox: Boolean) {
-          registerDevice(input: { notificationToken: $notificationToken, appId: $appId, sandbox: $sandbox }) { registered }
         }
         """
     }
@@ -1086,20 +1076,16 @@ struct DeleteAccountResponse: Decodable, Sendable {
     let deleteAccount: Payload
 }
 
-struct RegisterDeviceResponse: Decodable, Sendable {
-    struct Payload: Decodable, Sendable { let registered: Bool }
-    let registerDevice: Payload
-}
-
 extension Coordinates {
-    /// The position as the SDK's GraphQL `CoordinatesInput`.
-    var audienceKit: AudienceKit.Coordinates {
-        AudienceKit.Coordinates(
-            latitude: latitude,
-            longitude: longitude,
-            beaconMajor: beaconMajor,
-            beaconMinor: beaconMinor
-        )
+    /// The position as the SDK's `Coordinate`, without the beacon.
+    var coordinate: Coordinate {
+        Coordinate(latitude: latitude, longitude: longitude)
+    }
+
+    /// The position as the GraphQL `CoordinatesInput`, with the beacon when
+    /// there is one (the SDK leaves a zero beacon out).
+    var graphQLInput: GraphQLValue {
+        coordinate.coordinatesInput(beaconMajor: beaconMajor, beaconMinor: beaconMinor)
     }
 }
 

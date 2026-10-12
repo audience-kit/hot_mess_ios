@@ -71,7 +71,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let userInfo = notification.request.content.userInfo
         let notificationID = InAppNotification.notificationID(in: userInfo)
 
-        if PingNotification(userInfo: userInfo) != nil {
+        if PingNotification(userInfo: userInfo)?.isPing == true {
             await AppDelegate.pingsChanged()
         }
         guard await AppDelegate.shouldPresentSystemCopy(notificationID: notificationID) else { return [] }
@@ -79,8 +79,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         return [.banner, .list, .sound]
     }
 
-    /// "I'm in" from a `ping` push joins the whole Ping in the background;
-    /// tapping a `ping` or `ping_join` push opens Now.
+    /// "I'm in" from a Ping push joins the whole Ping in the background;
+    /// tapping a push opens the `url` its payload carries.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
