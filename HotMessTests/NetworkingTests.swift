@@ -28,12 +28,34 @@ struct EndpointTests {
         #expect(url.absoluteString == "https://api.hotmess.social/v1/me")
     }
 
-    @Test("Reads the version manifest without a session")
-    func manifestIsPublic() {
-        let manifest = HotMessAPI.Endpoints.manifest(device: DeviceDescription(identifier: "d"))
+    @Test("Reads the client status without a session")
+    func statusIsPublic() {
+        let status = HotMessAPI.Endpoints.status
 
-        #expect(manifest.method == .post)
-        #expect(manifest.requiresAuthentication == false)
+        #expect(status.path == "/v1/status")
+        #expect(status.method == .get)
+        #expect(status.requiresAuthentication == false)
+    }
+
+    @Test("Reads the oldest supported version from the status")
+    func clientStatus() throws {
+        let json = """
+        { "api": { "version": "2026-10-11", "sdk": { "ios": { "minimumVersion": "0.1.0" } } },
+          "clients": { "ios": { "minimumVersion": "1.0.15", "latestVersion": "1.1.0", "storeUrl": "https://apps.apple.com/app/id1" },
+                       "android": { "minimumVersion": "1.0.0", "latestVersion": "1.0.0", "storeUrl": null } } }
+        """
+        let status = try JSONDecoder.hotMess.decode(ServiceStatus.self, from: Data(json.utf8))
+        let ios = try #require(status.ios)
+
+        #expect(status.apiVersion == "2026-10-11")
+        #expect(ios.minimumVersion == "1.0.15")
+        #expect(ios.latestVersion == "1.1.0")
+        #expect(ios.storeURL?.host() == "apps.apple.com")
+        #expect(ios.allows(version: "1.0.15"))
+        #expect(ios.allows(version: "1.1"))
+        #expect(ios.allows(version: "2.0.0"))
+        #expect(!ios.allows(version: "1.0.9"))
+        #expect(!ios.allows(version: "0.9"))
     }
 
     @Test("Signs in with Apple without a session, and connects Facebook with one")
@@ -64,7 +86,7 @@ struct EndpointTests {
 struct GraphQLTests {
     @Test("Sends coordinates as a CoordinatesInput, leaving out a zero beacon")
     func coordinatesInput() {
-        let value = Coordinates(latitude: 1.5, longitude: -2.5, beaconMajor: 0, beaconMinor: 4).audienceKit.graphQLValue
+        let value = Coordinates(latitude: 1.5, longitude: -2.5, beaconMajor: 0, beaconMinor: 4).graphQLInput
 
         #expect(value == ["latitude": 1.5, "longitude": -2.5, "beaconMinor": 4])
     }
@@ -75,14 +97,14 @@ struct GraphQLTests {
         {"reportLocation":{
           "venue":null,
           "nearby_venues":[{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
-                     "distance":120.5,"point":"POINT (-117.414777 47.6575451)","photo_url":null,"hero_url":null,
+                     "distance":120.5,"point":"POINT (-117.414777 47.6575451)","photo_url":null,"banner_url":null,
                      "profile":{"address":"232 W Sprague","phone":null,
                                 "facebook":{"facebook_id":"123","is_liked":false}}}],
           "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane",
-                    "hero_url":"https://cdn.example/spokane.jpg","chat":{"open":false,"recent_messages":{"nodes":[]}},
+                    "banner_url":"https://cdn.example/spokane.jpg","chat":{"open":false,"recent_messages":{"nodes":[]}},
                     "events":{"upcoming":{"nodes":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Drag Bingo",
                                "start_at":"2026-10-13T20:00:00Z","end_at":null,"facebook_id":42,
-                               "banner_url":null,"is_featured":false,"rsvp":"ATTENDING",
+                               "banner_url":null,"is_featured":false,"rsvp":{"mine":"ATTENDING"},
                                "venue":{"name":"To be announced","venue":null}}]}}},
           "audience":{"me":{"ping":null}}
         }}
@@ -106,7 +128,7 @@ struct GraphQLTests {
         {"reportLocation":{
           "nearby_venues":null,
           "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
-                   "distance":null,"point":null,"photo_url":null,"hero_url":null,
+                   "distance":null,"point":null,"photo_url":null,"banner_url":null,
                    "profile":{"address":"232 W Sprague","phone":null,
                               "facebook":{"facebook_id":null,"is_liked":false}},
                    "chat":{"recent_messages":{"nodes":[{"id":"1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b",
@@ -173,7 +195,7 @@ struct GraphQLTests {
           "venue":null,"nearby_venues":[],
           "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane","friends":{"list":{"nodes":[]},
           "venues":{"nodes":[{"venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"Nyne",
-                                     "distance":null,"point":null,"photo_url":null,"hero_url":null,
+                                     "distance":null,"point":null,"photo_url":null,"banner_url":null,
                                      "profile":{"address":null,"phone":null,
                                                 "facebook":{"facebook_id":null,"is_liked":false}}},
                             "friend_count":2,
@@ -303,6 +325,16 @@ struct AudienceKitMappingTests {
         #expect(APIError(AudienceKitError.notFound) == .notFound)
         #expect(APIError(AudienceKitError.http(status: 502)) == .server(status: 502))
         #expect(APIError(AudienceKitError.network(URLError(.notConnectedToInternet))) == .offline)
+
+        // The API's codes, as `extensions.code` or a REST envelope carry them.
+        #expect(APIError(AudienceKitError(code: "UNAUTHENTICATED", message: "Sign in", status: 401)) == .unauthorized)
+        #expect(APIError(AudienceKitError(code: "NOT_FOUND", message: "Gone", status: 404)) == .notFound)
+        #expect(APIError(AudienceKitError(code: "FORBIDDEN", message: "Not yours", status: 403)) == .transport("Not yours"))
+        #expect(APIError(AudienceKitError(code: "INVALID", message: "Note is too long", status: 400,
+                                          fields: ["note": ["is too long"]])) == .transport("Note is too long"))
+        #expect(APIError(AudienceKitError(code: "UNAVAILABLE", message: "Down", status: 503)) == .server(status: 503))
+        #expect(APIError(AudienceKitError(code: "INTERNAL", message: "Oops", status: 500)) == .server(status: 500))
+        #expect(APIError(AudienceKitError(code: "SOMETHING_NEW", message: "Hm", status: 418)) == .transport("Hm"))
     }
 
     @Test("Reads record UUIDs in either case")
@@ -382,7 +414,8 @@ struct ChatIdentifierTests {
         #expect(object["variables"] as? [String: String] == ["id": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0"])
 
         let query = try #require(object["query"] as? String)
-        #expect(query.hasPrefix("subscription ChatRoom($id: ID!)"))
+        #expect(query.split(separator: " ").first == "subscription")
+        #expect(query.contains("ChatRoom($id: ID!)"))
         #expect(query.contains("room: venueChat(venueId: $id)"))
         for type in ["ChatJoined", "ChatMessagePosted", "ChatMessageUpdated", "ChatMessageRemoved", "ChatPinChanged",
                      "ChatRoomCleared", "ChatPresenceChanged", "ChatRangeChanged", "ChatLeft"] {

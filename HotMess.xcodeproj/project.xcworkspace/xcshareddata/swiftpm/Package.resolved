@@ -2,6 +2,15 @@
   "originHash" : "61b5bc79c87eff98acfc65f05c88000cdf4287231243469665038eebfdf1bd2a",
   "pins" : [
     {
+      "identity" : "audience-kit-sdk-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/audience-kit/audience-kit-sdk-swift.git",
+      "state" : {
+        "branch" : "claude/project-thread-b1p0u4",
+        "revision" : "082cc75c3d342ae93acfcd636ef1557dae49a988"
+      }
+    },
+    {
       "identity" : "facebook-ios-sdk",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/facebook/facebook-ios-sdk",

@@ -54,7 +54,7 @@ final class AppModel {
 
         let audienceKit = AudienceKitClient(
             configuration: configuration.audienceKit,
-            tokenStore: SessionStore.tokenStore,
+            credentialStore: SessionStore.credentialStore,
             session: .hotMess
         )
         self.audienceKit = audienceKit
@@ -68,15 +68,18 @@ final class AppModel {
         checkout = CoverCheckout(api: api, configuration: configuration)
         safety = SafetyStore(api: api)
         // A socket the server refuses as unauthorized signs out the way an
-        // HTTP 401 does.
-        let tokenStore = SessionStore.tokenStore
+        // HTTP 401 does. The cable reads the session token from the SDK's
+        // store whenever it (re)opens, so a new sign-in is picked up.
+        let credentialStore = SessionStore.credentialStore
         let cable = AudienceCable(
             url: GraphQLCable.url(for: configuration),
-            session: .realtime,
-            token: { try? tokenStore.loadToken() },
+            token: { try? credentialStore.load()?.token },
             unauthorized: { [session] token in
                 guard let token else { return }
                 Task { @MainActor in await session.sessionRejected(token: token) }
+            },
+            openSocket: { request in
+                WebSocketTaskSocket(URLSession.realtime.webSocketTask(with: GraphQLCable.handshake(request)))
             }
         )
         self.cable = cable
@@ -163,12 +166,12 @@ final class AppModel {
     }
 
     /// Goes where a tapped notification leads, whether the system showed it
-    /// or the app did: Now, for a Ping.
+    /// or the app did: the `url` its payload carries (a universal link such as
+    /// `https://hotmess.social/pings/<id>`), never its `kind`. A notification
+    /// with no route, or one the app has no screen for, opens Now.
     func open(_ notification: PingNotification) {
-        switch notification.kind {
-        case .ping, .pingJoin:
-            openNow()
-        }
+        if let url = notification.url, open(url) { return }
+        openNow()
     }
 
     /// "I'm in" on a friend's Ping notification: joins the whole Ping.
@@ -205,9 +208,15 @@ final class AppModel {
     }
 
     func open(_ url: URL) -> Bool {
-        guard let route = DeepLink.route(for: url) else { return false }
-
-        open(route)
-        return true
+        switch DeepLink.destination(for: url) {
+        case let .route(route):
+            open(route)
+            return true
+        case .now:
+            openNow()
+            return true
+        case nil:
+            return false
+        }
     }
 }

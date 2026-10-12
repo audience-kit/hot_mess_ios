@@ -112,7 +112,9 @@ struct AppConfiguration: Sendable, Hashable {
             host: audienceHost,
             audienceID: audienceID,
             facebookAppID: facebookAppID,
-            environment: environment
+            environment: environment,
+            coverPassPrefix: CoverPass.prefix,
+            feeLabel: String(localized: "Service fee")
         )
     }
 

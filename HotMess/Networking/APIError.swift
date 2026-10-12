@@ -44,23 +44,33 @@ enum APIError: Error, Equatable, Sendable, LocalizedError {
         }
     }
 
-    /// Maps the SDK's errors onto the ones the screens know how to show.
+    /// Maps the SDK's errors onto the ones the screens know how to show, by
+    /// their `code` (the API's vocabulary, or one the SDK raised on the
+    /// device), then by HTTP status.
     init(_ error: AudienceKitError) {
-        switch error {
-        case .notSignedIn, .unauthorized, .signInRejected:
+        switch error.code {
+        case AudienceKitError.Code.notSignedIn, AudienceKitError.Code.unauthenticated,
+             AudienceKitError.Code.signInRejected:
             self = .unauthorized
-        case .forbidden:
-            self = .transport(error.localizedDescription)
-        case .notFound:
+        case AudienceKitError.Code.notFound:
             self = .notFound
-        case let .http(status):
-            self = .server(status: status)
-        case let .network(urlError):
-            self = APIError(urlError: urlError)
-        case let .decoding(detail):
-            self = .decoding(detail)
-        case .signInFailed, .graphQL, .missingConfiguration, .tokenStorage, .updateRequired:
-            self = .transport(error.localizedDescription)
+        case AudienceKitError.Code.network:
+            self = error.underlying.map(APIError.init(urlError:)) ?? .offline
+        case AudienceKitError.Code.decoding:
+            self = .decoding(error.message)
+        case AudienceKitError.Code.http, AudienceKitError.Code.internalError, AudienceKitError.Code.rateLimited,
+             AudienceKitError.Code.unavailable:
+            self = error.status.map { APIError.server(status: $0) } ?? .transport(error.localizedDescription)
+        default:
+            // FORBIDDEN, INVALID (with `fields`), CONFLICT, SIGN_IN_FAILED,
+            // GRAPHQL, MISSING_CONFIGURATION, STORAGE, UPDATE_REQUIRED,
+            // UNSUPPORTED_API_VERSION and codes a newer API adds: shown as
+            // the API worded them.
+            if let status = error.status, status >= 500 {
+                self = .server(status: status)
+            } else {
+                self = .transport(error.localizedDescription)
+            }
         }
     }
 
@@ -73,4 +83,10 @@ enum APIError: Error, Equatable, Sendable, LocalizedError {
             self = .transport(urlError.localizedDescription)
         }
     }
+}
+
+extension AudienceKitError.Code {
+    /// The API's eighth code: the service is down (HTTP 503). Not yet among
+    /// the SDK's constants.
+    static let unavailable = "UNAVAILABLE"
 }

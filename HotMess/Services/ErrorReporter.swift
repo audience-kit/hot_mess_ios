@@ -96,7 +96,7 @@ final class ErrorReporter: NSObject {
         completed.osVersion = report.osVersion ?? "iOS \(UIDevice.current.systemVersion)"
         completed.device = report.device ?? DeviceInfo.model
 
-        let signedIn = SessionStore.tokenStore.hasToken
+        let signedIn = SessionStore.credentialStore.hasCredential
         let body = try? JSONEncoder().encode(completed)
         Task.detached(priority: .utility) {
             guard let body else { return }
@@ -195,6 +195,6 @@ extension APIError {
     }
 }
 
-extension KeychainTokenStore {
-    var hasToken: Bool { (try? loadToken()) != nil }
+extension CredentialStore {
+    var hasCredential: Bool { (try? load()) != nil }
 }
