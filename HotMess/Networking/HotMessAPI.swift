@@ -494,13 +494,13 @@ struct ConnectFacebookRequest: Encodable, Sendable {
 extension HotMessAPI {
     /// The GraphQL documents, with fields aliased to the keys the models decode.
     enum Documents {
-        /// `profile` is the venue's profile facet (see `ListingProfile`).
+        /// `profile` is the venue's profile mixin (see `ListingProfile`).
         static let venueFields = """
         id name distance point photo_url: photoUrl hero_url: heroUrl \
         profile { address phone facebook { facebook_id: facebookId is_liked: isLiked } }
         """
 
-        /// `profile` is the person's profile facet (see `ListingProfile`).
+        /// `profile` is the person's profile mixin (see `ListingProfile`).
         static let personFields = """
         id name photo_url: pictureUrl banner_url: bannerUrl \
         profile { facebook { facebook_id: facebookId is_liked: isLiked } }
@@ -530,19 +530,19 @@ extension HotMessAPI {
         static let personSummaryFields = "id name photo_url: pictureUrl"
 
         /// Who is on at a venue right now (see `Appearance`), under the
-        /// venue's people facet (see `VenuePeopleFacet`).
+        /// venue's people mixin (see `VenuePeopleMixin`).
         static let onNowFields = """
         people { on_now: onNow { nodes { id role starts_at: startsAt ends_at: endsAt person { \(personSummaryFields) } } } }
         """
 
         static let socialLinkFields = "id handle provider url"
 
-        /// The social links connection, merged into the profile facet that
+        /// The social links connection, merged into the profile mixin that
         /// `venueFields` and `personFields` already select.
         static let profileSocialLinks = "profile { social_links: socialLinks { nodes { \(socialLinkFields) } } }"
 
-        /// `venue` is the event's venue facet: the venue under `venue`, null
-        /// while it is to be announced (see `EventVenueFacet`).
+        /// `venue` is the event's venue mixin: the venue under `venue`, null
+        /// while it is to be announced (see `EventVenueMixin`).
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
         banner_url: bannerUrl is_featured: isFeatured rsvp: viewerRsvp \
@@ -559,7 +559,7 @@ extension HotMessAPI {
         """
 
         /// Tonight's cover at a venue and the user's pass for it, under the
-        /// venue's cover facet inside its tickets facet (see `TicketsFacet`).
+        /// venue's cover mixin inside its tickets mixin (see `TicketsMixin`).
         static let venueCoverFields = """
         tickets { cover { \
         cover_charge: charge { \(coverChargeFields) } \
@@ -569,7 +569,7 @@ extension HotMessAPI {
 
         static let venueFences = """
         query VenueFences($near: CoordinatesInput!) {
-          audience { venues { list(near: $near) { nodes { id point distance_tolerance: distanceTolerance } } } }
+          venues { list(near: $near) { nodes { id point distance_tolerance: distanceTolerance } } }
         }
         """
 
@@ -697,10 +697,10 @@ extension HotMessAPI {
 
         static let pings = """
         query Pings {
-          audience { ping {
+          ping {
             my_ping: myPing { \(pingFields) }
             friend_pings: friendPings { \(pingFields) }
-          } }
+          }
         }
         """
 
@@ -812,11 +812,11 @@ struct ReportLocationResponse: Decodable, Sendable {
     let reportLocation: Now
 }
 
-/// `audience { venues { list(near:) { nodes } } }`.
+/// `venues { list(near:) { nodes } }` on the root, the audience.
 struct VenueFencesResponse: Decodable, Sendable {
     let venues: [VenueFence]
 
-    private enum CodingKeys: String, CodingKey { case audience, venues, list, nodes }
+    private enum CodingKeys: String, CodingKey { case venues, list, nodes }
 
     /// A venue whose location has no point can't be watched; it's skipped
     /// rather than failing the rest.
@@ -827,7 +827,6 @@ struct VenueFencesResponse: Decodable, Sendable {
 
     init(from decoder: any Decoder) throws {
         let list = try decoder.container(keyedBy: CodingKeys.self)
-            .nestedContainer(keyedBy: CodingKeys.self, forKey: .audience)
             .nestedContainer(keyedBy: CodingKeys.self, forKey: .venues)
             .nestedContainer(keyedBy: CodingKeys.self, forKey: .list)
         venues = try list.decode([Entry].self, forKey: .nodes).compactMap(\.fence)
@@ -868,24 +867,24 @@ struct VenueWithEvents: Decodable, Sendable {
     init(from decoder: any Decoder) throws {
         venue = try Venue(from: decoder)
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // The tickets facet (holding the cover facet) is left out where the
+        // The tickets mixin (holding the cover mixin) is left out where the
         // audience has neither module, which reads as no cover. A missing
-        // events or friends facet reads as none.
-        events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
-        friends = try container.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
-        // Links come through the profile facet; missing reads as none.
+        // events or friends mixin reads as none.
+        events = try container.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
+        friends = try container.decodeIfPresent(FriendsMixin.self, forKey: .friends)?.list ?? []
+        // Links come through the profile mixin; missing reads as none.
         socialLinks = try container.decodeIfPresent(ListingProfile.self, forKey: .profile)?.socialLinks ?? []
         // Whether the user can join the room, and its last lines, come
-        // through the chat facet; missing reads as closed.
-        let chat = try container.decodeIfPresent(ChatFacet.self, forKey: .chat)
+        // through the chat mixin; missing reads as closed.
+        let chat = try container.decodeIfPresent(ChatMixin.self, forKey: .chat)
         chatOpen = chat?.open ?? false
         recentMessages = chat?.recentMessages ?? []
-        let cover = try container.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover
+        let cover = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
         coverCharge = cover?.coverCharge
         viewerAdmission = cover?.viewerAdmission
-        // Who's on comes through the people facet; missing reads as no one.
-        onNow = (try? container.decodeIfPresent(VenuePeopleFacet.self, forKey: .people))?.onNow ?? []
-        // Friends' Pings come through the ping facet; missing reads as none.
+        // Who's on comes through the people mixin; missing reads as no one.
+        onNow = (try? container.decodeIfPresent(VenuePeopleMixin.self, forKey: .people))?.onNow ?? []
+        // Friends' Pings come through the ping mixin; missing reads as none.
         friendPings = try container.decodeIfPresent(PingsResponse.self, forKey: .ping)?.friendPings ?? []
     }
 }
@@ -901,12 +900,12 @@ struct VenueResponse: Decodable, Sendable {
 
 struct LocaleEventsResponse: Decodable, Sendable {
     struct Locale: Decodable, Sendable {
-        /// The locale's upcoming events; empty when the facet is missing.
-        var events: [Event] { eventsFacet?.upcoming ?? [] }
+        /// The locale's upcoming events; empty when the mixin is missing.
+        var events: [Event] { eventsMixin?.upcoming ?? [] }
 
-        private let eventsFacet: UpcomingEventsFacet?
+        private let eventsMixin: UpcomingEventsMixin?
 
-        private enum CodingKeys: String, CodingKey { case eventsFacet = "events" }
+        private enum CodingKeys: String, CodingKey { case eventsMixin = "events" }
     }
 
     let locale: Locale?
@@ -941,7 +940,7 @@ struct RefundAdmissionResponse: Decodable, Sendable {
     let refundAdmission: AdmissionPayload
 }
 
-/// `cover { admissions { nodes } }`; no cover facet reads as no passes.
+/// `cover { admissions { nodes } }`; no cover mixin reads as no passes.
 struct AdmissionsResponse: Decodable, Sendable {
     struct Nodes: Decodable, Sendable { let nodes: [Admission] }
     struct Cover: Decodable, Sendable { let admissions: Nodes }
@@ -951,13 +950,11 @@ struct AdmissionsResponse: Decodable, Sendable {
     var admissions: [Admission] { cover?.admissions.nodes ?? [] }
 }
 
-/// `audience { ping { my_ping friend_pings } }`; no ping facet reads as none.
+/// `ping { my_ping friend_pings }` on the root, the audience; no ping mixin reads as none.
 struct AudiencePingsResponse: Decodable, Sendable {
-    struct Audience: Decodable, Sendable { let ping: PingsResponse? }
+    let ping: PingsResponse?
 
-    let audience: Audience
-
-    var pings: PingsResponse { audience.ping ?? PingsResponse() }
+    var pings: PingsResponse { ping ?? PingsResponse() }
 }
 
 struct PingsResponse: Decodable, Sendable {

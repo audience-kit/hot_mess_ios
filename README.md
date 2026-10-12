@@ -66,7 +66,7 @@ empty and failure states are handled the same way everywhere.
   "Now" (`reportLocation`), the closest locale, venue, event and person
   detail, a locale's events, RSVPs (`rsvpEvent`), Pings (`sendPing`,
   `joinPing`, `leavePing`, `endPing`, and `myPing`/`friendPings` on Now,
-  and on venues' and events' `ping` facet) and push registration (`registerDevice`, with the bundle
+  and on venues' and events' `ping` mixin) and push registration (`registerDevice`, with the bundle
   ID and whether the build's `aps-environment` is the APNs sandbox).
 - **Ping.** "I want to go out tonight": a Ping names tonight's events or
   venues in the user's locale (or none), reaches the user's friends (or

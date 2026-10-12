@@ -76,10 +76,10 @@ extension Appearance: Decodable {
     }
 }
 
-/// A venue's `people` facet as the app asks for it: who is on there right
+/// A venue's `people` mixin as the app asks for it: who is on there right
 /// now, a connection the documents read as `people { on_now: onNow { nodes
 /// { … } } }`. A missing or malformed connection reads as no one.
-struct VenuePeopleFacet: Decodable {
+struct VenuePeopleMixin: Decodable {
     let onNow: [Appearance]
 
     private enum CodingKeys: String, CodingKey { case onNow = "on_now" }

@@ -58,17 +58,17 @@ struct CoverCharge: Decodable, Hashable, Sendable {
     }
 }
 
-/// A venue's or an event's `tickets` facet, read for the `cover` facet the
+/// A venue's or an event's `tickets` mixin, read for the `cover` mixin the
 /// cover module nests inside it: `tickets { cover { … } }`. Either is left out
 /// where the audience doesn't have its module, so callers decode both with
 /// `decodeIfPresent`.
-struct TicketsFacet: Decodable, Hashable, Sendable {
-    let cover: CoverFacet?
+struct TicketsMixin: Decodable, Hashable, Sendable {
+    let cover: CoverMixin?
 }
 
-/// A venue's or an event's `cover` facet, as the documents alias it: the
+/// A venue's or an event's `cover` mixin, as the documents alias it: the
 /// night's charge and, on a venue, the user's pass for tonight.
-struct CoverFacet: Decodable, Hashable, Sendable {
+struct CoverMixin: Decodable, Hashable, Sendable {
     let coverCharge: CoverCharge?
     let viewerAdmission: Admission?
 

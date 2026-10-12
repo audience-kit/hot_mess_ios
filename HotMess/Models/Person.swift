@@ -16,7 +16,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
 
     var facebookURL: URL? { facebookID?.profileURL }
 
-    /// `facebook_id` and `is_liked` come in the person's profile facet (see
+    /// `facebook_id` and `is_liked` come in the person's profile mixin (see
     /// `ListingProfile`).
     enum CodingKeys: String, CodingKey {
         case id, name, role, profile
@@ -32,13 +32,13 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         role = try container.decodeIfPresent(String.self, forKey: .role)
         pictureURL = try container.decodeURLIfPresent(forKey: .pictureURL)
         bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
-        // A missing profile facet reads as no Page, not liked.
+        // A missing profile mixin reads as no Page, not liked.
         let profile = try container.decodeIfPresent(ListingProfile.self, forKey: .profile) ?? ListingProfile()
         facebookID = profile.facebookID
         isLiked = profile.isLiked
     }
 
-    /// Writes the shape `init(from:)` reads, with the profile facet.
+    /// Writes the shape `init(from:)` reads, with the profile mixin.
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -95,12 +95,12 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         person = try Person(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // The person's events facet; tolerated when missing, which reads as none.
-        events = try container.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
-        // Their links come through the profile facet; missing reads as none.
+        // The person's events mixin; tolerated when missing, which reads as none.
+        events = try container.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
+        // Their links come through the profile mixin; missing reads as none.
         socialLinks = try container.decodeIfPresent(ListingProfile.self, forKey: .profile)?.socialLinks ?? []
-        // Their tracks come through the music facet; a missing one reads as none.
-        tracks = try container.decodeIfPresent(MusicFacet.self, forKey: .music)?.tracks ?? []
+        // Their tracks come through the music mixin; a missing one reads as none.
+        tracks = try container.decodeIfPresent(MusicMixin.self, forKey: .music)?.tracks ?? []
         members = try container.decodeIfPresent([Person].self, forKey: .members) ?? []
         groups = try container.decodeIfPresent([Person].self, forKey: .groups) ?? []
     }
@@ -109,13 +109,13 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         try person.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(UpcomingEventsFacet(upcoming: events), forKey: .events)
-        // The whole profile facet again, as it replaces the person's own.
+        try container.encode(UpcomingEventsMixin(upcoming: events), forKey: .events)
+        // The whole profile mixin again, as it replaces the person's own.
         try container.encode(
             ListingProfile(socialLinks: socialLinks, facebookID: person.facebookID, isLiked: person.isLiked),
             forKey: .profile
         )
-        try container.encode(MusicFacet(tracks: tracks), forKey: .music)
+        try container.encode(MusicMixin(tracks: tracks), forKey: .music)
         try container.encode(members, forKey: .members)
         try container.encode(groups, forKey: .groups)
     }
@@ -137,10 +137,10 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// The `music` facet on a person, read as `music { tracks { nodes { … } } }`:
+/// The `music` mixin on a person, read as `music { tracks { nodes { … } } }`:
 /// their newest tracks, a connection. A missing or null connection reads as
 /// no tracks, and null nodes are dropped.
-private struct MusicFacet: Codable {
+private struct MusicMixin: Codable {
     let tracks: [Track]
 
     init(tracks: [Track]) {

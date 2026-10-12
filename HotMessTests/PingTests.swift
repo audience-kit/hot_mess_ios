@@ -130,7 +130,7 @@ struct PingDecodingTests {
     func decodesPingsQuery() throws {
         let response = try PingFixtures.decode(
             AudiencePingsResponse.self,
-            #"{"audience":{"ping":{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}}}"#
+            #"{"ping":{"my_ping":null,"friend_pings":[\#(PingFixtures.ping)]}}"#
         ).pings
 
         #expect(response.myPing == nil)

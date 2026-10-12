@@ -256,11 +256,11 @@ extension VenueMessage {
     }
 }
 
-/// A venue's or locale's `chat` facet: whether the user can join its room
+/// A venue's or locale's `chat` mixin: whether the user can join its room
 /// (`open`), and the room's last few lines, oldest first, a connection the
 /// documents read as `recent_messages: recentMessages(limit: 3) { nodes { … } }`.
 /// A missing field reads as closed, with no lines.
-struct ChatFacet: Decodable, Sendable {
+struct ChatMixin: Decodable, Sendable {
     let open: Bool
     let recentMessages: [VenueMessage]
 

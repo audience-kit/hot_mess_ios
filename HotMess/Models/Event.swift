@@ -56,14 +56,14 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         startDate = try container.decode(Date.self, forKey: .startDate)
         endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
         facebookID = try container.decodeIfPresent(FacebookID.self, forKey: .facebookID)
-        venue = try container.decodeIfPresent(EventVenueFacet.self, forKey: .venue)?.venue
+        venue = try container.decodeIfPresent(EventVenueMixin.self, forKey: .venue)?.venue
         person = try container.decodeIfPresent(Person.self, forKey: .person)
         bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
         isFeatured = try container.decodeIfPresent(Bool.self, forKey: .isFeatured) ?? false
         rsvp = try container.decodeIfPresent(RSVP.self, forKey: .rsvp) ?? .unsure
     }
 
-    /// Writes the shape `init(from:)` reads, with `venue` as the venue facet.
+    /// Writes the shape `init(from:)` reads, with `venue` as the venue mixin.
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
@@ -72,7 +72,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         try container.encode(startDate, forKey: .startDate)
         try container.encodeIfPresent(endDate, forKey: .endDate)
         try container.encodeIfPresent(facebookID, forKey: .facebookID)
-        try container.encode(EventVenueFacet(venue: venue), forKey: .venue)
+        try container.encode(EventVenueMixin(venue: venue), forKey: .venue)
         try container.encodeIfPresent(person, forKey: .person)
         try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
         try container.encode(isFeatured, forKey: .isFeatured)
@@ -104,9 +104,9 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// An event's `venue` facet: its venue, or nil while it is to be announced.
-/// The API always sends the facet; a missing one reads as no venue.
-struct EventVenueFacet: Codable, Hashable, Sendable {
+/// An event's `venue` mixin: its venue, or nil while it is to be announced.
+/// The API always sends the mixin; a missing one reads as no venue.
+struct EventVenueMixin: Codable, Hashable, Sendable {
     /// The venue's name, or "To be announced".
     let name: String?
     let venue: Venue?
@@ -125,11 +125,11 @@ struct EventVenueFacet: Codable, Hashable, Sendable {
     }
 }
 
-/// The `events` facet on a venue, locale or person: `upcoming`, soonest
+/// The `events` mixin on a venue, locale or person: `upcoming`, soonest
 /// first, a connection the documents read as `upcoming { nodes { … } }`.
 /// Without `first` the connection holds every upcoming event. A missing or
-/// null facet or connection reads as no events.
-struct UpcomingEventsFacet: Codable, Hashable, Sendable {
+/// null mixin or connection reads as no events.
+struct UpcomingEventsMixin: Codable, Hashable, Sendable {
     let upcoming: [Event]
 
     init(upcoming: [Event] = []) {
@@ -156,10 +156,10 @@ struct UpcomingEventsFacet: Codable, Hashable, Sendable {
     }
 }
 
-/// An event's `people` facet: who is hosting or playing, a connection the
+/// An event's `people` mixin: who is hosting or playing, a connection the
 /// documents read as `people { lineup { nodes { … } } }`. A missing or null
 /// connection reads as no one.
-struct EventPeopleFacet: Codable, Hashable, Sendable {
+struct EventPeopleMixin: Codable, Hashable, Sendable {
     let lineup: [Person]
 
     init(lineup: [Person] = []) {
@@ -198,7 +198,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     let venueCoverTonight: CoverCharge?
     /// The user's cover tonight at its venue, paid or being paid.
     let viewerAdmission: Admission?
-    /// Friends' Pings that pick this event, from its ping facet. Read from
+    /// Friends' Pings that pick this event, from its ping mixin. Read from
     /// GraphQL only, so it isn't encoded.
     var friendPings: [Ping]
 
@@ -216,29 +216,29 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         case venueCover = "venue_cover"
     }
 
-    /// `venue_cover` is the event's venue facet again, holding only the
-    /// venue's tickets facet and the cover facet inside it.
-    private enum VenueFacetKeys: String, CodingKey { case venue }
+    /// `venue_cover` is the event's venue mixin again, holding only the
+    /// venue's tickets mixin and the cover mixin inside it.
+    private enum VenueMixinKeys: String, CodingKey { case venue }
     private enum VenueKeys: String, CodingKey { case tickets }
 
     init(from decoder: any Decoder) throws {
         event = try Event(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // Who's on comes through the people facet; missing reads as no one.
-        people = try container.decodeIfPresent(EventPeopleFacet.self, forKey: .people)?.lineup ?? []
-        coverCharge = try container.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover?.coverCharge
+        // Who's on comes through the people mixin; missing reads as no one.
+        people = try container.decodeIfPresent(EventPeopleMixin.self, forKey: .people)?.lineup ?? []
+        coverCharge = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover?.coverCharge
 
-        var venueCover: CoverFacet?
+        var venueCover: CoverMixin?
         if (try? container.decodeNil(forKey: .venueCover)) == false,
-           let facet = try? container.nestedContainer(keyedBy: VenueFacetKeys.self, forKey: .venueCover),
-           (try? facet.decodeNil(forKey: .venue)) == false,
-           let venue = try? facet.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
-            venueCover = try venue.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover
+           let mixin = try? container.nestedContainer(keyedBy: VenueMixinKeys.self, forKey: .venueCover),
+           (try? mixin.decodeNil(forKey: .venue)) == false,
+           let venue = try? mixin.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
+            venueCover = try venue.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
         }
         venueCoverTonight = venueCover?.coverCharge
         viewerAdmission = venueCover?.viewerAdmission
-        // The ping facet is null without a viewer or the ping module, which
+        // The ping mixin is null without a viewer or the ping module, which
         // reads as no Pings.
         friendPings = try container.decodeIfPresent(PingsResponse.self, forKey: .ping)?.friendPings ?? []
     }
@@ -247,7 +247,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         try event.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(EventPeopleFacet(lineup: people), forKey: .people)
+        try container.encode(EventPeopleMixin(lineup: people), forKey: .people)
     }
 
     init(

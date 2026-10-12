@@ -10,7 +10,7 @@ import MapKit
 ///
 /// The API returns only where the user is: the `venue` they're in, else their
 /// `locale` and its `nearby_venues`. Everything else comes from those objects'
-/// facets (`friends`, `events`, chat) and the audience's `ping` feed, and the
+/// mixins (`friends`, `events`, chat) and the audience's `ping` feed, and the
 /// title and hero are built here from the venue or locale.
 ///
 /// `venues` stays optional on purpose: a missing key means "we don't know where
@@ -88,16 +88,16 @@ struct Now: Decodable, Hashable, Sendable {
         var venueFriends: [Friend] = []
         if (try? container.decodeNil(forKey: .venue)) == false,
            let venueContainer = try? container.nestedContainer(keyedBy: VenueKeys.self, forKey: .venue) {
-            // The chat and people facets; missing reads as no lines and no one on.
-            recentMessages = try venueContainer.decodeIfPresent(ChatFacet.self, forKey: .chat)?.recentMessages ?? []
-            // The venue's cover facet, inside its tickets facet; missing reads
+            // The chat and people mixins; missing reads as no lines and no one on.
+            recentMessages = try venueContainer.decodeIfPresent(ChatMixin.self, forKey: .chat)?.recentMessages ?? []
+            // The venue's cover mixin, inside its tickets mixin; missing reads
             // as no cover.
-            let cover = try venueContainer.decodeIfPresent(TicketsFacet.self, forKey: .tickets)?.cover
+            let cover = try venueContainer.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
             coverCharge = cover?.coverCharge
             viewerAdmission = cover?.viewerAdmission
-            onNow = (try? venueContainer.decodeIfPresent(VenuePeopleFacet.self, forKey: .people))?.onNow ?? []
-            venueEvents = try venueContainer.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
-            venueFriends = try venueContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)?.list ?? []
+            onNow = (try? venueContainer.decodeIfPresent(VenuePeopleMixin.self, forKey: .people))?.onNow ?? []
+            venueEvents = try venueContainer.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
+            venueFriends = try venueContainer.decodeIfPresent(FriendsMixin.self, forKey: .friends)?.list ?? []
         } else {
             recentMessages = []
             coverCharge = nil
@@ -108,19 +108,19 @@ struct Now: Decodable, Hashable, Sendable {
         var localeName: String?
         var localeHero: URL?
         var localeEvents: [Event] = []
-        var localeFriends: FriendsFacet?
+        var localeFriends: FriendsMixin?
         if (try? container.decodeNil(forKey: .locale)) == false,
            let localeContainer = try? container.nestedContainer(keyedBy: LocaleKeys.self, forKey: .locale),
            let id = try localeContainer.decodeIfPresent(UUID.self, forKey: .id) {
             let name = try localeContainer.decodeIfPresent(String.self, forKey: .name) ?? ""
             locale = AppLocale(id: id, name: name)
             localeName = name
-            let chat = try localeContainer.decodeIfPresent(ChatFacet.self, forKey: .chat)
+            let chat = try localeContainer.decodeIfPresent(ChatMixin.self, forKey: .chat)
             localeChatOpen = chat?.open ?? false
             localeMessages = chat?.recentMessages ?? []
             localeHero = try localeContainer.decodeURLIfPresent(forKey: .heroURL)
-            localeEvents = try localeContainer.decodeIfPresent(UpcomingEventsFacet.self, forKey: .events)?.upcoming ?? []
-            localeFriends = try localeContainer.decodeIfPresent(FriendsFacet.self, forKey: .friends)
+            localeEvents = try localeContainer.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
+            localeFriends = try localeContainer.decodeIfPresent(FriendsMixin.self, forKey: .friends)
         } else {
             locale = nil
             localeChatOpen = false
