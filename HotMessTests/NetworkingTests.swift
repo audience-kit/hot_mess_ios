@@ -68,8 +68,8 @@ struct EndpointTests {
         #expect(apple.requiresAuthentication == false)
 
         let connect = HotMessAPI.Endpoints.connectFacebook(
-            ConnectFacebookRequest(code: "c", redirectURI: "fb1://authorize/", host: nil, facebookAppID: "1",
-                                   device: device)
+            ConnectFacebookRequest(result: .code("c", redirectURI: "fb1://authorize/"), host: nil,
+                                   facebookAppID: "1", device: device)
         )
         #expect(connect.path == "/v1/token")
         #expect(connect.requiresAuthentication)
@@ -79,6 +79,16 @@ struct EndpointTests {
         let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["connect"] as? Bool == true)
         #expect(json["redirect_uri"] as? String == "fb1://authorize/")
+        #expect(json["facebook_token"] == nil)
+
+        let sdk = HotMessAPI.Endpoints.connectFacebook(
+            ConnectFacebookRequest(result: .accessToken("t"), host: nil, facebookAppID: "1", device: device)
+        )
+        let sdkEncode = try #require(sdk.body?.encode)
+        let sdkBody = try sdkEncode(JSONEncoder())
+        let sdkJSON = try #require(JSONSerialization.jsonObject(with: sdkBody) as? [String: Any])
+        #expect(sdkJSON["facebook_token"] as? String == "t")
+        #expect(sdkJSON["code"] == nil)
     }
 }
 

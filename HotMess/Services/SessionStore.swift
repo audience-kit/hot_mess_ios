@@ -166,11 +166,13 @@ final class SessionStore {
         state = .signingIn
 
         do {
-            let login = try await facebookWebLogin()
-            let result = try await login.authorize()
-            await exchange { device in
-                try await self.audienceKit.signIn(facebookCode: result.code, redirectURI: result.redirectURI,
-                                                  device: device)
+            switch try await facebookSignIn().authorize() {
+            case let .accessToken(token):
+                await exchange(facebookToken: token)
+            case let .code(code, redirectURI):
+                await exchange { device in
+                    try await self.audienceKit.signIn(facebookCode: code, redirectURI: redirectURI, device: device)
+                }
             }
         } catch SessionError.cancelled {
             Log.session.info("Facebook sign-in cancelled")
@@ -228,16 +230,15 @@ final class SessionStore {
     /// different account: when the Facebook profile already had one, that
     /// account takes over the Apple sign-in. False when the person cancels.
     func connectFacebook() async throws -> Bool {
-        let result: FacebookWebLogin.Result
+        let result: FacebookSignIn.Result
         do {
-            result = try await facebookWebLogin().authorize()
+            result = try await facebookSignIn().authorize()
         } catch SessionError.cancelled {
             return false
         }
 
         let request = ConnectFacebookRequest(
-            code: result.code,
-            redirectURI: result.redirectURI,
+            result: result,
             host: audienceKit.configuration.host,
             facebookAppID: audienceKit.configuration.facebookAppID,
             device: DeviceInfo.description(for: configuration)
@@ -340,7 +341,7 @@ final class SessionStore {
     /// app needs the Login for Business configuration from the audience's
     /// branding, so branding is loaded first when it hasn't arrived yet. The
     /// configuration is only used when it belongs to the same app.
-    private func facebookWebLogin() async throws -> FacebookWebLogin {
+    private func facebookSignIn() async throws -> FacebookSignIn {
         guard let appID = configuration.facebookAppID, !appID.isEmpty else {
             throw SessionError.configurationUnavailable
         }
@@ -348,7 +349,8 @@ final class SessionStore {
 
         let branding = brand.branding
         let configID = branding?.facebookAppID == appID ? branding?.facebookLoginConfigID : nil
-        return FacebookWebLogin(appID: appID, configID: configID, permissions: Self.requestedPermissions)
+        return FacebookSignIn(appID: appID, configID: configID, permissions: Self.requestedPermissions,
+                              loginManager: loginManager)
     }
 
     /// Signs out as soon as the API ends the session, wherever in the app the

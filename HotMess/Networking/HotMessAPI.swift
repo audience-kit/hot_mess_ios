@@ -460,14 +460,29 @@ struct AppleSignInRequest: Encodable, Sendable {
 
 /// `POST /v1/token` with `connect`, for an account that signed in with Apple.
 struct ConnectFacebookRequest: Encodable, Sendable {
-    let code: String
-    let redirectURI: String
+    /// From the Facebook SDK; otherwise `code` and `redirectURI` from the dialog.
+    let facebookToken: String?
+    let code: String?
+    let redirectURI: String?
     let host: String?
     let facebookAppID: String?
     let device: DeviceDescription
     let connect = true
 
+    init(result: FacebookSignIn.Result, host: String?, facebookAppID: String?, device: DeviceDescription) {
+        switch result {
+        case let .accessToken(token):
+            (facebookToken, code, redirectURI) = (token, nil, nil)
+        case let .code(code, redirectURI):
+            (facebookToken, self.code, self.redirectURI) = (nil, code, redirectURI)
+        }
+        self.host = host
+        self.facebookAppID = facebookAppID
+        self.device = device
+    }
+
     enum CodingKeys: String, CodingKey {
+        case facebookToken = "facebook_token"
         case code
         case redirectURI = "redirect_uri"
         case host
