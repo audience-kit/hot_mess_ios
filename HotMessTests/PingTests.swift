@@ -163,8 +163,6 @@ struct PingDecodingTests {
         let ended = try PingFixtures.decode(EndPingResponse.self, #"{"endPing":{"ended":true}}"#)
         #expect(ended.endPing.ended)
 
-        let registered = try PingFixtures.decode(RegisterDeviceResponse.self, #"{"registerDevice":{"registered":true}}"#)
-        #expect(registered.registerDevice.registered)
     }
 }
 

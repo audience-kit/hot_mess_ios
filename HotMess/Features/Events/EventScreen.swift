@@ -58,6 +58,10 @@ struct EventScreen: View {
                             )
                         }
 
+                        if let karaoke = event.karaoke {
+                            KaraokeSection(karaoke: karaoke)
+                        }
+
                         detailsSection(event)
 
                         if let person = event.person {

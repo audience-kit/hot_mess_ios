@@ -17,10 +17,18 @@ struct HotMessApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            Group {
+#if DEBUG
+                if let fixture = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) {
+                    KaraokeUITestScreen(mode: String(fixture.split(separator: "=").last ?? "venue"))
+                } else { RootView() }
+#else
+                RootView()
+#endif
+            }
                 .environment(model)
                 .tint(model.brand.accent)
-                .task { await model.start() }
+                .task { await start() }
                 .onOpenURL(perform: handle)
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
                     guard let url = activity.webpageURL else { return }
@@ -37,6 +45,13 @@ struct HotMessApp: App {
                 break
             }
         }
+    }
+
+    private func start() async {
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) { return }
+#endif
+        await model.start()
     }
 
     /// Stripe claims its bank redirects (`hotmess://stripe-redirect`), then

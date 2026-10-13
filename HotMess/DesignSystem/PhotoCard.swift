@@ -381,7 +381,16 @@ struct EventCard: View {
             }
             .accessibilityLabel(event.startDate.formatted(date: .abbreviated, time: .omitted))
         } trailing: {
-            RSVPBadge(rsvp: event.rsvp)
+            VStack(alignment: .trailing, spacing: 6) {
+                RSVPBadge(rsvp: event.rsvp)
+                if event.isKaraoke {
+                    Label(String(localized: "Karaoke"), systemImage: "music.mic")
+                        .font(.hotMess(.caption, semibold: true))
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .accessibilityIdentifier("karaoke.badge")
+                }
+            }
         }
     }
 }

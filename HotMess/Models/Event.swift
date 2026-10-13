@@ -16,6 +16,8 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
     let bannerURL: URL?
     let isFeatured: Bool
     var rsvp: RSVP
+    let karaoke: KaraokeNight?
+    var isKaraoke: Bool { karaoke != nil }
 
     var facebookURL: URL? { facebookID?.eventURL }
 
@@ -40,7 +42,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, venue, person, rsvp
+        case id, name, venue, person, rsvp, karaoke
         case startDate = "start_at"
         case endDate = "end_at"
         case facebookID = "facebook_id"
@@ -60,6 +62,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         person = try container.decodeIfPresent(Person.self, forKey: .person)
         bannerURL = try container.decodeURLIfPresent(forKey: .bannerURL)
         isFeatured = try container.decodeIfPresent(Bool.self, forKey: .isFeatured) ?? false
+        karaoke = try container.decodeIfPresent(KaraokeNight.self, forKey: .karaoke)
         // The event's rsvp mixin, read as `rsvp { mine }`; missing reads as undecided.
         rsvp = try container.decodeIfPresent(RSVPMixin.self, forKey: .rsvp)?.mine ?? .unsure
     }
@@ -77,6 +80,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         try container.encodeIfPresent(person, forKey: .person)
         try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
         try container.encode(isFeatured, forKey: .isFeatured)
+        try container.encodeIfPresent(karaoke, forKey: .karaoke)
         try container.encode(RSVPMixin(mine: rsvp), forKey: .rsvp)
     }
 
@@ -90,7 +94,8 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         person: Person? = nil,
         bannerURL: URL? = nil,
         isFeatured: Bool = false,
-        rsvp: RSVP = .unsure
+        rsvp: RSVP = .unsure,
+        karaoke: KaraokeNight? = nil
     ) {
         self.id = id
         self.name = name
@@ -102,6 +107,7 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         self.bannerURL = bannerURL
         self.isFeatured = isFeatured
         self.rsvp = rsvp
+        self.karaoke = karaoke
     }
 }
 

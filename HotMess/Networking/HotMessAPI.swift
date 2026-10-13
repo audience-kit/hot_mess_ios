@@ -534,6 +534,7 @@ extension HotMessAPI {
         static let eventFields = """
         id name start_at: startAt end_at: endAt facebook_id: facebookId \
         banner_url: bannerUrl is_featured: isFeatured rsvp { mine } \
+        karaoke { provider provider_name: providerName session_code: sessionCode own_session_code: ownSessionCode join_url: joinUrl } \
         venue { name venue { \(venueFields) } }
         """
 
