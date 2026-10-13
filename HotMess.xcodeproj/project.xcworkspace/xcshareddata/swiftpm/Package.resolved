@@ -1,51 +1,50 @@
 {
-  "originHash" : "61b5bc79c87eff98acfc65f05c88000cdf4287231243469665038eebfdf1bd2a",
-  "pins" : [
+  "originHash": "61b5bc79c87eff98acfc65f05c88000cdf4287231243469665038eebfdf1bd2a",
+  "pins": [
     {
-      "identity" : "audience-kit-sdk-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/audience-kit/audience-kit-sdk-swift.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "a794707b8a4e8c2b3a8603a901d96dd389bf5600"
+      "identity": "audience-kit-sdk-swift",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/audience-kit/audience-kit-sdk-swift.git",
+      "state": {
+        "revision": "8235020bb267f96c98936ca4657c8a0e2d118e8a"
       }
     },
     {
-      "identity" : "facebook-ios-sdk",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/facebook/facebook-ios-sdk",
-      "state" : {
-        "revision" : "80d0ee82f6370d1bace1431a80cb80575f98ee90",
-        "version" : "18.1.1"
+      "identity": "facebook-ios-sdk",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/facebook/facebook-ios-sdk",
+      "state": {
+        "revision": "80d0ee82f6370d1bace1431a80cb80575f98ee90",
+        "version": "18.1.1"
       }
     },
     {
-      "identity" : "in-app-payments-ios",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/square/in-app-payments-ios",
-      "state" : {
-        "revision" : "386889b41c945b64a147a2999823356c0883504e",
-        "version" : "1.6.7"
+      "identity": "in-app-payments-ios",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/square/in-app-payments-ios",
+      "state": {
+        "revision": "386889b41c945b64a147a2999823356c0883504e",
+        "version": "1.6.7"
       }
     },
     {
-      "identity" : "kingfisher",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/onevcat/Kingfisher.git",
-      "state" : {
-        "revision" : "8648fe649c5d62be38721110f835821906e9242a",
-        "version" : "8.13.0"
+      "identity": "kingfisher",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/onevcat/Kingfisher.git",
+      "state": {
+        "revision": "8648fe649c5d62be38721110f835821906e9242a",
+        "version": "8.13.0"
       }
     },
     {
-      "identity" : "stripe-ios-spm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/stripe/stripe-ios-spm",
-      "state" : {
-        "revision" : "938bad5c435cba09690e6a097c3d7354f89eebf3",
-        "version" : "26.13.0"
+      "identity": "stripe-ios-spm",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/stripe/stripe-ios-spm",
+      "state": {
+        "revision": "938bad5c435cba09690e6a097c3d7354f89eebf3",
+        "version": "26.13.0"
       }
     }
   ],
-  "version" : 3
+  "version": 3
 }

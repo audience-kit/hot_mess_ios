@@ -772,8 +772,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/audience-kit/audience-kit-sdk-swift.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				revision = 8235020bb267f96c98936ca4657c8a0e2d118e8a;
+				kind = revision;
 			};
 		};
 		AC0000000000000000000083 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
