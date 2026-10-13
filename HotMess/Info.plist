@@ -82,6 +82,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Hot Mess uses your camera to scan your payment card when you pay a venue’s cover charge.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Hot Mess listens for beacons in venues so it can tell which room you are in.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
