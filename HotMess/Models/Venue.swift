@@ -13,6 +13,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
     let subtitle: String?
     let phone: String?
     let facebookID: FacebookID?
+    let facebookLink: URL?
     /// Metres from the device, when the request carried a location.
     let distance: Double?
     let photoURL: URL?
@@ -22,7 +23,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
 
     var coordinate: CLLocationCoordinate2D? { point?.coordinate }
 
-    var facebookURL: URL? { facebookID?.profileURL }
+    var facebookURL: URL? { facebookLink ?? facebookID?.profileURL }
 
     /// What to show under the venue's name in a list row.
     var summary: String {
@@ -55,6 +56,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         address = profile.address
         phone = profile.phone
         facebookID = profile.facebookID
+        facebookLink = profile.facebookLink
         isLiked = profile.isLiked
     }
 
@@ -69,7 +71,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
         try container.encodeIfPresent(point, forKey: .point)
         try container.encode(
-            ListingProfile(address: address, phone: phone, facebookID: facebookID, isLiked: isLiked),
+            ListingProfile(address: address, phone: phone, facebookID: facebookID, facebookLink: facebookLink, isLiked: isLiked),
             forKey: .profile
         )
     }
@@ -81,6 +83,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         subtitle: String? = nil,
         phone: String? = nil,
         facebookID: FacebookID? = nil,
+        facebookLink: URL? = nil,
         distance: Double? = nil,
         photoURL: URL? = nil,
         bannerURL: URL? = nil,
@@ -93,6 +96,7 @@ struct Venue: Codable, Hashable, Sendable, Identifiable {
         self.subtitle = subtitle
         self.phone = phone
         self.facebookID = facebookID
+        self.facebookLink = facebookLink
         self.distance = distance
         self.photoURL = photoURL
         self.bannerURL = bannerURL
@@ -113,6 +117,7 @@ struct ListingProfile: Codable, Hashable, Sendable {
     var socialLinks: [SocialLink]?
     /// From the facebook module's mixin, like `isLiked`.
     var facebookID: FacebookID?
+    var facebookLink: URL?
     var isLiked: Bool
 
     init(
@@ -120,12 +125,14 @@ struct ListingProfile: Codable, Hashable, Sendable {
         phone: String? = nil,
         socialLinks: [SocialLink]? = nil,
         facebookID: FacebookID? = nil,
+        facebookLink: URL? = nil,
         isLiked: Bool = false
     ) {
         self.address = address
         self.phone = phone
         self.socialLinks = socialLinks
         self.facebookID = facebookID
+        self.facebookLink = facebookLink
         self.isLiked = isLiked
     }
 
@@ -137,6 +144,7 @@ struct ListingProfile: Codable, Hashable, Sendable {
     private enum FacebookKeys: String, CodingKey {
         case facebookID = "facebook_id"
         case isLiked = "is_liked"
+        case facebookLink = "link"
     }
 
     private enum ConnectionKeys: String, CodingKey { case nodes }
@@ -154,9 +162,11 @@ struct ListingProfile: Codable, Hashable, Sendable {
         if (try? container.decodeNil(forKey: .facebook)) == false {
             let facebook = try container.nestedContainer(keyedBy: FacebookKeys.self, forKey: .facebook)
             facebookID = try facebook.decodeIfPresent(FacebookID.self, forKey: .facebookID)
+            facebookLink = try facebook.decodeURLIfPresent(forKey: .facebookLink)
             isLiked = try facebook.decodeIfPresent(Bool.self, forKey: .isLiked) ?? false
         } else {
             facebookID = nil
+            facebookLink = nil
             isLiked = false
         }
     }
@@ -171,6 +181,7 @@ struct ListingProfile: Codable, Hashable, Sendable {
         }
         var facebook = container.nestedContainer(keyedBy: FacebookKeys.self, forKey: .facebook)
         try facebook.encodeIfPresent(facebookID, forKey: .facebookID)
+        try facebook.encodeIfPresent(facebookLink, forKey: .facebookLink)
         try facebook.encode(isLiked, forKey: .isLiked)
     }
 }

@@ -21,6 +21,17 @@ private func instant(_ iso8601: String) throws -> Date {
 
 @Suite("Venue decoding")
 struct VenueDecodingTests {
+    @Test("Preserves a public group URL through decoding and encoding")
+    func publicGroupLink() throws {
+        let link = URL(string: "https://www.facebook.com/groups/123456789")!
+        let venue = Venue(id: UUID(), name: "Community", facebookID: FacebookID("123456789"), facebookLink: link)
+        let decoded = try JSONDecoder.hotMess.decode(Venue.self, from: JSONEncoder().encode(venue))
+        #expect(decoded.facebookURL == link)
+        let person = Person(id: UUID(), name: "Community", facebookID: FacebookID("123456789"), facebookLink: link)
+        let decodedPerson = try JSONDecoder.hotMess.decode(Person.self, from: JSONEncoder().encode(person))
+        #expect(decodedPerson.facebookURL == link)
+    }
+
     @Test("Reads every field the API sends")
     func fullPayload() throws {
         let venue = try decode(Venue.self, from: Fixtures.venue)

@@ -9,12 +9,13 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
     let id: UUID
     let name: String
     let facebookID: FacebookID?
+    let facebookLink: URL?
     let role: String?
     let isLiked: Bool
     let avatarURL: URL?
     let bannerURL: URL?
 
-    var facebookURL: URL? { facebookID?.profileURL }
+    var facebookURL: URL? { facebookLink ?? facebookID?.profileURL }
 
     /// `facebook_id` and `is_liked` come in the person's profile mixin (see
     /// `ListingProfile`).
@@ -35,6 +36,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         // A missing profile mixin reads as no Page, not liked.
         let profile = try container.decodeIfPresent(ListingProfile.self, forKey: .profile) ?? ListingProfile()
         facebookID = profile.facebookID
+        facebookLink = profile.facebookLink
         isLiked = profile.isLiked
     }
 
@@ -46,13 +48,14 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         try container.encodeIfPresent(role, forKey: .role)
         try container.encodeIfPresent(avatarURL, forKey: .avatarURL)
         try container.encodeIfPresent(bannerURL, forKey: .bannerURL)
-        try container.encode(ListingProfile(facebookID: facebookID, isLiked: isLiked), forKey: .profile)
+        try container.encode(ListingProfile(facebookID: facebookID, facebookLink: facebookLink, isLiked: isLiked), forKey: .profile)
     }
 
     init(
         id: UUID,
         name: String,
         facebookID: FacebookID? = nil,
+        facebookLink: URL? = nil,
         role: String? = nil,
         isLiked: Bool = false,
         avatarURL: URL? = nil,
@@ -61,6 +64,7 @@ struct Person: Codable, Hashable, Sendable, Identifiable {
         self.id = id
         self.name = name
         self.facebookID = facebookID
+        self.facebookLink = facebookLink
         self.role = role
         self.isLiked = isLiked
         self.avatarURL = avatarURL
@@ -112,7 +116,7 @@ struct PersonDetail: Codable, Hashable, Sendable, Identifiable {
         try container.encode(UpcomingEventsMixin(upcoming: events), forKey: .events)
         // The whole profile mixin again, as it replaces the person's own.
         try container.encode(
-            ListingProfile(socialLinks: socialLinks, facebookID: person.facebookID, isLiked: person.isLiked),
+            ListingProfile(socialLinks: socialLinks, facebookID: person.facebookID, facebookLink: person.facebookLink, isLiked: person.isLiked),
             forKey: .profile
         )
         try container.encode(MusicMixin(tracks: tracks), forKey: .music)

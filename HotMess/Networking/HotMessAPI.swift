@@ -485,13 +485,13 @@ extension HotMessAPI {
         /// `profile` is the venue's profile mixin (see `ListingProfile`).
         static let venueFields = """
         id name distance point photo_url: photoUrl banner_url: bannerUrl \
-        profile { address phone facebook { facebook_id: facebookId is_liked: isLiked } }
+        profile { address phone facebook { facebook_id: facebookId is_liked: isLiked link } }
         """
 
         /// `profile` is the person's profile mixin (see `ListingProfile`).
         static let personFields = """
         id name avatar_url: avatarUrl banner_url: bannerUrl \
-        profile { facebook { facebook_id: facebookId is_liked: isLiked } }
+        profile { facebook { facebook_id: facebookId is_liked: isLiked link } }
         """
 
         static let friendFields = "id name facebook_id: facebookId presence avatar_url: avatarUrl"
