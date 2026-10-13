@@ -306,7 +306,7 @@ struct VenueCard<Corner: View>: View {
         RecordCard(
             title: venue.name,
             description: description ?? venue.summary,
-            photoURL: venue.photoURL
+            photoURL: venue.bannerURL ?? venue.photoURL
         ) {
             corner
         } trailing: {
