@@ -180,6 +180,60 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
     }
 }
 
+/// Shared presentation for people, venues and events. Screens customize the
+/// description (for example a person's next appearance), while record adapters
+/// supply photos and badges.
+struct RecordCard<Leading: View, Trailing: View>: View {
+    let title: String
+    var description: String?
+    let photoURL: URL?
+    var portraitURL: URL?
+    var showsPortrait = false
+    var minHeight: CGFloat = CardMetrics.photoHeight
+    var topClearance: CGFloat = 52
+    var titleStyle: Font.TextStyle = .title3
+    var descriptionLines = 2
+    var trailingClearance: CGFloat = 0
+    var cornerRadius: CGFloat = CardMetrics.cornerRadius
+    @ViewBuilder var leading: Leading
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        PhotoCard(
+            url: photoURL,
+            minHeight: minHeight,
+            topClearance: topClearance,
+            blur: showsPortrait ? 24 : 0,
+            alignment: showsPortrait ? .leading : .bottomLeading,
+            cornerRadius: cornerRadius
+        ) {
+            HStack(spacing: 14) {
+                if showsPortrait {
+                    Avatar(url: portraitURL, initials: title.initialsForDisplay, size: 56)
+                        .overlay { Circle().strokeBorder(Color.hotMessAvatarRing, lineWidth: 2) }
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.hotMess(titleStyle, semibold: true))
+                        .lineLimit(2)
+
+                    if let description, !description.isEmpty {
+                        Text(description)
+                            .font(.hotMess(.subheadline, semibold: true))
+                            .lineLimit(descriptionLines)
+                    }
+                }
+            }
+            .padding(.trailing, trailingClearance)
+        } leading: {
+            leading
+        } trailing: {
+            trailing
+        }
+    }
+}
+
 // MARK: - Badges
 
 /// A small label on dark glass, for a card's top corners. It reads on any
@@ -244,22 +298,16 @@ struct FriendFaces: View {
 /// top right (a distance, a friend count) and `corner` top left (friend faces).
 struct VenueCard<Corner: View>: View {
     let venue: Venue
-    var detail: String?
+    var description: String?
     var pill: String?
     @ViewBuilder var corner: Corner
 
     var body: some View {
-        PhotoCard(url: venue.photoURL) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(venue.name)
-                    .font(.hotMess(.title3, semibold: true))
-                    .lineLimit(2)
-
-                Text(detail ?? venue.summary)
-                    .font(.hotMess(.subheadline, semibold: true))
-                    .lineLimit(2)
-            }
-        } leading: {
+        RecordCard(
+            title: venue.name,
+            description: description ?? venue.summary,
+            photoURL: venue.photoURL
+        ) {
             corner
         } trailing: {
             if let pill {
@@ -270,8 +318,8 @@ struct VenueCard<Corner: View>: View {
 }
 
 extension VenueCard where Corner == EmptyView {
-    init(venue: Venue, detail: String? = nil, pill: String?) {
-        self.init(venue: venue, detail: detail, pill: pill) { EmptyView() }
+    init(venue: Venue, description: String? = nil, pill: String?) {
+        self.init(venue: venue, description: description, pill: pill) { EmptyView() }
     }
 
     /// The card for a venue list: its summary, and how far away it is.
@@ -308,23 +356,18 @@ extension VenueCardLink where Card == VenueCard<EmptyView> {
 /// right, and the name with when and where at the bottom. Featured events are taller.
 struct EventCard: View {
     let event: Event
+    var description: String?
 
     var body: some View {
-        PhotoCard(
-            url: event.bannerURL,
+        RecordCard(
+            title: event.name,
+            description: description ?? event.subtitle,
+            photoURL: event.bannerURL,
             minHeight: event.isFeatured ? CardMetrics.featuredHeight : CardMetrics.photoHeight,
-            topClearance: 68
+            topClearance: 68,
+            titleStyle: event.isFeatured ? .title2 : .title3,
+            descriptionLines: 1
         ) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(event.name)
-                    .font(.hotMess(event.isFeatured ? .title2 : .title3, semibold: true))
-                    .lineLimit(2)
-
-                Text(event.subtitle)
-                    .font(.hotMess(.subheadline, semibold: true))
-                    .lineLimit(1)
-            }
-        } leading: {
             GlassPill(padding: EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8), shape: AnyShape(RoundedRectangle(cornerRadius: HotMessRadius.md))) {
                 VStack(spacing: 0) {
                     Text(event.startDate.formatted(.dateTime.month(.abbreviated)).uppercased())
@@ -345,10 +388,11 @@ struct EventCard: View {
 /// An `EventCard` that opens the event.
 struct EventCardLink: View {
     let event: Event
+    var description: String?
 
     var body: some View {
         NavigationLink(value: AppRoute.event(event.id)) {
-            EventCard(event: event)
+            EventCard(event: event, description: description)
         }
         .buttonStyle(.plain)
     }
@@ -394,24 +438,15 @@ struct SharedEventMessage: View {
     }
 
     private var card: some View {
-        PhotoCard(
-            url: nil,
+        RecordCard(
+            title: name,
+            description: event.startAt.map { $0.formatted(.dateTime.weekday(.wide).hour().minute()) },
+            photoURL: nil,
             minHeight: 112,
             topClearance: event.startAt == nil ? 14 : 64,
+            descriptionLines: 1,
             cornerRadius: ChatMetrics.bubbleRadius
         ) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .font(.hotMess(.title3, semibold: true))
-                    .lineLimit(2)
-
-                if let startAt = event.startAt {
-                    Text(startAt.formatted(.dateTime.weekday(.wide).hour().minute()))
-                        .font(.hotMess(.subheadline, semibold: true))
-                        .lineLimit(1)
-                }
-            }
-        } leading: {
             if let startAt = event.startAt {
                 GlassPill(padding: EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8), shape: AnyShape(RoundedRectangle(cornerRadius: HotMessRadius.md))) {
                     VStack(spacing: 0) {
@@ -434,40 +469,27 @@ struct SharedEventMessage: View {
 // MARK: - People
 
 /// A person as a shorter card: their picture enlarged and blurred behind a sharp
-/// round avatar, with their name and role (or `detail`) beside it, and `friends`
+/// round avatar, with their name and role (or `description`) beside it, and `friends`
 /// with them top right. Profile pictures are small square faces, so filling a
 /// wide card with one sharply would crop the head and show the pixels.
 struct PersonCard: View {
     let person: Person
-    var detail: String?
+    var description: String?
     var friends: [Friend] = []
 
     var body: some View {
-        PhotoCard(
-            url: person.avatarURL,
+        RecordCard(
+            title: person.name,
+            description: description ?? person.role,
+            photoURL: person.avatarURL,
+            portraitURL: person.avatarURL,
+            showsPortrait: true,
             minHeight: CardMetrics.personHeight,
             topClearance: 14,
-            blur: 24,
-            alignment: .leading
+            titleStyle: .headline,
+            descriptionLines: 1,
+            trailingClearance: friends.isEmpty ? 0 : 64
         ) {
-            HStack(spacing: 14) {
-                Avatar(url: person.avatarURL, initials: person.name.initialsForDisplay, size: 56)
-                    .overlay { Circle().strokeBorder(Color.hotMessAvatarRing, lineWidth: 2) }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(person.name)
-                        .font(.hotMess(.headline, semibold: true))
-                        .lineLimit(2)
-
-                    if let line = detail ?? person.role, !line.isEmpty {
-                        Text(line)
-                            .font(.hotMess(.subheadline, semibold: true))
-                            .lineLimit(1)
-                    }
-                }
-            }
-            .padding(.trailing, friends.isEmpty ? 0 : 64)
-        } leading: {
             EmptyView()
         } trailing: {
             if !friends.isEmpty {
@@ -487,12 +509,12 @@ struct PersonCard: View {
 /// A `PersonCard` that opens the person.
 struct PersonCardLink: View {
     let person: Person
-    var detail: String?
+    var description: String?
     var friends: [Friend] = []
 
     var body: some View {
         NavigationLink(value: AppRoute.person(person.id)) {
-            PersonCard(person: person, detail: detail, friends: friends)
+            PersonCard(person: person, description: description, friends: friends)
         }
         .buttonStyle(.plain)
     }

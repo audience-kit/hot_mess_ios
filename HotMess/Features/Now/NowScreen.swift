@@ -275,7 +275,7 @@ struct NowScreen: View {
                     VenueCardLink(venue: entry.venue) {
                         VenueCard(
                             venue: entry.venue,
-                            detail: entry.friends.map(\.name).formatted(.list(type: .and)),
+                            description: entry.friends.map(\.name).formatted(.list(type: .and)),
                             pill: entry.friendCount == 1
                                 ? String(localized: "1 friend")
                                 : String(localized: "\(entry.friendCount) friends")

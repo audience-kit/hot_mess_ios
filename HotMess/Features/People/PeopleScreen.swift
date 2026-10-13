@@ -83,7 +83,7 @@ struct PeopleScreen: View {
                 ForEach(local.playing) { playing in
                     PersonCardLink(
                         person: playing.entry.person,
-                        detail: gigLine(playing.gig),
+                        description: gigLine(playing.gig),
                         friends: playing.entry.friends
                     )
                 }
