@@ -341,6 +341,7 @@ struct VenueCardLink<Card: View>: View {
             card
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("card.venue.\(venue.id)")
     }
 }
 
@@ -395,6 +396,7 @@ struct EventCardLink: View {
             EventCard(event: event, description: description)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("card.event.\(event.id)")
     }
 }
 
@@ -517,6 +519,7 @@ struct PersonCardLink: View {
             PersonCard(person: person, description: description, friends: friends)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("card.person.\(person.id)")
     }
 }
 
