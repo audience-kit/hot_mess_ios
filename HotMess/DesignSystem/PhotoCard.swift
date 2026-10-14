@@ -358,12 +358,13 @@ extension VenueCardLink where Card == VenueCard<EmptyView> {
 struct EventCard: View {
     let event: Event
     var description: String?
+    var photoURL: URL?
 
     var body: some View {
         RecordCard(
             title: event.name,
             description: description ?? event.subtitle,
-            photoURL: event.bannerURL,
+            photoURL: photoURL ?? event.bannerURL,
             minHeight: event.isFeatured ? CardMetrics.featuredHeight : CardMetrics.photoHeight,
             topClearance: 68,
             titleStyle: event.isFeatured ? .title2 : .title3,
@@ -399,10 +400,11 @@ struct EventCard: View {
 struct EventCardLink: View {
     let event: Event
     var description: String?
+    var photoURL: URL?
 
     var body: some View {
         NavigationLink(value: AppRoute.event(event.id)) {
-            EventCard(event: event, description: description)
+            EventCard(event: event, description: description, photoURL: photoURL)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("card.event.\(event.id)")

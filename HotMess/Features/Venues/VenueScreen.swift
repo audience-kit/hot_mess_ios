@@ -90,7 +90,7 @@ struct VenueScreen: View {
                         } else {
                             CardSection(String(localized: "Events")) {
                                 ForEach(overview.events) { event in
-                                    EventCardLink(event: event)
+                                    EventCardLink(event: event, photoURL: event.photoURL(prioritizing: .personFirst, venueFallback: venue))
                                 }
                             }
                         }

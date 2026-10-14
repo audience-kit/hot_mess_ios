@@ -41,6 +41,32 @@ struct Event: Codable, Hashable, Sendable, Identifiable {
         return "\(time) · \(Self.toBeAnnounced)"
     }
 
+    enum PhotoPriority {
+        case venueFirst
+        case personFirst
+        case standard
+    }
+
+    /// Background photo for an event card:
+    /// In a person view, event -> venue -> person (.venueFirst)
+    /// In a venue view, event -> person -> venue (.personFirst)
+    func photoURL(
+        prioritizing: PhotoPriority = .standard,
+        venueFallback: Venue? = nil,
+        personFallback: Person? = nil
+    ) -> URL? {
+        let venueBg = venue?.bannerURL ?? venue?.photoURL ?? venueFallback?.bannerURL ?? venueFallback?.photoURL
+        let personBg = person?.bannerURL ?? person?.avatarURL ?? personFallback?.bannerURL ?? personFallback?.avatarURL
+        switch prioritizing {
+        case .venueFirst:
+            return bannerURL ?? venueBg ?? personBg
+        case .personFirst:
+            return bannerURL ?? personBg ?? venueBg
+        case .standard:
+            return bannerURL ?? venueBg ?? personBg
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, venue, person, rsvp, karaoke
         case startDate = "start_at"

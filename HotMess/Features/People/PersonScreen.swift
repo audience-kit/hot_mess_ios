@@ -57,21 +57,23 @@ struct PersonScreen: View {
                         } else {
                             CardSection(String(localized: "Events")) {
                                 ForEach(detail.events) { event in
-                                    EventCardLink(event: event)
+                                    EventCardLink(event: event, photoURL: event.photoURL(prioritizing: .venueFirst, personFallback: detail.person))
                                 }
                             }
                         }
 
-                        DetailSection {
-                            ForEach(detail.tracks) { track in
-                                trackRow(track)
+                        if !detail.tracks.isEmpty {
+                            DetailSection(String(localized: "Tracks")) {
+                                ForEach(detail.tracks) { track in
+                                    trackRow(track)
+                                }
+                            } footer: {
+                                Image("PoweredBySoundCloud")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 20)
+                                    .accessibilityLabel(String(localized: "Powered by SoundCloud"))
                             }
-                        } footer: {
-                            Image("PoweredBySoundCloud")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 20)
-                                .accessibilityLabel(String(localized: "Powered by SoundCloud"))
                         }
                     }
                     .padding(.bottom, 24)
