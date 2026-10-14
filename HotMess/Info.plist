@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ApplePayMerchantID</key>
+	<string>$(APPLE_PAY_MERCHANT_ID)</string>
+	<key>AudienceKitAudienceID</key>
+	<string>$(AUDIENCE_ID)</string>
+	<key>AudienceKitEnvironment</key>
+	<string>$(AUDIENCEKIT_ENVIRONMENT)</string>
+	<key>AudienceKitHost</key>
+	<string>$(AUDIENCE_HOST)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -18,8 +26,6 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -39,24 +45,18 @@
 			</array>
 		</dict>
 	</array>
-	<key>ApplePayMerchantID</key>
-	<string>$(APPLE_PAY_MERCHANT_ID)</string>
-	<key>AudienceKitEnvironment</key>
-	<string>$(AUDIENCEKIT_ENVIRONMENT)</string>
-	<key>AudienceKitAudienceID</key>
-	<string>$(AUDIENCE_ID)</string>
-	<key>AudienceKitHost</key>
-	<string>$(AUDIENCE_HOST)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>FacebookAdvertiserIDCollectionEnabled</key>
 	<false/>
 	<key>FacebookAppID</key>
 	<string>$(FACEBOOK_APP_ID)</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<false/>
 	<key>FacebookClientToken</key>
 	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
 	<key>FacebookDisplayName</key>
 	<string>Hot Mess</string>
-	<key>FacebookAutoLogAppEventsEnabled</key>
-	<false/>
 	<key>HotMessAPNSEnvironment</key>
 	<string>$(APNS_ENVIRONMENT)</string>
 	<key>HotMessBeaconID</key>
@@ -82,10 +82,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Hot Mess uses your camera to scan your payment card when you pay a venue’s cover charge.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Hot Mess listens for beacons in venues so it can tell which room you are in.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Hot Mess uses your camera to scan your payment card when you pay a venue’s cover charge.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Hot Mess notices when you arrive at or leave a venue, even with the app closed, so your friends see where you are and venues can tell how busy they are.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -120,16 +120,16 @@
 	</dict>
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
