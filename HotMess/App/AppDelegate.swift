@@ -24,6 +24,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             didFinishLaunchingWithOptions: launchOptions
         )
 
+        // Ensure the Facebook SDK makes no tracking or event calls beyond login
+        Settings.shared.isAutoLogAppEventsEnabled = false
+        Settings.shared.isAdvertiserIDCollectionEnabled = false
+
         // Set before launch finishes, so a tap or an action that launched
         // the app is delivered here.
         UNUserNotificationCenter.current().delegate = self

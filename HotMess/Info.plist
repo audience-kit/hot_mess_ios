@@ -92,6 +92,8 @@
 	<string>Hot Mess uses your location to recommend venues and events near you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Hot Mess accesses your photo library so you can send photographs to venue chat rooms.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Hot Mess connects with Facebook to find your friends and events at nearby venues.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Figtree-Regular.ttf</string>

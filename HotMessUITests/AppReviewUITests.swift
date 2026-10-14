@@ -73,8 +73,12 @@ final class AppReviewUITests: XCTestCase {
                 XCTFail("Sign in failed: \(app.alerts.firstMatch.label)")
                 return
             }
-            let permission = [springboard.alerts.buttons["Continue"], app.alerts.buttons["Continue"]]
-                .first { $0.exists && $0.isHittable }
+            let permission = [
+                springboard.alerts.buttons["Allow Tracking"],
+                springboard.alerts.buttons["Allow"],
+                springboard.alerts.buttons["Continue"],
+                app.alerts.buttons["Continue"],
+            ].first { $0.exists && $0.isHittable }
             if let permission {
                 sleep(2)
                 permission.tap()
