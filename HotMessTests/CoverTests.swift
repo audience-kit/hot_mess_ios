@@ -218,6 +218,16 @@ struct CoverPaymentTests {
         #expect(SquarePaymentMethod.available(canUseApplePay: false, merchantID: "merchant.social.hotmess") == [.card])
         #expect(SquarePaymentMethod.available(canUseApplePay: true, merchantID: nil) == [.card])
         #expect(SquarePaymentMethod.available(canUseApplePay: true, merchantID: "") == [.card])
+        #expect(SquarePaymentMethod.available(canUseApplePay: false, merchantID: "merchant.social.hotmess", isReview: true) == [.applePay, .card])
+    }
+
+    @Test("Review demo cover charge is payable and formatted")
+    func reviewDemoCover() {
+        let demo = CoverCharge.reviewDemo()
+        #expect(demo.payable)
+        #expect(demo.amount == Money(cents: 1000))
+        #expect(demo.total == Money(cents: 1000))
+        #expect(demo.summary(isTonight: true).contains("10"))
     }
 
     @Test("Apple Pay charges the all-in price in currency units")

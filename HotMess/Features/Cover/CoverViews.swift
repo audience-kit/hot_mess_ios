@@ -48,6 +48,13 @@ struct CoverSection: View {
     let admission: Admission?
     let venueID: UUID?
     let venueName: String
+    var isReviewMode: Bool = false
+
+    @Environment(AppModel.self) private var model
+
+    private var effectiveReviewMode: Bool {
+        isReviewMode || model.isReviewMode
+    }
 
     var body: some View {
         DetailSection(String(localized: "Cover")) {
@@ -59,8 +66,23 @@ struct CoverSection: View {
             if let admission, admission.isPaid {
                 ShowPassButton(admission: admission)
             } else if isTonight, let coverCharge {
-                if coverCharge.payable, let venueID {
+                if (coverCharge.payable || effectiveReviewMode), let venueID {
                     PayCoverButton(venueID: venueID, venueName: venueName)
+                    #if canImport(PassKit)
+                    ApplePayButton(type: .plain, style: .white) {
+                        Task {
+                            await model.checkout.payWithApplePay(
+                                venueID: venueID,
+                                venueName: venueName,
+                                isReview: effectiveReviewMode
+                            )
+                        }
+                    }
+                    .frame(height: 50)
+                    .clipShape(Capsule())
+                    .disabled(model.checkout.isBusy)
+                    .accessibilityIdentifier("cover.applePay")
+                    #endif
                 } else if !coverCharge.payable {
                     Text("Pay at the door")
                         .font(.hotMess(.subheadline))
@@ -81,7 +103,7 @@ struct PayCoverButton: View {
 
     var body: some View {
         Button {
-            Task { await model.checkout.pay(venueID: venueID, venueName: venueName) }
+            Task { await model.checkout.pay(venueID: venueID, venueName: venueName, isReview: model.isReviewMode) }
         } label: {
             HStack(spacing: 8) {
                 if model.checkout.isPaying(for: venueID) {
@@ -213,3 +235,35 @@ struct TonightPassCard: View {
         .accessibilityIdentifier("cover.tonightPass")
     }
 }
+
+// MARK: - Native Apple Pay Button
+
+#if canImport(PassKit)
+import PassKit
+
+/// A native Apple Pay button rendered via PassKit PKPaymentButton.
+struct ApplePayButton: UIViewRepresentable {
+    var type: PKPaymentButtonType = .plain
+    var style: PKPaymentButtonStyle = .white
+    var action: () -> Void
+
+    func makeUIView(context: Context) -> PKPaymentButton {
+        let button = PKPaymentButton(paymentButtonType: type, paymentButtonStyle: style)
+        button.cornerRadius = 24
+        button.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
+        return button
+    }
+
+    func updateUIView(_ uiView: PKPaymentButton, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(action: action)
+    }
+
+    final class Coordinator: NSObject {
+        let action: () -> Void
+        init(action: @escaping () -> Void) { self.action = action }
+        @objc func tapped() { action() }
+    }
+}
+#endif

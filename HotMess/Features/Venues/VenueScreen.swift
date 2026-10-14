@@ -30,13 +30,16 @@ struct VenueScreen: View {
                             heroText(venue)
                         }
 
-                        if overview.coverCharge != nil || overview.viewerAdmission?.isPaid == true {
+                        let isReview = model.isReviewMode
+                        let coverCharge = overview.coverCharge ?? (isReview ? CoverCharge.reviewDemo() : nil)
+                        if coverCharge != nil || overview.viewerAdmission?.isPaid == true {
                             CoverSection(
-                                coverCharge: overview.coverCharge,
+                                coverCharge: coverCharge,
                                 isTonight: true,
                                 admission: overview.viewerAdmission,
                                 venueID: venue.id,
-                                venueName: venue.name
+                                venueName: venue.name,
+                                isReviewMode: isReview
                             )
                         }
                         if !overview.onNow.isEmpty {
@@ -209,29 +212,37 @@ struct VenueScreen: View {
     @ViewBuilder
     private func testingSection(_ venue: Venue) -> some View {
         let isTestBuild = model.configuration.isTestBuild
-        let isReview = model.safety.canPretendLocation
-        if isTestBuild || isReview, let coordinate = venue.coordinate {
+        let isReview = model.safety.canPretendLocation || model.isReviewMode
+        if isTestBuild || isReview {
             DetailSection(isTestBuild ? String(localized: "Testing") : String(localized: "App Review")) {
-                if model.location.simulatedVenueName == venue.name {
-                    Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
-                        Task {
-                            await model.location.stopSimulating()
-                            await viewModel?.load()
+                if let coordinate = venue.coordinate {
+                    if model.location.simulatedVenueName == venue.name {
+                        Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
+                            Task {
+                                await model.location.stopSimulating()
+                                await viewModel?.load()
+                            }
+                        }
+                    } else {
+                        Button(String(localized: "Pretend I'm here"), systemImage: "location.fill") {
+                            // Reload once the visit is recorded, so the chat row appears.
+                            Task {
+                                await model.location.simulate(at: coordinate, venueName: venue.name, allowed: isReview)
+                                await viewModel?.load()
+                            }
                         }
                     }
-                } else {
-                    Button(String(localized: "Pretend I'm here"), systemImage: "location.fill") {
-                        // Reload once the visit is recorded, so the chat row appears.
-                        Task {
-                            await model.location.simulate(at: coordinate, venueName: venue.name, allowed: isReview)
-                            await viewModel?.load()
-                        }
+                }
+
+                Button(String(localized: "Test Apple Pay"), systemImage: "creditcard") {
+                    Task {
+                        await model.checkout.payWithApplePay(venueID: venue.id, venueName: venue.name, isReview: true)
                     }
                 }
             } footer: {
                 Text(isTestBuild
-                    ? String(localized: "Test builds only. Reports this venue's location instead of yours until you stop.")
-                    : String(localized: "For App Review. Reports this venue's location instead of yours until you stop, so you can try its chat."))
+                    ? String(localized: "Test builds only. Reports this venue's location instead of yours until you stop, and lets you test Apple Pay.")
+                    : String(localized: "For App Review. Test Apple Pay and report this venue's location instead of yours until you stop, so you can try its chat."))
                     .font(.hotMess(.footnote))
                     .foregroundStyle(.secondary)
             }

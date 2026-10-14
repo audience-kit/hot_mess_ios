@@ -47,6 +47,16 @@ final class AppModel {
     /// send sheet on a venue), so Now reloads.
     private(set) var pingRevision = 0
 
+    /// Whether the app is running in review or test mode, enabling features like pretending
+    /// location and demonstrating Apple Pay on all venues.
+    var isReviewMode: Bool {
+        configuration.isTestBuild
+            || safety.canPretendLocation
+            || !safety.hasFacebook
+            || ProcessInfo.processInfo.arguments.contains("-HotMessReviewMode")
+            || UserDefaults.standard.bool(forKey: "HotMessReviewMode")
+    }
+
     static let shared = AppModel()
 
     init(configuration: AppConfiguration = AppConfiguration()) {
