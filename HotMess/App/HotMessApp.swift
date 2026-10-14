@@ -18,13 +18,11 @@ struct HotMessApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-#if DEBUG
                 if let fixture = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) {
                     KaraokeUITestScreen(mode: String(fixture.split(separator: "=").last ?? "venue"))
-                } else { RootView() }
-#else
-                RootView()
-#endif
+                } else {
+                    RootView()
+                }
             }
                 .environment(model)
                 .tint(model.brand.accent)
@@ -48,9 +46,7 @@ struct HotMessApp: App {
     }
 
     private func start() async {
-#if DEBUG
         if ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) { return }
-#endif
         await model.start()
     }
 

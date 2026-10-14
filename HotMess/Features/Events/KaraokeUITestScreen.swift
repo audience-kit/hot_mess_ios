@@ -1,4 +1,3 @@
-#if DEBUG
 import SwiftUI
 
 /// A deterministic UI fixture that exercises the production card, section and Link without changing a live session.
@@ -21,4 +20,3 @@ struct KaraokeUITestScreen: View {
         }.environment(\.openURL, OpenURLAction { url in openedURL = url.absoluteString; return .handled })
     }
 }
-#endif
