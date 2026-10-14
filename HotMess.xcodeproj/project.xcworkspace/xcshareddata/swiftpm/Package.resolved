@@ -4,7 +4,7 @@
     {
       "identity": "audience-kit-sdk-swift",
       "kind": "remoteSourceControl",
-      "location": "https://github.com/audience-kit/audience-kit-sdk-swift.git",
+      "location": "https://github.com/lwm-luminx/audience-kit-sdk-swift.git",
       "state": {
         "revision": "8235020bb267f96c98936ca4657c8a0e2d118e8a"
       }

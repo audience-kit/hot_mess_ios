@@ -770,7 +770,7 @@
 		};
 		AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit-sdk-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/audience-kit/audience-kit-sdk-swift.git";
+			repositoryURL = "https://github.com/lwm-luminx/audience-kit-sdk-swift.git";
 			requirement = {
 				revision = 8235020bb267f96c98936ca4657c8a0e2d118e8a;
 				kind = revision;
@@ -825,10 +825,11 @@
 			package = AC0000000000000000000084 /* XCRemoteSwiftPackageReference "in-app-payments-ios" */;
 			productName = SquareInAppPaymentsSDK;
 		};
-        ACAD00000000000000000001 /* AudienceKitUI */ = {
-            isa = XCSwiftPackageProductDependency;
-            productName = AudienceKitUI;
-        };
+		ACAD00000000000000000001 /* AudienceKitUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC0000000000000000000082 /* XCRemoteSwiftPackageReference "audience-kit-sdk-swift" */;
+			productName = AudienceKitUI;
+		};
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AC0000000000000000000001 /* Project object */;
