@@ -15,6 +15,8 @@ struct PingSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var composer: PingComposer?
+    @State private var isPromptingFacebook = false
+    @State private var connectErrorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -36,6 +38,7 @@ struct PingSheet: View {
             }
         }
         .task {
+            async let safetyLoad: Void = model.safety.load()
             if composer == nil {
                 composer = PingComposer(
                     api: model.api,
@@ -44,11 +47,53 @@ struct PingSheet: View {
                     seed: seed
                 )
             }
-            await composer?.load()
+            _ = await (safetyLoad, composer?.load())
+        }
+        .alert(
+            String(localized: "Connect Facebook to See Friends"),
+            isPresented: $isPromptingFacebook
+        ) {
+            Button(String(localized: "Connect Facebook")) {
+                Task {
+                    do {
+                        if try await model.connectFacebook() {
+                            performSend()
+                        }
+                    } catch {
+                        connectErrorMessage = error.localizedDescription
+                    }
+                }
+            }
+            Button(String(localized: "Send Anyway")) {
+                performSend()
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: {
+            Text("Connecting Facebook is required to see your friends and share your pings with them.")
+        }
+        .alert(
+            String(localized: "Couldn't connect Facebook"),
+            isPresented: Binding(
+                get: { connectErrorMessage != nil },
+                set: { if !$0 { connectErrorMessage = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(connectErrorMessage ?? "")
         }
     }
 
     private func send() {
+        if !model.safety.hasFacebook && !model.hasPromptedFacebookOnPing {
+            model.hasPromptedFacebookOnPing = true
+            isPromptingFacebook = true
+            return
+        }
+        performSend()
+    }
+
+    private func performSend() {
         Task {
             guard let ping = await composer?.send() else { return }
             onSent(ping)
@@ -59,6 +104,7 @@ struct PingSheet: View {
 }
 
 private struct PingComposerForm: View {
+    @Environment(AppModel.self) private var model
     @Bindable var composer: PingComposer
     let send: () -> Void
 

@@ -5,6 +5,7 @@
 
 import AudienceKit
 import Foundation
+import StoreKit
 
 /// Values baked into the bundle by the per-environment `.xcconfig` files.
 ///
@@ -147,9 +148,23 @@ struct AppConfiguration: Sendable, Hashable {
         return components.url
     }
 
-    /// TestFlight builds carry a sandbox receipt.
+    private static let environmentTask = Task<AppStore.Environment?, Never> {
+        do {
+            let result = try await AppTransaction.shared
+            switch result {
+            case .verified(let transaction), .unverified(let transaction, _):
+                return transaction.environment
+            }
+        } catch {
+            return nil
+        }
+    }
+
+    /// TestFlight builds report `.sandbox` as their App Store environment.
     var isTestFlight: Bool {
-        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        get async {
+            await Self.environmentTask.value == .sandbox
+        }
     }
 }
 

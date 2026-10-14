@@ -43,7 +43,7 @@ enum HotMessDecoding {
 
     /// `en_US_POSIX` keeps parsing stable on devices whose locale would
     /// otherwise reinterpret the fixed format — the original app omitted it.
-    nonisolated(unsafe) private static let fractionalSeconds: DateFormatter = {
+    private static let fractionalSeconds: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Foundation.Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)

@@ -131,3 +131,29 @@ struct GeometryTests {
         #expect(polygon.exteriorCoordinates.count == 1)
     }
 }
+
+@Suite("Facebook connection prompt")
+struct FacebookPromptTests {
+    @Test("Tracks whether the user has been prompted for Facebook on ping and chat")
+    @MainActor
+    func promptedFlags() {
+        let model = AppModel.shared
+        UserDefaults.standard.removeObject(forKey: "hasPromptedFacebookOnPing")
+        UserDefaults.standard.removeObject(forKey: "hasPromptedFacebookOnChat")
+
+        #expect(!model.hasPromptedFacebookOnPing)
+        #expect(!model.hasPromptedFacebookOnChat)
+
+        model.hasPromptedFacebookOnPing = true
+        #expect(model.hasPromptedFacebookOnPing)
+        #expect(!model.hasPromptedFacebookOnChat)
+
+        model.hasPromptedFacebookOnChat = true
+        #expect(model.hasPromptedFacebookOnChat)
+
+        model.signOut()
+        #expect(!model.hasPromptedFacebookOnPing)
+        #expect(!model.hasPromptedFacebookOnChat)
+    }
+}
+

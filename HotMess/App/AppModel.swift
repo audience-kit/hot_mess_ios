@@ -57,6 +57,21 @@ final class AppModel {
             || UserDefaults.standard.bool(forKey: "HotMessReviewMode")
     }
 
+    private static let promptedFacebookOnPingKey = "hasPromptedFacebookOnPing"
+    private static let promptedFacebookOnChatKey = "hasPromptedFacebookOnChat"
+
+    /// Whether the user has been told that connecting Facebook is required to see friends when sending a ping.
+    var hasPromptedFacebookOnPing: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.promptedFacebookOnPingKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.promptedFacebookOnPingKey) }
+    }
+
+    /// Whether the user has been told that connecting Facebook is required to see friends in chat.
+    var hasPromptedFacebookOnChat: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.promptedFacebookOnChatKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.promptedFacebookOnChatKey) }
+    }
+
     static let shared = AppModel()
 
     init(configuration: AppConfiguration = AppConfiguration()) {
@@ -144,6 +159,8 @@ final class AppModel {
         safety.forget()
         notifications.reset()
         location.forget()
+        UserDefaults.standard.removeObject(forKey: Self.promptedFacebookOnPingKey)
+        UserDefaults.standard.removeObject(forKey: Self.promptedFacebookOnChatKey)
         Task { [cable] in await cable.disconnect() }
     }
 

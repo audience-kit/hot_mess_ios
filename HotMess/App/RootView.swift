@@ -121,6 +121,7 @@ struct UpdateRequiredView: View {
     let versionInfo: VersionInfo?
 
     @Environment(AppModel.self) private var model
+    @State private var isTestFlight = false
 
     var body: some View {
         ContentUnavailableView {
@@ -128,10 +129,13 @@ struct UpdateRequiredView: View {
         } description: {
             Text(description)
         }
+        .task {
+            isTestFlight = await model.configuration.isTestFlight
+        }
     }
 
     private var description: String {
-        let source = model.configuration.isTestFlight
+        let source = isTestFlight
             ? String(localized: "TestFlight")
             : String(localized: "the App Store")
 

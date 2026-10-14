@@ -42,6 +42,31 @@ struct VenueScreen: View {
                                 isReviewMode: isReview
                             )
                         }
+                        if let coatCheck = coverCharge?.coatCheck {
+                            if overview.viewerCoatCheck?.isPaid == true || overview.viewerAdmission?.isPaid == true {
+                                CoatCheckSection(
+                                    coatCheck: coatCheck,
+                                    admission: overview.viewerCoatCheck,
+                                    venueID: venue.id,
+                                    venueName: venue.name,
+                                    isReviewMode: isReview
+                                )
+                            }
+                        } else if let viewerCoatCheck = overview.viewerCoatCheck, viewerCoatCheck.isPaid {
+                            CoatCheckSection(
+                                coatCheck: CoatCheckCharge(
+                                    amount: viewerCoatCheck.total,
+                                    fee: Money(cents: 0, currency: viewerCoatCheck.total.currency),
+                                    total: viewerCoatCheck.total,
+                                    night: viewerCoatCheck.night,
+                                    payable: false
+                                ),
+                                admission: viewerCoatCheck,
+                                venueID: venue.id,
+                                venueName: venue.name,
+                                isReviewMode: isReview
+                            )
+                        }
                         if !overview.onNow.isEmpty {
                             OnNowSection(appearances: overview.onNow)
                         }

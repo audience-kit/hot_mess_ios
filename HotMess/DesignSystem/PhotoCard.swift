@@ -24,6 +24,8 @@ enum CardMetrics {
 /// scrim, otherwise white text over the lightest scrim that does. `leading` and
 /// `trailing` sit in the top corners and bring their own backgrounds. With no
 /// photo the card is the accent gradient with white text.
+private let photoCardCoordinateSpace = "photoCard"
+
 struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
     let url: URL?
     var minHeight: CGFloat = CardMetrics.photoHeight
@@ -46,19 +48,17 @@ struct PhotoCard<Content: View, Leading: View, Trailing: View>: View {
     @State private var size: CGSize = .zero
     @State private var textFrame: CGRect = .zero
 
-    private static var space: String { "photoCard" }
-
     var body: some View {
         content
             .foregroundStyle(tone.textColor)
             .photoTextShadow(tone)
             .animation(HotMessMotion.quick, value: tone)
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { textFrame = $0 }
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(photoCardCoordinateSpace)) } action: { textFrame = $0 }
             .padding(.horizontal, 18)
             .padding(.top, topClearance)
             .padding(.bottom, 14)
             .frame(maxWidth: .infinity, minHeight: minHeight, alignment: alignment)
-            .coordinateSpace(.named(Self.space))
+            .coordinateSpace(.named(photoCardCoordinateSpace))
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
             .background {
                 photo

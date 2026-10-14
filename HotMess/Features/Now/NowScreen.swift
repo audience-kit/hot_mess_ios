@@ -198,6 +198,12 @@ struct NowScreen: View {
                 SkipTheLineCard(venue: venue, coverCharge: coverCharge)
             }
 
+            if let coatPass = now.viewerCoatCheck, coatPass.isPaid {
+                TonightPassCard(admission: coatPass)
+            } else if let coatCheck = now.coverCharge?.coatCheck, coatCheck.payable {
+                CoatCheckCard(venue: venue, coatCheck: coatCheck)
+            }
+
             if !now.onNow.isEmpty {
                 OnNowSection(appearances: now.onNow)
             }

@@ -35,6 +35,8 @@ struct VenueChatScreen: View {
     @State private var blockTarget: ChatThreadMessage?
     @State private var deleteTarget: ChatThreadMessage?
     @State private var failureMessage: String?
+    @State private var isPromptingFacebook = false
+    @State private var isConnectingFacebook = false
 
     var body: some View {
         Group {
@@ -137,6 +139,34 @@ struct VenueChatScreen: View {
             Button(String(localized: "OK"), role: .cancel) {}
         } message: { message in
             Text(message)
+        }
+        .alert(
+            String(localized: "Connect Facebook to See Friends"),
+            isPresented: $isPromptingFacebook
+        ) {
+            Button(String(localized: "Connect Facebook")) {
+                Task {
+                    isConnectingFacebook = true
+                    defer { isConnectingFacebook = false }
+                    do {
+                        if try await model.connectFacebook() {
+                            if let viewModel {
+                                performChatSend(viewModel)
+                            }
+                        }
+                    } catch {
+                        failureMessage = error.localizedDescription
+                    }
+                }
+            }
+            Button(String(localized: "Send Anyway")) {
+                if let viewModel {
+                    performChatSend(viewModel)
+                }
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: {
+            Text("Connecting Facebook is required to see your friends in chat and know when they're out.")
         }
     }
 
@@ -330,9 +360,22 @@ struct VenueChatScreen: View {
     private func composer(_ viewModel: VenueChatViewModel) -> some View {
         @Bindable var viewModel = viewModel
 
-        return ChatComposer(text: $viewModel.draft, canSend: viewModel.canSend) {
-            Task { await viewModel.send() }
+        return ChatComposer(text: $viewModel.draft, canSend: viewModel.canSend && !isConnectingFacebook) {
+            handleChatSend(viewModel)
         }
+    }
+
+    private func handleChatSend(_ viewModel: VenueChatViewModel) {
+        if !model.safety.hasFacebook && !model.hasPromptedFacebookOnChat {
+            model.hasPromptedFacebookOnChat = true
+            isPromptingFacebook = true
+            return
+        }
+        performChatSend(viewModel)
+    }
+
+    private func performChatSend(_ viewModel: VenueChatViewModel) {
+        Task { await viewModel.send() }
     }
 
     private func makeViewModel() -> VenueChatViewModel {

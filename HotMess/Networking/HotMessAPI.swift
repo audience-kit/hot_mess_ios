@@ -97,6 +97,7 @@ struct HotMessAPI: Sendable {
             recentMessages: venue.recentMessages,
             coverCharge: venue.coverCharge,
             viewerAdmission: venue.viewerAdmission,
+            viewerCoatCheck: venue.viewerCoatCheck,
             onNow: venue.onNow,
             friendPings: venue.friendPings
         )
@@ -137,12 +138,32 @@ struct HotMessAPI: Sendable {
 
     /// Starts paying tonight's cover at a venue. Asking again the same night
     /// returns the same pass and payment.
-    func buyCover(venueID: UUID) async throws -> CoverPurchase {
-        try await query(
+    func buyCover(venueID: UUID, quantity: Int = 1, tier: String? = nil) async throws -> CoverPurchase {
+        var variables: [String: GraphQLValue] = [
+            "venueId": .string(venueID.uuidString),
+            "quantity": .int(quantity),
+        ]
+        if let tier {
+            variables["tier"] = .string(tier)
+        }
+        return try await query(
             Documents.buyCover,
-            variables: ["venueId": .string(venueID.uuidString)],
+            variables: variables,
             as: BuyCoverResponse.self
         ).buyCover
+    }
+
+    /// Starts paying tonight's coat check at a venue.
+    func buyCoatCheck(venueID: UUID, quantity: Int = 1) async throws -> CoverPurchase {
+        let variables: [String: GraphQLValue] = [
+            "venueId": .string(venueID.uuidString),
+            "quantity": .int(quantity),
+        ]
+        return try await query(
+            Documents.buyCoatCheck,
+            variables: variables,
+            as: BuyCoatCheckResponse.self
+        ).buyCoatCheck
     }
 
     /// Pays a Square venue's cover with a payment token (nonce) from Square's
@@ -557,12 +578,15 @@ extension HotMessAPI {
         static let moneyFields = "cents currency"
 
         static let coverChargeFields = """
-        amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } night from until payable
+        amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } \
+        night from until payable payment_mechanisms: paymentMechanisms \
+        tiers { id name amount { \(moneyFields) } total { \(moneyFields) } description } \
+        coat_check: coatCheck { amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } night payable payment_mechanisms: paymentMechanisms }
         """
 
         /// `profile` is the buyer: the pass shows their name and avatar.
         static let admissionFields = """
-        id status night total { \(moneyFields) } is_refundable: isRefundable \
+        id status night total { \(moneyFields) } quantity tier kind claim_check_number: claimCheckNumber is_refundable: isRefundable \
         pass_secret: passSecret scan_count: scanCount checked_in_at: checkedInAt \
         profile { id name avatar_url: avatarUrl } \
         venue { id name photo_url: photoUrl } event { id name }
@@ -574,6 +598,7 @@ extension HotMessAPI {
         tickets { cover { \
         cover_charge: charge { \(coverChargeFields) } \
         viewer_admission: viewerAdmission { \(admissionFields) } \
+        viewer_coat_check: viewerCoatCheck { \(admissionFields) } \
         } }
         """
 
@@ -659,8 +684,22 @@ extension HotMessAPI {
         """
 
         static let buyCover = """
-        mutation BuyCover($venueId: ID!) {
-          buyCover(input: { venueId: $venueId }) {
+        mutation BuyCover($venueId: ID!, $quantity: Int, $tier: String) {
+          buyCover(input: { venueId: $venueId, quantity: $quantity, tier: $tier }) {
+            admission { \(admissionFields) }
+            payment_intent_client_secret: paymentIntentClientSecret
+            publishable_key: publishableKey
+            stripe_account_id: stripeAccountId
+            provider
+            square_application_id: squareApplicationId
+            square_location_id: squareLocationId
+          }
+        }
+        """
+
+        static let buyCoatCheck = """
+        mutation BuyCoatCheck($venueId: ID!, $quantity: Int) {
+          buyCoatCheck(input: { venueId: $venueId, quantity: $quantity }) {
             admission { \(admissionFields) }
             payment_intent_client_secret: paymentIntentClientSecret
             publishable_key: publishableKey
@@ -867,6 +906,8 @@ struct VenueWithEvents: Decodable, Sendable {
     let coverCharge: CoverCharge?
     /// The user's cover tonight, paid or being paid.
     let viewerAdmission: Admission?
+    /// The user's coat check tonight, paid or being paid.
+    let viewerCoatCheck: Admission?
     /// Who is on there right now, by start.
     let onNow: [Appearance]
     let friendPings: [Ping]
@@ -893,6 +934,7 @@ struct VenueWithEvents: Decodable, Sendable {
         let cover = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
         coverCharge = cover?.coverCharge
         viewerAdmission = cover?.viewerAdmission
+        viewerCoatCheck = cover?.viewerCoatCheck
         // Who's on comes through the people mixin; missing reads as no one.
         onNow = (try? container.decodeIfPresent(VenuePeopleMixin.self, forKey: .people))?.onNow ?? []
         // Friends' Pings come through the ping mixin; missing reads as none.
@@ -933,6 +975,10 @@ struct EventResponse: Decodable, Sendable {
 
 struct BuyCoverResponse: Decodable, Sendable {
     let buyCover: CoverPurchase
+}
+
+struct BuyCoatCheckResponse: Decodable, Sendable {
+    let buyCoatCheck: CoverPurchase
 }
 
 struct AdmissionPayload: Decodable, Sendable {

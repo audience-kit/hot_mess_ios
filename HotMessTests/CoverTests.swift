@@ -129,6 +129,118 @@ struct CoverDecodingTests {
         #expect(now.coverCharge?.payable == true)
         #expect(now.viewerAdmission?.isPaid == true)
     }
+
+    @Test("Reads a pass with quantity and tier, defaulting quantity to 1 when omitted")
+    func admissionQuantityAndTier() throws {
+        let defaultAdmission = try decode(Admission.self, from: Self.admission)
+        #expect(defaultAdmission.quantity == 1)
+        #expect(defaultAdmission.tier == nil)
+
+        let multipleJson = """
+        {
+          "id": "7d9f2c1e-3b4a-4e5f-8a6b-1c2d3e4f5a6b",
+          "status": "PAID",
+          "night": "2026-10-09",
+          "total": { "cents": 2224, "currency": "usd" },
+          "quantity": 2,
+          "tier": "vip"
+        }
+        """
+        let multipleAdmission = try decode(Admission.self, from: multipleJson)
+        #expect(multipleAdmission.quantity == 2)
+        #expect(multipleAdmission.tier == "vip")
+    }
+
+    @Test("Reads payment mechanisms and tiers on cover charge")
+    func coverChargeMechanismsAndTiers() throws {
+        let json = """
+        {
+          "amount": { "cents": 1000, "currency": "usd" },
+          "fee": { "cents": 112, "currency": "usd" },
+          "total": { "cents": 1112, "currency": "usd" },
+          "night": "2026-10-09",
+          "payable": true,
+          "payment_mechanisms": ["apple_pay"],
+          "tiers": [
+            {
+              "id": "general",
+              "name": "General Admission",
+              "description": "Standard entry",
+              "amount": { "cents": 1000, "currency": "usd" },
+              "fee": { "cents": 112, "currency": "usd" },
+              "total": { "cents": 1112, "currency": "usd" }
+            },
+            {
+              "id": "vip",
+              "name": "VIP",
+              "amount": { "cents": 2500, "currency": "usd" },
+              "fee": { "cents": 250, "currency": "usd" },
+              "total": { "cents": 2750, "currency": "usd" }
+            }
+          ]
+        }
+        """
+        let cover = try decode(CoverCharge.self, from: json)
+        #expect(cover.paymentMechanisms == ["apple_pay"])
+        #expect(cover.supportsApplePay)
+        #expect(!cover.hasOtherPaymentMechanisms)
+        #expect(cover.tiers?.count == 2)
+        #expect(cover.tiers?[1].id == "vip")
+        #expect(cover.tiers?[1].total(for: 2) == Money(cents: 5500, currency: "usd"))
+        #expect(cover.total(for: 3) == Money(cents: 3336, currency: "usd"))
+    }
+
+    @Test("Reads coat check on cover charge and coat check pass on Now")
+    func coatCheckDecoding() throws {
+        let json = """
+        {
+          "amount": { "cents": 1000, "currency": "usd" },
+          "fee": { "cents": 112, "currency": "usd" },
+          "total": { "cents": 1112, "currency": "usd" },
+          "night": "2026-10-09",
+          "payable": true,
+          "coat_check": {
+            "amount": { "cents": 500, "currency": "usd" },
+            "fee": { "cents": 50, "currency": "usd" },
+            "total": { "cents": 550, "currency": "usd" },
+            "night": "2026-10-09",
+            "payable": true,
+            "payment_mechanisms": ["apple_pay", "card"]
+          }
+        }
+        """
+        let cover = try decode(CoverCharge.self, from: json)
+        let coatCheck = try #require(cover.coatCheck)
+        #expect(coatCheck.amount == Money(cents: 500, currency: "usd"))
+        #expect(coatCheck.fee == Money(cents: 50, currency: "usd"))
+        #expect(coatCheck.total == Money(cents: 550, currency: "usd"))
+        #expect(coatCheck.payable)
+        #expect(coatCheck.supportsApplePay)
+        #expect(coatCheck.hasOtherPaymentMechanisms)
+        #expect(coatCheck.price(for: 2).contains("11"))
+        #expect(coatCheck.total(for: 2) == Money(cents: 1100, currency: "usd"))
+    }
+
+    @Test("Reads coat check admission with kind and claim check number")
+    func coatCheckAdmission() throws {
+        let json = """
+        {
+          "id": "cc-pass-123",
+          "status": "PAID",
+          "night": "2026-10-09",
+          "total": { "cents": 550, "currency": "usd" },
+          "quantity": 2,
+          "kind": "COAT_CHECK",
+          "claim_check_number": "42"
+        }
+        """
+        let admission = try decode(Admission.self, from: json)
+        #expect(admission.id == "cc-pass-123")
+        #expect(admission.kind == .coatCheck)
+        #expect(admission.isCoatCheck)
+        #expect(admission.claimCheckNumber == "42")
+        #expect(admission.quantity == 2)
+    }
 }
 
 @Suite("Paying cover")
@@ -228,6 +340,59 @@ struct CoverPaymentTests {
         #expect(demo.amount == Money(cents: 1000))
         #expect(demo.total == Money(cents: 1000))
         #expect(demo.summary(isTonight: true).contains("10"))
+        #expect(demo.supportsApplePay)
+        #expect(!demo.hasOtherPaymentMechanisms)
+    }
+
+    @Test("Payment mechanisms properly indicate whether only Apple Pay is supported")
+    func paymentMechanismsDetection() {
+        let onlyApplePay = CoverCharge(
+            amount: Money(cents: 1000),
+            total: Money(cents: 1112),
+            night: "2026-10-09",
+            payable: true,
+            paymentMechanisms: ["apple_pay"]
+        )
+        #expect(onlyApplePay.supportsApplePay)
+        #expect(!onlyApplePay.hasOtherPaymentMechanisms)
+
+        let both = CoverCharge(
+            amount: Money(cents: 1000),
+            total: Money(cents: 1112),
+            night: "2026-10-09",
+            payable: true,
+            paymentMechanisms: ["apple_pay", "card"]
+        )
+        #expect(both.supportsApplePay)
+        #expect(both.hasOtherPaymentMechanisms)
+
+        let cardOnly = CoverCharge(
+            amount: Money(cents: 1000),
+            total: Money(cents: 1112),
+            night: "2026-10-09",
+            payable: true,
+            paymentMechanisms: ["card"]
+        )
+        #expect(!cardOnly.supportsApplePay)
+        #expect(cardOnly.hasOtherPaymentMechanisms)
+
+        let legacyNil = CoverCharge(
+            amount: Money(cents: 1000),
+            total: Money(cents: 1112),
+            night: "2026-10-09",
+            payable: true
+        )
+        #expect(legacyNil.supportsApplePay)
+        #expect(legacyNil.hasOtherPaymentMechanisms)
+    }
+
+    @Test("Apple Pay status computes properly for unavailable, needs setup, and ready states")
+    func applePayStatus() {
+        #expect(ApplePayStatus.current(canMakePayments: false, hasConfiguredCards: false) == .unavailable)
+        #expect(ApplePayStatus.current(canMakePayments: false, hasConfiguredCards: true) == .unavailable)
+        #expect(ApplePayStatus.current(canMakePayments: true, hasConfiguredCards: false) == .needsSetup)
+        #expect(ApplePayStatus.current(canMakePayments: true, hasConfiguredCards: true) == .ready)
+        #expect(ApplePayStatus.current(canMakePayments: false, hasConfiguredCards: false, isReview: true) == .ready)
     }
 
     @Test("Apple Pay charges the all-in price in currency units")

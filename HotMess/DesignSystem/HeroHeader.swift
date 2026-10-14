@@ -11,6 +11,8 @@ enum HeroMetrics {
     static let bodyHeight: CGFloat = 256
 }
 
+private let heroCoordinateSpace = "hero"
+
 /// A banner that runs edge to edge and up under the status bar, with its
 /// title drawn over it in whichever colour the photo can carry.
 ///
@@ -30,8 +32,6 @@ struct HeroHeader<Content: View>: View {
     @State private var size: CGSize = .zero
     @State private var textFrame: CGRect = .zero
 
-    private static var space: String { "hero" }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer(minLength: topInset + 16)
@@ -39,13 +39,13 @@ struct HeroHeader<Content: View>: View {
             content
                 .foregroundStyle(tone.textColor)
                 .photoTextShadow(tone)
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { textFrame = $0 }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(heroCoordinateSpace)) } action: { textFrame = $0 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
                 .animation(HotMessMotion.quick, value: tone)
         }
         .frame(maxWidth: .infinity, minHeight: topInset + HeroMetrics.bodyHeight, alignment: .bottomLeading)
-        .coordinateSpace(.named(Self.space))
+        .coordinateSpace(.named(heroCoordinateSpace))
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .background {
             GeometryReader { proxy in

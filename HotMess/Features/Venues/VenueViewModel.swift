@@ -22,6 +22,8 @@ struct VenueOverview: Sendable, Equatable {
     var coverCharge: CoverCharge?
     /// The user's cover tonight, paid or being paid.
     var viewerAdmission: Admission?
+    /// The user's coat check tonight, paid or being paid.
+    var viewerCoatCheck: Admission?
     /// Who is on there right now: hosting, DJing, performing or MCing.
     var onNow: [Appearance] = []
     /// Friends' Pings that pick this venue or one of its events.
