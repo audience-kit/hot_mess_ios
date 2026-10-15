@@ -13,6 +13,7 @@ struct PersonScreen: View {
     @State private var viewModel: PersonViewModel?
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
+    @State private var isReporting = false
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { detail in
@@ -90,6 +91,31 @@ struct PersonScreen: View {
             tone: heroTone,
             collapsed: heroCollapsed || viewModel?.state.value == nil
         )
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(role: .destructive) {
+                        isReporting = true
+                    } label: {
+                        Label(String(localized: "Report Creator…"), systemImage: "exclamationmark.bubble")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.body)
+                }
+                .accessibilityIdentifier("person.optionsMenu")
+            }
+        }
+        .sheet(isPresented: $isReporting) {
+            NavigationStack {
+                ReportProblemScreen()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(String(localized: "Cancel")) { isReporting = false }
+                        }
+                    }
+            }
+        }
         .task {
             ensureViewModel()
             await viewModel?.load()

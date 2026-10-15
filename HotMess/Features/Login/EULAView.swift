@@ -19,6 +19,8 @@ struct EULAView: View {
 
                     Divider()
 
+                    creatorsSection
+
                     zeroToleranceSection
 
                     reportingSection
@@ -83,12 +85,23 @@ struct EULAView: View {
         }
     }
 
-    private var zeroToleranceSection: some View {
+    private var creatorsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("1. Zero Tolerance Policy")
+            Text("1. Content Creators: Venues & People")
                 .font(.hotMess(.headline, semibold: true))
 
-            Text("Hot Mess strictly enforces a zero-tolerance policy against objectionable, inappropriate, or abusive content and behavior. There is no tolerance for:")
+            Text("Venues (clubs, bars, event organizers) and People (performers, DJs, hosts, and artists) are verified content creators who curate and publish event listings, music tracks, specials, announcements, and rich media through our dedicated creator applications, Velvet and Backstage. All creator content and community interactions must adhere to our safety standards.")
+                .font(.hotMess(.subheadline))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var zeroToleranceSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("2. Zero Tolerance Policy")
+                .font(.hotMess(.headline, semibold: true))
+
+            Text("Hot Mess strictly enforces a zero-tolerance policy against objectionable, inappropriate, or abusive content and behavior from any content creator or user. There is no tolerance for:")
                 .font(.hotMess(.subheadline))
                 .foregroundStyle(.secondary)
 
@@ -105,7 +118,7 @@ struct EULAView: View {
 
     private var reportingSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("2. Flagging Objectionable Content")
+            Text("3. Flagging Objectionable Content")
                 .font(.hotMess(.headline, semibold: true))
 
             Text("All users have an immediate mechanism to flag objectionable content:")
@@ -114,7 +127,7 @@ struct EULAView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 bullet("In Chat: Press and hold any message to open the moderation menu and select Report.")
-                bullet("On Profiles: Tap the options menu (•••) on any profile to report that user.")
+                bullet("On Creator Profiles: Tap the options menu (•••) on any Venue or Performer profile to report that creator.")
                 bullet("Anywhere: Use 'Report a Problem' in Settings to send reports directly to our team.")
             }
             .padding(.leading, 8)
@@ -123,10 +136,10 @@ struct EULAView: View {
 
     private var blockingSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("3. Blocking Abusive Users")
+            Text("4. Blocking Abusive Users")
                 .font(.hotMess(.headline, semibold: true))
 
-            Text("You can block any user at any time. When you block a user:")
+            Text("You can block any user or creator at any time. When you block a user:")
                 .font(.hotMess(.subheadline))
                 .foregroundStyle(.secondary)
 
@@ -142,10 +155,10 @@ struct EULAView: View {
 
     private var moderationSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("4. 24-Hour Developer Action Guarantee")
+            Text("5. 24-Hour Developer Action Guarantee")
                 .font(.hotMess(.headline, semibold: true))
 
-            Text("Our moderation staff reviews all flagged content and reports. The developer must and will act on all objectionable content reports within 24 hours by removing the offending content and ejecting / terminating the user who provided it.")
+            Text("Our moderation staff reviews all flagged creator content, reports, and blocks. The developer must and will act on all objectionable content reports within 24 hours by removing the offending content and ejecting / terminating the creator or user who provided it.")
                 .font(.hotMess(.subheadline))
                 .foregroundStyle(.secondary)
         }
@@ -153,10 +166,10 @@ struct EULAView: View {
 
     private var ejectionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("5. User Ejection & Account Termination")
+            Text("6. Creator & User Ejection")
                 .font(.hotMess(.headline, semibold: true))
 
-            Text("Violating these terms will result in immediate ejection from the community, deletion of offending content, and permanent banning from the Hot Mess platform.")
+            Text("Violating these terms will result in immediate ejection from the community, revocation of Velvet and Backstage creator publishing access, deletion of offending content, and permanent banning from the Hot Mess platform.")
                 .font(.hotMess(.subheadline))
                 .foregroundStyle(.secondary)
         }

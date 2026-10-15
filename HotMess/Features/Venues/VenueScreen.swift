@@ -18,6 +18,7 @@ struct VenueScreen: View {
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
     @State private var pingSeed: PingSeed?
+    @State private var isReporting = false
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { overview in
@@ -132,9 +133,25 @@ struct VenueScreen: View {
             .ignoresSafeArea(edges: .top)
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .toolbar {
-                if let shareURL = venue.shareURL {
-                    ShareLink(item: shareURL) {
-                        Label(String(localized: "Share"), systemImage: "square.and.arrow.up")
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 12) {
+                        if let shareURL = venue.shareURL {
+                            ShareLink(item: shareURL) {
+                                Label(String(localized: "Share"), systemImage: "square.and.arrow.up")
+                            }
+                        }
+
+                        Menu {
+                            Button(role: .destructive) {
+                                isReporting = true
+                            } label: {
+                                Label(String(localized: "Report Venue…"), systemImage: "exclamationmark.bubble")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.body)
+                        }
+                        .accessibilityIdentifier("venue.optionsMenu")
                     }
                 }
             }
@@ -144,6 +161,16 @@ struct VenueScreen: View {
             tone: heroTone,
             collapsed: heroCollapsed || viewModel?.state.value == nil
         )
+        .sheet(isPresented: $isReporting) {
+            NavigationStack {
+                ReportProblemScreen()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(String(localized: "Cancel")) { isReporting = false }
+                        }
+                    }
+            }
+        }
         .task {
             ensureViewModel()
             await viewModel?.load()
