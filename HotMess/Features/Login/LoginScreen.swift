@@ -11,6 +11,10 @@ import SwiftUI
 /// Sign in with Apple beside it (App Store guideline 4.8).
 struct LoginScreen: View {
     @Environment(AppModel.self) private var model
+    @AppStorage("hasAgreedToEULA") private var hasAgreedToEULA = false
+    @State private var isShowingEULA = false
+    @State private var pendingFacebookSignIn = false
+    @State private var pendingAppleResult: Result<ASAuthorization, any Error>?
     @State private var isShowingError = false
     @State private var hasAppeared = false
     @State private var isReportingProblem = false
@@ -49,7 +53,11 @@ struct LoginScreen: View {
             withAnimation(.easeOut(duration: 0.5)) { hasAppeared = true }
         }
         .onChange(of: model.session.state) { _, state in
-            if case let .failed(message) = state {
+            if state == .signedIn {
+                Task {
+                    try? await model.safety.acceptTerms()
+                }
+            } else if case let .failed(message) = state {
                 isShowingError = true
                 ErrorReporter.shared.record(kind: "sign_in", message: message)
             }
@@ -59,6 +67,19 @@ struct LoginScreen: View {
             Button(String(localized: "Report a Problem")) { isReportingProblem = true }
         } message: {
             Text(failureMessage ?? String(localized: "Please try again."))
+        }
+        .sheet(isPresented: $isShowingEULA) {
+            EULAView {
+                hasAgreedToEULA = true
+                if pendingFacebookSignIn {
+                    pendingFacebookSignIn = false
+                    Task { await model.session.signIn() }
+                } else if let result = pendingAppleResult {
+                    pendingAppleResult = nil
+                    model.session.signInWithApple(result)
+                }
+            }
+            .preferredColorScheme(nil)
         }
         .sheet(isPresented: $isReportingProblem) {
             NavigationStack {
@@ -101,8 +122,15 @@ struct LoginScreen: View {
                     .accessibilityIdentifier("login.sessionEnded")
             }
 
+            eulaAgreementRow
+
             Button {
-                Task { await model.session.signIn() }
+                if hasAgreedToEULA {
+                    Task { await model.session.signIn() }
+                } else {
+                    pendingFacebookSignIn = true
+                    isShowingEULA = true
+                }
             } label: {
                 HStack(spacing: 12) {
                     if isSigningIn {
@@ -132,7 +160,12 @@ struct LoginScreen: View {
             SignInWithAppleButton(.continue) { request in
                 request.requestedScopes = [.fullName, .email]
             } onCompletion: { result in
-                model.session.signInWithApple(result)
+                if hasAgreedToEULA {
+                    model.session.signInWithApple(result)
+                } else {
+                    pendingAppleResult = result
+                    isShowingEULA = true
+                }
             }
             .signInWithAppleButtonStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 54, maxHeight: 54)
@@ -146,6 +179,43 @@ struct LoginScreen: View {
                 .foregroundStyle(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var eulaAgreementRow: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Button {
+                hasAgreedToEULA.toggle()
+            } label: {
+                Image(systemName: hasAgreedToEULA ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 20))
+                    .foregroundStyle(hasAgreedToEULA ? Color.hotMessAccentInk : .white.opacity(0.85))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("login.eulaCheckbox")
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text("I agree to the")
+                        .foregroundStyle(.white.opacity(0.9))
+                    Button {
+                        isShowingEULA = true
+                    } label: {
+                        Text("Terms of Use (EULA)")
+                            .underline()
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("login.openEULA")
+                }
+                Text("Zero tolerance for objectionable content or abusive users.")
+                    .font(.hotMess(.caption2))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .font(.hotMess(.caption))
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 4)
     }
 
     private var isSigningIn: Bool {

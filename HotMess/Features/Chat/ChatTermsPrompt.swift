@@ -33,7 +33,7 @@ struct ChatTermsPrompt: View {
                     rule("Press and hold a message to report it or block its sender.", systemImage: "hand.raised")
                 }
 
-                Text("There's no tolerance for objectionable content or abusive people. Admins remove messages and people that break these rules.")
+                Text("There's no tolerance for objectionable content or abusive people. Admins review reports within 24 hours to remove offending messages and eject people who break these rules.")
                     .font(.hotMess(.subheadline))
                     .foregroundStyle(.secondary)
 

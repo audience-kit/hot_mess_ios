@@ -92,7 +92,7 @@ struct VenueChatScreen: View {
             }
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: { _ in
-            Text("The room's admins will look at it. They can remove the sender from the room.")
+            Text("Reports are reviewed within 24 hours. Objectionable content will be removed and offending users ejected.")
         }
         .alert(
             String(localized: "Thanks for reporting it"),
@@ -104,7 +104,7 @@ struct VenueChatScreen: View {
             }
             Button(String(localized: "Not Now"), role: .cancel) {}
         } message: { _ in
-            Text("Block them too, and you won't see their messages in any room.")
+            Text("Block them too: their messages will be removed from your feed instantly and our team will be notified.")
         }
         .alert(
             blockTitle(blockTarget),
@@ -116,7 +116,7 @@ struct VenueChatScreen: View {
             }
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: { _ in
-            Text("You won't see their messages in any room. They won't be told. You can unblock them in Settings.")
+            Text("Their messages will be removed from your feed instantly and our moderation team will be notified to review the content.")
         }
         .confirmationDialog(
             String(localized: "Delete this message?"),
@@ -231,7 +231,11 @@ struct VenueChatScreen: View {
         guard let sender = sender(of: message) else { return }
 
         do {
-            try await model.safety.block(sender)
+            if let id = UUID(uuidString: message.id) {
+                try await model.safety.report(messageID: id, sender: sender, reason: .other, block: true)
+            } else {
+                try await model.safety.block(sender)
+            }
         } catch {
             failureMessage = String(localized: "Couldn't block them. Please try again.")
         }
