@@ -45,12 +45,19 @@ enum SimulatorAppleAccount {
                         "sign it in to Settings on this simulator by hand once.")
                 return
             }
-            // Offers on the way: sign in another way, keep data separate, skip extras.
+            if settings.alerts.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'password is incorrect'")).firstMatch.exists {
+                snapshot(settings, "Apple Account password refused")
+                XCTFail("Apple says the password for \(email) is incorrect")
+                return
+            }
+            // Offers on the way: sign in another way, keep data separate, skip extras, and decline the two-factor
+            // upgrade (Other Options → Don't Upgrade) rather than add a phone number.
             // "Sign in Manually" is a card whose label runs on into its description, so match its start.
             let detour = settings.descendants(matching: .any).matching(NSPredicate(format:
                 "label BEGINSWITH[c] 'Sign in Manually' OR label ==[c] 'Use Email or Phone' OR label ==[c] 'Don’t Merge' OR " +
                 "label ==[c] 'Don\\'t Merge' OR label ==[c] 'Not Now' OR label ==[c] 'Skip' OR label ==[c] 'Later' OR " +
-                "label ==[c] 'Agree'")).firstMatch
+                "label ==[c] 'Agree' OR label ==[c] 'Other Options' OR label ==[c] 'Don’t Upgrade' OR " +
+                "label ==[c] 'Don\\'t Upgrade'")).firstMatch
             if detour.exists, detour.isHittable {
                 detour.tap()
                 sleep(2)
