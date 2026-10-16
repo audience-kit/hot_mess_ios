@@ -168,7 +168,7 @@ final class SessionStore {
     }
 
     func signIn() async {
-        if ProcessInfo.processInfo.arguments.contains("-HotMessSafetyDemo"), await hasStoredSession {
+        if AppModel.isSafetyDemo, await hasStoredSession {
             await restoreSession()
             if isSignedIn { return }
         }

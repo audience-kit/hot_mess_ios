@@ -138,7 +138,7 @@ final class AppModel {
         // UI tests start from the login screen.
         if ProcessInfo.processInfo.arguments.contains("-HotMessUITestSignedOut") {
             signOut()
-        } else if ProcessInfo.processInfo.arguments.contains("-HotMessSafetyDemo") {
+        } else if Self.isSafetyDemo {
             session.presentDemoLogin()
         } else {
             await session.start()
@@ -153,6 +153,16 @@ final class AppModel {
             // session never went through sign-in's registration.
             Task { await PushNotifications.requestAuthorizationAndRegister() }
         }
+    }
+
+    /// The safety walkthrough's `-HotMessSafetyDemo`: start on the login
+    /// screen even with a stored session. Only in builds with test hooks.
+    static var isSafetyDemo: Bool {
+        #if TEST_HOOKS
+        ProcessInfo.processInfo.arguments.contains("-HotMessSafetyDemo")
+        #else
+        false
+        #endif
     }
 
     /// Signs out and forgets what was loaded for the user.

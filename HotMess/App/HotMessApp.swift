@@ -18,11 +18,15 @@ struct HotMessApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if let fixture = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) {
-                    KaraokeUITestScreen(mode: String(fixture.split(separator: "=").last ?? "venue"))
+                #if TEST_HOOKS
+                if let mode = Self.karaokeFixture {
+                    KaraokeUITestScreen(mode: mode)
                 } else {
                     RootView()
                 }
+                #else
+                RootView()
+                #endif
             }
                 .environment(model)
                 .tint(model.brand.accent)
@@ -46,9 +50,21 @@ struct HotMessApp: App {
     }
 
     private func start() async {
-        if ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) { return }
+        #if TEST_HOOKS
+        if Self.karaokeFixture != nil { return }
+        #endif
         await model.start()
     }
+
+    #if TEST_HOOKS
+    /// The karaoke UI tests' fixture (`-HotMessUITestKaraoke=<mode>`), shown
+    /// instead of the app. Only in builds with test hooks.
+    private static var karaokeFixture: String? {
+        guard let argument = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-HotMessUITestKaraoke=") })
+        else { return nil }
+        return String(argument.split(separator: "=").last ?? "venue")
+    }
+    #endif
 
     /// Stripe claims its bank redirects (`hotmess://stripe-redirect`), then the
     /// Facebook SDK claims its login redirects, and anything neither claims is

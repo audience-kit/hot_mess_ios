@@ -82,16 +82,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Hot Mess listens for beacons in venues so it can tell which room you are in.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Hot Mess uses your camera to scan your payment card when you pay a venue’s cover charge.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Hot Mess notices when you arrive at or leave a venue, even with the app closed, so your friends see where you are and venues can tell how busy they are.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Hot Mess uses your location to recommend venues and events near you.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Hot Mess accesses your photo library so you can send photographs to venue chat rooms.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Hot Mess signs you in with Facebook to find your friends on Hot Mess. If you allow it, Facebook can link that sign-in with your activity in other apps and websites. Hot Mess itself doesn’t track you or show ads.</string>
 	<key>UIAppFonts</key>
@@ -106,10 +102,6 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
