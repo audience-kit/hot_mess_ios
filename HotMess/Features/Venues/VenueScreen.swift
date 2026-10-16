@@ -18,7 +18,8 @@ struct VenueScreen: View {
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
     @State private var pingSeed: PingSeed?
-    @State private var isReporting = false
+    @State private var reportSubject: ReportSubject?
+    @State private var blockTarget: BlockedUser?
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { overview in
@@ -69,7 +70,7 @@ struct VenueScreen: View {
                         }
 
                         PingPlaceStrip(
-                            pings: viewModel?.activePings ?? [],
+                            pings: (viewModel?.activePings ?? []).filter { !model.safety.isBlocked($0.user.id) },
                             isJoined: viewModel?.isJoinedHere(userID: model.session.userID) == true,
                             isBusy: viewModel?.isUpdatingPings == true,
                             pingForHere: { pingSeed = .venue(venue) },
@@ -139,7 +140,7 @@ struct VenueScreen: View {
 
                         Menu {
                             Button(role: .destructive) {
-                                isReporting = true
+                                reportSubject = ReportSubject(target: .venue, targetID: venue.id.uuidString.lowercased())
                             } label: {
                                 Label(String(localized: "Report Venue…"), systemImage: "exclamationmark.bubble")
                             }
@@ -157,16 +158,7 @@ struct VenueScreen: View {
             tone: heroTone,
             collapsed: heroCollapsed || viewModel?.state.value == nil
         )
-        .sheet(isPresented: $isReporting) {
-            NavigationStack {
-                ReportProblemScreen()
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(String(localized: "Cancel")) { isReporting = false }
-                        }
-                    }
-            }
-        }
+        .contentReporting(report: $reportSubject, block: $blockTarget)
         .task {
             ensureViewModel()
             await viewModel?.load()

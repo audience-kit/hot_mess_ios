@@ -521,3 +521,23 @@ struct ChatIdentifierTests {
         #expect(message.sentAt == Date(timeIntervalSince1970: 1_791_691_200))
     }
 }
+
+@Suite("Reporting")
+struct ReportContentTests {
+    @Test("Names the target type in the reportContent mutation and decodes its payload")
+    func reportContent() throws {
+        #expect(HotMessAPI.operationName(HotMessAPI.Documents.reportContent) == "graphql mutation ReportContent")
+        #expect(HotMessAPI.Documents.reportContent.contains("$targetType: ReportTarget!"))
+        #expect(ReportTarget.ping.rawValue == "PING")
+        #expect(ReportTarget.person.rawValue == "PERSON")
+
+        let json = Data(#"{"reportContent":{"reported":true,"blocked":false}}"#.utf8)
+        let payload = try JSONDecoder.hotMess.decode(ReportContentResponse.self, from: json).reportContent
+        #expect(payload.reported)
+        #expect(!payload.blocked)
+
+        let subject = ReportSubject(target: .venue, targetID: "v1")
+        #expect(subject.id == "VENUE:v1")
+        #expect(subject.sender == nil)
+    }
+}

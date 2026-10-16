@@ -360,6 +360,23 @@ struct HotMessAPI: Sendable {
         )
     }
 
+    /// Reports a person, venue, Ping, photo or message to the audience's
+    /// moderators (the same queue as chat reports), and blocks whoever is
+    /// behind it too when asked. Returns whether they're now blocked.
+    @discardableResult
+    func reportContent(_ target: ReportTarget, id: String, reason: String?, block: Bool) async throws -> Bool {
+        try await query(
+            Documents.reportContent,
+            variables: [
+                "targetType": .string(target.rawValue),
+                "targetId": .string(id),
+                "reason": reason.map(GraphQLValue.string) ?? .null,
+                "block": .bool(block),
+            ],
+            as: ReportContentResponse.self
+        ).reportContent.blocked
+    }
+
     /// Takes back one of the user's own chat messages. The room drops it for
     /// everyone, the same as when an admin removes it.
     func removeMyChatMessage(_ id: UUID) async throws {
@@ -894,6 +911,12 @@ extension HotMessAPI {
         }
         """
 
+        static let reportContent = """
+        mutation ReportContent($targetType: ReportTarget!, $targetId: ID!, $reason: String, $block: Boolean) {
+          reportContent(input: { targetType: $targetType, targetId: $targetId, reason: $reason, block: $block }) { reported blocked }
+        }
+        """
+
         static let removeMyChatMessage = """
         mutation RemoveMyChatMessage($messageId: ID!) {
           removeMyChatMessage(input: { messageId: $messageId }) { deletedId }
@@ -1165,6 +1188,15 @@ struct UnblockUserResponse: Decodable, Sendable { let unblockUser: BlockedUsersP
 struct ReportChatMessageResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let reported: Bool }
     let reportChatMessage: Payload
+}
+
+struct ReportContentResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable {
+        let reported: Bool
+        let blocked: Bool
+    }
+
+    let reportContent: Payload
 }
 
 struct SendMyChatMessageResponse: Decodable, Sendable {

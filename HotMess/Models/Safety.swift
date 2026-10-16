@@ -99,6 +99,38 @@ enum ChatReportReason: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// What `reportContent` can be told about: the API's `ReportTarget`.
+enum ReportTarget: String, Hashable, Sendable {
+    case person = "PERSON"
+    case venue = "VENUE"
+    case ping = "PING"
+    case photo = "PHOTO"
+    case message = "MESSAGE"
+}
+
+/// Something the user is reporting: what it is, its ID, and the person behind
+/// it when blocking them makes sense (a Ping's sender, someone here now). A
+/// venue or a creator's profile has no one to block.
+struct ReportSubject: Identifiable, Hashable, Sendable {
+    let target: ReportTarget
+    let targetID: String
+    /// Who to offer to block once it's reported.
+    var sender: BlockedUser? = nil
+
+    var id: String { "\(target.rawValue):\(targetID)" }
+
+    /// The reason picker's question.
+    var question: String {
+        switch target {
+        case .person: String(localized: "Why are you reporting this person?")
+        case .venue: String(localized: "Why are you reporting this venue?")
+        case .ping: String(localized: "Why are you reporting this ping?")
+        case .photo: String(localized: "Why are you reporting this photo?")
+        case .message: String(localized: "Why are you reporting this message?")
+        }
+    }
+}
+
 /// The audience's legal pages, linked from Settings and the terms prompt.
 enum LegalLinks {
     static let terms = URL(string: "https://audiencekit.com/terms/")!

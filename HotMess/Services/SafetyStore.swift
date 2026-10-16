@@ -88,6 +88,15 @@ final class SafetyStore {
         }
     }
 
+    /// Reports a person, venue, Ping, photo or message (`reportContent`).
+    /// Blocking with it hides whoever is behind it at once.
+    func report(_ subject: ReportSubject, reason: ChatReportReason, block: Bool) async throws {
+        try await api.reportContent(subject.target, id: subject.targetID, reason: reason.rawValue, block: block)
+        if block, let sender = subject.sender, !isBlocked(sender.id) {
+            blockedUsers.append(sender)
+        }
+    }
+
     /// Forgets everything, for sign-out and account deletion.
     func forget() {
         blockedUsers = []

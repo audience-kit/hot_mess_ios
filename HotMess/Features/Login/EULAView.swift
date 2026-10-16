@@ -160,6 +160,7 @@ struct EULAView: View {
             VStack(alignment: .leading, spacing: 6) {
                 bullet("In Chat: Press and hold any message to open the moderation menu and select Report.")
                 bullet("On Creator Profiles: Tap the options menu (•••) on any Venue or Performer profile to report that creator.")
+                bullet("On Pings and People: Tap ••• on a friend's Ping, or press and hold anyone in Here Now, to report or block them.")
                 bullet("Anywhere: Use 'Report a Problem' in Settings to send reports directly to our team.")
             }
             .padding(.leading, 8)
