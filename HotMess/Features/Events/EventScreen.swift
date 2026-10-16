@@ -30,6 +30,12 @@ struct EventScreen: View {
                             heroText(event)
                         }
 
+                        if let person = event.person {
+                            CardSection(String(localized: "Host")) {
+                                PersonCardLink(person: person)
+                            }
+                        }
+
                         if viewModel?.isTonight == true || viewModel?.activePings.isEmpty == false {
                             PingPlaceStrip(
                                 pings: (viewModel?.activePings ?? []).filter { !model.safety.isBlocked($0.user.id) },
@@ -63,12 +69,6 @@ struct EventScreen: View {
                         }
 
                         detailsSection(event)
-
-                        if let person = event.person {
-                            CardSection(String(localized: "Host")) {
-                                PersonCardLink(person: person)
-                            }
-                        }
 
                         if let venue = event.venue {
                             CardSection(String(localized: "Venue")) {

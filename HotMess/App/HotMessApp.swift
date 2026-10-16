@@ -37,6 +37,7 @@ struct HotMessApp: App {
                     _ = model.open(url)
                 }
         }
+        .environment(model)
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:

@@ -2,17 +2,79 @@ import SwiftUI
 
 struct KaraokeSection: View {
     let karaoke: KaraokeNight
+    @State private var showingJoinCode = false
+
+    private var joinTitle: String {
+        if let provider = karaoke.providerName, !provider.isEmpty {
+            return String(localized: "Join \(provider) session")
+        }
+        return String(localized: "Join karaoke session")
+    }
+
     var body: some View {
         DetailSection(String(localized: "Karaoke")) {
-            Label(String(localized: "Karaoke night"), systemImage: "music.mic")
-            if let provider = karaoke.providerName { Text(provider).foregroundStyle(.secondary) }
             if let url = karaoke.joinURL {
-                Link(destination: url) { Label(String(localized: "Join karaoke"), systemImage: "music.note.list") }
+                Link(destination: url) { Label(joinTitle, systemImage: "music.mic") }
                     .accessibilityIdentifier("karaoke.join")
-                if let code = karaoke.sessionCode { Text(String(localized: "Session: \(code)")).font(.caption).foregroundStyle(.secondary) }
+                Button { showingJoinCode = true } label: {
+                    Label(String(localized: "Show join code"), systemImage: "qrcode")
+                }
+                .accessibilityIdentifier("karaoke.showCode")
             } else {
+                Label(String(localized: "Karaoke night"), systemImage: "music.mic")
                 Text(String(localized: "Ask the host how to join the karaoke session.")).foregroundStyle(.secondary)
             }
         }
+        .sheet(isPresented: $showingJoinCode) {
+            if let url = karaoke.joinURL {
+                KaraokeJoinCodeSheet(url: url, title: joinTitle, sessionCode: karaoke.sessionCode)
+            }
+        }
+    }
+}
+
+/// Full-screen-ish QR so others nearby can scan straight into the session.
+private struct KaraokeJoinCodeSheet: View {
+    let url: URL
+    let title: String
+    let sessionCode: String?
+    @Environment(\.dismiss) private var dismiss
+    @State private var image: UIImage?
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Group {
+                    if let image {
+                        Image(uiImage: image).interpolation(.none).resizable().scaledToFit()
+                    } else {
+                        ProgressView()
+                    }
+                }
+                .frame(maxWidth: 280, maxHeight: 280)
+                .padding(16)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
+                .accessibilityLabel(String(localized: "Karaoke join QR code"))
+
+                if let sessionCode {
+                    Text(sessionCode)
+                        .font(.system(.largeTitle, design: .monospaced).weight(.semibold))
+                        .textSelection(.enabled)
+                }
+                Text(String(localized: "Scan to join"))
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(String(localized: "Done")) { dismiss() }
+                }
+            }
+            .task { image = QRCodeRenderer.image(for: url.absoluteString) }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

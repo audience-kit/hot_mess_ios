@@ -44,6 +44,7 @@ struct VenuesScreen: View {
                     isMapExpanded = false
                     model.venuesPath.append(.venue(pin.id))
                 }
+                .environment(model)
             }
         }
         .navigationTitle(model.location.locale?.name ?? String(localized: "Venues"))
