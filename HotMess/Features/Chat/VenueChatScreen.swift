@@ -142,6 +142,17 @@ struct VenueChatScreen: View {
         }
         .contentReporting(report: $personReport, block: $personBlock)
         .alert(
+            String(localized: "Message Not Sent"),
+            isPresented: Binding(
+                get: { viewModel?.sendError != nil },
+                set: { if !$0 { viewModel?.sendError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(viewModel?.sendError ?? "")
+        }
+        .alert(
             String(localized: "Something went wrong"),
             isPresented: isPresenting($failureMessage),
             presenting: failureMessage

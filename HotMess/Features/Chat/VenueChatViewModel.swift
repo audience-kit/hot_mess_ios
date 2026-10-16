@@ -67,6 +67,9 @@ final class VenueChatViewModel {
     /// messages the room shows.
     private(set) var pinned: VenueMessage?
     var draft: String = ""
+    /// Why the API refused the last line, in its words: terms not accepted
+    /// yet, or the content filter. The screen shows it, then clears it.
+    var sendError: String?
 
     let room: ChatRoom
 
@@ -475,7 +478,19 @@ final class VenueChatViewModel {
         } catch {
             Log.realtime.error("Chat line not sent: \(error.localizedDescription, privacy: .public)")
             markFailed(id, attempt: attempt)
+            if let refusal = Self.refusalMessage(for: error) {
+                sendError = refusal
+            }
         }
+    }
+
+    /// What the API said when it refused a line on purpose (the terms gate,
+    /// the content filter), which is worth showing; `nil` for being offline
+    /// or a server fault, which the line's "Not sent. Tap to retry." covers.
+    static func refusalMessage(for error: any Error) -> String? {
+        guard case let .transport(message)? = error as? APIError else { return nil }
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     /// The API took the line: it leaves `pending` and shows as the room will
