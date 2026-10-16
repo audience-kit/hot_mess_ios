@@ -170,6 +170,7 @@ struct VenueScreen: View {
                         }
                     }
             }
+            .environment(model)
         }
         .task {
             ensureViewModel()

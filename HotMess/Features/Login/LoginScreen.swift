@@ -92,6 +92,7 @@ struct LoginScreen: View {
                         }
                     }
             }
+            .environment(model)
             .preferredColorScheme(nil)
         }
     }

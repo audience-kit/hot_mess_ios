@@ -115,6 +115,7 @@ struct PersonScreen: View {
                         }
                     }
             }
+            .environment(model)
         }
         .task {
             ensureViewModel()

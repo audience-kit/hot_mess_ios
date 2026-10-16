@@ -59,6 +59,7 @@ struct MainTabView: View {
                     NowScreen()
                         .navigationDestination(for: AppRoute.self) { RouteDestination(route: $0) }
                 }
+                .environment(model)
             }
 
             Tab(AppTab.events.title, systemImage: AppTab.events.systemImage, value: AppTab.events) {
@@ -66,6 +67,7 @@ struct MainTabView: View {
                     EventsScreen()
                         .navigationDestination(for: AppRoute.self) { RouteDestination(route: $0) }
                 }
+                .environment(model)
             }
 
             Tab(AppTab.venues.title, systemImage: AppTab.venues.systemImage, value: AppTab.venues) {
@@ -73,6 +75,7 @@ struct MainTabView: View {
                     VenuesScreen()
                         .navigationDestination(for: AppRoute.self) { RouteDestination(route: $0) }
                 }
+                .environment(model)
             }
 
             Tab(AppTab.people.title, systemImage: AppTab.people.systemImage, value: AppTab.people) {
@@ -80,17 +83,19 @@ struct MainTabView: View {
                     PeopleScreen()
                         .navigationDestination(for: AppRoute.self) { RouteDestination(route: $0) }
                 }
+                .environment(model)
             }
 
             Tab(AppTab.me.title, systemImage: AppTab.me.systemImage, value: AppTab.me) {
                 NavigationStack {
                     SettingsScreen()
                 }
+                .environment(model)
             }
         }
+        .environment(model)
         .accessibilityIdentifier("main.tabs")
         .coverPresenter()
-        .notificationBannerHost()
         .notificationBannerHost()
     }
 }
