@@ -21,10 +21,10 @@ FACEBOOK_APP_ID = 1168782378316790
 
 AUDIENCEKIT_ENVIRONMENT = production
 
-// Required by Facebook SDK 13 and later. Copy the client token from the
-// Facebook app dashboard (Settings -> Advanced -> Client token) for each
-// environment; login reports an error at runtime while this is empty.
-FACEBOOK_CLIENT_TOKEN =
+// Required by Facebook SDK 13 and later. The client token ships in the app's
+// Info.plist, so it is not a secret; it comes from the Facebook app dashboard
+// (Settings -> Advanced -> Client token) for FACEBOOK_APP_ID above.
+FACEBOOK_CLIENT_TOKEN = ee4e193e42709c8aaf8f3aa6b383feab
 
 BUNDLE_SUFFIX = 
 APNS_ENVIRONMENT = production
@@ -35,8 +35,8 @@ APNS_ENVIRONMENT = production
 // empty to take cards only.
 APPLE_PAY_MERCHANT_ID = merchant.social.hotmess
 
-// Secrets that stay out of git, such as FACEBOOK_CLIENT_TOKEN. Copy
-// Local.xcconfig.example to Local.release.xcconfig and fill it in.
+// Local overrides that stay out of git. Copy
+// Local.xcconfig.example to Local.release.xcconfig to override a value here.
 #include? "Local.release.xcconfig"
 
 HOTMESS_APP_GROUP = group.social.hotmess
