@@ -17,6 +17,8 @@ struct NowScreen: View {
     /// The Ping revision last loaded, so a change to Pings asks for a fresh
     /// report while a new position or a return to the tab can share one.
     @State private var loadedPingRevision: Int?
+    @State private var reportSubject: ReportSubject?
+    @State private var blockTarget: BlockedUser?
 
     /// Reloads when the position changes or Pings change elsewhere.
     private struct LoadKey: Hashable {
@@ -115,6 +117,7 @@ struct NowScreen: View {
         .onChange(of: model.checkout.revision) {
             reload()
         }
+        .contentReporting(report: $reportSubject, block: $blockTarget)
     }
 
     private var navigationTitle: String {
@@ -159,17 +162,28 @@ struct NowScreen: View {
             .padding(.horizontal, 16)
         }
 
+        // People the user blocked are left out at once.
+        let blocked = model.safety.blockedIDs
         CardSection(String(localized: "Friends going out tonight")) {
-            ForEach(Ping.friendFeed(now.friendPings, at: .now)) { ping in
+            ForEach(Ping.friendFeed(now.friendPings, at: .now).filter { !blocked.contains($0.user.id) }) { ping in
+                let sender = BlockedUser(id: ping.user.id, name: ping.user.name, avatarURL: ping.user.avatarURL)
                 FriendPingCard(
                     ping: ping,
                     userID: model.session.userID,
-                    isBusy: viewModel?.busyPingIDs.contains(ping.id) == true
-                ) { target in
-                    Task { await viewModel?.join(ping, target: target) }
-                } leave: {
-                    Task { await viewModel?.leave(ping) }
-                }
+                    isBusy: viewModel?.busyPingIDs.contains(ping.id) == true,
+                    join: { target in
+                        Task { await viewModel?.join(ping, target: target) }
+                    },
+                    leave: {
+                        Task { await viewModel?.leave(ping) }
+                    },
+                    report: {
+                        reportSubject = ReportSubject(target: .ping, targetID: ping.id, sender: sender)
+                    },
+                    block: {
+                        blockTarget = sender
+                    }
+                )
             }
         }
     }

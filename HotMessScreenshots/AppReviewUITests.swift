@@ -9,7 +9,8 @@ import XCTest
 /// recording of the run. Xcode keeps the recording in the result bundle when the test plan or
 /// .xctestrun keeps attachments.
 ///
-/// Run them on the Release configuration so they sign in with the Hot Mess consumer Facebook app.
+/// Run them with the Screenshots scheme (Staging): `-HotMessUseNextAPI` and the other launch-argument
+/// hooks only exist in builds with the `TEST_HOOKS` compilation condition (Debug and Staging).
 @MainActor
 final class AppReviewUITests: XCTestCase {
     private var facebook: XCUIApplication { XCUIApplication(bundleIdentifier: "com.facebook.Facebook") }

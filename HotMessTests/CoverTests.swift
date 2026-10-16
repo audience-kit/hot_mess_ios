@@ -330,18 +330,6 @@ struct CoverPaymentTests {
         #expect(SquarePaymentMethod.available(canUseApplePay: false, merchantID: "merchant.social.hotmess") == [.card])
         #expect(SquarePaymentMethod.available(canUseApplePay: true, merchantID: nil) == [.card])
         #expect(SquarePaymentMethod.available(canUseApplePay: true, merchantID: "") == [.card])
-        #expect(SquarePaymentMethod.available(canUseApplePay: false, merchantID: "merchant.social.hotmess", isReview: true) == [.applePay, .card])
-    }
-
-    @Test("Review demo cover charge is payable and formatted")
-    func reviewDemoCover() {
-        let demo = CoverCharge.reviewDemo()
-        #expect(demo.payable)
-        #expect(demo.amount == Money(cents: 1000))
-        #expect(demo.total == Money(cents: 1000))
-        #expect(demo.summary(isTonight: true).contains("10"))
-        #expect(demo.supportsApplePay)
-        #expect(!demo.hasOtherPaymentMechanisms)
     }
 
     @Test("Payment mechanisms properly indicate whether only Apple Pay is supported")
@@ -392,7 +380,6 @@ struct CoverPaymentTests {
         #expect(ApplePayStatus.current(canMakePayments: false, hasConfiguredCards: true) == .unavailable)
         #expect(ApplePayStatus.current(canMakePayments: true, hasConfiguredCards: false) == .needsSetup)
         #expect(ApplePayStatus.current(canMakePayments: true, hasConfiguredCards: true) == .ready)
-        #expect(ApplePayStatus.current(canMakePayments: false, hasConfiguredCards: false, isReview: true) == .ready)
     }
 
     @Test("Apple Pay charges the all-in price in currency units")

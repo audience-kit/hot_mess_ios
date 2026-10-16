@@ -48,16 +48,11 @@ struct CoverSection: View {
     let admission: Admission?
     let venueID: UUID?
     let venueName: String
-    var isReviewMode: Bool = false
 
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @State private var quantity = 1
     @State private var selectedTierID: String?
-
-    private var effectiveReviewMode: Bool {
-        isReviewMode || model.isReviewMode
-    }
 
     private var isOnlyApplePay: Bool {
         guard let coverCharge else { return false }
@@ -65,14 +60,10 @@ struct CoverSection: View {
     }
 
     private var applePayStatus: ApplePayStatus {
-        ApplePayStatus.current(isReview: effectiveReviewMode)
+        ApplePayStatus.current()
     }
 
     private var showsPayCoverButton: Bool {
-        // In review mode without a real payable cover charge, Apple Pay is the only mechanism
-        if effectiveReviewMode && !(coverCharge?.payable ?? false) {
-            return false
-        }
         // If the cover charge specifies payment mechanisms and there are no other mechanisms besides apple_pay
         if let coverCharge, !coverCharge.hasOtherPaymentMechanisms {
             return false
@@ -103,7 +94,7 @@ struct CoverSection: View {
             if let admission, admission.isPaid {
                 ShowPassButton(admission: admission)
             } else if isTonight, let coverCharge {
-                if (coverCharge.payable || effectiveReviewMode), let venueID {
+                if coverCharge.payable, let venueID {
                     if isOnlyApplePay && applePayStatus == .unavailable {
                         Text(String(localized: "Pay cash at the door"))
                             .font(.hotMess(.subheadline))
@@ -171,8 +162,7 @@ struct CoverSection: View {
                                         venueID: venueID,
                                         venueName: venueName,
                                         quantity: quantity,
-                                        tier: selectedTier?.id,
-                                        isReview: effectiveReviewMode
+                                        tier: selectedTier?.id
                                     )
                                 }
                             }
@@ -183,7 +173,7 @@ struct CoverSection: View {
                         }
                         #endif
                     }
-                    if let coatCheck = coverCharge.coatCheck, coatCheck.payable || effectiveReviewMode {
+                    if let coatCheck = coverCharge.coatCheck, coatCheck.payable {
                         Divider()
                         HStack {
                             Label(String(localized: "Coat Check: \(coatCheck.price)"), systemImage: "hanger")
@@ -194,8 +184,7 @@ struct CoverSection: View {
                                     await model.checkout.payCoatCheck(
                                         venueID: venueID,
                                         venueName: venueName,
-                                        quantity: 1,
-                                        isReview: effectiveReviewMode
+                                        quantity: 1
                                     )
                                 }
                             }
@@ -222,27 +211,19 @@ struct CoatCheckSection: View {
     let admission: Admission?
     let venueID: UUID
     let venueName: String
-    var isReviewMode: Bool = false
 
     @Environment(AppModel.self) private var model
     @State private var quantity = 1
-
-    private var effectiveReviewMode: Bool {
-        isReviewMode || model.isReviewMode
-    }
 
     private var isOnlyApplePay: Bool {
         !coatCheck.hasOtherPaymentMechanisms && coatCheck.supportsApplePay
     }
 
     private var applePayStatus: ApplePayStatus {
-        ApplePayStatus.current(isReview: effectiveReviewMode)
+        ApplePayStatus.current()
     }
 
     private var showsPayCoatCheckButton: Bool {
-        if effectiveReviewMode && !coatCheck.payable {
-            return false
-        }
         if !coatCheck.hasOtherPaymentMechanisms {
             return false
         }
@@ -261,7 +242,7 @@ struct CoatCheckSection: View {
 
             if let admission, admission.isPaid {
                 ShowPassButton(admission: admission, title: String(localized: "Show coat check pass"), systemImage: "hanger")
-            } else if coatCheck.payable || effectiveReviewMode {
+            } else if coatCheck.payable {
                 if isOnlyApplePay && applePayStatus == .unavailable {
                     Text(String(localized: "Pay cash at coat check"))
                         .font(.hotMess(.subheadline))
@@ -315,8 +296,7 @@ struct CoatCheckSection: View {
                                 await model.checkout.payCoatCheckWithApplePay(
                                     venueID: venueID,
                                     venueName: venueName,
-                                    quantity: quantity,
-                                    isReview: effectiveReviewMode
+                                    quantity: quantity
                                 )
                             }
                         }
@@ -355,8 +335,7 @@ struct PayCoatCheckButton: View {
                 await model.checkout.payCoatCheck(
                     venueID: venueID,
                     venueName: venueName,
-                    quantity: quantity,
-                    isReview: model.isReviewMode
+                    quantity: quantity
                 )
             }
         } label: {
@@ -400,8 +379,7 @@ struct PayCoverButton: View {
                     venueID: venueID,
                     venueName: venueName,
                     quantity: quantity,
-                    tier: tier,
-                    isReview: model.isReviewMode
+                    tier: tier
                 )
             }
         } label: {
@@ -464,22 +442,15 @@ struct SkipTheLineCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
 
-    private var effectiveReviewMode: Bool {
-        model.isReviewMode
-    }
-
     private var isOnlyApplePay: Bool {
         !coverCharge.hasOtherPaymentMechanisms && coverCharge.supportsApplePay
     }
 
     private var applePayStatus: ApplePayStatus {
-        ApplePayStatus.current(isReview: effectiveReviewMode)
+        ApplePayStatus.current()
     }
 
     private var showsPayCoverButton: Bool {
-        if effectiveReviewMode && !coverCharge.payable {
-            return false
-        }
         if !coverCharge.hasOtherPaymentMechanisms {
             return false
         }
@@ -542,8 +513,7 @@ struct SkipTheLineCard: View {
                         Task {
                             await model.checkout.payWithApplePay(
                                 venueID: venue.id,
-                                venueName: venue.name,
-                                isReview: effectiveReviewMode
+                                venueName: venue.name
                             )
                         }
                     }
@@ -574,18 +544,15 @@ struct CoatCheckCard: View {
 
     @Environment(AppModel.self) private var model
 
-    private var effectiveReviewMode: Bool { model.isReviewMode }
-
     private var isOnlyApplePay: Bool {
         !coatCheck.hasOtherPaymentMechanisms && coatCheck.supportsApplePay
     }
 
     private var applePayStatus: ApplePayStatus {
-        ApplePayStatus.current(isReview: effectiveReviewMode)
+        ApplePayStatus.current()
     }
 
     private var showsPayCoatCheckButton: Bool {
-        if effectiveReviewMode && !coatCheck.payable { return false }
         if !coatCheck.hasOtherPaymentMechanisms { return false }
         return true
     }
@@ -644,8 +611,7 @@ struct CoatCheckCard: View {
                         Task {
                             await model.checkout.payCoatCheckWithApplePay(
                                 venueID: venue.id,
-                                venueName: venue.name,
-                                isReview: effectiveReviewMode
+                                venueName: venue.name
                             )
                         }
                     }
@@ -760,8 +726,7 @@ import PassKit
 extension ApplePayStatus {
     static let supportedNetworks: [PKPaymentNetwork] = [.visa, .masterCard, .amex, .discover]
 
-    static func current(isReview: Bool = false) -> ApplePayStatus {
-        if isReview { return .ready }
+    static func current() -> ApplePayStatus {
         guard PKPaymentAuthorizationController.canMakePayments() else {
             return .unavailable
         }
@@ -799,8 +764,8 @@ struct ApplePayButton: UIViewRepresentable {
 }
 #else
 extension ApplePayStatus {
-    static func current(isReview: Bool = false) -> ApplePayStatus {
-        isReview ? .ready : .unavailable
+    static func current() -> ApplePayStatus {
+        .unavailable
     }
 }
 #endif

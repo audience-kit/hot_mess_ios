@@ -90,6 +90,66 @@ struct EndpointTests {
         #expect(sdkJSON["facebook_token"] as? String == "t")
         #expect(sdkJSON["code"] == nil)
     }
+
+    @Test("Sends Apple's authorization code with the identity token when there is one")
+    func appleAuthorizationCode() throws {
+        let device = DeviceDescription(identifier: "d")
+        let withCode = HotMessAPI.Endpoints.appleSignIn(
+            AppleSignInRequest(identityToken: "t", authorizationCode: "c", firstName: nil, lastName: nil,
+                               host: nil, device: device)
+        )
+        let encode = try #require(withCode.body?.encode)
+        let json = try #require(JSONSerialization.jsonObject(with: try encode(JSONEncoder())) as? [String: Any])
+        #expect(json["identity_token"] as? String == "t")
+        #expect(json["authorization_code"] as? String == "c")
+
+        let without = HotMessAPI.Endpoints.appleSignIn(
+            AppleSignInRequest(identityToken: "t", firstName: nil, lastName: nil, host: nil, device: device)
+        )
+        let encodeWithout = try #require(without.body?.encode)
+        let jsonWithout = try #require(
+            JSONSerialization.jsonObject(with: try encodeWithout(JSONEncoder())) as? [String: Any]
+        )
+        #expect(jsonWithout["authorization_code"] == nil)
+    }
+
+    @Test("Asks whether App Review sign-in is on, and signs in with a review code, without a session")
+    func reviewSignIn() throws {
+        let status = HotMessAPI.Endpoints.reviewSignInStatus(host: "hotmess.social")
+        #expect(status.path == "/v1/token/review")
+        #expect(status.method == .get)
+        #expect(status.requiresAuthentication == false)
+        #expect(status.query == [URLQueryItem(name: "host", value: "hotmess.social")])
+
+        let device = DeviceDescription(identifier: "d")
+        let signIn = HotMessAPI.Endpoints.reviewSignIn(ReviewSignInRequest(code: "1234", host: nil, device: device))
+        #expect(signIn.path == "/v1/token/review")
+        #expect(signIn.method == .post)
+        #expect(signIn.requiresAuthentication == false)
+
+        let encode = try #require(signIn.body?.encode)
+        let json = try #require(JSONSerialization.jsonObject(with: try encode(JSONEncoder())) as? [String: Any])
+        #expect(json["code"] as? String == "1234")
+        #expect((json["device"] as? [String: Any])?["identifier"] as? String == "d")
+
+        let enabled = try JSONDecoder().decode(ReviewSignInStatus.self, from: Data(#"{"enabled": true}"#.utf8))
+        #expect(enabled.enabled)
+        let missing = try JSONDecoder().decode(ReviewSignInStatus.self, from: Data("{}".utf8))
+        #expect(!missing.enabled)
+    }
+}
+
+@Suite("Age gate")
+struct AgeGateTests {
+    @Test("Reads an 18 gate's shared range as adult, minor or unknown")
+    func verdicts() {
+        #expect(AgeGate.verdict(lowerBound: 18, upperBound: nil) == .adult)
+        #expect(AgeGate.verdict(lowerBound: 21, upperBound: 25) == .adult)
+        #expect(AgeGate.verdict(lowerBound: 13, upperBound: 17) == .minor)
+        #expect(AgeGate.verdict(lowerBound: nil, upperBound: 17) == .minor)
+        #expect(AgeGate.verdict(lowerBound: nil, upperBound: nil) == .unknown)
+        #expect(AgeGate.verdict(lowerBound: 16, upperBound: nil) == .unknown)
+    }
 }
 
 @Suite("GraphQL")
@@ -459,5 +519,25 @@ struct ChatIdentifierTests {
         #expect(message.body == "hi")
         #expect(message.kind == .text)
         #expect(message.sentAt == Date(timeIntervalSince1970: 1_791_691_200))
+    }
+}
+
+@Suite("Reporting")
+struct ReportContentTests {
+    @Test("Names the target type in the reportContent mutation and decodes its payload")
+    func reportContent() throws {
+        #expect(HotMessAPI.operationName(HotMessAPI.Documents.reportContent) == "graphql mutation ReportContent")
+        #expect(HotMessAPI.Documents.reportContent.contains("$targetType: ReportTarget!"))
+        #expect(ReportTarget.ping.rawValue == "PING")
+        #expect(ReportTarget.person.rawValue == "PERSON")
+
+        let json = Data(#"{"reportContent":{"reported":true,"blocked":false}}"#.utf8)
+        let payload = try JSONDecoder.hotMess.decode(ReportContentResponse.self, from: json).reportContent
+        #expect(payload.reported)
+        #expect(!payload.blocked)
+
+        let subject = ReportSubject(target: .venue, targetID: "v1")
+        #expect(subject.id == "VENUE:v1")
+        #expect(subject.sender == nil)
     }
 }

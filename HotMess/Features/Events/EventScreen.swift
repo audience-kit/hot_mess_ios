@@ -32,7 +32,7 @@ struct EventScreen: View {
 
                         if viewModel?.isTonight == true || viewModel?.activePings.isEmpty == false {
                             PingPlaceStrip(
-                                pings: viewModel?.activePings ?? [],
+                                pings: (viewModel?.activePings ?? []).filter { !model.safety.isBlocked($0.user.id) },
                                 isJoined: viewModel?.isJoinedHere(userID: model.session.userID) == true,
                                 isBusy: viewModel?.isUpdatingPings == true,
                                 pingForHere: pingForHere(event),

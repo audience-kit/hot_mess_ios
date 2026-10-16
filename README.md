@@ -187,6 +187,30 @@ The dumps publish from the API's `main`, so while this app tracks `next` the ste
 is `continue-on-error`; locally, run the same check against
 `api/schema.graphql` in an `audience-kit` checkout on `next`.
 
+## App Review
+
+Apple's reviewer signs in with a code, not a personal account:
+
+- While the audience is in App Review, `GET /v1/token/review` answers
+  `{"enabled": true}` and the login screen shows **Have an App Review code?**.
+  Like every sign-in, it first needs the 18+ check and the terms. The code from
+  the App Store Connect review notes goes to `POST /v1/token/review`, which
+  signs in the designated reviewer account (`users.app_reviewer`). A wrong code
+  is a 401, shown as an invalid code.
+- Only that account gets `canPretendLocation`, which shows **Pretend I'm here**
+  on a venue so the reviewer can try its chat from anywhere. No one else sees
+  it in an App Store build. Cover and coat check go through the venue's real
+  Stripe or Square payment; there is no demo charge.
+- Age: on iOS 26 the app asks for the declared age range (an 18 gate, the
+  `com.apple.developer.declared-age-range` entitlement). Under 18 blocks
+  sign-in. Otherwise, or on older iOS, the person ticks "I confirm I am 18 or
+  older". The device keeps the confirmation.
+
+Test hooks (`-HotMessReviewMode`, `-HotMessUseNextAPI`, `HOTMESS_API_URL`,
+`-HotMessSafetyDemo`, `-HotMessUITestKaraoke=`) only compile with the
+`TEST_HOOKS` condition, set for Debug and Staging. Run the UI tests and the
+Screenshots scheme on those, not on Release.
+
 ## TestFlight
 
 `Scripts/testflight.sh` archives the "HotMess Release" scheme, exports it for

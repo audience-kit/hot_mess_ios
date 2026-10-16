@@ -26,6 +26,7 @@ enum SessionError: Error, LocalizedError {
     case configurationUnavailable
     case missingFacebookToken
     case missingAppleToken
+    case invalidReviewCode
     case facebook(String)
 
     var errorDescription: String? {
@@ -38,6 +39,8 @@ enum SessionError: Error, LocalizedError {
             String(localized: "Facebook didn't return an access token.")
         case .missingAppleToken:
             String(localized: "Apple didn't return a sign-in token.")
+        case .invalidReviewCode:
+            String(localized: "That App Review code isn't valid. Check the code in the review notes and try again.")
         case let .facebook(reason):
             reason
         }
@@ -165,7 +168,7 @@ final class SessionStore {
     }
 
     func signIn() async {
-        if ProcessInfo.processInfo.arguments.contains("-HotMessSafetyDemo"), await hasStoredSession {
+        if AppModel.isSafetyDemo, await hasStoredSession {
             await restoreSession()
             if isSignedIn { return }
         }
@@ -217,6 +220,9 @@ final class SessionStore {
             return
         }
 
+        // Single-use and short-lived; the API trades it for the refresh
+        // token it revokes on account deletion.
+        let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
         // Apple only gives the name the first time; the API keeps it.
         let firstName = credential.fullName?.givenName
         let lastName = credential.fullName?.familyName
@@ -225,9 +231,34 @@ final class SessionStore {
         state = .signingIn
         Task {
             await exchange { device in
-                let request = AppleSignInRequest(identityToken: identityToken, firstName: firstName,
-                                                 lastName: lastName, host: host, device: device)
+                let request = AppleSignInRequest(identityToken: identityToken, authorizationCode: authorizationCode,
+                                                 firstName: firstName, lastName: lastName, host: host, device: device)
                 return try await self.adopting(self.api.signInWithApple(request))
+            }
+        }
+    }
+
+    /// Whether the login screen offers "Have an App Review code?": only while
+    /// the API says App Review sign-in is on. Unreachable reads as off.
+    func isReviewSignInEnabled() async -> Bool {
+        (try? await api.isReviewSignInEnabled(host: audienceKit.configuration.host)) ?? false
+    }
+
+    /// Signs in the designated App Review account with the code from the
+    /// review notes, the way Sign in with Apple does: the API mints the
+    /// credential and the SDK adopts it.
+    func signInWithReviewCode(_ code: String) async {
+        let code = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !code.isEmpty else { return }
+        let host = audienceKit.configuration.host
+
+        state = .signingIn
+        await exchange { device in
+            do {
+                let request = ReviewSignInRequest(code: code, host: host, device: device)
+                return try await self.adopting(self.api.signInWithReviewCode(request))
+            } catch APIError.unauthorized {
+                throw SessionError.invalidReviewCode
             }
         }
     }

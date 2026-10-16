@@ -37,6 +37,10 @@ struct VenueChatScreen: View {
     @State private var failureMessage: String?
     @State private var isPromptingFacebook = false
     @State private var isConnectingFacebook = false
+    @State private var isThankingForReport = false
+    /// Someone in the Here now strip being reported or blocked.
+    @State private var personReport: ReportSubject?
+    @State private var personBlock: BlockedUser?
 
     var body: some View {
         Group {
@@ -131,6 +135,23 @@ struct VenueChatScreen: View {
         } message: { _ in
             Text("It's removed for everyone in the room.")
         }
+        .alert(String(localized: "Thanks for reporting it"), isPresented: $isThankingForReport) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text("Our moderation team will review it within 24 hours.")
+        }
+        .contentReporting(report: $personReport, block: $personBlock)
+        .alert(
+            String(localized: "Message Not Sent"),
+            isPresented: Binding(
+                get: { viewModel?.sendError != nil },
+                set: { if !$0 { viewModel?.sendError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(viewModel?.sendError ?? "")
+        }
         .alert(
             String(localized: "Something went wrong"),
             isPresented: isPresenting($failureMessage),
@@ -186,7 +207,20 @@ struct VenueChatScreen: View {
                 let hereNow = viewModel.hereNow.filter { !blocked.contains($0.id) }
                 let place = room.kind == .venue ? HereNowPlace(name: room.name, photoURL: room.photoURL) : nil
                 if place != nil || !hereNow.isEmpty {
-                    HereNowStrip(place: place, people: hereNow)
+                    HereNowStrip(
+                        place: place,
+                        people: hereNow,
+                        onReport: { person in
+                            personReport = ReportSubject(
+                                target: .person,
+                                targetID: person.id.uuidString.lowercased(),
+                                sender: BlockedUser(id: person.id, name: person.name, avatarURL: person.avatarURL)
+                            )
+                        },
+                        onBlock: { person in
+                            personBlock = BlockedUser(id: person.id, name: person.name, avatarURL: person.avatarURL)
+                        }
+                    )
                 }
                 // Each minute, so a special leaves the room when it ends.
                 TimelineView(.everyMinute) { timeline in
@@ -218,9 +252,14 @@ struct VenueChatScreen: View {
         guard let id = UUID(uuidString: message.id) else { return }
 
         do {
-            try await model.safety.report(messageID: id, sender: sender(of: message), reason: reason, block: false)
-            if !model.safety.isBlocked(UUID(uuidString: message.authorID)) {
+            // A post as the venue has no sender to block; the API ignores
+            // `block` for it.
+            let author: BlockedUser? = message.isFromPlace ? nil : sender(of: message)
+            try await model.safety.report(messageID: id, sender: author, reason: reason, block: false)
+            if !message.isFromPlace, !model.safety.isBlocked(UUID(uuidString: message.authorID)) {
                 blockOffer = message
+            } else {
+                isThankingForReport = true
             }
         } catch {
             failureMessage = String(localized: "The report didn't go through. Please try again.")

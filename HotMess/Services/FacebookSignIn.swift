@@ -11,6 +11,16 @@ import UIKit
 
 /// Signs in with Facebook using only the Facebook SDK, requesting App
 /// Tracking Transparency permission before starting the login flow.
+///
+/// Why not Limited Login: it returns only an OpenID Connect authentication
+/// token (a JWT), with no Graph API access token, and the AudienceKit API
+/// signs people in with a Graph access token (`POST /v1/token`
+/// `facebook_token`, checked and used with the Graph API for the profile and
+/// friends). So login stays classic (`tracking: .enabled`), the ATT prompt
+/// comes first with an accurate `NSUserTrackingUsageDescription`, and the
+/// privacy manifest declares tracking with the Facebook SDK's tracking domain.
+/// The app sends Facebook no app events and no advertiser ID (`AppDelegate`,
+/// Info.plist), whatever the person answers.
 @MainActor
 final class FacebookSignIn {
     enum Result: Sendable, Equatable {

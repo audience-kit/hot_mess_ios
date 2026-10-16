@@ -45,7 +45,11 @@ struct AppConfiguration: Sendable, Hashable {
         var env = (bundle.object(forInfoDictionaryKey: "AudienceKitEnvironment") as? String)
             .flatMap(AudienceKitEnvironment.init(rawValue:)) ?? .production
 
-        // Support App Store test review mode targeting the Next API
+        // UI tests and screenshots can point a build at the next preview
+        // (`-HotMessUseNextAPI`) or another API (`HOTMESS_API_URL`). Only in
+        // builds with test hooks (Debug, Staging); an App Store build always
+        // talks to the API its xcconfig names.
+        #if TEST_HOOKS
         let processInfo = ProcessInfo.processInfo
         let useNextAPI = processInfo.arguments.contains("-HotMessUseNextAPI") ||
             processInfo.environment["HOTMESS_USE_NEXT_API"] == "1" ||
@@ -60,6 +64,7 @@ struct AppConfiguration: Sendable, Hashable {
                   !customURL.isEmpty {
             serverBase = customURL
         }
+        #endif
 
         baseURL = serverBase.flatMap(URL.init(string:)) ?? Self.defaultBaseURL
         beaconUUID = (bundle.object(forInfoDictionaryKey: "HotMessBeaconID") as? String)

@@ -64,6 +64,10 @@ struct HereNowPlace: Hashable, Sendable {
 struct HereNowStrip: View {
     var place: HereNowPlace? = nil
     let people: [HereNowPerson]
+    /// Report someone here, from their avatar's menu.
+    var onReport: ((HereNowPerson) -> Void)? = nil
+    /// Block someone here, which hides them at once.
+    var onBlock: ((HereNowPerson) -> Void)? = nil
 
     var body: some View {
         // One compact row: the count, then the faces. A horizontal scroll view
@@ -87,6 +91,16 @@ struct HereNowStrip: View {
 
                 ForEach(people) { person in
                     HereNowFace(person: person)
+                        .contextMenu {
+                            if onReport != nil || onBlock != nil {
+                                safetyActions(for: person)
+                            }
+                        }
+                        .accessibilityActions {
+                            if onReport != nil || onBlock != nil {
+                                safetyActions(for: person)
+                            }
+                        }
                 }
             }
             .padding(.horizontal, 16)
@@ -106,6 +120,24 @@ struct HereNowStrip: View {
 
     private var countLabel: String {
         String(localized: "\(people.count) here now")
+    }
+
+    @ViewBuilder
+    private func safetyActions(for person: HereNowPerson) -> some View {
+        if let onReport {
+            Button {
+                onReport(person)
+            } label: {
+                Label(String(localized: "Report \(person.firstName)…"), systemImage: "exclamationmark.bubble")
+            }
+        }
+        if let onBlock {
+            Button(role: .destructive) {
+                onBlock(person)
+            } label: {
+                Label(String(localized: "Block \(person.firstName)"), systemImage: "hand.raised")
+            }
+        }
     }
 }
 
