@@ -160,9 +160,16 @@ final class SessionStore {
         await exchange(facebookToken: facebookToken)
     }
 
-    // MARK: - Sign in and out
+    func presentDemoLogin() {
+        state = .signedOut
+    }
 
     func signIn() async {
+        if ProcessInfo.processInfo.arguments.contains("-HotMessSafetyDemo"), await hasStoredSession {
+            await restoreSession()
+            if isSignedIn { return }
+        }
+
         state = .signingIn
 
         do {

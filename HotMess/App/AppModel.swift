@@ -133,11 +133,14 @@ final class AppModel {
         // UI tests start from the login screen.
         if ProcessInfo.processInfo.arguments.contains("-HotMessUITestSignedOut") {
             signOut()
+        } else if ProcessInfo.processInfo.arguments.contains("-HotMessSafetyDemo") {
+            session.presentDemoLogin()
+        } else {
+            await session.start()
         }
 
         // Branding is public, so the login screen can wear the audience's colours.
         Task { await brand.load() }
-        await session.start()
 
         if session.isSignedIn {
             location.start()

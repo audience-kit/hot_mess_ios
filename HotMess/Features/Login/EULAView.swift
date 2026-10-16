@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// End User License Agreement (EULA) and Community Guidelines display, presented
-/// to users before registering or logging in (App Store guideline 1.2).
+/// to users before registering or logging in.
 struct EULAView: View {
     @Environment(\.dismiss) private var dismiss
     var onAccept: (() -> Void)?
@@ -28,6 +28,8 @@ struct EULAView: View {
                     blockingSection
 
                     moderationSection
+
+                    appealsSection
 
                     ejectionSection
 
@@ -145,7 +147,7 @@ struct EULAView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 bullet("Their messages, presence, and profile are instantly removed from your feed and chat.")
-                bullet("The developer is notified immediately of the abusive user report for review.")
+                bullet("Our moderation team is notified immediately of the report for review.")
                 bullet("The blocked user is not notified that they have been blocked.")
                 bullet("You can review and manage your blocked users list anytime in Settings > Blocked People.")
             }
@@ -155,21 +157,39 @@ struct EULAView: View {
 
     private var moderationSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("5. 24-Hour Developer Action Guarantee")
+            Text("5. Swift Action on Reports (Within 24 Hours)")
                 .font(.hotMess(.headline, semibold: true))
 
-            Text("Our moderation staff reviews all flagged creator content, reports, and blocks. The developer must and will act on all objectionable content reports within 24 hours by removing the offending content and ejecting / terminating the creator or user who provided it.")
+            Text("We act swiftly on every report. Our safety team reviews all flagged content, creator reports, and blocks within 24 hours, promptly removing offending content and ejecting abusive users from the community.")
                 .font(.hotMess(.subheadline))
                 .foregroundStyle(.secondary)
         }
     }
 
-    private var ejectionSection: some View {
+    private var appealsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("6. Creator & User Ejection")
+            Text("6. Appeals & Due Process")
                 .font(.hotMess(.headline, semibold: true))
 
-            Text("Violating these terms will result in immediate ejection from the community, revocation of Velvet and Backstage creator publishing access, deletion of offending content, and permanent banning from the Hot Mess platform.")
+            Text("We believe in fair moderation with a strong bias toward a thorough and thoughtful appeal process. If you believe your content or account was flagged, restricted, or removed in error, you have a direct path to appeal:")
+                .font(.hotMess(.subheadline))
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 6) {
+                bullet("Submit an appeal anytime via 'Report a Problem' in Settings or by contacting support.")
+                bullet("Every appeal is given a fresh, human review with an open mind to correcting mistakes.")
+                bullet("Content or accounts determined to have been penalized in error are swiftly reinstated.")
+            }
+            .padding(.leading, 8)
+        }
+    }
+
+    private var ejectionSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("7. Creator & User Ejection")
+                .font(.hotMess(.headline, semibold: true))
+
+            Text("Confirmed violations of our community safety guidelines will result in swift ejection from the community, revocation of Velvet and Backstage creator publishing access, deletion of offending content, and permanent banning from the Hot Mess platform.")
                 .font(.hotMess(.subheadline))
                 .foregroundStyle(.secondary)
         }

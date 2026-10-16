@@ -190,8 +190,8 @@ struct ChatThreadView: View {
     var pinned: ChatThreadMessage? = nil
     /// Called with a failed message's ID when the reader taps it.
     var onRetry: ((String) -> Void)? = nil
-    /// Report and Block, in the menu on someone else's message (App Store
-    /// guideline 1.2). Without them there's no menu.
+    /// Report and Block, in the menu on someone else's message. Without them
+    /// there's no menu.
     var onReport: ((ChatThreadMessage) -> Void)? = nil
     var onBlock: ((ChatThreadMessage) -> Void)? = nil
     /// Delete, in the menu on the reader's own sent messages. Without it

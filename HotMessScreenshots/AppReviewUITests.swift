@@ -22,7 +22,7 @@ final class AppReviewUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = true
         app = XCUIApplication()
-        app.launchArguments = ["-HotMessUITestSignedOut"]
+        app.launchArguments = ["-HotMessUITestSignedOut", "-HotMessUseNextAPI"]
         app.launch()
     }
 
@@ -48,7 +48,30 @@ final class AppReviewUITests: XCTestCase {
         sleep(dwell * 3)
     }
 
+    /// Sign in with Apple walkthrough using Sandbox Apple ID for screen recording and demo videos.
+    func testAppleSignInWalkthrough() throws {
+        try signInWithAppleFromLoginScreen()
+        showNotificationPrompt()
+        open(tab: "Now")
+        sleep(dwell)
+        open(tab: "Me")
+        sleep(dwell)
+        sleep(dwell * 3)
+    }
+
     // MARK: - Sign-in
+
+    private func signInWithAppleFromLoginScreen() throws {
+        let appleButton = app.buttons["login.apple"]
+        XCTAssertTrue(appleButton.waitForExistence(timeout: 15), "The Apple sign-in button didn't appear")
+        snapshot("Login screen")
+        sleep(dwell)
+
+        let helper = AppleSignInHelper(app: app, dwell: dwell)
+        try helper.signIn()
+        snapshot("Signed in with Apple")
+        sleep(dwell)
+    }
 
     private func signInFromLoginScreen() throws {
         let login = app.buttons["login.facebook"]

@@ -8,10 +8,10 @@ import SwiftUI
 
 /// What `RootView` shows when there is no session: the Hot Mess silhouette in
 /// the audience's colours, its name and tagline, and Facebook sign-in, with
-/// Sign in with Apple beside it (App Store guideline 4.8).
+/// Sign in with Apple beside it.
 struct LoginScreen: View {
     @Environment(AppModel.self) private var model
-    @AppStorage("hasAgreedToEULA") private var hasAgreedToEULA = false
+    @State private var hasAgreedToEULA = false
     @State private var isShowingEULA = false
     @State private var pendingFacebookSignIn = false
     @State private var pendingAppleResult: Result<ASAuthorization, any Error>?
@@ -50,6 +50,8 @@ struct LoginScreen: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
+            UserDefaults.standard.removeObject(forKey: "hasAgreedToEULA")
+            hasAgreedToEULA = false
             withAnimation(.easeOut(duration: 0.5)) { hasAppeared = true }
         }
         .onChange(of: model.session.state) { _, state in
@@ -182,40 +184,51 @@ struct LoginScreen: View {
     }
 
     private var eulaAgreementRow: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 12) {
             Button {
                 hasAgreedToEULA.toggle()
             } label: {
                 Image(systemName: hasAgreedToEULA ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 20))
-                    .foregroundStyle(hasAgreedToEULA ? Color.hotMessAccentInk : .white.opacity(0.85))
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(hasAgreedToEULA ? .white : .white.opacity(0.9))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("login.eulaCheckbox")
+            .accessibilityValue(hasAgreedToEULA ? "1" : "0")
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Text("I agree to the")
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white)
                     Button {
                         isShowingEULA = true
                     } label: {
                         Text("Terms of Use (EULA)")
                             .underline()
-                            .fontWeight(.semibold)
+                            .fontWeight(.bold)
                             .foregroundStyle(.white)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("login.openEULA")
                 }
                 Text("Zero tolerance for objectionable content or abusive users.")
-                    .font(.hotMess(.caption2))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.hotMess(.caption2, semibold: true))
+                    .foregroundStyle(.white.opacity(0.85))
             }
             .font(.hotMess(.caption))
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 4)
+        )
     }
 
     private var isSigningIn: Bool {

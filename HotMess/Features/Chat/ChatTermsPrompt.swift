@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Shown in place of a chat room until the user agrees to the terms of use,
-/// which forbid objectionable content and abuse (App Store guideline 1.2).
+/// which forbid objectionable content and abuse.
 /// Asked once per account; the API remembers.
 struct ChatTermsPrompt: View {
     let accept: () async throws -> Void

@@ -7,7 +7,7 @@ import Foundation
 import Observation
 
 /// The user's blocks and whether they've agreed to the terms of use, which
-/// chat needs before anyone can read or post (App Store guideline 1.2). Also
+/// chat needs before anyone can read or post. Also
 /// whether the account has Facebook, and whether App Review lets it pretend
 /// to be at a venue.
 ///
