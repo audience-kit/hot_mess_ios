@@ -47,22 +47,8 @@ final class AppleSignInHelper {
             return true
         }
 
-        // 1. Ensure EULA checkbox is checked prior to tapping Sign in with Apple
-        let eulaCheckbox = app.buttons["login.eulaCheckbox"]
-        if eulaCheckbox.waitForExistence(timeout: 3) && eulaCheckbox.isHittable {
-            let isChecked = (eulaCheckbox.value as? String == "1") || (eulaCheckbox.value as? String == "checked")
-            if !isChecked {
-                eulaCheckbox.tap()
-                sleep(1)
-            }
-        }
-
-        // The 18+ confirmation shows until the device has one.
-        let ageCheckbox = app.buttons["login.ageCheckbox"]
-        if ageCheckbox.waitForExistence(timeout: 2) && ageCheckbox.isHittable && ageCheckbox.value as? String != "1" {
-            ageCheckbox.tap()
-            sleep(1)
-        }
+        // 1. Agree to the terms (and confirm 18+) before tapping Sign in with Apple
+        app.agreeToLoginTerms()
 
         // 2. Locate and tap "Sign in with Apple"
         let appleButton = app.buttons["login.apple"]
@@ -166,5 +152,28 @@ final class AppleSignInHelper {
 
         XCTAssertTrue(tabs.waitForExistence(timeout: 5), "Hot Mess tabs did not appear within timeout after Apple Sign-In")
         return tabs.exists
+    }
+}
+
+extension XCUIApplication {
+    /// Ticks the login screen's "I agree to the Terms of Use" and, until the device has a confirmation,
+    /// "I confirm I am 18 or older", so a sign-in button starts signing in rather than opening the terms.
+    @MainActor
+    func agreeToLoginTerms() {
+        let eulaCheckbox = buttons["login.eulaCheckbox"]
+        if eulaCheckbox.waitForExistence(timeout: 3) && eulaCheckbox.isHittable {
+            let isChecked = (eulaCheckbox.value as? String == "1") || (eulaCheckbox.value as? String == "checked")
+            if !isChecked {
+                eulaCheckbox.tap()
+                sleep(1)
+            }
+        }
+
+        // The 18+ confirmation shows until the device has one.
+        let ageCheckbox = buttons["login.ageCheckbox"]
+        if ageCheckbox.waitForExistence(timeout: 2) && ageCheckbox.isHittable && ageCheckbox.value as? String != "1" {
+            ageCheckbox.tap()
+            sleep(1)
+        }
     }
 }
