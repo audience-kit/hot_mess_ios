@@ -9,14 +9,18 @@ enum AppleTestCredentials {
     static let defaultEmail = "tom_test_me@hotmess.social"
     static let defaultPassword = "I_am_1_test_user"
 
+    /// `HOTMESS_UITEST_APPLE_*`, else the root .env's `APPLE_TEST_USER`/`APPLE_TEST_PASSWORD` (which
+    /// scripts/test-credentials.py passes to the run), else the defaults.
     static var email: String {
-        let env = ProcessInfo.processInfo.environment["HOTMESS_UITEST_APPLE_EMAIL"]
-        return (env != nil && !env!.isEmpty) ? env! : defaultEmail
+        value("HOTMESS_UITEST_APPLE_EMAIL") ?? value("APPLE_TEST_USER") ?? defaultEmail
     }
 
     static var password: String {
-        let env = ProcessInfo.processInfo.environment["HOTMESS_UITEST_APPLE_PASSWORD"]
-        return (env != nil && !env!.isEmpty) ? env! : defaultPassword
+        value("HOTMESS_UITEST_APPLE_PASSWORD") ?? value("APPLE_TEST_PASSWORD") ?? defaultPassword
+    }
+
+    private static func value(_ key: String) -> String? {
+        ProcessInfo.processInfo.environment[key].flatMap { $0.isEmpty ? nil : $0 }
     }
 }
 

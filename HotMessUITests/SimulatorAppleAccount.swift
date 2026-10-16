@@ -37,8 +37,9 @@ enum SimulatorAppleAccount {
             }
             let code = settings.staticTexts
                 .matching(NSPredicate(format: "label CONTAINS[c] 'verification code' OR label CONTAINS[c] 'Two-Factor' OR " +
-                                        "label CONTAINS[c] 'verify your identity'")).firstMatch
-            if code.exists {
+                                        "label CONTAINS[c] 'verify your identity with'")).firstMatch
+            // Only after the password: the "Sign in Manually" card itself mentions verifying your identity.
+            if typedPassword, code.exists {
                 snapshot(settings, "Apple Account wants a verification code")
                 XCTFail("\(email) needs a phone number or verification code; " +
                         "sign it in to Settings on this simulator by hand once.")
