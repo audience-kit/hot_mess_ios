@@ -26,6 +26,7 @@ final class FacebookSignInUITests: XCTestCase {
     func testSignsInWithFacebook() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-HotMessUITestSignedOut"]
+        app.useRunnerAPI()
         app.launch()
 
         let button = app.buttons["login.facebook"]

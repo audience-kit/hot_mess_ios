@@ -13,10 +13,10 @@ final class AppleSignInUITests: XCTestCase {
 
         let app = XCUIApplication()
         app.launchArguments = ["-HotMessUITestSignedOut", "-hasAgreedToEULA", "NO"]
+        app.useRunnerAPI()
         app.launch()
-        let agreement = app.buttons["login.eulaCheckbox"]
-        XCTAssertTrue(agreement.waitForExistence(timeout: 15))
-        agreement.tap()
+        XCTAssertTrue(app.buttons["login.eulaCheckbox"].waitForExistence(timeout: 15))
+        app.agreeToLoginTerms()
         let signIn = app.buttons["login.apple"]
         XCTAssertTrue(signIn.waitForExistence(timeout: 5))
         signIn.tap()

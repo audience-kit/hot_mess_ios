@@ -156,6 +156,15 @@ final class AppleSignInHelper {
 }
 
 extension XCUIApplication {
+    /// Points the app at the API the test runner started (`HOTMESS_API_URL`, passed to xcodebuild as
+    /// `TEST_RUNNER_HOTMESS_API_URL`), if there is one; otherwise the build's own API.
+    @MainActor
+    func useRunnerAPI() {
+        if let api = ProcessInfo.processInfo.environment["HOTMESS_API_URL"], !api.isEmpty {
+            launchEnvironment["HOTMESS_API_URL"] = api
+        }
+    }
+
     /// Ticks the login screen's "I agree to the Terms of Use" and, until the device has a confirmation,
     /// "I confirm I am 18 or older", so a sign-in button starts signing in rather than opening the terms.
     @MainActor
