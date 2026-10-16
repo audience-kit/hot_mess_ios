@@ -31,6 +31,8 @@ final class FacebookSignInUITests: XCTestCase {
         let button = app.buttons["login.facebook"]
         XCTAssertTrue(button.waitForExistence(timeout: 15), "The login screen didn't appear")
         snapshot("Login screen")
+        // Without the terms (and 18+) ticked, the button opens the terms sheet instead of Facebook.
+        app.agreeToLoginTerms()
         button.tap()
         sleep(2)
         snapshot("After tapping Continue with Facebook")
