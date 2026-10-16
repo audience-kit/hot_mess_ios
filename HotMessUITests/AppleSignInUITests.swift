@@ -6,6 +6,7 @@ import XCTest
 final class AppleSignInUITests: XCTestCase {
     func testSignsInWithApple() throws {
         continueAfterFailure = false
+        SimulatorAppleAccount.ensureSignedIn(email: AppleTestCredentials.email, password: AppleTestCredentials.password)
 
         let app = XCUIApplication()
         app.launchArguments = ["-HotMessUITestSignedOut", "-hasAgreedToEULA", "NO"]
