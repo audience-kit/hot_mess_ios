@@ -67,12 +67,15 @@ enum VenueChatConnection {
     static let operationName = "ChatRoom"
 
     /// The room's subscription, aliased to `room` whichever field it is, with
-    /// its fields aliased to the keys the app's models decode.
-    static func subscriptionDocument(for room: ChatRoom) -> String {
+    /// its fields aliased to the keys the app's models decode. A watcher
+    /// (`watch`) follows the room without being in it: the server records no
+    /// presence, so nobody sees them as in chat.
+    static func subscriptionDocument(for room: ChatRoom, watch: Bool = false) -> String {
         let line = HotMessAPI.Documents.roomMessageFields
+        let watching = watch ? ", watch: true" : ""
         return """
         subscription ChatRoom($id: ID!) {
-          room: \(room.channelName)(\(room.subscriptionKey): $id) {
+          room: \(room.channelName)(\(room.subscriptionKey): $id\(watching)) {
             __typename
             ... on ChatJoined {
               out_of_range: outOfRange
@@ -101,10 +104,10 @@ enum VenueChatConnection {
     }
 
     /// The room's operation on the cable.
-    static func subscribe(to room: ChatRoom, on cable: AudienceCable, audienceID: String) async
+    static func subscribe(to room: ChatRoom, on cable: AudienceCable, audienceID: String, watch: Bool = false) async
         -> AsyncStream<AudienceCable.Event> {
         await cable.subscribe(
-            query: subscriptionDocument(for: room),
+            query: subscriptionDocument(for: room, watch: watch),
             variables: variables(for: room),
             operationName: operationName,
             audienceID: audienceID

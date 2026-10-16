@@ -49,6 +49,17 @@ extension Color {
     /// `surface-sunken`: a well that reads as set into the page, like ChatPeek.
     static var hotMessSurfaceSunken: Color { .token(\.surfaceSunken) }
 
+    /// `border`: hairlines, and the edge that lifts a `surface-sunken` well
+    /// off the wash.
+    static var hotMessBorder: Color { .token(\.border) }
+
+    /// `spectrum-1` to `spectrum-6`: the audience's six bands (the pride flag
+    /// for Hot Mess, brighter in dark). Decorative only, never text.
+    static var hotMessSpectrum: [Color] {
+        [.token(\.spectrum1), .token(\.spectrum2), .token(\.spectrum3),
+         .token(\.spectrum4), .token(\.spectrum5), .token(\.spectrum6)]
+    }
+
     /// `glass`: the dark fill of a pill over a photo, laid over
     /// `.ultraThinMaterial`. The same in every theme.
     static var hotMessGlass: Color { Color(DesignTokens.hotMess.glass) }

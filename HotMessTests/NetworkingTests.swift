@@ -494,6 +494,9 @@ struct ChatIdentifierTests {
         #expect(query.contains("sender_presence: senderPresence"))
 
         #expect(VenueChatConnection.subscriptionDocument(for: locale).contains("room: localeChat(localeId: $id)"))
+        // A ChatPeek watches the room without being in it.
+        #expect(VenueChatConnection.subscriptionDocument(for: locale, watch: true)
+            .contains("room: localeChat(localeId: $id, watch: true)"))
         #expect(executeData(for: venue) == data)
     }
 

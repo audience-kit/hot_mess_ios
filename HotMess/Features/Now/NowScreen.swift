@@ -222,10 +222,10 @@ struct NowScreen: View {
                 OnNowSection(appearances: now.onNow)
             }
 
-            ChatPeek(
+            LiveChatPeek(
                 title: String(localized: "Small talk"),
-                roomName: venue.name,
-                messages: now.recentMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
+                room: .venue(venue),
+                messages: now.recentMessages,
                 participants: chatParticipants(now, venue: venue),
                 route: .venueChat(venue)
             )
@@ -237,12 +237,21 @@ struct NowScreen: View {
     }
 
     private func chatParticipants(_ now: Now, venue: Venue) -> [ChatPeek.Participant] {
+        let place = ChatPeek.Participant(
+            id: "venue-\(venue.id)", name: venue.name,
+            avatarURL: venue.photoURL, isPlace: true
+        )
+        return [place] + viewerAndFriends(now)
+    }
+
+    /// The locale's room has no place to show first: you, then your friends out in it.
+    private func localeChatParticipants(_ now: Now) -> [ChatPeek.Participant] {
+        now.friends.isEmpty ? [] : viewerAndFriends(now)
+    }
+
+    private func viewerAndFriends(_ now: Now) -> [ChatPeek.Participant] {
         let viewerID = model.session.userID
         var participants = [
-            ChatPeek.Participant(
-                id: "venue-\(venue.id)", name: venue.name,
-                avatarURL: venue.photoURL, isPlace: true
-            ),
             ChatPeek.Participant(
                 id: "viewer", name: String(localized: "You"),
                 avatarURL: model.session.user?.avatarURL
@@ -276,10 +285,11 @@ struct NowScreen: View {
     @ViewBuilder
     private func localeChatSection(_ now: Now) -> some View {
         if now.venue == nil, now.localeChatOpen, let locale = now.locale {
-            ChatPeek(
+            LiveChatPeek(
                 title: String(localized: "Small talk in \(locale.name)"),
-                roomName: locale.name,
-                messages: now.localeMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
+                room: .locale(locale),
+                messages: now.localeMessages,
+                participants: localeChatParticipants(now),
                 route: .localeChat(locale)
             )
             .padding(.horizontal, 16)
