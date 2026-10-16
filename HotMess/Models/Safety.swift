@@ -33,8 +33,9 @@ struct SafetyState: Decodable, Sendable {
     /// False for an account that signed in with Apple and hasn't connected
     /// Facebook, so has no friends to show.
     var hasFacebook: Bool
-    /// True while the audience is in App Review, for an Apple account: the
-    /// reviewer can pretend to be at a venue, like a test build.
+    /// True only for the designated App Review account while the audience is
+    /// in App Review: the reviewer can pretend to be at a venue, like a test
+    /// build.
     var canPretendLocation: Bool
 
     /// `me`: the viewer's state, with their own profile (`self`), where `hasFacebook` is.

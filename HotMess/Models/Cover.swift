@@ -207,21 +207,6 @@ struct CoverCharge: Decodable, Hashable, Sendable {
         guard let start = from.flatMap(CoverFormat.time) else { return cover }
         return String(localized: "\(cover) · from \(start)")
     }
-
-    /// A demo cover charge shown for venues in review or test mode.
-    static func reviewDemo(night: String = "tonight") -> CoverCharge {
-        CoverCharge(
-            amount: Money(cents: 1000),
-            fee: Money(cents: 0),
-            total: Money(cents: 1000),
-            night: night,
-            from: "21:00",
-            until: "02:00",
-            payable: true,
-            paymentMechanisms: ["apple_pay"],
-            tiers: nil
-        )
-    }
 }
 
 /// A venue's or an event's `tickets` mixin, read for the `cover` mixin the
@@ -519,10 +504,10 @@ enum SquarePaymentMethod: Hashable, Sendable {
     case applePay
     case card
 
-    /// Apple Pay first when Square can take it here (or in review mode) and the build has a
+    /// Apple Pay first when Square can take it here and the build has a
     /// merchant ID; a card always.
-    static func available(canUseApplePay: Bool, merchantID: String?, isReview: Bool = false) -> [SquarePaymentMethod] {
-        (canUseApplePay || isReview) && merchantID.nonBlank != nil ? [.applePay, .card] : [.card]
+    static func available(canUseApplePay: Bool, merchantID: String?) -> [SquarePaymentMethod] {
+        canUseApplePay && merchantID.nonBlank != nil ? [.applePay, .card] : [.card]
     }
 }
 
@@ -538,10 +523,8 @@ enum ApplePayStatus: Equatable, Sendable {
     /// Computes the status from capability flags.
     static func current(
         canMakePayments: Bool,
-        hasConfiguredCards: Bool,
-        isReview: Bool = false
+        hasConfiguredCards: Bool
     ) -> ApplePayStatus {
-        if isReview { return .ready }
         guard canMakePayments else { return .unavailable }
         guard hasConfiguredCards else { return .needsSetup }
         return .ready

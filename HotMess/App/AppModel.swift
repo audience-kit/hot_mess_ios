@@ -47,14 +47,19 @@ final class AppModel {
     /// send sheet on a venue), so Now reloads.
     private(set) var pingRevision = 0
 
-    /// Whether the app is running in review or test mode, enabling features like pretending
-    /// location and demonstrating Apple Pay on all venues.
+    /// Whether testing aids such as "Pretend I'm here" show: test builds, and
+    /// the designated App Review account while App Review is on (the API's
+    /// `canPretendLocation`). Never for an ordinary App Store user. The
+    /// launch-argument and defaults overrides exist only in builds with
+    /// `TEST_HOOKS` (Debug and Staging, for the UI tests and screenshots).
     var isReviewMode: Bool {
-        configuration.isTestBuild
-            || safety.canPretendLocation
-            || !safety.hasFacebook
-            || ProcessInfo.processInfo.arguments.contains("-HotMessReviewMode")
+        if configuration.isTestBuild || safety.canPretendLocation { return true }
+        #if TEST_HOOKS
+        return ProcessInfo.processInfo.arguments.contains("-HotMessReviewMode")
             || UserDefaults.standard.bool(forKey: "HotMessReviewMode")
+        #else
+        return false
+        #endif
     }
 
     private static let promptedFacebookOnPingKey = "hasPromptedFacebookOnPing"

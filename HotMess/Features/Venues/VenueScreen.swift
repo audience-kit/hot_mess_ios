@@ -31,16 +31,14 @@ struct VenueScreen: View {
                             heroText(venue)
                         }
 
-                        let isReview = model.isReviewMode
-                        let coverCharge = overview.coverCharge ?? (isReview ? CoverCharge.reviewDemo() : nil)
+                        let coverCharge = overview.coverCharge
                         if coverCharge != nil || overview.viewerAdmission?.isPaid == true {
                             CoverSection(
                                 coverCharge: coverCharge,
                                 isTonight: true,
                                 admission: overview.viewerAdmission,
                                 venueID: venue.id,
-                                venueName: venue.name,
-                                isReviewMode: isReview
+                                venueName: venue.name
                             )
                         }
                         if let coatCheck = coverCharge?.coatCheck {
@@ -49,8 +47,7 @@ struct VenueScreen: View {
                                     coatCheck: coatCheck,
                                     admission: overview.viewerCoatCheck,
                                     venueID: venue.id,
-                                    venueName: venue.name,
-                                    isReviewMode: isReview
+                                    venueName: venue.name
                                 )
                             }
                         } else if let viewerCoatCheck = overview.viewerCoatCheck, viewerCoatCheck.isPaid {
@@ -64,8 +61,7 @@ struct VenueScreen: View {
                                 ),
                                 admission: viewerCoatCheck,
                                 venueID: venue.id,
-                                venueName: venue.name,
-                                isReviewMode: isReview
+                                venueName: venue.name
                             )
                         }
                         if !overview.onNow.isEmpty {
@@ -259,42 +255,35 @@ struct VenueScreen: View {
         }
     }
 
-    /// Test builds, and App Review: report the venue's own position, so the
-    /// app (and the API) treat you as inside it wherever you really are.
+    /// Test builds, and the App Review account while the API allows it:
+    /// report the venue's own position, so the app (and the API) treat you as
+    /// inside it wherever you really are.
     @ViewBuilder
     private func testingSection(_ venue: Venue) -> some View {
         let isTestBuild = model.configuration.isTestBuild
-        let isReview = model.safety.canPretendLocation || model.isReviewMode
-        if isTestBuild || isReview {
+        let isReview = model.isReviewMode
+        if isReview, let coordinate = venue.coordinate {
             DetailSection(isTestBuild ? String(localized: "Testing") : String(localized: "App Review")) {
-                if let coordinate = venue.coordinate {
-                    if model.location.simulatedVenueName == venue.name {
-                        Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
-                            Task {
-                                await model.location.stopSimulating()
-                                await viewModel?.load()
-                            }
-                        }
-                    } else {
-                        Button(String(localized: "Pretend I'm here"), systemImage: "location.fill") {
-                            // Reload once the visit is recorded, so the chat row appears.
-                            Task {
-                                await model.location.simulate(at: coordinate, venueName: venue.name, allowed: isReview)
-                                await viewModel?.load()
-                            }
+                if model.location.simulatedVenueName == venue.name {
+                    Button(String(localized: "Stop pretending"), systemImage: "location.slash") {
+                        Task {
+                            await model.location.stopSimulating()
+                            await viewModel?.load()
                         }
                     }
-                }
-
-                Button(String(localized: "Test Apple Pay"), systemImage: "creditcard") {
-                    Task {
-                        await model.checkout.payWithApplePay(venueID: venue.id, venueName: venue.name, isReview: true)
+                } else {
+                    Button(String(localized: "Pretend I'm here"), systemImage: "location.fill") {
+                        // Reload once the visit is recorded, so the chat row appears.
+                        Task {
+                            await model.location.simulate(at: coordinate, venueName: venue.name, allowed: isReview)
+                            await viewModel?.load()
+                        }
                     }
                 }
             } footer: {
                 Text(isTestBuild
-                    ? String(localized: "Test builds only. Reports this venue's location instead of yours until you stop, and lets you test Apple Pay.")
-                    : String(localized: "For App Review. Test Apple Pay and report this venue's location instead of yours until you stop, so you can try its chat."))
+                    ? String(localized: "Test builds only. Reports this venue's location instead of yours until you stop.")
+                    : String(localized: "For App Review. Reports this venue's location instead of yours until you stop, so you can try its chat."))
                     .font(.hotMess(.footnote))
                     .foregroundStyle(.secondary)
             }
