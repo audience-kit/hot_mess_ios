@@ -13,10 +13,10 @@ final class AppleSignInUITests: XCTestCase {
 
         let app = XCUIApplication()
         app.launchArguments = ["-HotMessUITestSignedOut", "-hasAgreedToEULA", "NO"]
+        app.useRunnerAPI()
         app.launch()
-        let agreement = app.buttons["login.eulaCheckbox"]
-        XCTAssertTrue(agreement.waitForExistence(timeout: 15))
-        agreement.tap()
+        XCTAssertTrue(app.buttons["login.eulaCheckbox"].waitForExistence(timeout: 15))
+        app.agreeToLoginTerms()
         let signIn = app.buttons["login.apple"]
         XCTAssertTrue(signIn.waitForExistence(timeout: 5))
         signIn.tap()
@@ -30,6 +30,11 @@ final class AppleSignInUITests: XCTestCase {
             if app.descendants(matching: .any)["main.tabs"].exists {
                 XCTAssertTrue(enteredUser || confirmedAccount,
                               "Apple signed in without confirming the configured test account. Use an isolated test simulator.")
+                return
+            }
+            // With no Apple Account on the simulator, iOS sends the person to Settings instead of showing the sheet.
+            if system.alerts["Sign in to your Apple Account"].exists {
+                XCTFail("The simulator isn't signed in to an Apple Account. Sign it in to APPLE_TEST_USER in Settings and rerun.")
                 return
             }
             if app.alerts["Sign In Failed"].exists {
