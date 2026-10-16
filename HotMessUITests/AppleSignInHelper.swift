@@ -57,6 +57,13 @@ final class AppleSignInHelper {
             }
         }
 
+        // The 18+ confirmation shows until the device has one.
+        let ageCheckbox = app.buttons["login.ageCheckbox"]
+        if ageCheckbox.waitForExistence(timeout: 2) && ageCheckbox.isHittable && ageCheckbox.value as? String != "1" {
+            ageCheckbox.tap()
+            sleep(1)
+        }
+
         // 2. Locate and tap "Sign in with Apple"
         let appleButton = app.buttons["login.apple"]
         XCTAssertTrue(appleButton.waitForExistence(timeout: 10), "Sign in with Apple button (login.apple) not found")

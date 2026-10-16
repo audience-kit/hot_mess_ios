@@ -9,7 +9,15 @@ import SwiftUI
 /// to users before registering or logging in.
 struct EULAView: View {
     @Environment(\.dismiss) private var dismiss
+    /// Before sign-in, when iOS couldn't say how old the person is: agreeing
+    /// also needs "I confirm I am 18 or older".
+    var asksForAge = false
     var onAccept: (() -> Void)?
+
+    @State private var confirmsAge = false
+
+    /// Agreeing waits for the age confirmation when it's asked for.
+    private var canAccept: Bool { !asksForAge || confirmsAge }
 
     var body: some View {
         NavigationStack {
@@ -36,6 +44,10 @@ struct EULAView: View {
                     legalLinksSection
 
                     if let onAccept {
+                        if asksForAge {
+                            ageConfirmation
+                        }
+
                         Button {
                             onAccept()
                             dismiss()
@@ -46,6 +58,7 @@ struct EULAView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .padding(.top, 12)
+                        .disabled(!canAccept)
                         .accessibilityIdentifier("eula.bottomAccept")
                     }
                 }
@@ -69,10 +82,27 @@ struct EULAView: View {
                             dismiss()
                         }
                         .fontWeight(.semibold)
+                        .disabled(!canAccept)
                     }
                 }
             }
         }
+    }
+
+    /// The 18+ confirmation, required to agree when it's asked for.
+    private var ageConfirmation: some View {
+        Toggle(isOn: $confirmsAge) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("I confirm I am 18 or older")
+                    .font(.hotMess(.subheadline, semibold: true))
+                Text("Hot Mess is only for adults.")
+                    .font(.hotMess(.caption))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .toggleStyle(.switch)
+        .padding(.top, 12)
+        .accessibilityIdentifier("eula.ageConfirm")
     }
 
     private var header: some View {
