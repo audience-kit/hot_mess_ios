@@ -6,7 +6,7 @@
 import XCTest
 
 enum AppleTestCredentials {
-    static let defaultEmail = "tom_test_user@hotmess.social"
+    static let defaultEmail = "tom_test_me@hotmess.social"
     static let defaultPassword = "I_am_1_test_user"
 
     static var email: String {
@@ -88,6 +88,11 @@ final class AppleSignInHelper {
                     typedPassword = true
                     sleep(dwell)
                     continue
+                }
+                // With no Apple Account on the simulator, iOS sends the person to Settings instead of the sheet.
+                if alert.buttons["Settings"].exists && !alert.textFields.firstMatch.exists {
+                    XCTFail("The simulator isn't signed in to an Apple Account (\(alert.label)). Sign it in to \(email) in Settings and rerun.")
+                    return false
                 }
                 let alertAction = alert.buttons.matching(
                     NSPredicate(format: "label BEGINSWITH[c] 'Continue' OR label ==[c] 'Sign In' OR label ==[c] 'Allow' OR label ==[c] 'OK'")
