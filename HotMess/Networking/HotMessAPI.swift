@@ -688,6 +688,7 @@ extension HotMessAPI {
         static let reportLocation = """
         mutation ReportLocation($position: CoordinatesInput!) {
           reportLocation(input: { position: $position }) {
+            event { \(eventFields) }
             venue {
               \(venueFields)
               chat { recent_messages: recentMessages(limit: 3) { nodes { \(messageFields) } } }
