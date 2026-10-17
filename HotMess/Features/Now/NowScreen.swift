@@ -132,7 +132,31 @@ struct NowScreen: View {
 
     @ViewBuilder
     private func heroText(_ now: Now) -> some View {
-        if let venue = now.venue {
+        if let event = now.event {
+            // At an event: it leads, with its venue (or host) underneath.
+            NavigationLink(value: AppRoute.event(event.id)) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(eventStage(event))
+                        .font(.hotMess(.subheadline, semibold: true))
+                        .textCase(.uppercase)
+                    HStack(spacing: 12) {
+                        Text(event.name)
+                            .font(.hotMess(.largeTitle, semibold: true))
+                            .lineLimit(2)
+                            .accessibilityAddTraits(.isHeader)
+                        Image(systemName: "chevron.right")
+                            .font(.hotMess(.headline, semibold: true))
+                            .accessibilityHidden(true)
+                    }
+                    Text(event.subtitle)
+                        .font(.hotMess(.headline))
+                        .lineLimit(1)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("now.event")
+            .accessibilityHint(String(localized: "View event details"))
+        } else if let venue = now.venue {
             VenueCardLink(venue: venue) {
                 HStack(spacing: 12) {
                     Text(venue.name)
@@ -151,6 +175,14 @@ struct NowScreen: View {
                 .lineLimit(2)
                 .accessibilityAddTraits(.isHeader)
         }
+    }
+
+    /// Now finds an event from an hour before it starts to an hour after it ends.
+    private func eventStage(_ event: Event) -> String {
+        let now = Date.now
+        if event.startDate > now { return String(localized: "Starting soon") }
+        if let end = event.endDate, end < now { return String(localized: "Just ended") }
+        return String(localized: "Happening now")
     }
 
     // MARK: - Sections
@@ -228,12 +260,14 @@ struct NowScreen: View {
                 OnNowSection(appearances: now.onNow)
             }
 
+            // At an event the venue's room is the event's: named and pictured for it.
+            let room = now.event.map { ChatRoom.event($0, at: venue) } ?? .venue(venue)
             LiveChatPeek(
                 title: String(localized: "Small talk"),
-                room: .venue(venue),
+                room: room,
                 messages: now.recentMessages,
-                participants: chatParticipants(now, venue: venue),
-                route: .venueChat(venue)
+                participants: chatParticipants(now, room: room),
+                route: now.event == nil ? .venueChat(venue) : .eventChat(room)
             )
             .padding(.horizontal, 16)
 
@@ -242,10 +276,10 @@ struct NowScreen: View {
         }
     }
 
-    private func chatParticipants(_ now: Now, venue: Venue) -> [ChatPeek.Participant] {
+    private func chatParticipants(_ now: Now, room: ChatRoom) -> [ChatPeek.Participant] {
         let place = ChatPeek.Participant(
-            id: "venue-\(venue.id)", name: venue.name,
-            avatarURL: venue.photoURL, isPlace: true
+            id: "venue-\(room.id)", name: room.name,
+            avatarURL: room.photoURL, isPlace: true
         )
         return [place] + viewerAndFriends(now)
     }

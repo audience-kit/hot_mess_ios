@@ -24,6 +24,12 @@ struct ChatRoom: Hashable, Sendable {
         ChatRoom(kind: .venue, id: venue.id, name: venue.name, photoURL: venue.photoURL)
     }
 
+    /// The venue's room while the user is at an event there: the same room,
+    /// branded for the event, since the host may not be a listed venue.
+    static func event(_ event: Event, at venue: Venue) -> ChatRoom {
+        ChatRoom(kind: .venue, id: venue.id, name: event.name, photoURL: event.bannerURL ?? venue.photoURL)
+    }
+
     static func locale(_ locale: AppLocale) -> ChatRoom {
         ChatRoom(kind: .locale, id: locale.id, name: locale.name)
     }

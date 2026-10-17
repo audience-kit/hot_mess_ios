@@ -11,6 +11,8 @@ enum AppRoute: Hashable, Sendable {
     case event(UUID)
     case person(UUID)
     case venueChat(Venue)
+    /// A venue's chat room branded for the event the user is at there (Now).
+    case eventChat(ChatRoom)
     /// A locale's chat room, for people out in it who aren't at a venue.
     case localeChat(AppLocale)
 
@@ -20,7 +22,7 @@ enum AppRoute: Hashable, Sendable {
         case .venue, .venueChat: .venues
         case .event: .events
         case .person: .people
-        case .localeChat: .now
+        case .localeChat, .eventChat: .now
         }
     }
 }

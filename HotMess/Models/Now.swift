@@ -11,7 +11,11 @@ import MapKit
 /// The API returns only where the user is: the `venue` they're in, else their
 /// `locale` and its `nearby_venues`. Everything else comes from those objects'
 /// mixins (`friends`, `events`, chat) and the audience's `ping` feed, and the
-/// title and hero are built here from the venue or locale.
+/// title and hero are built here from the event, venue or locale.
+///
+/// `event` is the event the user is at, from an hour before it starts to an
+/// hour after it ends. When there is one the screen leads with it rather than
+/// its venue, which may be a host that isn't listed as a venue at all.
 ///
 /// `venues` stays optional on purpose: a missing key means "we don't know where
 /// you are, show your friends", while an empty array means "we do know, and
@@ -22,6 +26,8 @@ struct Now: Decodable, Hashable, Sendable {
     static let localeEventLimit = Int(HotMessAPI.Documents.localeEventLimit) ?? 5
 
     let title: String
+    /// The event the user is at, when they're at one.
+    let event: Event?
     let venue: Venue?
     let venues: [Venue]?
     let friends: [Friend]
@@ -61,7 +67,7 @@ struct Now: Decodable, Hashable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case venue, locale, audience
+        case event, venue, locale, audience
         case nearbyVenues = "nearby_venues"
     }
 
@@ -88,6 +94,8 @@ struct Now: Decodable, Hashable, Sendable {
 
         let venue = try container.decodeIfPresent(Venue.self, forKey: .venue)
         self.venue = venue
+        let event = try container.decodeIfPresent(Event.self, forKey: .event)
+        self.event = event
         venues = try container.decodeIfPresent([Venue].self, forKey: .nearbyVenues)
         var venueEvents: [Event] = []
         var venueFriends: [Friend] = []
@@ -134,16 +142,24 @@ struct Now: Decodable, Hashable, Sendable {
             localeMessages = []
         }
 
-        if let venue {
+        if let event {
+            title = event.name
+            imageURL = event.bannerURL ?? venue?.bannerURL ?? localeBanner
+        } else if let venue {
             title = venue.name
             imageURL = venue.bannerURL
-            events = venueEvents
-            friends = venueFriends
-            friendVenues = []
         } else {
             title = localeName.map { String(localized: "Happening Now in \($0)") } ?? String(localized: "Happening Now")
             imageURL = localeBanner
-            events = Array(localeEvents.prefix(Self.localeEventLimit))
+        }
+
+        if venue != nil {
+            // The event the user is at leads the screen, so it isn't listed again.
+            events = venueEvents.filter { $0.id != event?.id }
+            friends = venueFriends
+            friendVenues = []
+        } else {
+            events = Array(localeEvents.filter { $0.id != event?.id }.prefix(Self.localeEventLimit))
             friends = localeFriends?.list ?? []
             friendVenues = localeFriends?.venues ?? []
         }
@@ -164,6 +180,7 @@ struct Now: Decodable, Hashable, Sendable {
 
     init(
         title: String,
+        event: Event? = nil,
         venue: Venue? = nil,
         venues: [Venue]? = nil,
         friends: [Friend] = [],
@@ -182,6 +199,7 @@ struct Now: Decodable, Hashable, Sendable {
         friendPings: [Ping] = []
     ) {
         self.title = title
+        self.event = event
         self.venue = venue
         self.venues = venues
         self.friends = friends

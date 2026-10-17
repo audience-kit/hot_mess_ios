@@ -225,6 +225,40 @@ struct GraphQLTests {
         #expect(now.friends.map(\.name) == ["Alex Friend"])
     }
 
+    @Test("Leads Now with the event the user is at, and brands the venue's room for it")
+    func decodesNowAtEvent() throws {
+        let json = Data(#"""
+        {"reportLocation":{
+          "nearby_venues":null,
+          "event":{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Bingo",
+                   "start_at":"2026-10-16T19:00:00Z","end_at":"2026-10-16T22:00:00Z","facebook_id":null,
+                   "banner_url":"https://cdn.example/bingo.jpg","is_featured":false,"rsvp":{"mine":null},
+                   "venue":{"name":"First Baptist","venue":null}},
+          "venue":{"id":"6f1c2c1e-4d2a-4f6b-9a37-0c1d2e3f4a5b","name":"First Baptist",
+                   "distance":null,"point":null,"photo_url":null,"banner_url":"https://cdn.example/church.jpg",
+                   "profile":null,
+                   "events":{"upcoming":{"nodes":[{"id":"9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d","name":"Bingo",
+                               "start_at":"2026-10-16T19:00:00Z","end_at":null,"facebook_id":null,
+                               "banner_url":null,"is_featured":false,"rsvp":{"mine":null},
+                               "venue":{"name":"First Baptist","venue":null}}]}},
+                   "friends":{"list":{"nodes":[]}}},
+          "locale":{"id":"4e5f6071-8293-4a41-8d5e-6f7a8b9c0d1e","name":"Spokane"}
+        }}
+        """#.utf8)
+
+        let now = try JSONDecoder.hotMess.decode(ReportLocationResponse.self, from: json).reportLocation
+
+        #expect(now.event?.name == "Bingo")
+        #expect(now.title == "Bingo")
+        #expect(now.imageURL?.absoluteString == "https://cdn.example/bingo.jpg")
+        #expect(now.events.isEmpty)
+        let venue = try #require(now.venue)
+        let room = ChatRoom.event(try #require(now.event), at: venue)
+        #expect(room.name == "Bingo")
+        #expect(room.id == venue.id)
+        #expect(room.kind == .venue)
+    }
+
     @Test("Decodes the locale's chat room into Now when you aren't in a venue")
     func decodesNowLocaleChat() throws {
         let json = Data(#"""
