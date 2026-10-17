@@ -7,7 +7,7 @@ import XCTest
 
 /// Automated walkthrough demonstrating safety, creator content moderation, and reporting:
 /// 1. EULA and Terms presented prior to login with explicit Zero Tolerance Policy & Content Creator definition.
-/// 2. Interactive Sign in with Apple using sandbox credentials (tom_test_me@hotmess.social).
+/// 2. Continue with Facebook, on a clone of the Facebook session snapshot simulator (scripts/app-review/README.md).
 /// 3. Flagging creator content on Venue and Person profiles via the (•••) menu.
 /// 4. Flagging objectionable chat messages with swift 24-hour moderation action.
 /// 5. Blocking abusive users with instant feed removal and moderation notification.
@@ -37,10 +37,6 @@ final class SafetyReviewUITests: XCTestCase {
 
     /// Full end-to-end safety walkthrough for screen recording.
     func testSafetyAndModerationWalkthrough() throws {
-        // Sign in with Apple needs an Apple Account in Settings. Done before the app launches, so the recording
-        // (which starts when Hot Mess does) never shows Settings.
-        SimulatorAppleAccount.ensureSignedIn(email: AppleTestCredentials.email, password: AppleTestCredentials.password)
-
         // --- STEP 1: EULA & Terms Presentation Prior to Sign-In ---
         app.launchArguments = ["-HotMessUITestSignedOut", "-HotMessUseNextAPI", "-HotMessReviewMode"]
         app.launch()
@@ -88,15 +84,10 @@ final class SafetyReviewUITests: XCTestCase {
         // Checkbox is now visibly checked
         sleep(1)
 
-        // --- STEP 2: Authenticate with Apple ID (tom_test_me@hotmess.social) ---
+        // --- STEP 2: Continue with Facebook (the simulator's Facebook session is already signed in) ---
         var tabs = app.descendants(matching: .any)["main.tabs"]
         if !tabs.exists {
-            let helper = AppleSignInHelper(app: app, dwell: dwell)
-            try helper.signIn(
-                email: AppleTestCredentials.email,
-                password: AppleTestCredentials.password,
-                timeout: 90
-            )
+            FacebookSignInHelper(app: app, dwell: dwell).signIn()
             tabs = app.descendants(matching: .any)["main.tabs"]
         }
 
@@ -108,7 +99,7 @@ final class SafetyReviewUITests: XCTestCase {
             sleep(1)
         }
 
-        XCTAssertTrue(tabs.waitForExistence(timeout: 25), "Simulator is not signed in to main.tabs after Apple Sign-In")
+        XCTAssertTrue(tabs.waitForExistence(timeout: 25), "Simulator is not signed in to main.tabs after Facebook sign-in")
         sleep(dwell)
 
         // --- STEP 3: Flagging Creator Profiles & Content (Venues & Chat) ---
