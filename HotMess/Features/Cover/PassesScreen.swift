@@ -86,18 +86,26 @@ struct PassRow: View {
                 .clipShape(.rect(cornerRadius: HotMessRadius.lg))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(admission.venueName)
-                    .font(.hotMess(.headline, semibold: true))
-                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(admission.venueName)
+                        .font(.hotMess(.headline, semibold: true))
+                        .lineLimit(1)
 
-                Text("\(admission.nightTitle) · \(admission.price)")
+                    if admission.isCoatCheck {
+                        Image(systemName: "hanger")
+                            .font(.caption)
+                            .foregroundStyle(Color.hotMessAccent)
+                    }
+                }
+
+                Text(subtitleText)
                     .font(.hotMess(.subheadline))
                     .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 8)
 
-            Text(admission.status.title)
+            Text(statusBadgeText)
                 .font(.hotMess(.caption, semibold: true))
                 .foregroundStyle(admission.isPaid ? Color.hotMessAccent : .secondary)
                 .padding(.horizontal, 8)
@@ -109,5 +117,36 @@ struct PassRow: View {
         }
         .padding(.vertical, 2)
         .contentShape(.rect)
+    }
+
+    private var statusBadgeText: String {
+        if admission.isCoatCheck && admission.isPaid {
+            if admission.scanCount >= 2 { return String(localized: "Claimed") }
+            if admission.scanCount == 1 { return String(localized: "Checked In") }
+        }
+        return admission.status.title
+    }
+
+    private var subtitleText: String {
+        if admission.isCoatCheck {
+            var parts = [String(localized: "Coat Check")]
+            if let claim = admission.claimCheckNumber, !claim.isEmpty {
+                parts.append("#\(claim)")
+            }
+            parts.append(admission.nightTitle)
+            parts.append(admission.price)
+            if admission.quantity > 1 {
+                parts.append("\(admission.quantity) coats")
+            }
+            return parts.joined(separator: " · ")
+        }
+        var parts = [admission.nightTitle, admission.price]
+        if admission.quantity > 1 {
+            parts.append("\(admission.quantity) covers")
+        }
+        if let tier = admission.tier, !tier.isEmpty {
+            parts.append(tier.capitalized)
+        }
+        return parts.joined(separator: " · ")
     }
 }

@@ -100,6 +100,10 @@ struct FriendPingCard: View {
     let isBusy: Bool
     let join: (PingTarget?) -> Void
     let leave: () -> Void
+    /// Reports the Ping (its note is the sender's own words).
+    var report: (() -> Void)? = nil
+    /// Blocks the sender, which hides their Pings at once.
+    var block: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -131,31 +135,61 @@ struct FriendPingCard: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
-            Avatar(
-                url: ping.user.avatarURL,
-                initials: ping.user.name.initialsForDisplay,
-                size: 44
-            )
+            HStack(alignment: .top, spacing: 12) {
+                Avatar(
+                    url: ping.user.avatarURL,
+                    initials: ping.user.name.initialsForDisplay,
+                    size: 44
+                )
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(ping.user.firstName)
-                    .font(.hotMess(.headline, semibold: true))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ping.user.firstName)
+                        .font(.hotMess(.headline, semibold: true))
 
-                if let via = ping.viaText {
-                    Text(via)
-                        .font(.hotMess(.footnote, semibold: true))
+                    if let via = ping.viaText {
+                        Text(via)
+                            .font(.hotMess(.footnote, semibold: true))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(subtitle)
+                        .font(.hotMess(.subheadline))
                         .foregroundStyle(.secondary)
+                        .lineLimit(3)
                 }
-
-                Text(subtitle)
-                    .font(.hotMess(.subheadline))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
             }
+            .accessibilityElement(children: .combine)
 
             Spacer(minLength: 0)
+
+            if report != nil || block != nil {
+                safetyMenu
+            }
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    /// Report the Ping, or block its sender.
+    private var safetyMenu: some View {
+        Menu {
+            if let report {
+                Button(role: .destructive, action: report) {
+                    Label(String(localized: "Report Ping…"), systemImage: "exclamationmark.bubble")
+                }
+            }
+            if let block {
+                Button(role: .destructive, action: block) {
+                    Label(String(localized: "Block \(ping.user.firstName)"), systemImage: "hand.raised")
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.hotMess(.headline, semibold: true))
+                .foregroundStyle(.secondary)
+                .frame(width: 32, height: 32)
+                .contentShape(.rect)
+        }
+        .accessibilityLabel(String(localized: "More for \(ping.user.firstName)'s ping"))
+        .accessibilityIdentifier("ping.optionsMenu")
     }
 
     /// "“who's coming” · 9:46 PM", or "Anywhere tonight? · 9:30 PM".

@@ -9,7 +9,8 @@ import XCTest
 /// recording of the run. Xcode keeps the recording in the result bundle when the test plan or
 /// .xctestrun keeps attachments.
 ///
-/// Run them on the Release configuration so they sign in with the Hot Mess consumer Facebook app.
+/// Run them with the Screenshots scheme (Staging): `-HotMessUseNextAPI` and the other launch-argument
+/// hooks only exist in builds with the `TEST_HOOKS` compilation condition (Debug and Staging).
 @MainActor
 final class AppReviewUITests: XCTestCase {
     private var facebook: XCUIApplication { XCUIApplication(bundleIdentifier: "com.facebook.Facebook") }
@@ -22,7 +23,7 @@ final class AppReviewUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = true
         app = XCUIApplication()
-        app.launchArguments = ["-HotMessUITestSignedOut"]
+        app.launchArguments = ["-HotMessUITestSignedOut", "-HotMessUseNextAPI"]
         app.launch()
     }
 
@@ -48,7 +49,30 @@ final class AppReviewUITests: XCTestCase {
         sleep(dwell * 3)
     }
 
+    /// Sign in with Apple walkthrough using Sandbox Apple ID for screen recording and demo videos.
+    func testAppleSignInWalkthrough() throws {
+        try signInWithAppleFromLoginScreen()
+        showNotificationPrompt()
+        open(tab: "Now")
+        sleep(dwell)
+        open(tab: "Me")
+        sleep(dwell)
+        sleep(dwell * 3)
+    }
+
     // MARK: - Sign-in
+
+    private func signInWithAppleFromLoginScreen() throws {
+        let appleButton = app.buttons["login.apple"]
+        XCTAssertTrue(appleButton.waitForExistence(timeout: 15), "The Apple sign-in button didn't appear")
+        snapshot("Login screen")
+        sleep(dwell)
+
+        let helper = AppleSignInHelper(app: app, dwell: dwell)
+        try helper.signIn()
+        snapshot("Signed in with Apple")
+        sleep(dwell)
+    }
 
     private func signInFromLoginScreen() throws {
         let login = app.buttons["login.facebook"]
@@ -73,8 +97,12 @@ final class AppReviewUITests: XCTestCase {
                 XCTFail("Sign in failed: \(app.alerts.firstMatch.label)")
                 return
             }
-            let permission = [springboard.alerts.buttons["Continue"], app.alerts.buttons["Continue"]]
-                .first { $0.exists && $0.isHittable }
+            let permission = [
+                springboard.alerts.buttons["Allow Tracking"],
+                springboard.alerts.buttons["Allow"],
+                springboard.alerts.buttons["Continue"],
+                app.alerts.buttons["Continue"],
+            ].first { $0.exists && $0.isHittable }
             if let permission {
                 sleep(2)
                 permission.tap()

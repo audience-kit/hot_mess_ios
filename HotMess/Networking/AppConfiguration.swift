@@ -5,6 +5,7 @@
 
 import AudienceKit
 import Foundation
+import StoreKit
 
 /// Values baked into the bundle by the per-environment `.xcconfig` files.
 ///
@@ -38,17 +39,40 @@ struct AppConfiguration: Sendable, Hashable {
     static let defaultAudienceHost = "hotmess.admin.audiencekit.com"
 
     init(bundle: Bundle = .main) {
-        let serverBase = bundle.object(forInfoDictionaryKey: "HotMessServerBase") as? String
+        var serverBase = bundle.object(forInfoDictionaryKey: "HotMessServerBase") as? String
+        var host = (bundle.object(forInfoDictionaryKey: "AudienceKitHost") as? String).nonEmpty
+            ?? Self.defaultAudienceHost
+        var env = (bundle.object(forInfoDictionaryKey: "AudienceKitEnvironment") as? String)
+            .flatMap(AudienceKitEnvironment.init(rawValue:)) ?? .production
+
+        // UI tests and screenshots can point a build at the next preview
+        // (`-HotMessUseNextAPI`) or another API (`HOTMESS_API_URL`). Only in
+        // builds with test hooks (Debug, Staging); an App Store build always
+        // talks to the API its xcconfig names.
+        #if TEST_HOOKS
+        let processInfo = ProcessInfo.processInfo
+        let useNextAPI = processInfo.arguments.contains("-HotMessUseNextAPI") ||
+            processInfo.environment["HOTMESS_USE_NEXT_API"] == "1" ||
+            processInfo.environment["HOTMESS_API_URL"]?.contains("next") == true ||
+            processInfo.environment["AK_API_URL"]?.contains("next") == true
+
+        if useNextAPI {
+            serverBase = "https://api.next.audiencekit.com"
+            host = "hotmess.admin.next.audiencekit.com"
+            env = .staging
+        } else if let customURL = processInfo.environment["HOTMESS_API_URL"] ?? processInfo.environment["AK_API_URL"],
+                  !customURL.isEmpty {
+            serverBase = customURL
+        }
+        #endif
 
         baseURL = serverBase.flatMap(URL.init(string:)) ?? Self.defaultBaseURL
         beaconUUID = (bundle.object(forInfoDictionaryKey: "HotMessBeaconID") as? String)
             .flatMap(UUID.init(uuidString:))
         facebookAppID = bundle.object(forInfoDictionaryKey: "FacebookAppID") as? String
-        audienceHost = (bundle.object(forInfoDictionaryKey: "AudienceKitHost") as? String).nonEmpty
-            ?? Self.defaultAudienceHost
+        audienceHost = host
         audienceID = (bundle.object(forInfoDictionaryKey: "AudienceKitAudienceID") as? String).nonEmpty
-        environment = (bundle.object(forInfoDictionaryKey: "AudienceKitEnvironment") as? String)
-            .flatMap(AudienceKitEnvironment.init(rawValue:)) ?? .production
+        environment = env
         applePayMerchantID = (bundle.object(forInfoDictionaryKey: "ApplePayMerchantID") as? String).nonEmpty
             .flatMap { $0.hasPrefix("merchant.") ? $0 : nil }
         version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
@@ -147,9 +171,23 @@ struct AppConfiguration: Sendable, Hashable {
         return components.url
     }
 
-    /// TestFlight builds carry a sandbox receipt.
+    private static let environmentTask = Task<AppStore.Environment?, Never> {
+        do {
+            let result = try await AppTransaction.shared
+            switch result {
+            case .verified(let transaction), .unverified(let transaction, _):
+                return transaction.environment
+            }
+        } catch {
+            return nil
+        }
+    }
+
+    /// TestFlight builds report `.sandbox` as their App Store environment.
     var isTestFlight: Bool {
-        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        get async {
+            await Self.environmentTask.value == .sandbox
+        }
     }
 }
 

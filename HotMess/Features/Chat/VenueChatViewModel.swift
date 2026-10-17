@@ -67,8 +67,14 @@ final class VenueChatViewModel {
     /// messages the room shows.
     private(set) var pinned: VenueMessage?
     var draft: String = ""
+    /// Why the API refused the last line, in its words: terms not accepted
+    /// yet, or the content filter. The screen shows it, then clears it.
+    var sendError: String?
 
     let room: ChatRoom
+    /// Follows the room without being in it, for a ChatPeek: no presence is
+    /// reported or recorded, and nothing can be sent.
+    let isWatching: Bool
 
     /// The app's one cable, which the room's subscription rides with
     /// everything else realtime. Without it there's no chat.
@@ -93,8 +99,10 @@ final class VenueChatViewModel {
 
     /// - Parameter reportPresence: reports the device's position, so the API
     ///   lets the user into the room and keeps them in it.
+    /// - Parameter watch: follow the room without being in it (`isWatching`).
     init(
         room: ChatRoom,
+        watch: Bool = false,
         configuration: AppConfiguration,
         userID: UUID?,
         cable: AudienceCable? = nil,
@@ -103,6 +111,7 @@ final class VenueChatViewModel {
         reportPresence: @escaping @MainActor () async -> Void = {}
     ) {
         self.room = room
+        self.isWatching = watch
         self.api = api
         self.configuration = configuration
         self.userID = userID
@@ -114,7 +123,9 @@ final class VenueChatViewModel {
     /// Lines typed while the room is still joining wait in `pending` and go out
     /// once it's joined.
     var canSend: Bool {
-        guard !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, userID != nil else { return false }
+        guard !isWatching, !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, userID != nil else {
+            return false
+        }
 
         switch connectionState {
         case .connecting, .connected: return true
@@ -176,9 +187,11 @@ final class VenueChatViewModel {
         var failures = 0
         while !Task.isCancelled, generation == self.generation {
             connectionState = .connecting
-            await reportPresence()
-            guard !Task.isCancelled, generation == self.generation else { return }
-            startReportingPresence()
+            if !isWatching {
+                await reportPresence()
+                guard !Task.isCancelled, generation == self.generation else { return }
+                startReportingPresence()
+            }
 
             let outcome: Outcome
             if let audienceID = await audienceID() {
@@ -244,8 +257,10 @@ final class VenueChatViewModel {
     /// socket once nothing else is on it.
     private func follow(cable: AudienceCable, audienceID: String) async -> Outcome {
         following?.cancel()
-        let task = Task { [room] in
-            let subscription = await VenueChatConnection.subscribe(to: room, on: cable, audienceID: audienceID)
+        let task = Task { [room, isWatching] in
+            let subscription = await VenueChatConnection.subscribe(
+                to: room, on: cable, audienceID: audienceID, watch: isWatching
+            )
             return await self.apply(subscription)
         }
         following = task
@@ -298,7 +313,9 @@ final class VenueChatViewModel {
                     guard reconnects else { return .stopped }
                     // The cable rejoins on its own; tell the API the user is
                     // still here first, so the room lets them back in.
-                    Task { [reportPresence] in await reportPresence() }
+                    if !isWatching {
+                        Task { [reportPresence] in await reportPresence() }
+                    }
                 }
             }
         }
@@ -475,7 +492,19 @@ final class VenueChatViewModel {
         } catch {
             Log.realtime.error("Chat line not sent: \(error.localizedDescription, privacy: .public)")
             markFailed(id, attempt: attempt)
+            if let refusal = Self.refusalMessage(for: error) {
+                sendError = refusal
+            }
         }
+    }
+
+    /// What the API said when it refused a line on purpose (the terms gate,
+    /// the content filter), which is worth showing; `nil` for being offline
+    /// or a server fault, which the line's "Not sent. Tap to retry." covers.
+    static func refusalMessage(for error: any Error) -> String? {
+        guard case let .transport(message)? = error as? APIError else { return nil }
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     /// The API took the line: it leaves `pending` and shows as the room will

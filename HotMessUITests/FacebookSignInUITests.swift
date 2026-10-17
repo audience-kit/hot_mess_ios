@@ -26,11 +26,14 @@ final class FacebookSignInUITests: XCTestCase {
     func testSignsInWithFacebook() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-HotMessUITestSignedOut"]
+        app.useRunnerAPI()
         app.launch()
 
         let button = app.buttons["login.facebook"]
         XCTAssertTrue(button.waitForExistence(timeout: 15), "The login screen didn't appear")
         snapshot("Login screen")
+        // Without the terms (and 18+) ticked, the button opens the terms sheet instead of Facebook.
+        app.agreeToLoginTerms()
         button.tap()
         sleep(2)
         snapshot("After tapping Continue with Facebook")
@@ -78,6 +81,8 @@ final class FacebookSignInUITests: XCTestCase {
         var candidates: [(String, XCUIElement)] = [
             ("permission", springboard.alerts.buttons["Continue"]),
             ("permission", app.alerts.buttons["Continue"]),
+            ("tracking permission", springboard.alerts.buttons["Allow Tracking"]),
+            ("tracking permission", springboard.alerts.buttons["Allow"]),
             ("sheet", app.webViews.buttons.matching(continuing).firstMatch),
             // Login for Business follows "Continue as …" with a review of the access asked for.
             ("sheet review", app.webViews.buttons["Save"]),

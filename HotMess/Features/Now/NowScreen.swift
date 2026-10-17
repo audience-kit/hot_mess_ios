@@ -17,6 +17,8 @@ struct NowScreen: View {
     /// The Ping revision last loaded, so a change to Pings asks for a fresh
     /// report while a new position or a return to the tab can share one.
     @State private var loadedPingRevision: Int?
+    @State private var reportSubject: ReportSubject?
+    @State private var blockTarget: BlockedUser?
 
     /// Reloads when the position changes or Pings change elsewhere.
     private struct LoadKey: Hashable {
@@ -115,6 +117,7 @@ struct NowScreen: View {
         .onChange(of: model.checkout.revision) {
             reload()
         }
+        .contentReporting(report: $reportSubject, block: $blockTarget)
     }
 
     private var navigationTitle: String {
@@ -159,17 +162,28 @@ struct NowScreen: View {
             .padding(.horizontal, 16)
         }
 
+        // People the user blocked are left out at once.
+        let blocked = model.safety.blockedIDs
         CardSection(String(localized: "Friends going out tonight")) {
-            ForEach(Ping.friendFeed(now.friendPings, at: .now)) { ping in
+            ForEach(Ping.friendFeed(now.friendPings, at: .now).filter { !blocked.contains($0.user.id) }) { ping in
+                let sender = BlockedUser(id: ping.user.id, name: ping.user.name, avatarURL: ping.user.avatarURL)
                 FriendPingCard(
                     ping: ping,
                     userID: model.session.userID,
-                    isBusy: viewModel?.busyPingIDs.contains(ping.id) == true
-                ) { target in
-                    Task { await viewModel?.join(ping, target: target) }
-                } leave: {
-                    Task { await viewModel?.leave(ping) }
-                }
+                    isBusy: viewModel?.busyPingIDs.contains(ping.id) == true,
+                    join: { target in
+                        Task { await viewModel?.join(ping, target: target) }
+                    },
+                    leave: {
+                        Task { await viewModel?.leave(ping) }
+                    },
+                    report: {
+                        reportSubject = ReportSubject(target: .ping, targetID: ping.id, sender: sender)
+                    },
+                    block: {
+                        blockTarget = sender
+                    }
+                )
             }
         }
     }
@@ -198,14 +212,20 @@ struct NowScreen: View {
                 SkipTheLineCard(venue: venue, coverCharge: coverCharge)
             }
 
+            if let coatPass = now.viewerCoatCheck, coatPass.isPaid {
+                TonightPassCard(admission: coatPass)
+            } else if let coatCheck = now.coverCharge?.coatCheck, coatCheck.payable {
+                CoatCheckCard(venue: venue, coatCheck: coatCheck)
+            }
+
             if !now.onNow.isEmpty {
                 OnNowSection(appearances: now.onNow)
             }
 
-            ChatPeek(
+            LiveChatPeek(
                 title: String(localized: "Small talk"),
-                roomName: venue.name,
-                messages: now.recentMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
+                room: .venue(venue),
+                messages: now.recentMessages,
                 participants: chatParticipants(now, venue: venue),
                 route: .venueChat(venue)
             )
@@ -217,12 +237,21 @@ struct NowScreen: View {
     }
 
     private func chatParticipants(_ now: Now, venue: Venue) -> [ChatPeek.Participant] {
+        let place = ChatPeek.Participant(
+            id: "venue-\(venue.id)", name: venue.name,
+            avatarURL: venue.photoURL, isPlace: true
+        )
+        return [place] + viewerAndFriends(now)
+    }
+
+    /// The locale's room has no place to show first: you, then your friends out in it.
+    private func localeChatParticipants(_ now: Now) -> [ChatPeek.Participant] {
+        now.friends.isEmpty ? [] : viewerAndFriends(now)
+    }
+
+    private func viewerAndFriends(_ now: Now) -> [ChatPeek.Participant] {
         let viewerID = model.session.userID
         var participants = [
-            ChatPeek.Participant(
-                id: "venue-\(venue.id)", name: venue.name,
-                avatarURL: venue.photoURL, isPlace: true
-            ),
             ChatPeek.Participant(
                 id: "viewer", name: String(localized: "You"),
                 avatarURL: model.session.user?.avatarURL
@@ -256,10 +285,11 @@ struct NowScreen: View {
     @ViewBuilder
     private func localeChatSection(_ now: Now) -> some View {
         if now.venue == nil, now.localeChatOpen, let locale = now.locale {
-            ChatPeek(
+            LiveChatPeek(
                 title: String(localized: "Small talk in \(locale.name)"),
-                roomName: locale.name,
-                messages: now.localeMessages.peekMessages(currentUserID: model.session.userID, friends: model.friends.byID),
+                room: .locale(locale),
+                messages: now.localeMessages,
+                participants: localeChatParticipants(now),
                 route: .localeChat(locale)
             )
             .padding(.horizontal, 16)

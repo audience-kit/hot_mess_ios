@@ -1,4 +1,4 @@
-#if DEBUG
+#if TEST_HOOKS
 import SwiftUI
 
 /// A deterministic UI fixture that exercises the production card, section and Link without changing a live session.

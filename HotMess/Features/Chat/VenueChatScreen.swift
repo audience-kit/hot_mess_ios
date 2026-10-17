@@ -35,6 +35,12 @@ struct VenueChatScreen: View {
     @State private var blockTarget: ChatThreadMessage?
     @State private var deleteTarget: ChatThreadMessage?
     @State private var failureMessage: String?
+    @State private var isPromptingFacebook = false
+    @State private var isConnectingFacebook = false
+    @State private var isThankingForReport = false
+    /// Someone in the Here now strip being reported or blocked.
+    @State private var personReport: ReportSubject?
+    @State private var personBlock: BlockedUser?
 
     var body: some View {
         Group {
@@ -90,7 +96,7 @@ struct VenueChatScreen: View {
             }
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: { _ in
-            Text("The room's admins will look at it. They can remove the sender from the room.")
+            Text("Reports are reviewed within 24 hours. Objectionable content will be removed and offending users ejected.")
         }
         .alert(
             String(localized: "Thanks for reporting it"),
@@ -102,7 +108,7 @@ struct VenueChatScreen: View {
             }
             Button(String(localized: "Not Now"), role: .cancel) {}
         } message: { _ in
-            Text("Block them too, and you won't see their messages in any room.")
+            Text("Block them too: their messages will be removed from your feed instantly and our team will be notified.")
         }
         .alert(
             blockTitle(blockTarget),
@@ -114,7 +120,7 @@ struct VenueChatScreen: View {
             }
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: { _ in
-            Text("You won't see their messages in any room. They won't be told. You can unblock them in Settings.")
+            Text("Their messages will be removed from your feed instantly and our moderation team will be notified to review the content.")
         }
         .confirmationDialog(
             String(localized: "Delete this message?"),
@@ -129,6 +135,23 @@ struct VenueChatScreen: View {
         } message: { _ in
             Text("It's removed for everyone in the room.")
         }
+        .alert(String(localized: "Thanks for reporting it"), isPresented: $isThankingForReport) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text("Our moderation team will review it within 24 hours.")
+        }
+        .contentReporting(report: $personReport, block: $personBlock)
+        .alert(
+            String(localized: "Message Not Sent"),
+            isPresented: Binding(
+                get: { viewModel?.sendError != nil },
+                set: { if !$0 { viewModel?.sendError = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(viewModel?.sendError ?? "")
+        }
         .alert(
             String(localized: "Something went wrong"),
             isPresented: isPresenting($failureMessage),
@@ -137,6 +160,34 @@ struct VenueChatScreen: View {
             Button(String(localized: "OK"), role: .cancel) {}
         } message: { message in
             Text(message)
+        }
+        .alert(
+            String(localized: "Connect Facebook to See Friends"),
+            isPresented: $isPromptingFacebook
+        ) {
+            Button(String(localized: "Connect Facebook")) {
+                Task {
+                    isConnectingFacebook = true
+                    defer { isConnectingFacebook = false }
+                    do {
+                        if try await model.connectFacebook() {
+                            if let viewModel {
+                                performChatSend(viewModel)
+                            }
+                        }
+                    } catch {
+                        failureMessage = error.localizedDescription
+                    }
+                }
+            }
+            Button(String(localized: "Send Anyway")) {
+                if let viewModel {
+                    performChatSend(viewModel)
+                }
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: {
+            Text("Connecting Facebook is required to see your friends in chat and know when they're out.")
         }
     }
 
@@ -156,7 +207,20 @@ struct VenueChatScreen: View {
                 let hereNow = viewModel.hereNow.filter { !blocked.contains($0.id) }
                 let place = room.kind == .venue ? HereNowPlace(name: room.name, photoURL: room.photoURL) : nil
                 if place != nil || !hereNow.isEmpty {
-                    HereNowStrip(place: place, people: hereNow)
+                    HereNowStrip(
+                        place: place,
+                        people: hereNow,
+                        onReport: { person in
+                            personReport = ReportSubject(
+                                target: .person,
+                                targetID: person.id.uuidString.lowercased(),
+                                sender: BlockedUser(id: person.id, name: person.name, avatarURL: person.avatarURL)
+                            )
+                        },
+                        onBlock: { person in
+                            personBlock = BlockedUser(id: person.id, name: person.name, avatarURL: person.avatarURL)
+                        }
+                    )
                 }
                 // Each minute, so a special leaves the room when it ends.
                 TimelineView(.everyMinute) { timeline in
@@ -188,9 +252,14 @@ struct VenueChatScreen: View {
         guard let id = UUID(uuidString: message.id) else { return }
 
         do {
-            try await model.safety.report(messageID: id, sender: sender(of: message), reason: reason, block: false)
-            if !model.safety.isBlocked(UUID(uuidString: message.authorID)) {
+            // A post as the venue has no sender to block; the API ignores
+            // `block` for it.
+            let author: BlockedUser? = message.isFromPlace ? nil : sender(of: message)
+            try await model.safety.report(messageID: id, sender: author, reason: reason, block: false)
+            if !message.isFromPlace, !model.safety.isBlocked(UUID(uuidString: message.authorID)) {
                 blockOffer = message
+            } else {
+                isThankingForReport = true
             }
         } catch {
             failureMessage = String(localized: "The report didn't go through. Please try again.")
@@ -201,7 +270,11 @@ struct VenueChatScreen: View {
         guard let sender = sender(of: message) else { return }
 
         do {
-            try await model.safety.block(sender)
+            if let id = UUID(uuidString: message.id) {
+                try await model.safety.report(messageID: id, sender: sender, reason: .other, block: true)
+            } else {
+                try await model.safety.block(sender)
+            }
         } catch {
             failureMessage = String(localized: "Couldn't block them. Please try again.")
         }
@@ -330,9 +403,22 @@ struct VenueChatScreen: View {
     private func composer(_ viewModel: VenueChatViewModel) -> some View {
         @Bindable var viewModel = viewModel
 
-        return ChatComposer(text: $viewModel.draft, canSend: viewModel.canSend) {
-            Task { await viewModel.send() }
+        return ChatComposer(text: $viewModel.draft, canSend: viewModel.canSend && !isConnectingFacebook) {
+            handleChatSend(viewModel)
         }
+    }
+
+    private func handleChatSend(_ viewModel: VenueChatViewModel) {
+        if !model.safety.hasFacebook && !model.hasPromptedFacebookOnChat {
+            model.hasPromptedFacebookOnChat = true
+            isPromptingFacebook = true
+            return
+        }
+        performChatSend(viewModel)
+    }
+
+    private func performChatSend(_ viewModel: VenueChatViewModel) {
+        Task { await viewModel.send() }
     }
 
     private func makeViewModel() -> VenueChatViewModel {

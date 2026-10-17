@@ -13,6 +13,8 @@ struct PersonScreen: View {
     @State private var viewModel: PersonViewModel?
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
+    @State private var reportSubject: ReportSubject?
+    @State private var blockTarget: BlockedUser?
 
     var body: some View {
         LoadStateView(state: viewModel?.state ?? .loading, retry: reload) { detail in
@@ -90,6 +92,22 @@ struct PersonScreen: View {
             tone: heroTone,
             collapsed: heroCollapsed || viewModel?.state.value == nil
         )
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(role: .destructive) {
+                        reportSubject = ReportSubject(target: .person, targetID: personID.uuidString.lowercased())
+                    } label: {
+                        Label(String(localized: "Report Creator…"), systemImage: "exclamationmark.bubble")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.body)
+                }
+                .accessibilityIdentifier("person.optionsMenu")
+            }
+        }
+        .contentReporting(report: $reportSubject, block: $blockTarget)
         .task {
             ensureViewModel()
             await viewModel?.load()

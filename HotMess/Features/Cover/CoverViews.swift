@@ -48,12 +48,40 @@ struct CoverSection: View {
     let admission: Admission?
     let venueID: UUID?
     let venueName: String
-    var isReviewMode: Bool = false
 
     @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var quantity = 1
+    @State private var selectedTierID: String?
 
-    private var effectiveReviewMode: Bool {
-        isReviewMode || model.isReviewMode
+    private var isOnlyApplePay: Bool {
+        guard let coverCharge else { return false }
+        return !coverCharge.hasOtherPaymentMechanisms && coverCharge.supportsApplePay
+    }
+
+    private var applePayStatus: ApplePayStatus {
+        ApplePayStatus.current()
+    }
+
+    private var showsPayCoverButton: Bool {
+        // If the cover charge specifies payment mechanisms and there are no other mechanisms besides apple_pay
+        if let coverCharge, !coverCharge.hasOtherPaymentMechanisms {
+            return false
+        }
+        return true
+    }
+
+    private var showsApplePayButton: Bool {
+        guard let coverCharge, coverCharge.supportsApplePay else { return false }
+        return applePayStatus == .ready
+    }
+
+    private var selectedTier: CoverTier? {
+        guard let tiers = coverCharge?.tiers, !tiers.isEmpty else { return nil }
+        if let selectedTierID, let tier = tiers.first(where: { $0.id == selectedTierID }) {
+            return tier
+        }
+        return tiers.first
     }
 
     var body: some View {
@@ -66,25 +94,109 @@ struct CoverSection: View {
             if let admission, admission.isPaid {
                 ShowPassButton(admission: admission)
             } else if isTonight, let coverCharge {
-                if (coverCharge.payable || effectiveReviewMode), let venueID {
-                    PayCoverButton(venueID: venueID, venueName: venueName)
-                    #if canImport(PassKit)
-                    ApplePayButton(type: .plain, style: .white) {
-                        Task {
-                            await model.checkout.payWithApplePay(
+                if coverCharge.payable, let venueID {
+                    if isOnlyApplePay && applePayStatus == .unavailable {
+                        Text(String(localized: "Pay cash at the door"))
+                            .font(.hotMess(.subheadline))
+                            .foregroundStyle(.secondary)
+                    } else if isOnlyApplePay && applePayStatus == .needsSetup {
+                        VStack(alignment: .leading, spacing: 10) {
+                            #if canImport(PassKit)
+                            ApplePayButton(type: .setUp, style: .white) {
+                                if PKPassLibrary.isPassLibraryAvailable() {
+                                    PKPassLibrary().openPaymentSetup()
+                                }
+                            }
+                            .frame(height: 50)
+                            .clipShape(Capsule())
+                            .accessibilityIdentifier("cover.applePaySetup")
+                            #endif
+
+                            Text(String(localized: "Or pay cash at the door"))
+                                .font(.hotMess(.subheadline))
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        if let tiers = coverCharge.tiers, tiers.count > 1 {
+                            Picker(String(localized: "Tier"), selection: Binding(
+                                get: { selectedTierID ?? tiers.first?.id ?? "" },
+                                set: { selectedTierID = $0 }
+                            )) {
+                                ForEach(tiers) { tier in
+                                    Text("\(tier.name) (\(tier.price))").tag(tier.id)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        Stepper(value: $quantity, in: 1...10) {
+                            HStack {
+                                Text(String(localized: "Quantity"))
+                                    .font(.hotMess(.body))
+                                Spacer()
+                                Text(quantity > 1 ? String(localized: "\(quantity) covers") : String(localized: "1 cover"))
+                                    .font(.hotMess(.body, semibold: true))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        let totalPrice = selectedTier?.total(for: quantity).formatted ?? coverCharge.price(for: quantity)
+
+                        if showsPayCoverButton {
+                            PayCoverButton(
                                 venueID: venueID,
                                 venueName: venueName,
-                                isReview: effectiveReviewMode
+                                quantity: quantity,
+                                tier: selectedTier?.id,
+                                title: showsApplePayButton
+                                    ? (quantity > 1 ? String(localized: "Pay \(totalPrice) with card") : String(localized: "Pay with card"))
+                                    : (quantity > 1 ? String(localized: "Pay \(totalPrice)") : String(localized: "Pay cover"))
                             )
                         }
+
+                        #if canImport(PassKit)
+                        if showsApplePayButton {
+                            ApplePayButton(type: .plain, style: .white) {
+                                Task {
+                                    await model.checkout.payWithApplePay(
+                                        venueID: venueID,
+                                        venueName: venueName,
+                                        quantity: quantity,
+                                        tier: selectedTier?.id
+                                    )
+                                }
+                            }
+                            .frame(height: 50)
+                            .clipShape(Capsule())
+                            .disabled(model.checkout.isBusy)
+                            .accessibilityIdentifier("cover.applePay")
+                        }
+                        #endif
                     }
-                    .frame(height: 50)
-                    .clipShape(Capsule())
-                    .disabled(model.checkout.isBusy)
-                    .accessibilityIdentifier("cover.applePay")
-                    #endif
+                    if let coatCheck = coverCharge.coatCheck, coatCheck.payable {
+                        Divider()
+                        HStack {
+                            Label(String(localized: "Coat Check: \(coatCheck.price)"), systemImage: "hanger")
+                                .font(.hotMess(.subheadline))
+                            Spacer()
+                            Button(String(localized: "Check Coat")) {
+                                Task {
+                                    await model.checkout.payCoatCheck(
+                                        venueID: venueID,
+                                        venueName: venueName,
+                                        quantity: 1
+                                    )
+                                }
+                            }
+                            .font(.hotMess(.caption, semibold: true))
+                            .buttonStyle(.bordered)
+                            .tint(Color.hotMessAccent)
+                            .disabled(model.checkout.isBusy)
+                            .accessibilityIdentifier("cover.addCoatCheck")
+                        }
+                    }
                 } else if !coverCharge.payable {
-                    Text("Pay at the door")
+                    Text(String(localized: "Pay cash at the door"))
                         .font(.hotMess(.subheadline))
                         .foregroundStyle(.secondary)
                 }
@@ -93,24 +205,190 @@ struct CoverSection: View {
     }
 }
 
-/// Starts paying tonight's cover at a venue.
-struct PayCoverButton: View {
+/// Tonight's coat check at a venue: the price, and a way to pay it, or show the pass.
+struct CoatCheckSection: View {
+    let coatCheck: CoatCheckCharge
+    let admission: Admission?
     let venueID: UUID
     let venueName: String
-    var title = String(localized: "Pay cover")
+
+    @Environment(AppModel.self) private var model
+    @State private var quantity = 1
+
+    private var isOnlyApplePay: Bool {
+        !coatCheck.hasOtherPaymentMechanisms && coatCheck.supportsApplePay
+    }
+
+    private var applePayStatus: ApplePayStatus {
+        ApplePayStatus.current()
+    }
+
+    private var showsPayCoatCheckButton: Bool {
+        if !coatCheck.hasOtherPaymentMechanisms {
+            return false
+        }
+        return true
+    }
+
+    private var showsApplePayButton: Bool {
+        guard coatCheck.supportsApplePay else { return false }
+        return applePayStatus == .ready
+    }
+
+    var body: some View {
+        DetailSection(String(localized: "Coat Check")) {
+            Label(String(localized: "Coat check \(coatCheck.price) tonight"), systemImage: "hanger")
+                .font(.hotMess(.body))
+
+            if let admission, admission.isPaid {
+                ShowPassButton(admission: admission, title: String(localized: "Show coat check pass"), systemImage: "hanger")
+            } else if coatCheck.payable {
+                if isOnlyApplePay && applePayStatus == .unavailable {
+                    Text(String(localized: "Pay cash at coat check"))
+                        .font(.hotMess(.subheadline))
+                        .foregroundStyle(.secondary)
+                } else if isOnlyApplePay && applePayStatus == .needsSetup {
+                    VStack(alignment: .leading, spacing: 10) {
+                        #if canImport(PassKit)
+                        ApplePayButton(type: .setUp, style: .white) {
+                            if PKPassLibrary.isPassLibraryAvailable() {
+                                PKPassLibrary().openPaymentSetup()
+                            }
+                        }
+                        .frame(height: 50)
+                        .clipShape(Capsule())
+                        .accessibilityIdentifier("coatCheck.applePaySetup")
+                        #endif
+
+                        Text(String(localized: "Or pay cash at coat check"))
+                            .font(.hotMess(.subheadline))
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Stepper(value: $quantity, in: 1...10) {
+                        HStack {
+                            Text(String(localized: "Coats"))
+                                .font(.hotMess(.body))
+                            Spacer()
+                            Text(quantity > 1 ? String(localized: "\(quantity) coats") : String(localized: "1 coat"))
+                                .font(.hotMess(.body, semibold: true))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    let totalPrice = coatCheck.price(for: quantity)
+
+                    if showsPayCoatCheckButton {
+                        PayCoatCheckButton(
+                            venueID: venueID,
+                            venueName: venueName,
+                            quantity: quantity,
+                            title: showsApplePayButton
+                                ? (quantity > 1 ? String(localized: "Pay \(totalPrice) with card") : String(localized: "Pay with card"))
+                                : (quantity > 1 ? String(localized: "Check \(quantity) coats (\(totalPrice))") : String(localized: "Check coat (\(totalPrice))"))
+                        )
+                    }
+
+                    #if canImport(PassKit)
+                    if showsApplePayButton {
+                        ApplePayButton(type: .plain, style: .white) {
+                            Task {
+                                await model.checkout.payCoatCheckWithApplePay(
+                                    venueID: venueID,
+                                    venueName: venueName,
+                                    quantity: quantity
+                                )
+                            }
+                        }
+                        .frame(height: 50)
+                        .clipShape(Capsule())
+                        .disabled(model.checkout.isBusy)
+                        .accessibilityIdentifier("coatCheck.applePay")
+                    }
+                    #endif
+                }
+            } else if !coatCheck.payable {
+                Text(String(localized: "Pay cash at coat check"))
+                    .font(.hotMess(.subheadline))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+/// Starts paying coat check at a venue.
+struct PayCoatCheckButton: View {
+    let venueID: UUID
+    let venueName: String
+    var quantity: Int = 1
+    var title: String? = nil
 
     @Environment(AppModel.self) private var model
 
+    private var buttonTitle: String {
+        title ?? String(localized: "Pay coat check")
+    }
+
     var body: some View {
         Button {
-            Task { await model.checkout.pay(venueID: venueID, venueName: venueName, isReview: model.isReviewMode) }
+            Task {
+                await model.checkout.payCoatCheck(
+                    venueID: venueID,
+                    venueName: venueName,
+                    quantity: quantity
+                )
+            }
         } label: {
             HStack(spacing: 8) {
                 if model.checkout.isPaying(for: venueID) {
                     ProgressView()
                         .tint(Color.hotMessOnAccent)
                 }
-                Text(title)
+                Text(buttonTitle)
+                    .font(.hotMess(.headline, semibold: true))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Color.hotMessAccent)
+        .foregroundStyle(Color.hotMessOnAccent)
+        .disabled(model.checkout.isBusy)
+        .accessibilityIdentifier("coatCheck.pay")
+    }
+}
+
+/// Starts paying tonight's cover at a venue.
+struct PayCoverButton: View {
+    let venueID: UUID
+    let venueName: String
+    var quantity: Int = 1
+    var tier: String? = nil
+    var title: String? = nil
+
+    @Environment(AppModel.self) private var model
+
+    private var buttonTitle: String {
+        title ?? String(localized: "Pay cover")
+    }
+
+    var body: some View {
+        Button {
+            Task {
+                await model.checkout.pay(
+                    venueID: venueID,
+                    venueName: venueName,
+                    quantity: quantity,
+                    tier: tier
+                )
+            }
+        } label: {
+            HStack(spacing: 8) {
+                if model.checkout.isPaying(for: venueID) {
+                    ProgressView()
+                        .tint(Color.hotMessOnAccent)
+                }
+                Text(buttonTitle)
                     .font(.hotMess(.headline, semibold: true))
             }
             .frame(maxWidth: .infinity)
@@ -127,14 +405,24 @@ struct PayCoverButton: View {
 /// Opens a paid pass.
 struct ShowPassButton: View {
     let admission: Admission
+    var title: String? = nil
+    var systemImage: String? = nil
 
     @Environment(AppModel.self) private var model
+
+    private var buttonTitle: String {
+        title ?? (admission.isCoatCheck ? String(localized: "Show coat check pass") : String(localized: "Show pass"))
+    }
+
+    private var icon: String {
+        systemImage ?? (admission.isCoatCheck ? "hanger" : "qrcode")
+    }
 
     var body: some View {
         Button {
             model.checkout.show(admission)
         } label: {
-            Label(String(localized: "Show pass"), systemImage: "qrcode")
+            Label(buttonTitle, systemImage: icon)
                 .font(.hotMess(.headline, semibold: true))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
@@ -142,7 +430,7 @@ struct ShowPassButton: View {
         .buttonStyle(.borderedProminent)
         .tint(Color.hotMessAccent)
         .foregroundStyle(Color.hotMessOnAccent)
-        .accessibilityIdentifier("cover.showPass")
+        .accessibilityIdentifier(admission.isCoatCheck ? "coatCheck.showPass" : "cover.showPass")
     }
 }
 
@@ -151,25 +439,198 @@ struct SkipTheLineCard: View {
     let venue: Venue
     let coverCharge: CoverCharge
 
+    @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var isOnlyApplePay: Bool {
+        !coverCharge.hasOtherPaymentMechanisms && coverCharge.supportsApplePay
+    }
+
+    private var applePayStatus: ApplePayStatus {
+        ApplePayStatus.current()
+    }
+
+    private var showsPayCoverButton: Bool {
+        if !coverCharge.hasOtherPaymentMechanisms {
+            return false
+        }
+        return true
+    }
+
+    private var showsApplePayButton: Bool {
+        guard coverCharge.supportsApplePay else { return false }
+        return applePayStatus == .ready
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(String(localized: "Skip the line, pay cover"), systemImage: "bolt.fill")
-                .font(.hotMess(.headline, semibold: true))
-                .foregroundStyle(Color.hotMessAccent)
+            Label(
+                isOnlyApplePay && applePayStatus == .unavailable
+                    ? String(localized: "Cover at the door")
+                    : String(localized: "Skip the line, pay cover"),
+                systemImage: isOnlyApplePay && applePayStatus == .unavailable ? "ticket" : "bolt.fill"
+            )
+            .font(.hotMess(.headline, semibold: true))
+            .foregroundStyle(isOnlyApplePay && applePayStatus == .unavailable ? Color.secondary : Color.hotMessAccent)
 
             Text(coverCharge.summary(isTonight: true))
                 .font(.hotMess(.subheadline))
                 .foregroundStyle(.secondary)
 
-            PayCoverButton(
-                venueID: venue.id,
-                venueName: venue.name,
-                title: String(localized: "Pay \(coverCharge.price)")
-            )
+            if isOnlyApplePay && applePayStatus == .unavailable {
+                Text(String(localized: "Pay cash at the door"))
+                    .font(.hotMess(.subheadline))
+                    .foregroundStyle(.secondary)
+            } else if isOnlyApplePay && applePayStatus == .needsSetup {
+                #if canImport(PassKit)
+                ApplePayButton(type: .setUp, style: .white) {
+                    if PKPassLibrary.isPassLibraryAvailable() {
+                        PKPassLibrary().openPaymentSetup()
+                    }
+                }
+                .frame(height: 50)
+                .clipShape(Capsule())
+                .accessibilityIdentifier("cover.applePaySetup")
+                #endif
+
+                Text(String(localized: "Or pay cash at the door"))
+                    .font(.hotMess(.subheadline))
+                    .foregroundStyle(.secondary)
+            } else {
+                if showsPayCoverButton {
+                    PayCoverButton(
+                        venueID: venue.id,
+                        venueName: venue.name,
+                        title: showsApplePayButton
+                            ? String(localized: "Pay with card")
+                            : String(localized: "Pay \(coverCharge.price)")
+                    )
+                }
+
+                #if canImport(PassKit)
+                if showsApplePayButton {
+                    ApplePayButton(type: .plain, style: .white) {
+                        Task {
+                            await model.checkout.payWithApplePay(
+                                venueID: venue.id,
+                                venueName: venue.name
+                            )
+                        }
+                    }
+                    .frame(height: 50)
+                    .clipShape(Capsule())
+                    .disabled(model.checkout.isBusy)
+                    .accessibilityIdentifier("cover.applePay")
+                }
+                #endif
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hotMessAccentSoft, in: .rect(cornerRadius: CardMetrics.cornerRadius))
+        .background(
+            isOnlyApplePay && applePayStatus == .unavailable
+                ? Color(.secondarySystemGroupedBackground)
+                : Color.hotMessAccentSoft,
+            in: .rect(cornerRadius: CardMetrics.cornerRadius)
+        )
+        .padding(.horizontal, 16)
+    }
+}
+
+/// Now, at a venue with coat check that can be paid in the app and isn't yet.
+struct CoatCheckCard: View {
+    let venue: Venue
+    let coatCheck: CoatCheckCharge
+
+    @Environment(AppModel.self) private var model
+
+    private var isOnlyApplePay: Bool {
+        !coatCheck.hasOtherPaymentMechanisms && coatCheck.supportsApplePay
+    }
+
+    private var applePayStatus: ApplePayStatus {
+        ApplePayStatus.current()
+    }
+
+    private var showsPayCoatCheckButton: Bool {
+        if !coatCheck.hasOtherPaymentMechanisms { return false }
+        return true
+    }
+
+    private var showsApplePayButton: Bool {
+        guard coatCheck.supportsApplePay else { return false }
+        return applePayStatus == .ready
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(
+                String(localized: "Coat Check"),
+                systemImage: "hanger"
+            )
+            .font(.hotMess(.headline, semibold: true))
+            .foregroundStyle(Color.hotMessAccent)
+
+            Text(String(localized: "\(coatCheck.price) tonight"))
+                .font(.hotMess(.subheadline))
+                .foregroundStyle(.secondary)
+
+            if isOnlyApplePay && applePayStatus == .unavailable {
+                Text(String(localized: "Pay cash at coat check"))
+                    .font(.hotMess(.subheadline))
+                    .foregroundStyle(.secondary)
+            } else if isOnlyApplePay && applePayStatus == .needsSetup {
+                #if canImport(PassKit)
+                ApplePayButton(type: .setUp, style: .white) {
+                    if PKPassLibrary.isPassLibraryAvailable() {
+                        PKPassLibrary().openPaymentSetup()
+                    }
+                }
+                .frame(height: 50)
+                .clipShape(Capsule())
+                .accessibilityIdentifier("coatCheck.applePaySetup")
+                #endif
+
+                Text(String(localized: "Or pay cash at coat check"))
+                    .font(.hotMess(.subheadline))
+                    .foregroundStyle(.secondary)
+            } else {
+                if showsPayCoatCheckButton {
+                    PayCoatCheckButton(
+                        venueID: venue.id,
+                        venueName: venue.name,
+                        title: showsApplePayButton
+                            ? String(localized: "Pay with card")
+                            : String(localized: "Pay \(coatCheck.price)")
+                    )
+                }
+
+                #if canImport(PassKit)
+                if showsApplePayButton {
+                    ApplePayButton(type: .plain, style: .white) {
+                        Task {
+                            await model.checkout.payCoatCheckWithApplePay(
+                                venueID: venue.id,
+                                venueName: venue.name
+                            )
+                        }
+                    }
+                    .frame(height: 50)
+                    .clipShape(Capsule())
+                    .disabled(model.checkout.isBusy)
+                    .accessibilityIdentifier("coatCheck.applePay")
+                }
+                #endif
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            isOnlyApplePay && applePayStatus == .unavailable
+                ? Color(.secondarySystemGroupedBackground)
+                : Color.hotMessAccentSoft,
+            in: .rect(cornerRadius: CardMetrics.cornerRadius)
+        )
         .padding(.horizontal, 16)
     }
 }
@@ -180,6 +641,27 @@ struct TonightPassCard: View {
     let admission: Admission
 
     @Environment(AppModel.self) private var model
+
+    private var badgeTitle: String {
+        admission.isCoatCheck ? String(localized: "Coat Check") : String(localized: "Your pass")
+    }
+
+    private var actionTitle: String {
+        admission.isCoatCheck ? String(localized: "Show at coat check") : String(localized: "Show at the door")
+    }
+
+    private var passTitle: String {
+        if admission.isCoatCheck {
+            let coats = admission.quantity > 1 ? "\(admission.quantity) coats" : String(localized: "1 coat")
+            if let claim = admission.claimCheckNumber, !claim.isEmpty {
+                return String(localized: "Hanger #\(claim) (\(coats)) · \(admission.nightTitle)")
+            }
+            return String(localized: "Paid \(admission.price) (\(coats)) · \(admission.nightTitle)")
+        }
+        return admission.quantity > 1
+            ? String(localized: "Paid \(admission.price) (\(admission.quantity) covers) · \(admission.nightTitle)")
+            : String(localized: "Paid \(admission.price) · \(admission.nightTitle)")
+    }
 
     var body: some View {
         Button {
@@ -196,7 +678,7 @@ struct TonightPassCard: View {
                         .background(.white, in: .rect(cornerRadius: HotMessRadius.lg))
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Your pass")
+                        Text(badgeTitle)
                             .font(.hotMess(.footnote, semibold: true))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
@@ -205,12 +687,12 @@ struct TonightPassCard: View {
                             .font(.hotMess(.title3, semibold: true))
                             .lineLimit(2)
 
-                        Text(String(localized: "Paid \(admission.price) · \(admission.nightTitle)"))
+                        Text(passTitle)
                             .font(.hotMess(.subheadline))
                             .foregroundStyle(.secondary)
 
                         HStack(spacing: 4) {
-                            Text("Show at the door")
+                            Text(actionTitle)
                             Image(systemName: "chevron.right")
                                 .font(.footnote.weight(.semibold))
                         }
@@ -230,9 +712,9 @@ struct TonightPassCard: View {
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "Your pass for \(admission.venueName), \(admission.nightTitle)"))
-        .accessibilityHint(String(localized: "Opens the pass to show at the door."))
-        .accessibilityIdentifier("cover.tonightPass")
+        .accessibilityLabel(String(localized: "\(badgeTitle) for \(admission.venueName), \(admission.nightTitle)"))
+        .accessibilityHint(String(localized: "Opens the pass."))
+        .accessibilityIdentifier(admission.isCoatCheck ? "coatCheck.tonightPass" : "cover.tonightPass")
     }
 }
 
@@ -240,6 +722,20 @@ struct TonightPassCard: View {
 
 #if canImport(PassKit)
 import PassKit
+
+extension ApplePayStatus {
+    static let supportedNetworks: [PKPaymentNetwork] = [.visa, .masterCard, .amex, .discover]
+
+    static func current() -> ApplePayStatus {
+        guard PKPaymentAuthorizationController.canMakePayments() else {
+            return .unavailable
+        }
+        guard PKPaymentAuthorizationController.canMakePayments(usingNetworks: supportedNetworks) else {
+            return .needsSetup
+        }
+        return .ready
+    }
+}
 
 /// A native Apple Pay button rendered via PassKit PKPaymentButton.
 struct ApplePayButton: UIViewRepresentable {
@@ -264,6 +760,12 @@ struct ApplePayButton: UIViewRepresentable {
         let action: () -> Void
         init(action: @escaping () -> Void) { self.action = action }
         @objc func tapped() { action() }
+    }
+}
+#else
+extension ApplePayStatus {
+    static func current() -> ApplePayStatus {
+        .unavailable
     }
 }
 #endif

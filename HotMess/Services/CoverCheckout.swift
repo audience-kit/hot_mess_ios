@@ -49,14 +49,14 @@ final class CoverCheckout {
     func isPaying(for venueID: UUID) -> Bool { payingVenueID == venueID }
 
     /// Pays tonight's cover at a venue and shows the pass once it's paid.
-    func pay(venueID: UUID, venueName: String, isReview: Bool = false) async {
+    func pay(venueID: UUID, venueName: String, quantity: Int = 1, tier: String? = nil) async {
         guard payingVenueID == nil else { return }
 
         payingVenueID = venueID
         defer { payingVenueID = nil }
 
         do {
-            let purchase = try await api.buyCover(venueID: venueID)
+            let purchase = try await api.buyCover(venueID: venueID, quantity: quantity, tier: tier)
 
             switch purchase.nextStep {
             case .showPass:
@@ -78,7 +78,7 @@ final class CoverCheckout {
                     errorMessage = message
                 }
             case let .square(applicationID):
-                switch await payWithSquare(purchase.admission, applicationID: applicationID, venueName: venueName, isReview: isReview) {
+                switch await payWithSquare(purchase.admission, applicationID: applicationID, venueName: venueName) {
                 case let .paid(admission):
                     finish(with: admission)
                 case .canceled:
@@ -87,36 +87,23 @@ final class CoverCheckout {
                     errorMessage = message
                 }
             case .unavailable:
-                if isReview {
-                    await presentReviewApplePay(venueID: venueID, venueName: venueName)
-                } else {
-                    errorMessage = String(localized: "This venue can't take cover in the app right now.")
-                }
+                errorMessage = String(localized: "This venue can't take cover in the app right now.")
             }
         } catch is CancellationError {
         } catch {
-            if isReview {
-                await presentReviewApplePay(venueID: venueID, venueName: venueName)
-            } else {
-                errorMessage = paymentErrorMessage(error)
-            }
+            errorMessage = paymentErrorMessage(error)
         }
     }
 
     /// Triggers Apple Pay directly, presenting the native Apple Pay sheet.
-    func payWithApplePay(venueID: UUID, venueName: String, isReview: Bool = false) async {
+    func payWithApplePay(venueID: UUID, venueName: String, quantity: Int = 1, tier: String? = nil) async {
         guard payingVenueID == nil else { return }
 
         payingVenueID = venueID
         defer { payingVenueID = nil }
 
-        if isReview {
-            await presentReviewApplePay(venueID: venueID, venueName: venueName)
-            return
-        }
-
         do {
-            let purchase = try await api.buyCover(venueID: venueID)
+            let purchase = try await api.buyCover(venueID: venueID, quantity: quantity, tier: tier)
 
             switch purchase.nextStep {
             case .showPass:
@@ -136,7 +123,7 @@ final class CoverCheckout {
                     errorMessage = message
                 }
             case let .square(applicationID):
-                switch await payWithSquare(purchase.admission, applicationID: applicationID, venueName: venueName, isReview: isReview) {
+                switch await payWithSquare(purchase.admission, applicationID: applicationID, venueName: venueName) {
                 case let .paid(admission):
                     finish(with: admission)
                 case .canceled:
@@ -153,27 +140,93 @@ final class CoverCheckout {
         }
     }
 
-    private func presentReviewApplePay(venueID: UUID, venueName: String) async {
-        let merchantID = configuration.applePayMerchantID ?? "merchant.social.hotmess"
-        let request = PKPaymentRequest()
-        request.merchantIdentifier = merchantID
-        request.countryCode = "US"
-        request.currencyCode = "USD"
-        request.supportedNetworks = [.visa, .masterCard, .amex, .discover]
-        request.merchantCapabilities = .threeDSecure
-        request.paymentSummaryItems = [
-            PKPaymentSummaryItem(label: Self.merchantName(venueName), amount: NSDecimalNumber(string: "10.00")),
-            PKPaymentSummaryItem(label: String(localized: "Hot Mess"), amount: NSDecimalNumber(string: "10.00"))
-        ]
+    /// Pays tonight's coat check at a venue and shows the pass once it's paid.
+    func payCoatCheck(venueID: UUID, venueName: String, quantity: Int = 1) async {
+        guard payingVenueID == nil else { return }
 
-        let outcome = await ReviewApplePay(venueID: venueID, venueName: venueName).run(request)
-        switch outcome {
-        case let .paid(admission):
-            finish(with: admission)
-        case .canceled:
-            break
-        case let .failed(message):
-            errorMessage = message
+        payingVenueID = venueID
+        defer { payingVenueID = nil }
+
+        do {
+            let purchase = try await api.buyCoatCheck(venueID: venueID, quantity: quantity)
+
+            switch purchase.nextStep {
+            case .showPass:
+                finish(with: purchase.admission)
+            case let .stripe(clientSecret, publishableKey, accountID):
+                switch await presentPaymentSheet(
+                    clientSecret: clientSecret,
+                    publishableKey: publishableKey,
+                    accountID: accountID,
+                    venueName: venueName
+                ) {
+                case .completed:
+                    finish(with: try await api.confirmCover(admissionID: purchase.admission.id))
+                case .canceled:
+                    break
+                case let .failed(message):
+                    errorMessage = message
+                }
+            case let .square(applicationID):
+                switch await payWithSquare(purchase.admission, applicationID: applicationID, venueName: venueName) {
+                case let .paid(admission):
+                    finish(with: admission)
+                case .canceled:
+                    break
+                case let .failed(message):
+                    errorMessage = message
+                }
+            case .unavailable:
+                errorMessage = String(localized: "This venue can't take coat check in the app right now.")
+            }
+        } catch is CancellationError {
+        } catch {
+            errorMessage = paymentErrorMessage(error)
+        }
+    }
+
+    /// Triggers Apple Pay directly for coat check.
+    func payCoatCheckWithApplePay(venueID: UUID, venueName: String, quantity: Int = 1) async {
+        guard payingVenueID == nil else { return }
+
+        payingVenueID = venueID
+        defer { payingVenueID = nil }
+
+        do {
+            let purchase = try await api.buyCoatCheck(venueID: venueID, quantity: quantity)
+
+            switch purchase.nextStep {
+            case .showPass:
+                finish(with: purchase.admission)
+            case let .stripe(clientSecret, publishableKey, accountID):
+                switch await presentPaymentSheet(
+                    clientSecret: clientSecret,
+                    publishableKey: publishableKey,
+                    accountID: accountID,
+                    venueName: venueName
+                ) {
+                case .completed:
+                    finish(with: try await api.confirmCover(admissionID: purchase.admission.id))
+                case .canceled:
+                    break
+                case let .failed(message):
+                    errorMessage = message
+                }
+            case let .square(applicationID):
+                switch await payWithSquare(purchase.admission, applicationID: applicationID, venueName: venueName) {
+                case let .paid(admission):
+                    finish(with: admission)
+                case .canceled:
+                    break
+                case let .failed(message):
+                    errorMessage = message
+                }
+            case .unavailable:
+                errorMessage = String(localized: "This venue can't take coat check in the app right now.")
+            }
+        } catch is CancellationError {
+        } catch {
+            errorMessage = paymentErrorMessage(error)
         }
     }
 
@@ -250,7 +303,7 @@ final class CoverCheckout {
 
     // MARK: - Square
 
-    private func payWithSquare(_ admission: Admission, applicationID: String, venueName: String, isReview: Bool = false) async -> SquareOutcome {
+    private func payWithSquare(_ admission: Admission, applicationID: String, venueName: String) async -> SquareOutcome {
         // Square needs the application ID before anything else it does,
         // Apple Pay checks included.
         SQIPInAppPaymentsSDK.squareApplicationID = applicationID
@@ -262,8 +315,7 @@ final class CoverCheckout {
         let merchantID = configuration.applePayMerchantID
         let methods = SquarePaymentMethod.available(
             canUseApplePay: SQIPInAppPaymentsSDK.canUseApplePay,
-            merchantID: merchantID,
-            isReview: isReview
+            merchantID: merchantID
         )
         let pay: @MainActor (String) async throws -> Admission = { [api] nonce in
             try await api.payCover(admissionID: admission.id, sourceID: nonce)
@@ -352,7 +404,7 @@ private func paymentErrorMessage(_ error: any Error) -> String {
 /// `@preconcurrency` with the class on the main actor, as `LocationProvider`
 /// does for Core Location.
 @MainActor
-private final class SquareApplePay: NSObject, @preconcurrency PKPaymentAuthorizationControllerDelegate {
+private final class SquareApplePay: NSObject, PKPaymentAuthorizationControllerDelegate {
     private let pay: @MainActor (String) async throws -> Admission
     private var controller: PKPaymentAuthorizationController?
     private var continuation: CheckedContinuation<SquareOutcome, Never>?
@@ -423,72 +475,6 @@ private final class SquareApplePay: NSObject, @preconcurrency PKPaymentAuthoriza
 
 private struct SquareNonceError: LocalizedError {
     var errorDescription: String? { String(localized: "Square couldn't read this Apple Pay payment.") }
-}
-
-// MARK: - Review Apple Pay
-
-/// Presents the native Apple Pay sheet for App Review or testing, and completes with a valid pass.
-@MainActor
-private final class ReviewApplePay: NSObject, @preconcurrency PKPaymentAuthorizationControllerDelegate {
-    private let venueID: UUID
-    private let venueName: String
-    private var controller: PKPaymentAuthorizationController?
-    private var continuation: CheckedContinuation<SquareOutcome, Never>?
-    private var outcome = SquareOutcome.canceled
-
-    init(venueID: UUID, venueName: String) {
-        self.venueID = venueID
-        self.venueName = venueName
-    }
-
-    func run(_ request: PKPaymentRequest) async -> SquareOutcome {
-        let controller = PKPaymentAuthorizationController(paymentRequest: request)
-        controller.delegate = self
-        self.controller = controller
-
-        return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            controller.present { @Sendable presented in
-                guard !presented else { return }
-                Task { @MainActor in
-                    self.complete(.failed(String(localized: "Couldn't open Apple Pay. Please make sure Apple Pay is configured on this device.")))
-                }
-            }
-        }
-    }
-
-    func paymentAuthorizationController(
-        _ controller: PKPaymentAuthorizationController,
-        didAuthorizePayment payment: PKPayment,
-        handler completion: @escaping (PKPaymentAuthorizationResult) -> Void
-    ) {
-        let secret = Data(repeating: 0x42, count: 32).base64EncodedString()
-        let today = Date.now.formatted(Date.ISO8601FormatStyle(timeZone: .gmt).year().month().day())
-        let admission = Admission(
-            id: UUID().uuidString.lowercased(),
-            status: .paid,
-            night: today,
-            total: Money(cents: 1000, currency: "usd"),
-            isRefundable: true,
-            passSecret: secret,
-            venueID: venueID,
-            venueName: venueName
-        )
-        outcome = .paid(admission)
-        completion(PKPaymentAuthorizationResult(status: .success, errors: nil))
-    }
-
-    func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
-        controller.dismiss { @Sendable in
-            Task { @MainActor in self.complete(self.outcome) }
-        }
-    }
-
-    private func complete(_ outcome: SquareOutcome) {
-        controller = nil
-        continuation?.resume(returning: outcome)
-        continuation = nil
-    }
 }
 
 // MARK: - Square card entry

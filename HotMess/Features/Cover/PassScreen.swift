@@ -40,7 +40,7 @@ struct PassScreen: View {
                 .padding(.vertical, 24)
             }
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
-            .navigationTitle(String(localized: "Pass"))
+            .navigationTitle(admission.isCoatCheck ? String(localized: "Coat Check") : String(localized: "Pass"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -81,10 +81,25 @@ struct PassScreen: View {
 
     private var holder: some View {
         VStack(spacing: 8) {
-            Avatar(url: photoURL, initials: holderName.initialsForDisplay, size: 88)
+            if admission.isCoatCheck {
+                Image(systemName: "hanger")
+                    .font(.system(size: 56))
+                    .foregroundStyle(Color.hotMessAccent)
+                    .frame(width: 88, height: 88)
 
-            Text(holderName.firstNameForDisplay)
-                .font(.hotMess(.title2, semibold: true))
+                if let claim = admission.claimCheckNumber, !claim.isEmpty {
+                    Text("Hanger #\(claim)")
+                        .font(.hotMess(.title2, semibold: true))
+                } else {
+                    Text(holderName.firstNameForDisplay)
+                        .font(.hotMess(.title2, semibold: true))
+                }
+            } else {
+                Avatar(url: photoURL, initials: holderName.initialsForDisplay, size: 88)
+
+                Text(holderName.firstNameForDisplay)
+                    .font(.hotMess(.title2, semibold: true))
+            }
 
             Text(admission.venueName)
                 .font(.hotMess(.title, semibold: true))
@@ -144,9 +159,39 @@ struct PassScreen: View {
 
     private var details: some View {
         VStack(spacing: 0) {
-            InfoRow(title: String(localized: "Cover"), value: admission.price)
+            InfoRow(
+                title: admission.isCoatCheck ? String(localized: "Coat Check") : String(localized: "Cover"),
+                value: admission.price
+            )
+            .padding(.horizontal, 20)
+            .padding(.vertical, 11)
+
+            if admission.quantity > 1 {
+                Divider().padding(.leading, 20)
+
+                InfoRow(
+                    title: String(localized: "Quantity"),
+                    value: admission.isCoatCheck ? "\(admission.quantity) coats" : "\(admission.quantity) covers"
+                )
                 .padding(.horizontal, 20)
                 .padding(.vertical, 11)
+            }
+
+            if let claim = admission.claimCheckNumber, !claim.isEmpty {
+                Divider().padding(.leading, 20)
+
+                InfoRow(title: String(localized: "Claim Check"), value: "#\(claim)")
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+            }
+
+            if let tier = admission.tier, !tier.isEmpty {
+                Divider().padding(.leading, 20)
+
+                InfoRow(title: String(localized: "Tier"), value: tier.capitalized)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+            }
 
             Divider().padding(.leading, 20)
 
@@ -188,11 +233,37 @@ struct PassScreen: View {
     }
 
     private var nightLine: String {
-        [admission.nightTitle, admission.eventName].compactMap(\.self).joined(separator: " · ")
+        if admission.isCoatCheck {
+            var parts = [admission.nightTitle]
+            if admission.quantity > 1 {
+                parts.append("\(admission.quantity) coats")
+            } else {
+                parts.append(String(localized: "1 coat"))
+            }
+            return parts.joined(separator: " · ")
+        }
+        var parts = [admission.nightTitle, admission.eventName].compactMap(\.self)
+        if admission.quantity > 1 {
+            parts.append("\(admission.quantity) covers")
+        }
+        if let tier = admission.tier, !tier.isEmpty {
+            parts.append(tier.capitalized)
+        }
+        return parts.joined(separator: " · ")
     }
 
     private var statusText: String {
-        guard admission.isPaid, let checkedInAt = admission.checkedInAt else { return admission.status.title }
+        guard admission.isPaid else { return admission.status.title }
+        if admission.isCoatCheck {
+            if admission.scanCount >= 2 {
+                return String(localized: "Claimed")
+            } else if admission.scanCount == 1 {
+                return String(localized: "Checked in")
+            } else {
+                return String(localized: "Ready to check in")
+            }
+        }
+        guard let checkedInAt = admission.checkedInAt else { return admission.status.title }
         return String(localized: "In at \(checkedInAt.formatted(date: .omitted, time: .shortened))")
     }
 
@@ -242,7 +313,7 @@ struct QRCodeImage: View {
 
 enum QRCodeRenderer {
     /// CIContext is thread-safe and costly to make, so one is shared.
-    nonisolated(unsafe) private static let context = CIContext()
+    private static let context = CIContext()
 
     static func image(for text: String) -> UIImage? {
         let filter = CIFilter.qrCodeGenerator()

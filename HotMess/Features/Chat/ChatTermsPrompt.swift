@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Shown in place of a chat room until the user agrees to the terms of use,
-/// which forbid objectionable content and abuse (App Store guideline 1.2).
+/// which forbid objectionable content and abuse.
 /// Asked once per account; the API remembers.
 struct ChatTermsPrompt: View {
     let accept: () async throws -> Void
@@ -33,7 +33,7 @@ struct ChatTermsPrompt: View {
                     rule("Press and hold a message to report it or block its sender.", systemImage: "hand.raised")
                 }
 
-                Text("There's no tolerance for objectionable content or abusive people. Admins remove messages and people that break these rules.")
+                Text("There's no tolerance for objectionable content or abusive people. Admins review reports within 24 hours to remove offending messages and eject people who break these rules.")
                     .font(.hotMess(.subheadline))
                     .foregroundStyle(.secondary)
 

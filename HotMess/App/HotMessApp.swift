@@ -18,13 +18,15 @@ struct HotMessApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-#if DEBUG
-                if let fixture = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) {
-                    KaraokeUITestScreen(mode: String(fixture.split(separator: "=").last ?? "venue"))
-                } else { RootView() }
-#else
+                #if TEST_HOOKS
+                if let mode = Self.karaokeFixture {
+                    KaraokeUITestScreen(mode: mode)
+                } else {
+                    RootView()
+                }
+                #else
                 RootView()
-#endif
+                #endif
             }
                 .environment(model)
                 .tint(model.brand.accent)
@@ -35,6 +37,7 @@ struct HotMessApp: App {
                     _ = model.open(url)
                 }
         }
+        .environment(model)
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
@@ -48,20 +51,27 @@ struct HotMessApp: App {
     }
 
     private func start() async {
-#if DEBUG
-        if ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("-HotMessUITestKaraoke=") }) { return }
-#endif
+        #if TEST_HOOKS
+        if Self.karaokeFixture != nil { return }
+        #endif
         await model.start()
     }
 
-    /// Stripe claims its bank redirects (`hotmess://stripe-redirect`), then a
-    /// sign-in waiting on the Facebook app takes its `fb<app-id>://` redirect,
-    /// then the Facebook SDK gets refusal (its own login comes back the same
-    /// way), and anything none claims is treated as one of our own
-    /// `hotmess://` links.
+    #if TEST_HOOKS
+    /// The karaoke UI tests' fixture (`-HotMessUITestKaraoke=<mode>`), shown
+    /// instead of the app. Only in builds with test hooks.
+    private static var karaokeFixture: String? {
+        guard let argument = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("-HotMessUITestKaraoke=") })
+        else { return nil }
+        return String(argument.split(separator: "=").last ?? "venue")
+    }
+    #endif
+
+    /// Stripe claims its bank redirects (`hotmess://stripe-redirect`), then the
+    /// Facebook SDK claims its login redirects, and anything neither claims is
+    /// treated as one of our own `hotmess://` links.
     private func handle(_ url: URL) {
         if StripeAPI.handleURLCallback(with: url) { return }
-        if FacebookSignIn.handle(url) { return }
 
         let handledByFacebook = ApplicationDelegate.shared.application(
             UIApplication.shared,

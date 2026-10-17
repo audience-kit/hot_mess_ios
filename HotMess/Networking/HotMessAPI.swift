@@ -97,6 +97,7 @@ struct HotMessAPI: Sendable {
             recentMessages: venue.recentMessages,
             coverCharge: venue.coverCharge,
             viewerAdmission: venue.viewerAdmission,
+            viewerCoatCheck: venue.viewerCoatCheck,
             onNow: venue.onNow,
             friendPings: venue.friendPings
         )
@@ -137,12 +138,32 @@ struct HotMessAPI: Sendable {
 
     /// Starts paying tonight's cover at a venue. Asking again the same night
     /// returns the same pass and payment.
-    func buyCover(venueID: UUID) async throws -> CoverPurchase {
-        try await query(
+    func buyCover(venueID: UUID, quantity: Int = 1, tier: String? = nil) async throws -> CoverPurchase {
+        var variables: [String: GraphQLValue] = [
+            "venueId": .string(venueID.uuidString),
+            "quantity": .int(quantity),
+        ]
+        if let tier {
+            variables["tier"] = .string(tier)
+        }
+        return try await query(
             Documents.buyCover,
-            variables: ["venueId": .string(venueID.uuidString)],
+            variables: variables,
             as: BuyCoverResponse.self
         ).buyCover
+    }
+
+    /// Starts paying tonight's coat check at a venue.
+    func buyCoatCheck(venueID: UUID, quantity: Int = 1) async throws -> CoverPurchase {
+        let variables: [String: GraphQLValue] = [
+            "venueId": .string(venueID.uuidString),
+            "quantity": .int(quantity),
+        ]
+        return try await query(
+            Documents.buyCoatCheck,
+            variables: variables,
+            as: BuyCoatCheckResponse.self
+        ).buyCoatCheck
     }
 
     /// Pays a Square venue's cover with a payment token (nonce) from Square's
@@ -207,6 +228,19 @@ struct HotMessAPI: Sendable {
     /// hands the credential to the SDK (`adopt(credential:)`), which stores it.
     func signInWithApple(_ request: AppleSignInRequest) async throws -> Credential {
         try await client.send(Endpoints.appleSignIn(request))
+    }
+
+    /// `GET /v1/token/review`: whether the API takes App Review codes now
+    /// (only while the audience is in App Review). `host` names the audience.
+    func isReviewSignInEnabled(host: String?) async throws -> Bool {
+        try await client.send(Endpoints.reviewSignInStatus(host: host)).enabled
+    }
+
+    /// Trades the App Review code from the review notes for a session on the
+    /// designated reviewer account. A wrong code is a 401. The caller hands
+    /// the credential to the SDK (`adopt(credential:)`), as with Apple.
+    func signInWithReviewCode(_ request: ReviewSignInRequest) async throws -> Credential {
+        try await client.send(Endpoints.reviewSignIn(request))
     }
 
     /// Connects Facebook to the signed-in account, with the code from
@@ -326,6 +360,23 @@ struct HotMessAPI: Sendable {
         )
     }
 
+    /// Reports a person, venue, Ping, photo or message to the audience's
+    /// moderators (the same queue as chat reports), and blocks whoever is
+    /// behind it too when asked. Returns whether they're now blocked.
+    @discardableResult
+    func reportContent(_ target: ReportTarget, id: String, reason: String?, block: Bool) async throws -> Bool {
+        try await query(
+            Documents.reportContent,
+            variables: [
+                "targetType": .string(target.rawValue),
+                "targetId": .string(id),
+                "reason": reason.map(GraphQLValue.string) ?? .null,
+                "block": .bool(block),
+            ],
+            as: ReportContentResponse.self
+        ).reportContent.blocked
+    }
+
     /// Takes back one of the user's own chat messages. The room drops it for
     /// everyone, the same as when an admin removes it.
     func removeMyChatMessage(_ id: UUID) async throws {
@@ -432,6 +483,22 @@ extension HotMessAPI {
             Endpoint("/v1/token/apple", method: .post, body: JSONBody(request), requiresAuthentication: false)
         }
 
+        /// Whether App Review sign-in is on. Open, like the sign-ins.
+        static func reviewSignInStatus(host: String?) -> Endpoint<ReviewSignInStatus> {
+            Endpoint(
+                "/v1/token/review",
+                method: .get,
+                query: host.map { [URLQueryItem(name: "host", value: $0)] } ?? [],
+                requiresAuthentication: false
+            )
+        }
+
+        /// App Review sign-in with the reviewer's code; the response is the
+        /// same credential JSON as Sign in with Apple's.
+        static func reviewSignIn(_ request: ReviewSignInRequest) -> Endpoint<Credential> {
+            Endpoint("/v1/token/review", method: .post, body: JSONBody(request), requiresAuthentication: false)
+        }
+
         /// Facebook sign-in with `connect`, sent with the current session so
         /// the API knows which account Facebook joins.
         static func connectFacebook(_ request: ConnectFacebookRequest) -> Endpoint<Credential> {
@@ -441,9 +508,12 @@ extension HotMessAPI {
 }
 
 /// `POST /v1/token/apple`. Apple gives the name only the first time someone
-/// signs in to the app, so it's sent along then.
+/// signs in to the app, so it's sent along then. The authorization code lets
+/// the API get a refresh token from Apple, which it revokes when the account
+/// is deleted.
 struct AppleSignInRequest: Encodable, Sendable {
     let identityToken: String
+    var authorizationCode: String? = nil
     let firstName: String?
     let lastName: String?
     let host: String?
@@ -451,11 +521,35 @@ struct AppleSignInRequest: Encodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case identityToken = "identity_token"
+        case authorizationCode = "authorization_code"
         case firstName = "first_name"
         case lastName = "last_name"
         case host
         case device
     }
+}
+
+/// `GET /v1/token/review`.
+struct ReviewSignInStatus: Decodable, Sendable {
+    let enabled: Bool
+
+    private enum CodingKeys: String, CodingKey { case enabled }
+
+    init(enabled: Bool) {
+        self.enabled = enabled
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+    }
+}
+
+/// `POST /v1/token/review`: the code App Review was given in the review notes.
+struct ReviewSignInRequest: Encodable, Sendable {
+    let code: String
+    let host: String?
+    let device: DeviceDescription
 }
 
 /// `POST /v1/token` with `connect`, for an account that signed in with Apple.
@@ -557,12 +651,15 @@ extension HotMessAPI {
         static let moneyFields = "cents currency"
 
         static let coverChargeFields = """
-        amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } night from until payable
+        amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } \
+        night from until payable payment_mechanisms: paymentMechanisms \
+        tiers { id name amount { \(moneyFields) } total { \(moneyFields) } description } \
+        coat_check: coatCheck { amount { \(moneyFields) } fee { \(moneyFields) } total { \(moneyFields) } night payable payment_mechanisms: paymentMechanisms }
         """
 
         /// `profile` is the buyer: the pass shows their name and avatar.
         static let admissionFields = """
-        id status night total { \(moneyFields) } is_refundable: isRefundable \
+        id status night total { \(moneyFields) } quantity tier kind claim_check_number: claimCheckNumber is_refundable: isRefundable \
         pass_secret: passSecret scan_count: scanCount checked_in_at: checkedInAt \
         profile { id name avatar_url: avatarUrl } \
         venue { id name photo_url: photoUrl } event { id name }
@@ -574,6 +671,7 @@ extension HotMessAPI {
         tickets { cover { \
         cover_charge: charge { \(coverChargeFields) } \
         viewer_admission: viewerAdmission { \(admissionFields) } \
+        viewer_coat_check: viewerCoatCheck { \(admissionFields) } \
         } }
         """
 
@@ -659,8 +757,22 @@ extension HotMessAPI {
         """
 
         static let buyCover = """
-        mutation BuyCover($venueId: ID!) {
-          buyCover(input: { venueId: $venueId }) {
+        mutation BuyCover($venueId: ID!, $quantity: Int, $tier: String) {
+          buyCover(input: { venueId: $venueId, quantity: $quantity, tier: $tier }) {
+            admission { \(admissionFields) }
+            payment_intent_client_secret: paymentIntentClientSecret
+            publishable_key: publishableKey
+            stripe_account_id: stripeAccountId
+            provider
+            square_application_id: squareApplicationId
+            square_location_id: squareLocationId
+          }
+        }
+        """
+
+        static let buyCoatCheck = """
+        mutation BuyCoatCheck($venueId: ID!, $quantity: Int) {
+          buyCoatCheck(input: { venueId: $venueId, quantity: $quantity }) {
             admission { \(admissionFields) }
             payment_intent_client_secret: paymentIntentClientSecret
             publishable_key: publishableKey
@@ -799,6 +911,12 @@ extension HotMessAPI {
         }
         """
 
+        static let reportContent = """
+        mutation ReportContent($targetType: ReportTarget!, $targetId: ID!, $reason: String, $block: Boolean) {
+          reportContent(input: { targetType: $targetType, targetId: $targetId, reason: $reason, block: $block }) { reported blocked }
+        }
+        """
+
         static let removeMyChatMessage = """
         mutation RemoveMyChatMessage($messageId: ID!) {
           removeMyChatMessage(input: { messageId: $messageId }) { deletedId }
@@ -867,6 +985,8 @@ struct VenueWithEvents: Decodable, Sendable {
     let coverCharge: CoverCharge?
     /// The user's cover tonight, paid or being paid.
     let viewerAdmission: Admission?
+    /// The user's coat check tonight, paid or being paid.
+    let viewerCoatCheck: Admission?
     /// Who is on there right now, by start.
     let onNow: [Appearance]
     let friendPings: [Ping]
@@ -893,6 +1013,7 @@ struct VenueWithEvents: Decodable, Sendable {
         let cover = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
         coverCharge = cover?.coverCharge
         viewerAdmission = cover?.viewerAdmission
+        viewerCoatCheck = cover?.viewerCoatCheck
         // Who's on comes through the people mixin; missing reads as no one.
         onNow = (try? container.decodeIfPresent(VenuePeopleMixin.self, forKey: .people))?.onNow ?? []
         // Friends' Pings come through the ping mixin; missing reads as none.
@@ -933,6 +1054,10 @@ struct EventResponse: Decodable, Sendable {
 
 struct BuyCoverResponse: Decodable, Sendable {
     let buyCover: CoverPurchase
+}
+
+struct BuyCoatCheckResponse: Decodable, Sendable {
+    let buyCoatCheck: CoverPurchase
 }
 
 struct AdmissionPayload: Decodable, Sendable {
@@ -1063,6 +1188,15 @@ struct UnblockUserResponse: Decodable, Sendable { let unblockUser: BlockedUsersP
 struct ReportChatMessageResponse: Decodable, Sendable {
     struct Payload: Decodable, Sendable { let reported: Bool }
     let reportChatMessage: Payload
+}
+
+struct ReportContentResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable {
+        let reported: Bool
+        let blocked: Bool
+    }
+
+    let reportContent: Payload
 }
 
 struct SendMyChatMessageResponse: Decodable, Sendable {

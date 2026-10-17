@@ -47,14 +47,34 @@ final class AppModel {
     /// send sheet on a venue), so Now reloads.
     private(set) var pingRevision = 0
 
-    /// Whether the app is running in review or test mode, enabling features like pretending
-    /// location and demonstrating Apple Pay on all venues.
+    /// Whether testing aids such as "Pretend I'm here" show: test builds, and
+    /// the designated App Review account while App Review is on (the API's
+    /// `canPretendLocation`). Never for an ordinary App Store user. The
+    /// launch-argument and defaults overrides exist only in builds with
+    /// `TEST_HOOKS` (Debug and Staging, for the UI tests and screenshots).
     var isReviewMode: Bool {
-        configuration.isTestBuild
-            || safety.canPretendLocation
-            || !safety.hasFacebook
-            || ProcessInfo.processInfo.arguments.contains("-HotMessReviewMode")
+        if configuration.isTestBuild || safety.canPretendLocation { return true }
+        #if TEST_HOOKS
+        return ProcessInfo.processInfo.arguments.contains("-HotMessReviewMode")
             || UserDefaults.standard.bool(forKey: "HotMessReviewMode")
+        #else
+        return false
+        #endif
+    }
+
+    private static let promptedFacebookOnPingKey = "hasPromptedFacebookOnPing"
+    private static let promptedFacebookOnChatKey = "hasPromptedFacebookOnChat"
+
+    /// Whether the user has been told that connecting Facebook is required to see friends when sending a ping.
+    var hasPromptedFacebookOnPing: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.promptedFacebookOnPingKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.promptedFacebookOnPingKey) }
+    }
+
+    /// Whether the user has been told that connecting Facebook is required to see friends in chat.
+    var hasPromptedFacebookOnChat: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.promptedFacebookOnChatKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.promptedFacebookOnChatKey) }
     }
 
     static let shared = AppModel()
@@ -118,11 +138,14 @@ final class AppModel {
         // UI tests start from the login screen.
         if ProcessInfo.processInfo.arguments.contains("-HotMessUITestSignedOut") {
             signOut()
+        } else if Self.isSafetyDemo {
+            session.presentDemoLogin()
+        } else {
+            await session.start()
         }
 
         // Branding is public, so the login screen can wear the audience's colours.
         Task { await brand.load() }
-        await session.start()
 
         if session.isSignedIn {
             location.start()
@@ -130,6 +153,16 @@ final class AppModel {
             // session never went through sign-in's registration.
             Task { await PushNotifications.requestAuthorizationAndRegister() }
         }
+    }
+
+    /// The safety walkthrough's `-HotMessSafetyDemo`: start on the login
+    /// screen even with a stored session. Only in builds with test hooks.
+    static var isSafetyDemo: Bool {
+        #if TEST_HOOKS
+        ProcessInfo.processInfo.arguments.contains("-HotMessSafetyDemo")
+        #else
+        false
+        #endif
     }
 
     /// Signs out and forgets what was loaded for the user.
@@ -144,6 +177,8 @@ final class AppModel {
         safety.forget()
         notifications.reset()
         location.forget()
+        UserDefaults.standard.removeObject(forKey: Self.promptedFacebookOnPingKey)
+        UserDefaults.standard.removeObject(forKey: Self.promptedFacebookOnChatKey)
         Task { [cable] in await cable.disconnect() }
     }
 

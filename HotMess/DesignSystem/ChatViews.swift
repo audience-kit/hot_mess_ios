@@ -190,8 +190,8 @@ struct ChatThreadView: View {
     var pinned: ChatThreadMessage? = nil
     /// Called with a failed message's ID when the reader taps it.
     var onRetry: ((String) -> Void)? = nil
-    /// Report and Block, in the menu on someone else's message (App Store
-    /// guideline 1.2). Without them there's no menu.
+    /// Report and Block, in the menu on someone else's message. Without them
+    /// there's no menu.
     var onReport: ((ChatThreadMessage) -> Void)? = nil
     var onBlock: ((ChatThreadMessage) -> Void)? = nil
     /// Delete, in the menu on the reader's own sent messages. Without it
@@ -330,10 +330,15 @@ private struct ChatThreadRowView: View {
         message.isOwn && message.delivery == .sent && onDelete != nil
     }
 
-    /// Someone else's message that reached the room. A post as the venue is
-    /// the venue's own, so it has no sender to block.
+    /// Someone else's message that reached the room, including a post as the
+    /// venue (or a person), which can be reported too.
     private var canReport: Bool {
-        !message.isOwn && message.delivery == .sent && !message.isFromPlace && onReport != nil
+        !message.isOwn && message.delivery == .sent && onReport != nil
+    }
+
+    /// A post as the venue is the venue's own, so it has no sender to block.
+    private var canBlock: Bool {
+        canReport && !message.isFromPlace && onBlock != nil
     }
 
     var body: some View {
@@ -421,7 +426,7 @@ private struct ChatThreadRowView: View {
             Label(String(localized: "Report…"), systemImage: "exclamationmark.bubble")
         }
 
-        if let onBlock {
+        if canBlock, let onBlock {
             Button(role: .destructive) {
                 onBlock(message)
             } label: {

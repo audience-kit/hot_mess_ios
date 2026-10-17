@@ -29,6 +29,83 @@ struct Money: Codable, Hashable, Sendable {
     var formatted: String { CoverFormat.price(cents: cents, currency: currency) }
 }
 
+/// A pricing tier for a cover charge, e.g. General Admission or VIP.
+struct CoverTier: Decodable, Hashable, Sendable, Identifiable {
+    let id: String
+    let name: String
+    let amount: Money
+    let total: Money
+    let description: String?
+
+    var price: String { total.formatted }
+
+    func total(for quantity: Int) -> Money {
+        Money(cents: total.cents * quantity, currency: total.currency)
+    }
+}
+
+/// What it costs to check a coat at a venue.
+struct CoatCheckCharge: Decodable, Hashable, Sendable {
+    let amount: Money
+    let fee: Money
+    let total: Money
+    let night: String
+    let payable: Bool
+    let paymentMechanisms: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case amount, fee, total, night, payable
+        case paymentMechanisms = "payment_mechanisms"
+    }
+
+    init(
+        amount: Money,
+        fee: Money = Money(cents: 0),
+        total: Money,
+        night: String,
+        payable: Bool,
+        paymentMechanisms: [String]? = nil
+    ) {
+        self.amount = amount
+        self.fee = fee
+        self.total = total
+        self.night = night
+        self.payable = payable
+        self.paymentMechanisms = paymentMechanisms ?? (payable ? ["apple_pay", "card"] : [])
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        amount = try container.decode(Money.self, forKey: .amount)
+        total = try container.decode(Money.self, forKey: .total)
+        fee = try container.decodeIfPresent(Money.self, forKey: .fee)
+            ?? Money(cents: total.cents - amount.cents, currency: total.currency)
+        night = try container.decode(String.self, forKey: .night)
+        payable = try container.decodeIfPresent(Bool.self, forKey: .payable) ?? false
+        paymentMechanisms = try container.decodeIfPresent([String].self, forKey: .paymentMechanisms)
+            ?? (payable ? ["apple_pay", "card"] : [])
+    }
+
+    var price: String { total.formatted }
+
+    var hasOtherPaymentMechanisms: Bool {
+        paymentMechanisms.contains { $0 != "apple_pay" }
+    }
+
+    var supportsApplePay: Bool {
+        paymentMechanisms.contains("apple_pay")
+    }
+
+    func price(for quantity: Int) -> String {
+        guard quantity > 1 else { return price }
+        return CoverFormat.price(cents: total.cents * quantity, currency: total.currency)
+    }
+
+    func total(for quantity: Int) -> Money {
+        Money(cents: total.cents * quantity, currency: total.currency)
+    }
+}
+
 /// What it costs to get into a venue on a night. The app shows `total`, the
 /// all-in price, and takes it in the app when `payable`; otherwise it's paid
 /// at the door.
@@ -47,9 +124,18 @@ struct CoverCharge: Decodable, Hashable, Sendable {
     let until: String?
     /// Whether it can be paid in the app.
     let payable: Bool
+    /// Supported payment mechanisms, e.g. ["apple_pay", "card"].
+    let paymentMechanisms: [String]
+    /// Optional pricing tiers available for this cover charge.
+    let tiers: [CoverTier]?
+    /// Optional coat check service for the night.
+    let coatCheck: CoatCheckCharge?
 
     enum CodingKeys: String, CodingKey {
         case amount, fee, total, night, from, until, payable
+        case paymentMechanisms = "payment_mechanisms"
+        case tiers
+        case coatCheck = "coat_check"
     }
 
     init(
@@ -59,7 +145,10 @@ struct CoverCharge: Decodable, Hashable, Sendable {
         night: String,
         from: String? = nil,
         until: String? = nil,
-        payable: Bool
+        payable: Bool,
+        paymentMechanisms: [String]? = nil,
+        tiers: [CoverTier]? = nil,
+        coatCheck: CoatCheckCharge? = nil
     ) {
         self.amount = amount
         self.fee = fee
@@ -68,6 +157,9 @@ struct CoverCharge: Decodable, Hashable, Sendable {
         self.from = from
         self.until = until
         self.payable = payable
+        self.paymentMechanisms = paymentMechanisms ?? (payable ? ["apple_pay", "card"] : [])
+        self.tiers = tiers
+        self.coatCheck = coatCheck
     }
 
     init(from decoder: any Decoder) throws {
@@ -80,9 +172,30 @@ struct CoverCharge: Decodable, Hashable, Sendable {
         from = try container.decodeIfPresent(String.self, forKey: .from)
         until = try container.decodeIfPresent(String.self, forKey: .until)
         payable = try container.decodeIfPresent(Bool.self, forKey: .payable) ?? false
+        paymentMechanisms = try container.decodeIfPresent([String].self, forKey: .paymentMechanisms)
+            ?? (payable ? ["apple_pay", "card"] : [])
+        tiers = try container.decodeIfPresent([CoverTier].self, forKey: .tiers)
+        coatCheck = try container.decodeIfPresent(CoatCheckCharge.self, forKey: .coatCheck)
     }
 
     var price: String { total.formatted }
+
+    var hasOtherPaymentMechanisms: Bool {
+        paymentMechanisms.contains { $0 != "apple_pay" }
+    }
+
+    var supportsApplePay: Bool {
+        paymentMechanisms.contains("apple_pay")
+    }
+
+    func price(for quantity: Int) -> String {
+        guard quantity > 1 else { return price }
+        return CoverFormat.price(cents: total.cents * quantity, currency: total.currency)
+    }
+
+    func total(for quantity: Int) -> Money {
+        Money(cents: total.cents * quantity, currency: total.currency)
+    }
 
     /// "Cover $11.12 tonight · from 9 PM", or with the night instead of
     /// "tonight" for another night.
@@ -93,19 +206,6 @@ struct CoverCharge: Decodable, Hashable, Sendable {
 
         guard let start = from.flatMap(CoverFormat.time) else { return cover }
         return String(localized: "\(cover) · from \(start)")
-    }
-
-    /// A demo cover charge shown for venues in review or test mode.
-    static func reviewDemo(night: String = "tonight") -> CoverCharge {
-        CoverCharge(
-            amount: Money(cents: 1000),
-            fee: Money(cents: 0),
-            total: Money(cents: 1000),
-            night: night,
-            from: "21:00",
-            until: "02:00",
-            payable: true
-        )
     }
 }
 
@@ -122,21 +222,29 @@ struct TicketsMixin: Decodable, Hashable, Sendable {
 struct CoverMixin: Decodable, Hashable, Sendable {
     let coverCharge: CoverCharge?
     let viewerAdmission: Admission?
+    let viewerCoatCheck: Admission?
 
     enum CodingKeys: String, CodingKey {
         case coverCharge = "cover_charge"
         case viewerAdmission = "viewer_admission"
+        case viewerCoatCheck = "viewer_coat_check"
     }
 
-    init(coverCharge: CoverCharge? = nil, viewerAdmission: Admission? = nil) {
+    init(
+        coverCharge: CoverCharge? = nil,
+        viewerAdmission: Admission? = nil,
+        viewerCoatCheck: Admission? = nil
+    ) {
         self.coverCharge = coverCharge
         self.viewerAdmission = viewerAdmission
+        self.viewerCoatCheck = viewerCoatCheck
     }
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         coverCharge = try container.decodeIfPresent(CoverCharge.self, forKey: .coverCharge)
         viewerAdmission = try container.decodeIfPresent(Admission.self, forKey: .viewerAdmission)
+        viewerCoatCheck = try container.decodeIfPresent(Admission.self, forKey: .viewerCoatCheck)
     }
 }
 
@@ -168,6 +276,17 @@ enum AdmissionStatus: String, Decodable, Hashable, Sendable {
     }
 }
 
+/// What kind of pass this admission represents.
+enum AdmissionKind: String, Decodable, Hashable, Sendable {
+    case cover = "COVER"
+    case coatCheck = "COAT_CHECK"
+    case unknown
+
+    init(from decoder: any Decoder) throws {
+        self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+    }
+}
+
 /// Someone's cover for one night at a venue, and their pass.
 struct Admission: Decodable, Hashable, Sendable, Identifiable {
     /// The API's ID, kept as sent: the pass code signs it character for character.
@@ -189,8 +308,14 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
     let venueName: String
     let venuePhotoURL: URL?
     let eventName: String?
+    let quantity: Int
+    let tier: String?
+    let kind: AdmissionKind
+    let claimCheckNumber: String?
 
     var isPaid: Bool { status == .paid }
+
+    var isCoatCheck: Bool { kind == .coatCheck }
 
     var price: String { total.formatted }
 
@@ -199,6 +324,8 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id, status, night, total, profile, venue, event
+        case quantity, tier, kind
+        case claimCheckNumber = "claim_check_number"
         case isRefundable = "is_refundable"
         case passSecret = "pass_secret"
         case scanCount = "scan_count"
@@ -217,6 +344,10 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
         status = try container.decode(AdmissionStatus.self, forKey: .status)
         night = try container.decode(String.self, forKey: .night)
         total = try container.decode(Money.self, forKey: .total)
+        quantity = try container.decodeIfPresent(Int.self, forKey: .quantity) ?? 1
+        tier = try container.decodeIfPresent(String.self, forKey: .tier)
+        kind = try container.decodeIfPresent(AdmissionKind.self, forKey: .kind) ?? .cover
+        claimCheckNumber = try container.decodeIfPresent(String.self, forKey: .claimCheckNumber)
         isRefundable = try container.decodeIfPresent(Bool.self, forKey: .isRefundable) ?? false
         passSecret = try container.decodeIfPresent(String.self, forKey: .passSecret)
         scanCount = try container.decodeIfPresent(Int.self, forKey: .scanCount) ?? 0
@@ -256,7 +387,11 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
         venueID: UUID? = nil,
         venueName: String = "",
         venuePhotoURL: URL? = nil,
-        eventName: String? = nil
+        eventName: String? = nil,
+        quantity: Int = 1,
+        tier: String? = nil,
+        kind: AdmissionKind = .cover,
+        claimCheckNumber: String? = nil
     ) {
         self.id = id
         self.status = status
@@ -271,6 +406,10 @@ struct Admission: Decodable, Hashable, Sendable, Identifiable {
         self.venueName = venueName
         self.venuePhotoURL = venuePhotoURL
         self.eventName = eventName
+        self.quantity = quantity
+        self.tier = tier
+        self.kind = kind
+        self.claimCheckNumber = claimCheckNumber
     }
 }
 
@@ -365,10 +504,30 @@ enum SquarePaymentMethod: Hashable, Sendable {
     case applePay
     case card
 
-    /// Apple Pay first when Square can take it here (or in review mode) and the build has a
+    /// Apple Pay first when Square can take it here and the build has a
     /// merchant ID; a card always.
-    static func available(canUseApplePay: Bool, merchantID: String?, isReview: Bool = false) -> [SquarePaymentMethod] {
-        (canUseApplePay || isReview) && merchantID.nonBlank != nil ? [.applePay, .card] : [.card]
+    static func available(canUseApplePay: Bool, merchantID: String?) -> [SquarePaymentMethod] {
+        canUseApplePay && merchantID.nonBlank != nil ? [.applePay, .card] : [.card]
+    }
+}
+
+/// The availability and readiness of Apple Pay on this device.
+enum ApplePayStatus: Equatable, Sendable {
+    /// Apple Pay is supported and configured with at least one active card.
+    case ready
+    /// The device hardware supports Apple Pay, but no cards are set up in Wallet yet.
+    case needsSetup
+    /// The device hardware or policy cannot make Apple Pay payments.
+    case unavailable
+
+    /// Computes the status from capability flags.
+    static func current(
+        canMakePayments: Bool,
+        hasConfiguredCards: Bool
+    ) -> ApplePayStatus {
+        guard canMakePayments else { return .unavailable }
+        guard hasConfiguredCards else { return .needsSetup }
+        return .ready
     }
 }
 

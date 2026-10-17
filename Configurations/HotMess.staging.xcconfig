@@ -23,10 +23,10 @@ FACEBOOK_APP_ID = 1660272792277019
 // and signs people in with Hot Mess's staging Facebook app.
 AUDIENCEKIT_ENVIRONMENT = staging
 
-// Required by Facebook SDK 13 and later. Copy the client token from the
-// Facebook app dashboard (Settings -> Advanced -> Client token) for each
-// environment; login reports an error at runtime while this is empty.
-FACEBOOK_CLIENT_TOKEN =
+// Required by Facebook SDK 13 and later. The client token ships in the app's
+// Info.plist, so it is not a secret; it comes from the Facebook app dashboard
+// (Settings -> Advanced -> Client token) for FACEBOOK_APP_ID above.
+FACEBOOK_CLIENT_TOKEN = 5d40b408dee01b2985755736fd046296
 
 BUNDLE_SUFFIX = .next
 APNS_ENVIRONMENT = development
@@ -37,8 +37,8 @@ APNS_ENVIRONMENT = development
 // empty to take cards only.
 APPLE_PAY_MERCHANT_ID = merchant.social.hotmess
 
-// Secrets that stay out of git, such as FACEBOOK_CLIENT_TOKEN. Copy
-// Local.xcconfig.example to Local.staging.xcconfig and fill it in.
+// Local overrides that stay out of git. Copy
+// Local.xcconfig.example to Local.staging.xcconfig to override a value here.
 #include? "Local.staging.xcconfig"
 
 // Separate local data from the production Hot Mess app.

@@ -7,8 +7,10 @@ import SwiftUI
 
 /// A read-only glimpse of a chat room (design system "ChatPeek"): the last few
 /// messages as the room's own bubbles, with no message box. The whole panel is
-/// one button that opens the room. It holds no connection; the screen showing
-/// it refreshes `messages` when it loads.
+/// one button that opens the room. It holds no connection itself: the screen
+/// showing it either refreshes `messages` when it loads or follows the room
+/// (`LiveChatPeek`) and says so with `isLive`, which turns a spectrum ring
+/// around the panel.
 struct ChatPeek: View {
     struct Participant: Identifiable {
         let id: String
@@ -34,8 +36,11 @@ struct ChatPeek: View {
     var online: Int?
     var limit: Int
     var participants: [Participant]
+    /// The messages are live: the screen is following the room right now.
+    var isLive: Bool
     let destination: Destination
 
+    @Environment(\.displayScale) private var displayScale
     @State private var width: CGFloat = 0
 
     init(
@@ -45,6 +50,7 @@ struct ChatPeek: View {
         online: Int? = nil,
         limit: Int = 3,
         participants: [Participant] = [],
+        isLive: Bool = false,
         route: AppRoute
     ) {
         self.title = title
@@ -53,6 +59,7 @@ struct ChatPeek: View {
         self.online = online
         self.limit = limit
         self.participants = participants
+        self.isLive = isLive
         self.destination = .route(route)
     }
 
@@ -63,6 +70,7 @@ struct ChatPeek: View {
         online: Int? = nil,
         limit: Int = 3,
         participants: [Participant] = [],
+        isLive: Bool = false,
         action: @escaping () -> Void
     ) {
         self.title = title
@@ -71,6 +79,7 @@ struct ChatPeek: View {
         self.online = online
         self.limit = limit
         self.participants = participants
+        self.isLive = isLive
         self.destination = .action(action)
     }
 
@@ -138,6 +147,18 @@ struct ChatPeek: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.hotMessSurfaceSunken, in: .rect(cornerRadius: CardMetrics.cornerRadius))
+        // Light `surface-sunken` is all but the wash's colour; the edge makes it a window.
+        .overlay {
+            RoundedRectangle(cornerRadius: CardMetrics.cornerRadius)
+                .strokeBorder(Color.hotMessBorder, lineWidth: 1 / displayScale)
+        }
+        .overlay {
+            if isLive {
+                LiveRing(cornerRadius: CardMetrics.cornerRadius)
+                    .transition(.opacity)
+            }
+        }
+        .animation(HotMessMotion.quick, value: isLive)
         .contentShape(.rect(cornerRadius: CardMetrics.cornerRadius))
         .onGeometryChange(for: CGFloat.self) { geometry in
             geometry.size.width
@@ -171,6 +192,11 @@ struct ChatPeek: View {
                 }
                 .font(.hotMess(.footnote))
                 .foregroundStyle(.secondary)
+            } else if isLive {
+                // The ring never says "live" on its own.
+                Text("Live")
+                    .font(.hotMess(.footnote))
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -182,6 +208,13 @@ struct ChatPeek: View {
     }
 
     private var accessibilityLabel: String {
+        if let online, online > 0 {
+            return recentLabel + ", " + String(localized: "\(online) here now")
+        }
+        return isLive ? recentLabel + ", " + String(localized: "live") : recentLabel
+    }
+
+    private var recentLabel: String {
         switch visible.count {
         case 0:
             String(localized: "Open the chat at \(roomName), no messages yet")
@@ -189,6 +222,54 @@ struct ChatPeek: View {
             String(localized: "Open the chat at \(roomName), 1 recent message")
         default:
             String(localized: "Open the chat at \(roomName), \(visible.count) recent messages")
+        }
+    }
+}
+
+/// ChatPeek's edge while the room is live: a 2pt spectrum sweep turning once
+/// every six seconds. It holds still with Reduce Motion, and stops while the
+/// app isn't active. Decoration only; the header says the same in words.
+private struct LiveRing: View {
+    let cornerRadius: CGFloat
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var turned = false
+
+    static let period: TimeInterval = 6
+    static let lineWidth: CGFloat = 2
+
+    private var turns: Bool { !reduceMotion && scenePhase == .active }
+
+    var body: some View {
+        GeometryReader { proxy in
+            // A square as wide as the panel's diagonal covers it at every angle.
+            let side = (proxy.size.width * proxy.size.width + proxy.size.height * proxy.size.height).squareRoot()
+            // The first band again at the end, so the loop has no seam.
+            AngularGradient(
+                colors: Color.hotMessSpectrum + [Color.hotMessSpectrum[0]],
+                center: .center
+            )
+            .frame(width: side, height: side)
+            .rotationEffect(.degrees(turned ? 360 : 0))
+            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+        }
+        .mask {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .strokeBorder(lineWidth: Self.lineWidth)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onChange(of: turns, initial: true) { _, turns in
+            if turns {
+                withAnimation(.linear(duration: Self.period).repeatForever(autoreverses: false)) {
+                    turned = true
+                }
+            } else {
+                var still = Transaction()
+                still.disablesAnimations = true
+                withTransaction(still) { turned = false }
+            }
         }
     }
 }
@@ -281,6 +362,14 @@ private enum ChatPeekPreviewData {
                     roomName: "The Eagle",
                     messages: ChatPeekPreviewData.messages,
                     online: 4
+                ) {}
+
+                ChatPeek(
+                    title: "Small talk",
+                    roomName: "The Eagle",
+                    messages: ChatPeekPreviewData.messages,
+                    online: 4,
+                    isLive: true
                 ) {}
 
                 ChatPeek(title: "Small talk", roomName: "The Eagle", messages: []) {}

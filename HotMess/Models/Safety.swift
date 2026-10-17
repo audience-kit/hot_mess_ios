@@ -33,8 +33,9 @@ struct SafetyState: Decodable, Sendable {
     /// False for an account that signed in with Apple and hasn't connected
     /// Facebook, so has no friends to show.
     var hasFacebook: Bool
-    /// True while the audience is in App Review, for an Apple account: the
-    /// reviewer can pretend to be at a venue, like a test build.
+    /// True only for the designated App Review account while the audience is
+    /// in App Review: the reviewer can pretend to be at a venue, like a test
+    /// build.
     var canPretendLocation: Bool
 
     /// `me`: the viewer's state, with their own profile (`self`), where `hasFacebook` is.
@@ -94,6 +95,38 @@ enum ChatReportReason: String, CaseIterable, Identifiable, Sendable {
         case .sexual: String(localized: "Sexual content")
         case .danger: String(localized: "Threats or danger")
         case .other: String(localized: "Something else")
+        }
+    }
+}
+
+/// What `reportContent` can be told about: the API's `ReportTarget`.
+enum ReportTarget: String, Hashable, Sendable {
+    case person = "PERSON"
+    case venue = "VENUE"
+    case ping = "PING"
+    case photo = "PHOTO"
+    case message = "MESSAGE"
+}
+
+/// Something the user is reporting: what it is, its ID, and the person behind
+/// it when blocking them makes sense (a Ping's sender, someone here now). A
+/// venue or a creator's profile has no one to block.
+struct ReportSubject: Identifiable, Hashable, Sendable {
+    let target: ReportTarget
+    let targetID: String
+    /// Who to offer to block once it's reported.
+    var sender: BlockedUser? = nil
+
+    var id: String { "\(target.rawValue):\(targetID)" }
+
+    /// The reason picker's question.
+    var question: String {
+        switch target {
+        case .person: String(localized: "Why are you reporting this person?")
+        case .venue: String(localized: "Why are you reporting this venue?")
+        case .ping: String(localized: "Why are you reporting this ping?")
+        case .photo: String(localized: "Why are you reporting this photo?")
+        case .message: String(localized: "Why are you reporting this message?")
         }
     }
 }

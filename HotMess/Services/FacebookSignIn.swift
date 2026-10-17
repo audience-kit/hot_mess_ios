@@ -4,129 +4,89 @@
 //
 
 import AppTrackingTransparency
-import AuthenticationServices
 import FacebookCore
 import FacebookLogin
 import Foundation
 import UIKit
 
-/// Signs in with Facebook, the best way this device allows, and returns what
-/// the API exchanges for a session:
+/// Signs in with Facebook using only the Facebook SDK, requesting App
+/// Tracking Transparency permission before starting the login flow.
 ///
-/// 1. With tracking already allowed (the app never asks), the Facebook SDK.
-///    Without it the SDK falls back to Limited Login, which returns no access
-///    token, and it can't send a Login for Business `config_id`, so it's only
-///    used for a Consumer app.
-/// 2. With the Facebook app installed, our own OAuth dialog opened there as
-///    `fbauth2://authorize` — the switch the SDK makes, carrying `config_id`.
-///    The app forwards incoming URLs to ``handle(_:)`` for the redirect.
-/// 3. Otherwise the same dialog in a web authentication sheet.
-///
-/// The dialog redirects to `fb<app ID>://authorize/`, which has to be listed in
-/// the app's Valid OAuth Redirect URIs.
+/// Why not Limited Login: it returns only an OpenID Connect authentication
+/// token (a JWT), with no Graph API access token, and the AudienceKit API
+/// signs people in with a Graph access token (`POST /v1/token`
+/// `facebook_token`, checked and used with the Graph API for the profile and
+/// friends). So login stays classic (`tracking: .enabled`), the ATT prompt
+/// comes first with an accurate `NSUserTrackingUsageDescription`, and the
+/// privacy manifest declares tracking with the Facebook SDK's tracking domain.
+/// The app sends Facebook no app events and no advertiser ID (`AppDelegate`,
+/// Info.plist), whatever the person answers.
 @MainActor
-final class FacebookSignIn: NSObject, ASWebAuthenticationPresentationContextProviding {
+final class FacebookSignIn {
     enum Result: Sendable, Equatable {
         /// From the SDK.
         case accessToken(String)
-        /// From the dialog, for the API to exchange.
+        /// Retained for compatibility.
         case code(String, redirectURI: String)
+
+        var accessToken: String? {
+            switch self {
+            case let .accessToken(token): token
+            case .code: nil
+            }
+        }
     }
+
+    typealias TrackingStatusProvider = @MainActor () -> ATTrackingManager.AuthorizationStatus
+    typealias TrackingRequest = @MainActor () async -> ATTrackingManager.AuthorizationStatus
+    typealias LoginAction = @MainActor (LoginConfiguration) async throws -> Result
 
     private let appID: String
     private let configID: String?
     private let permissions: [String]
     private let loginManager: LoginManager
-    private var session: ASWebAuthenticationSession?
+    private let trackingStatus: TrackingStatusProvider
+    private let requestTracking: TrackingRequest
+    private let loginAction: LoginAction?
 
-    /// The sign-in waiting for the Facebook app to switch back, if any.
-    private static weak var appSwitching: FacebookSignIn?
-    private var appSwitch: CheckedContinuation<AppSwitch, Never>?
-    private var activeObserver: NSObjectProtocol?
-
-    private enum AppSwitch {
-        case redirected(URL)
-        case returnedWithoutRedirect
-        case notOpened
-    }
-
-    /// - Parameters:
-    ///   - configID: the Login for Business configuration. Without one the
-    ///     dialog asks for `permissions` instead, as a Consumer app expects.
-    init(appID: String, configID: String?, permissions: [String], loginManager: LoginManager = LoginManager()) {
+    init(
+        appID: String,
+        configID: String? = nil,
+        permissions: [String],
+        loginManager: LoginManager = LoginManager(),
+        trackingStatus: TrackingStatusProvider? = nil,
+        requestTracking: TrackingRequest? = nil,
+        loginAction: LoginAction? = nil
+    ) {
         self.appID = appID
         self.configID = configID
         self.permissions = permissions
         self.loginManager = loginManager
+        self.trackingStatus = trackingStatus ?? { ATTrackingManager.trackingAuthorizationStatus }
+        self.requestTracking = requestTracking ?? {
+            await ATTrackingManager.requestTrackingAuthorization()
+        }
+        self.loginAction = loginAction
     }
 
     var redirectURI: String { "fb\(appID)://authorize/" }
 
-    /// Whether the SDK can sign in with a full access token: tracking is
-    /// allowed, and there's no Login for Business configuration it would drop.
-    var canUseSDK: Bool {
-        configID == nil && ATTrackingManager.trackingAuthorizationStatus == .authorized
-    }
+    var canUseSDK: Bool { true }
 
-    /// The dialog URL. `state` ties the redirect to this request.
-    func dialogURL(state: String) -> URL {
-        var components = URLComponents(string: "https://www.facebook.com/v26.0/dialog/oauth")!
-        var items = [
-            URLQueryItem(name: "client_id", value: appID),
-            URLQueryItem(name: "redirect_uri", value: redirectURI),
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "state", value: state),
-        ]
-        if let configID {
-            items.append(URLQueryItem(name: "config_id", value: configID))
-        } else {
-            items.append(URLQueryItem(name: "scope", value: permissions.joined(separator: ",")))
-        }
-        components.queryItems = items
-        return components.url!
-    }
-
-    /// The dialog as the Facebook app takes it, with the SDK's app-switch parameters.
-    func facebookAppURL(state: String) -> URL {
-        var components = URLComponents(url: dialogURL(state: state), resolvingAgainstBaseURL: false)!
-        components.scheme = "fbauth2"
-        components.host = "authorize"
-        components.path = ""
-        components.queryItems = (components.queryItems ?? []) + [
-            URLQueryItem(name: "ios_fast_app_switch", value: "true"),
-            URLQueryItem(name: "sdk", value: "ios"),
-            URLQueryItem(name: "display", value: "touch"),
-            URLQueryItem(name: "return_scopes", value: "true"),
-        ]
-        return components.url!
-    }
-
+    /// Requests ATT tracking authorization if not already determined, then
+    /// starts the Facebook SDK login flow.
     func authorize() async throws -> Result {
-        if canUseSDK { return try await authorizeWithSDK() }
-
-        let state = UUID().uuidString
-        let appURL = facebookAppURL(state: state)
-        if UIApplication.shared.canOpenURL(appURL) {
-            switch await switchToFacebookApp(url: appURL) {
-            case let .redirected(callback):
-                return try Self.result(from: callback, state: state, redirectURI: redirectURI)
-            case .returnedWithoutRedirect:
-                throw SessionError.cancelled
-            case .notOpened:
-                break
-            }
+        if trackingStatus() == .notDetermined {
+            _ = await requestTracking()
         }
-        return try await authorizeOnTheWeb(state: state)
+
+        return try await authorizeWithSDK()
     }
 
-    /// Takes the Facebook app's redirect while a sign-in waits for it;
-    /// returns whether the URL was one.
-    static func handle(_ url: URL) -> Bool {
-        guard let login = appSwitching, login.appSwitch != nil, url.scheme == "fb\(login.appID)",
-              url.host == "authorize" else { return false }
-        login.finishAppSwitch(.redirected(url))
-        return true
-    }
+    /// Compatibility no-op; all URL handling is performed directly by the
+    /// Facebook SDK's `ApplicationDelegate`.
+    @discardableResult
+    static func handle(_ url: URL) -> Bool { false }
 
     // MARK: - SDK
 
@@ -134,6 +94,11 @@ final class FacebookSignIn: NSObject, ASWebAuthenticationPresentationContextProv
         guard let configuration = LoginConfiguration(permissions: permissions, tracking: .enabled, messengerPageId: nil) else {
             throw SessionError.configurationUnavailable
         }
+
+        if let loginAction {
+            return try await loginAction(configuration)
+        }
+
         return try await withCheckedThrowingContinuation { continuation in
             loginManager.logIn(configuration: configuration) { result in
                 switch result {
@@ -150,93 +115,5 @@ final class FacebookSignIn: NSObject, ASWebAuthenticationPresentationContextProv
                 }
             }
         }
-    }
-
-    // MARK: - Facebook app
-
-    /// Opens the dialog in the Facebook app and waits to come back.
-    private func switchToFacebookApp(url: URL) async -> AppSwitch {
-        await withCheckedContinuation { continuation in
-            appSwitch = continuation
-            Self.appSwitching = self
-            UIApplication.shared.open(url) { [weak self] opened in
-                guard opened else { self?.finishAppSwitch(.notOpened); return }
-                // The redirect, when there is one, arrives as the app becomes
-                // active; coming back without it (cancelling, or switching back
-                // by hand) ends the wait.
-                self?.activeObserver = NotificationCenter.default.addObserver(
-                    forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
-                ) { _ in
-                    Task { @MainActor [weak self] in
-                        try? await Task.sleep(for: .seconds(1))
-                        self?.finishAppSwitch(.returnedWithoutRedirect)
-                    }
-                }
-            }
-        }
-    }
-
-    private func finishAppSwitch(_ outcome: AppSwitch) {
-        if let activeObserver { NotificationCenter.default.removeObserver(activeObserver) }
-        activeObserver = nil
-        appSwitch?.resume(returning: outcome)
-        appSwitch = nil
-        if Self.appSwitching === self { Self.appSwitching = nil }
-    }
-
-    // MARK: - Web
-
-    private func authorizeOnTheWeb(state: String) async throws -> Result {
-        let url = dialogURL(state: state)
-
-        let callback: URL = try await withCheckedThrowingContinuation { continuation in
-            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "fb\(appID)") { url, error in
-                if let url {
-                    continuation.resume(returning: url)
-                } else if let error = error as? ASWebAuthenticationSessionError, error.code == .canceledLogin {
-                    continuation.resume(throwing: SessionError.cancelled)
-                } else {
-                    continuation.resume(throwing: error ?? SessionError.missingFacebookToken)
-                }
-            }
-            // Share Safari's cookies, so someone already signed in to Facebook there just continues.
-            session.prefersEphemeralWebBrowserSession = false
-            session.presentationContextProvider = self
-            self.session = session
-
-            if !session.start() {
-                continuation.resume(throwing: SessionError.configurationUnavailable)
-            }
-        }
-        session = nil
-
-        return try Self.result(from: callback, state: state, redirectURI: redirectURI)
-    }
-
-    /// Reads the code from the redirect, or the reason Facebook gave instead.
-    /// The web dialog puts the parameters in the query; the Facebook app puts
-    /// them in the fragment.
-    nonisolated static func result(from callback: URL, state: String, redirectURI: String) throws -> Result {
-        var items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
-        if let fragment = callback.fragment {
-            items += URLComponents(string: "?" + fragment)?.queryItems ?? []
-        }
-        func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
-
-        if let reason = value("error_description") ?? value("error_message") ?? value("error") {
-            if value("error_reason") == "user_denied" { throw SessionError.cancelled }
-            throw SessionError.facebook(reason.replacingOccurrences(of: "+", with: " "))
-        }
-        guard value("state") == state else { throw SessionError.facebook("The login response didn't match the request.") }
-        guard let code = value("code"), !code.isEmpty else { throw SessionError.missingFacebookToken }
-
-        return .code(code, redirectURI: redirectURI)
-    }
-
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
     }
 }

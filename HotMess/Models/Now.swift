@@ -32,6 +32,8 @@ struct Now: Decodable, Hashable, Sendable {
     let coverCharge: CoverCharge?
     /// The user's cover tonight at the venue the user is in, paid or being paid.
     let viewerAdmission: Admission?
+    /// The user's coat check tonight at the venue the user is in, paid or being paid.
+    let viewerCoatCheck: Admission?
     /// Who is on at the venue the user is in right now.
     let onNow: [Appearance]
     /// The locale the user is in, or nearest.
@@ -98,6 +100,7 @@ struct Now: Decodable, Hashable, Sendable {
             let cover = try venueContainer.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover
             coverCharge = cover?.coverCharge
             viewerAdmission = cover?.viewerAdmission
+            viewerCoatCheck = cover?.viewerCoatCheck
             onNow = (try? venueContainer.decodeIfPresent(VenuePeopleMixin.self, forKey: .people))?.onNow ?? []
             venueEvents = try venueContainer.decodeIfPresent(UpcomingEventsMixin.self, forKey: .events)?.upcoming ?? []
             venueFriends = try venueContainer.decodeIfPresent(FriendsMixin.self, forKey: .friends)?.list ?? []
@@ -105,6 +108,7 @@ struct Now: Decodable, Hashable, Sendable {
             recentMessages = []
             coverCharge = nil
             viewerAdmission = nil
+            viewerCoatCheck = nil
             onNow = []
         }
 
@@ -166,6 +170,7 @@ struct Now: Decodable, Hashable, Sendable {
         recentMessages: [VenueMessage] = [],
         coverCharge: CoverCharge? = nil,
         viewerAdmission: Admission? = nil,
+        viewerCoatCheck: Admission? = nil,
         onNow: [Appearance] = [],
         locale: AppLocale? = nil,
         localeChatOpen: Bool = false,
@@ -183,6 +188,7 @@ struct Now: Decodable, Hashable, Sendable {
         self.recentMessages = recentMessages
         self.coverCharge = coverCharge
         self.viewerAdmission = viewerAdmission
+        self.viewerCoatCheck = viewerCoatCheck
         self.onNow = onNow
         self.locale = locale
         self.localeChatOpen = localeChatOpen

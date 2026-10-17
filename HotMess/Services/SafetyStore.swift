@@ -7,7 +7,7 @@ import Foundation
 import Observation
 
 /// The user's blocks and whether they've agreed to the terms of use, which
-/// chat needs before anyone can read or post (App Store guideline 1.2). Also
+/// chat needs before anyone can read or post. Also
 /// whether the account has Facebook, and whether App Review lets it pretend
 /// to be at a venue.
 ///
@@ -84,6 +84,15 @@ final class SafetyStore {
     func report(messageID: UUID, sender: BlockedUser?, reason: ChatReportReason, block: Bool) async throws {
         try await api.reportChatMessage(messageID, reason: reason.rawValue, block: block)
         if block, let sender, !isBlocked(sender.id) {
+            blockedUsers.append(sender)
+        }
+    }
+
+    /// Reports a person, venue, Ping, photo or message (`reportContent`).
+    /// Blocking with it hides whoever is behind it at once.
+    func report(_ subject: ReportSubject, reason: ChatReportReason, block: Bool) async throws {
+        try await api.reportContent(subject.target, id: subject.targetID, reason: reason.rawValue, block: block)
+        if block, let sender = subject.sender, !isBlocked(sender.id) {
             blockedUsers.append(sender)
         }
     }
