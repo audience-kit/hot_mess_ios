@@ -37,7 +37,7 @@ struct HereNowPerson: Identifiable, Hashable, Sendable {
     /// here recently" for someone who left lately.
     var accessibilityLabel: String {
         if isViewer { return String(localized: "You, here now") }
-        switch (isFriend, isHere) {
+        return switch (isFriend, isHere) {
         case (true, true): String(localized: "\(displayName), friend, here now")
         case (false, true): String(localized: "\(displayName), here now")
         case (true, false): String(localized: "\(displayName), friend, here recently")
