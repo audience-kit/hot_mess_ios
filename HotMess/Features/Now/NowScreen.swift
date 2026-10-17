@@ -4,12 +4,14 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// The home tab, replacing `NowViewController` — a table view whose row
 /// heights, section titles and cell identifiers were all decided by a chain of
 /// `indexPath.section == 0` checks.
 struct NowScreen: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.openURL) private var openURL
     @State private var viewModel: NowViewModel?
     @State private var heroTone = HeroTone.placeholder
     @State private var heroCollapsed = false
@@ -41,6 +43,10 @@ struct NowScreen: View {
                                     Task { await model.location.stopSimulating() }
                                 }
                             }
+                        }
+
+                        if !model.location.isAuthorized, model.location.simulatedVenueName == nil {
+                            locationNotice
                         }
 
                         if !model.safety.hasFacebook {
@@ -242,6 +248,25 @@ struct NowScreen: View {
             avatarURL: venue.photoURL, isPlace: true
         )
         return [place] + viewerAndFriends(now)
+    }
+
+    /// Without location access Now can't show what's near: venues, who's
+    /// there, the locale's room. Pings and friends still load.
+    private var locationNotice: some View {
+        DetailSection(String(localized: "Location is off")) {
+            Button(String(localized: "Turn On Location"), systemImage: "location") {
+                if model.location.isDenied {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                } else {
+                    model.location.start()
+                }
+            }
+            .accessibilityIdentifier("now.enableLocation")
+        } footer: {
+            Text("Hot Mess can't show venues, events or who's out near you without access to your location.")
+                .font(.hotMess(.footnote))
+                .foregroundStyle(.secondary)
+        }
     }
 
     /// The locale's room has no place to show first: you, then your friends out in it.

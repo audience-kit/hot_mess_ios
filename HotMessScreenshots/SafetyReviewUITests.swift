@@ -162,10 +162,16 @@ final class SafetyReviewUITests: XCTestCase {
                             sleep(2)
                         }
 
-                        // Dismiss the block offer prompt if shown
-                        let notNow = app.buttons["Not Now"]
-                        if notNow.waitForExistence(timeout: 4) {
-                            notNow.tap()
+                        // Send it from the report sheet, then close the thanks
+                        let send = app.buttons["report.submit"]
+                        if send.waitForExistence(timeout: 4) && send.isEnabled {
+                            send.tap()
+                            sleep(2)
+                        }
+                        let ok = app.alerts.buttons["OK"]
+                        if ok.waitForExistence(timeout: 4) {
+                            sleep(2)
+                            ok.tap()
                             sleep(1)
                         }
                     }

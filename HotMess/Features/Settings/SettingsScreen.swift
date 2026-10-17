@@ -20,6 +20,7 @@ struct SettingsScreen: View {
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
     @State private var deleteFailed = false
+    @State private var isNaming = false
 
     var body: some View {
         List {
@@ -37,6 +38,7 @@ struct SettingsScreen: View {
         .navigationTitle(String(localized: "Me"))
         .task { await model.session.refreshUser() }
         .task { await model.safety.load() }
+        .sheet(isPresented: $isNaming) { NameSheet() }
         .confirmationDialog(
             String(localized: "Sign out of Hot Mess?"),
             isPresented: $isConfirmingSignOut,
@@ -85,8 +87,18 @@ struct SettingsScreen: View {
                 )
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(model.session.user?.name ?? String(localized: "Signed in"))
-                        .font(.hotMess(.headline, semibold: true))
+                    if let name = model.session.user?.name, !name.isEmpty {
+                        Text(name)
+                            .font(.hotMess(.headline, semibold: true))
+                    } else if model.session.user != nil {
+                        // Sign in with Apple names an account only the first time.
+                        Button(String(localized: "Add your name")) { isNaming = true }
+                            .font(.hotMess(.headline, semibold: true))
+                            .accessibilityIdentifier("me.addName")
+                    } else {
+                        Text("Signed in")
+                            .font(.hotMess(.headline, semibold: true))
+                    }
 
                     if let locale = model.location.locale {
                         Text(locale.name)

@@ -31,7 +31,8 @@ struct VenueChatScreen: View {
     /// Whether the user has agreed to the terms is read before the room opens.
     @State private var isCheckingTerms = true
     @State private var reportTarget: ChatThreadMessage?
-    @State private var blockOffer: ChatThreadMessage?
+    /// Reported; thanked once the report sheet has gone.
+    @State private var didReport = false
     @State private var blockTarget: ChatThreadMessage?
     @State private var deleteTarget: ChatThreadMessage?
     @State private var failureMessage: String?
@@ -83,32 +84,13 @@ struct VenueChatScreen: View {
             let viewModel = self.viewModel
             Task { await viewModel?.stop() }
         }
-        .confirmationDialog(
-            String(localized: "Why are you reporting this message?"),
-            isPresented: isPresenting($reportTarget),
-            titleVisibility: .visible,
-            presenting: reportTarget
-        ) { message in
-            ForEach(ChatReportReason.allCases) { reason in
-                Button(reason.title) {
-                    Task { await report(message, reason: reason) }
-                }
+        .sheet(item: $reportTarget, onDismiss: thankIfReported) { message in
+            ReportSheet(
+                question: String(localized: "Why are you reporting this message?"),
+                blockable: blockable(message)
+            ) { reason, block in
+                try await report(message, reason: reason, block: block)
             }
-            Button(String(localized: "Cancel"), role: .cancel) {}
-        } message: { _ in
-            Text("Reports are reviewed within 24 hours. Objectionable content will be removed and offending users ejected.")
-        }
-        .alert(
-            String(localized: "Thanks for reporting it"),
-            isPresented: isPresenting($blockOffer),
-            presenting: blockOffer
-        ) { message in
-            Button(blockTitle(message), role: .destructive) {
-                Task { await block(message) }
-            }
-            Button(String(localized: "Not Now"), role: .cancel) {}
-        } message: { _ in
-            Text("Block them too: their messages will be removed from your feed instantly and our team will be notified.")
         }
         .alert(
             blockTitle(blockTarget),
@@ -248,21 +230,26 @@ struct VenueChatScreen: View {
 
     // MARK: - Reporting and blocking
 
-    private func report(_ message: ChatThreadMessage, reason: ChatReportReason) async {
+    /// Files the report from the sheet, blocking the sender too when asked.
+    /// Throws when it didn't go through, which the sheet shows.
+    private func report(_ message: ChatThreadMessage, reason: ChatReportReason, block: Bool) async throws {
         guard let id = UUID(uuidString: message.id) else { return }
+        // A post as the venue has no sender to block; the API ignores `block` for it.
+        let author: BlockedUser? = message.isFromPlace ? nil : sender(of: message)
+        try await model.safety.report(messageID: id, sender: author, reason: reason, block: block && author != nil)
+        didReport = true
+    }
 
-        do {
-            // A post as the venue has no sender to block; the API ignores
-            // `block` for it.
-            let author: BlockedUser? = message.isFromPlace ? nil : sender(of: message)
-            try await model.safety.report(messageID: id, sender: author, reason: reason, block: false)
-            if !message.isFromPlace, !model.safety.isBlocked(UUID(uuidString: message.authorID)) {
-                blockOffer = message
-            } else {
-                isThankingForReport = true
-            }
-        } catch {
-            failureMessage = String(localized: "The report didn't go through. Please try again.")
+    /// Who the sheet offers to block too: the sender, unless it's the venue or they're already blocked.
+    private func blockable(_ message: ChatThreadMessage) -> BlockedUser? {
+        guard !message.isFromPlace, !model.safety.isBlocked(UUID(uuidString: message.authorID)) else { return nil }
+        return sender(of: message)
+    }
+
+    private func thankIfReported() {
+        if didReport {
+            didReport = false
+            isThankingForReport = true
         }
     }
 
