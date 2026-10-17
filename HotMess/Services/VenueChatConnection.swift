@@ -397,14 +397,16 @@ struct RoomPerson: Hashable, Sendable, Identifiable {
     var isFriend = false
 }
 
-/// Someone who left a chat room in the last 30 minutes, whom the room keeps
-/// listing, offline, until `recentUntil`.
+/// Someone who left a chat room in the last 30 minutes, or hosts an event on
+/// there now, whom the room keeps listing, offline, until `recentUntil`
+/// (for a host, the event's end, which can be hours away).
 struct RecentRoomPerson: Hashable, Sendable, Identifiable {
     var person: RoomPerson
     /// `.push` when a notification still reaches them (the server only says
     /// so about the user's friends, and to admins), else `.offline`.
     var presence: PresenceState
-    /// When they were last in the room, when known.
+    /// When they were last in the room. `nil` when unknown, or for a host
+    /// who posted from Backstage without ever joining.
     var lastSeenAt: Date?
     /// When the room stops listing them.
     var recentUntil: Date

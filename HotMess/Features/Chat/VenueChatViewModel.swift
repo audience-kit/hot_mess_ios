@@ -149,15 +149,28 @@ final class VenueChatViewModel {
         pinned ?? messages.last { $0.isPinned && $0.kind == .announcement }
     }
 
-    /// Everyone else in the room now, for the Here now strip, then whoever
-    /// was here in the last 30 minutes, offline: friends first in each, then
-    /// everyone else, each by name. A friend shows by their full name.
-    /// Without names from the room (an older server), the name and avatar
-    /// they last posted with.
+    /// The user ("You", while they're in the room), everyone else in the
+    /// room now, for the Here now strip, then whoever was here in the last 30
+    /// minutes, offline: friends first in each, then everyone else, each by
+    /// name. A friend shows by their full name. Without names from the room
+    /// (an older server), the name and avatar they last posted with.
     var hereNow: [HereNowPerson] {
         let directory = friends?.byID ?? [:]
         var ids = onlineUserIDs
-        if let userID { ids.remove(userID) }
+        // The roster names the user too; a watcher isn't in the room.
+        var viewer: HereNowPerson?
+        if let userID {
+            ids.remove(userID)
+            if !isWatching, onlineUserIDs.contains(userID) || connectionState == .connected {
+                viewer = HereNowPerson(
+                    id: userID,
+                    name: roomPeople[userID]?.name,
+                    avatarURL: roomPeople[userID]?.avatarURL,
+                    isFriend: false,
+                    isViewer: true
+                )
+            }
+        }
 
         func face(_ id: UUID, _ person: RoomPerson?, presence: PresenceState) -> HereNowPerson {
             let friendName = rosterFriendNames[id] ?? directory[id]?.name
@@ -180,7 +193,7 @@ final class VenueChatViewModel {
             .filter { !ids.contains($0.id) && $0.id != userID && $0.recentUntil > now }
             .map { face($0.id, $0.person, presence: $0.presence) }
 
-        return HereNowPerson.sorted(here + recent)
+        return HereNowPerson.sorted(here + recent + (viewer.map { [$0] } ?? []))
     }
 
     /// Reports the position, subscribes to the room on the app's cable, and
@@ -454,7 +467,10 @@ final class VenueChatViewModel {
     }
 
     /// Wakes when the next of `recentPeople` is due to go, so the strip drops
-    /// them on time without another frame from the room.
+    /// them on time without another frame from the room. A host's can be
+    /// hours away; the sleep's clock keeps counting while the app is
+    /// suspended, so it fires (late at worst) on coming back, and `hereNow`
+    /// leaves out anyone past their time meanwhile.
     private func schedulePrune() {
         pruneTask?.cancel()
         guard let next = recentPeople.values.map(\.recentUntil).min() else {

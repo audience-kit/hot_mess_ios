@@ -121,6 +121,8 @@ struct ChatPresenceFrameTests {
                 "last_seen_at": "2026-10-11T04:10:00Z", "recent_until": "2026-10-11T04:40:00.000Z" },
               { "user_id": "\(jo)", "name": "Jo P.", "avatar_url": "https://example.com/j.jpg", "friend": false, "presence": "OFFLINE",
                 "last_seen_at": "2026-10-11T04:00:00Z", "recent_until": "2026-10-11T04:30:00Z" },
+              { "user_id": "\(aurora)", "name": "Aurora Bell", "friend": true, "presence": "OFFLINE",
+                "last_seen_at": null, "recent_until": "2026-10-11T09:00:00Z" },
               { "user_id": "\(sam)", "name": "No until", "friend": false, "presence": "OFFLINE" }
             ]
           },
@@ -159,13 +161,17 @@ struct ChatPresenceFrameTests {
         #expect(!samHere.isFriend)
         #expect(friends.map(\.id) == [aurora, alex])
         #expect(friends.map(\.name) == ["Aurora Bell", "Alex Rivera"])
-        // Latest to leave first; one without a `recentUntil` is dropped.
-        #expect(recent.map(\.id) == [alex, jo])
-        #expect(recent.map(\.presence) == [.push, .offline])
+        // Latest to leave first; one without a `recentUntil` is dropped. An
+        // event's host who never joined has no `lastSeenAt`, and is listed
+        // until the event ends.
+        #expect(recent.map(\.id) == [alex, jo, aurora])
+        #expect(recent.map(\.presence) == [.push, .offline, .offline])
+        #expect(recent.last?.lastSeenAt == nil)
+        #expect(recent.last?.recentUntil == Date(timeIntervalSince1970: 1_791_709_200))
         #expect(recent.first?.person.isFriend == true)
         #expect(recent.first?.recentUntil == Date(timeIntervalSince1970: 1_791_693_600))
         #expect(recent.first?.lastSeenAt == Date(timeIntervalSince1970: 1_791_691_800))
-        #expect(recent.last?.person.avatarURL?.absoluteString == "https://example.com/j.jpg")
+        #expect(recent[1].person.avatarURL?.absoluteString == "https://example.com/j.jpg")
 
         #expect(messages.map(\.body) == ["first", "second"])
         #expect(messages.first?.presence == .push)
@@ -454,7 +460,7 @@ struct HereNowTests {
         )
     }
 
-    @Test("Leaves the user out and puts friends first, by full name")
+    @Test("Puts the user first, as You, then friends, by full name")
     @MainActor
     func viewModelOrder() {
         let directory = FriendDirectory()
@@ -472,9 +478,13 @@ struct HereNowTests {
         )
 
         let here = viewModel.hereNow
-        #expect(here.map(\.id) == [aurora, jo, sam])
-        #expect(here.first?.name == "Aurora Bell")
-        #expect(here.first?.isFriend == true)
+        #expect(here.map(\.id) == [me, aurora, jo, sam])
+        #expect(here.first?.isViewer == true)
+        #expect(here.first?.displayName == "You")
+        #expect(here.first?.presence == .online)
+        #expect(here.first?.accessibilityLabel == "You, here now")
+        #expect(here[1].name == "Aurora Bell")
+        #expect(here[1].isFriend == true)
         #expect(here.last?.isFriend == false)
         // The roster's friends reach the rest of the app.
         #expect(directory.byID[aurora]?.name == "Aurora Bell")
@@ -486,14 +496,14 @@ struct HereNowTests {
         let viewModel = makeViewModel(friends: FriendDirectory())
 
         viewModel.applyRoster(online: [me], people: [], friends: [])
-        #expect(viewModel.hereNow.isEmpty)
+        #expect(viewModel.hereNow.map(\.id) == [me])
 
         viewModel.applyPresence(userID: sam, online: true, name: "Sam K.", avatarURL: nil)
-        #expect(viewModel.hereNow.map(\.name) == ["Sam K."])
+        #expect(viewModel.hereNow.map(\.displayName) == ["You", "Sam K."])
         #expect(viewModel.onlineUserIDs.contains(sam))
 
         viewModel.applyPresence(userID: sam, online: false, name: nil, avatarURL: nil)
-        #expect(viewModel.hereNow.isEmpty)
+        #expect(viewModel.hereNow.map(\.id) == [me])
         #expect(viewModel.roomPeople[sam] == nil)
     }
 
@@ -515,7 +525,7 @@ struct HereNowTests {
             now: now
         )
         // Alex's half hour is already up.
-        #expect(viewModel.hereNow.map(\.id) == [sam, jo])
+        #expect(viewModel.hereNow.map(\.id) == [me, sam, jo])
         #expect(viewModel.hereNow.last?.presence == .offline)
 
         // Sam's last connection leaves while a notification still reaches them.
@@ -529,14 +539,32 @@ struct HereNowTests {
         // Back in the room: here again, with the name they had.
         viewModel.applyPresence(userID: sam, online: true, name: nil, avatarURL: nil)
         #expect(viewModel.recentPeople[sam] == nil)
-        #expect(viewModel.hereNow.first?.id == sam)
-        #expect(viewModel.hereNow.first?.presence == .online)
-        #expect(viewModel.hereNow.first?.name == "Sam K.")
+        #expect(viewModel.hereNow.map(\.id) == [me, sam, jo])
+        #expect(viewModel.hereNow[1].presence == .online)
+        #expect(viewModel.hereNow[1].name == "Sam K.")
 
         // Once their time is up they go.
         viewModel.pruneRecent(now: soon)
-        #expect(viewModel.hereNow.map(\.id) == [sam])
+        #expect(viewModel.hereNow.map(\.id) == [me, sam])
         #expect(viewModel.recentPeople.isEmpty)
+    }
+
+    @Test("An event's host stays listed for hours, without a last-seen time")
+    @MainActor
+    func viewModelHost() {
+        let viewModel = makeViewModel(friends: FriendDirectory())
+        let now = Date.now
+        let host = RecentRoomPerson(
+            person: RoomPerson(id: alex, name: "Alex R."), presence: .offline, lastSeenAt: nil,
+            recentUntil: now.addingTimeInterval(5 * 3600)
+        )
+
+        viewModel.applyRoster(online: [me], people: [], friends: [], recent: [host], now: now)
+        viewModel.pruneRecent(now: now.addingTimeInterval(4 * 3600))
+        #expect(viewModel.hereNow.map(\.id) == [me, alex])
+
+        viewModel.pruneRecent(now: now.addingTimeInterval(5 * 3600))
+        #expect(viewModel.hereNow.map(\.id) == [me])
     }
 
     @Test("A plain leave, from an older server, still removes them")
@@ -551,7 +579,7 @@ struct HereNowTests {
         )
 
         viewModel.applyPresence(userID: jo, online: false, name: nil, avatarURL: nil)
-        #expect(viewModel.hereNow.isEmpty)
+        #expect(viewModel.hereNow.map(\.id) == [me])
     }
 
     @Test("History replaces the lines, and pins move the pinned announcement")

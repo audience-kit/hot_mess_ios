@@ -18,18 +18,25 @@ struct HereNowPerson: Identifiable, Hashable, Sendable {
     /// notification still reaches them) for someone who left in the last 30
     /// minutes and is still listed.
     var presence: PresenceState = .online
+    /// The user themself, shown as "You", first in the strip.
+    var isViewer = false
 
     /// In the room now, not only here recently.
     var isHere: Bool { presence == .online }
 
-    var displayName: String { name ?? String(localized: "Someone") }
+    var displayName: String {
+        isViewer ? String(localized: "You") : name ?? String(localized: "Someone")
+    }
 
     /// Under their avatar.
-    var firstName: String { name?.firstNameForDisplay ?? String(localized: "Someone") }
+    var firstName: String {
+        isViewer ? String(localized: "You") : name?.firstNameForDisplay ?? String(localized: "Someone")
+    }
 
     /// What VoiceOver reads: "Aurora Bell, friend, here now", or "Sam K.,
     /// here recently" for someone who left lately.
     var accessibilityLabel: String {
+        if isViewer { return String(localized: "You, here now") }
         switch (isFriend, isHere) {
         case (true, true): String(localized: "\(displayName), friend, here now")
         case (false, true): String(localized: "\(displayName), here now")
@@ -38,11 +45,12 @@ struct HereNowPerson: Identifiable, Hashable, Sendable {
         }
     }
 
-    /// People here now before people here recently; in each, friends first,
-    /// then everyone else, each by name. People with no name come last in
-    /// their group.
+    /// The user first, then people here now before people here recently; in
+    /// each, friends first, then everyone else, each by name. People with no
+    /// name come last in their group.
     static func sorted(_ people: some Sequence<HereNowPerson>) -> [HereNowPerson] {
         people.sorted { lhs, rhs in
+            if lhs.isViewer != rhs.isViewer { return lhs.isViewer }
             if lhs.isHere != rhs.isHere { return lhs.isHere }
             if lhs.isFriend != rhs.isFriend { return lhs.isFriend }
 
@@ -104,14 +112,15 @@ struct HereNowStrip: View {
                 }
 
                 ForEach(people) { person in
+                    // Nobody reports or blocks themself.
                     HereNowFace(person: person)
                         .contextMenu {
-                            if onReport != nil || onBlock != nil {
+                            if !person.isViewer, onReport != nil || onBlock != nil {
                                 safetyActions(for: person)
                             }
                         }
                         .accessibilityActions {
-                            if onReport != nil || onBlock != nil {
+                            if !person.isViewer, onReport != nil || onBlock != nil {
                                 safetyActions(for: person)
                             }
                         }
@@ -132,7 +141,8 @@ struct HereNowStrip: View {
         .accessibilityIdentifier("chat.hereNow")
     }
 
-    /// Only people in the room now count, not those here recently.
+    /// Only people in the room now count, the user included, not those here
+    /// recently.
     private var hereCount: Int {
         people.filter(\.isHere).count
     }
