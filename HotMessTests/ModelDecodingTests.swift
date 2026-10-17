@@ -768,6 +768,23 @@ struct MixinDecodingTests {
         #expect(detail.viewerAdmission?.isPaid == true)
     }
 
+    @Test("Shows an event's hosts as hosts and keeps them out of its lineup")
+    func eventHosts() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let host = #"{ "id": "1A1B2C3D-4E5F-4A6B-8C9D-0E1F2A3B4C5D", "name": "SLC Leather Pride", "avatar_url": null }"#
+        let act = #"{ "id": "2B2C3D4E-5F60-4B7C-9DAE-1F2A3B4C5D6E", "name": "Kiko Soirée", "avatar_url": null }"#
+        let detail = try decode(EventDetail.self, from: base + """
+        , "people": { "hosts": { "nodes": [\(host)] }, "lineup": { "nodes": [\(host), \(act)] } } }
+        """)
+
+        #expect(detail.hosts.map(\.name) == ["SLC Leather Pride"])
+        #expect(detail.people.map(\.name) == ["Kiko Soirée"])
+
+        let lineupOnly = try decode(EventDetail.self, from: base + #", "people": { "lineup": { "nodes": [\#(act)] } } }"#)
+        #expect(lineupOnly.hosts.isEmpty)
+        #expect(lineupOnly.people.map(\.name) == ["Kiko Soirée"])
+    }
+
     @Test("An event with no venue or no cover module has no venue cover")
     func eventWithoutVenueCover() throws {
         let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())

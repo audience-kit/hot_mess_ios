@@ -189,39 +189,52 @@ struct UpcomingEventsMixin: Codable, Hashable, Sendable {
     }
 }
 
-/// An event's `people` mixin: who is hosting or playing, a connection the
-/// documents read as `people { lineup { nodes { … } } }`. A missing or null
+/// An event's `people` mixin: who is hosting it and its whole lineup, both
+/// connections the documents read as `people { hosts { nodes { … } } lineup
+/// { nodes { … } } }`. The lineup includes the hosts. A missing or null
 /// connection reads as no one.
 struct EventPeopleMixin: Codable, Hashable, Sendable {
+    let hosts: [Person]
     let lineup: [Person]
 
-    init(lineup: [Person] = []) {
+    init(hosts: [Person] = [], lineup: [Person] = []) {
+        self.hosts = hosts
         self.lineup = lineup
     }
 
-    enum CodingKeys: String, CodingKey { case lineup }
+    enum CodingKeys: String, CodingKey { case hosts, lineup }
     private enum ConnectionKeys: String, CodingKey { case nodes }
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        if (try? container.decodeNil(forKey: .lineup)) == false {
-            let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .lineup)
-            lineup = try connection.decodeIfPresent([Person].self, forKey: .nodes) ?? []
-        } else {
-            lineup = []
-        }
+        hosts = try Self.decodeConnection(container, forKey: .hosts)
+        lineup = try Self.decodeConnection(container, forKey: .lineup)
     }
 
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        var connection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .lineup)
-        try connection.encode(lineup, forKey: .nodes)
+        var hostConnection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .hosts)
+        try hostConnection.encode(hosts, forKey: .nodes)
+        var lineupConnection = container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: .lineup)
+        try lineupConnection.encode(lineup, forKey: .nodes)
+    }
+
+    private static func decodeConnection(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws -> [Person] {
+        guard container.contains(key), (try? container.decodeNil(forKey: key)) == false else { return [] }
+        let connection = try container.nestedContainer(keyedBy: ConnectionKeys.self, forKey: key)
+        return try connection.decodeIfPresent([Person].self, forKey: .nodes) ?? []
     }
 }
 
-/// `/v1/events/{id}` — an event plus the people going.
+/// `/v1/events/{id}` — an event plus who is hosting it and who else is on.
 struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     var event: Event
+    /// Who is hosting it.
+    let hosts: [Person]
+    /// Who else is on: the lineup without the hosts.
     let people: [Person]
     /// The cover at its venue that night, or nil when there's none (or it
     /// sells tickets).
@@ -258,8 +271,12 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         event = try Event(from: decoder)
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // Who's on comes through the people mixin; missing reads as no one.
-        people = try container.decodeIfPresent(EventPeopleMixin.self, forKey: .people)?.lineup ?? []
+        // Who's hosting and who's on come through the people mixin; missing
+        // reads as no one. The lineup includes the hosts, so they're taken out.
+        let lineup = try container.decodeIfPresent(EventPeopleMixin.self, forKey: .people) ?? EventPeopleMixin()
+        hosts = lineup.hosts
+        let hostIDs = Set(lineup.hosts.map(\.id))
+        people = lineup.lineup.filter { !hostIDs.contains($0.id) }
         coverCharge = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover?.coverCharge
 
         var venueCover: CoverMixin?
@@ -280,11 +297,12 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         try event.encode(to: encoder)
 
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(EventPeopleMixin(lineup: people), forKey: .people)
+        try container.encode(EventPeopleMixin(hosts: hosts, lineup: hosts + people), forKey: .people)
     }
 
     init(
         event: Event,
+        hosts: [Person] = [],
         people: [Person] = [],
         coverCharge: CoverCharge? = nil,
         venueCoverTonight: CoverCharge? = nil,
@@ -292,6 +310,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         friendPings: [Ping] = []
     ) {
         self.event = event
+        self.hosts = hosts
         self.people = people
         self.coverCharge = coverCharge
         self.venueCoverTonight = venueCoverTonight
