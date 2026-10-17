@@ -175,9 +175,9 @@ extension XCUIApplication {
             .compactMap { $0 }.first { !$0.isEmpty }
     }
 
-    /// Whether this run has a real API to sign in against. The Facebook and Apple sign-in tests need one (and
-    /// real accounts), so they're skipped without one.
-    static var hasRunnerAPI: Bool { runnerAPI != nil }
+    /// Whether scripts/ui-tests.py started an API for this run. The Facebook and Apple sign-in tests need it (and
+    /// real accounts), so elsewhere, Xcode Cloud included, they're skipped.
+    static var hasRunnerAPI: Bool { !(ProcessInfo.processInfo.environment["HOTMESS_API_URL"] ?? "").isEmpty }
 
     /// Points the app at `runnerAPI`, if there is one; otherwise the build's own API.
     @MainActor

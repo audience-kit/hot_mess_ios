@@ -3,7 +3,7 @@
 # server for the branch being built (the .xctestrun carries it to test-without-building, which runs
 # without the repository): main talks to production, every other branch (next, feature branches) to the
 # next API. A pull request build uses the branch it targets. The tests read it as HOTMESS_TEST_API_URL
-# (see XCUIApplication.runnerAPI); without it, as on a local run, the sign-in tests skip.
+# (see XCUIApplication.runnerAPI). The sign-in tests still skip here: they need real accounts.
 set -eu
 
 [ "${CI_XCODEBUILD_ACTION:-}" = "build-for-testing" ] || exit 0

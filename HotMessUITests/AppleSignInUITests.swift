@@ -7,7 +7,7 @@ final class AppleSignInUITests: XCTestCase {
     func testSignsInWithApple() throws {
         continueAfterFailure = false
         try XCTSkipUnless(XCUIApplication.hasRunnerAPI,
-                          "Signs in for real, so it needs Xcode Cloud's HOTMESS_TEST_API_URL or scripts/ui-tests.py's API")
+                          "Signs in for real, so it only runs under scripts/ui-tests.py, never on Xcode Cloud")
         SimulatorAppleAccount.ensureSignedIn(email: AppleTestCredentials.email, password: AppleTestCredentials.password)
 
         let app = XCUIApplication()
