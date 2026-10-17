@@ -98,8 +98,6 @@ final class AppReviewUITests: XCTestCase {
                 return
             }
             let permission = [
-                springboard.alerts.buttons["Allow Tracking"],
-                springboard.alerts.buttons["Allow"],
                 springboard.alerts.buttons["Continue"],
                 app.alerts.buttons["Continue"],
             ].first { $0.exists && $0.isHittable }

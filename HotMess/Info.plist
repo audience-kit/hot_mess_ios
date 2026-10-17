@@ -88,8 +88,6 @@
 	<string>Hot Mess notices when you arrive at or leave a venue, even with the app closed, so your friends see where you are and venues can tell how busy they are.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Hot Mess uses your location to recommend venues and events near you.</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>Hot Mess signs you in with Facebook to find your friends on Hot Mess. If you allow it, Facebook can link that sign-in with your activity in other apps and websites. Hot Mess itself doesn’t track you or show ads.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Figtree-Regular.ttf</string>

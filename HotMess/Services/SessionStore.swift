@@ -387,8 +387,7 @@ final class SessionStore {
 
         let branding = brand.branding
         let configID = branding?.facebookAppID == appID ? branding?.facebookLoginConfigID : nil
-        return FacebookSignIn(appID: appID, configID: configID, permissions: Self.requestedPermissions,
-                              loginManager: loginManager)
+        return FacebookSignIn(appID: appID, configID: configID, permissions: Self.requestedPermissions)
     }
 
     /// Signs out as soon as the API ends the session, wherever in the app the

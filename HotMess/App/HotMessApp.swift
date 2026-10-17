@@ -67,11 +67,13 @@ struct HotMessApp: App {
     }
     #endif
 
-    /// Stripe claims its bank redirects (`hotmess://stripe-redirect`), then the
-    /// Facebook SDK claims its login redirects, and anything neither claims is
+    /// Stripe claims its bank redirects (`hotmess://stripe-redirect`), then a
+    /// sign-in waiting on the Facebook app takes its `fb<app-id>://` redirect,
+    /// then the Facebook SDK gets its chance, and anything none claims is
     /// treated as one of our own `hotmess://` links.
     private func handle(_ url: URL) {
         if StripeAPI.handleURLCallback(with: url) { return }
+        if FacebookSignIn.handle(url) { return }
 
         let handledByFacebook = ApplicationDelegate.shared.application(
             UIApplication.shared,

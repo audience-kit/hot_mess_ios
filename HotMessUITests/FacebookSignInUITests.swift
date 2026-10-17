@@ -89,8 +89,6 @@ final class FacebookSignInUITests: XCTestCase {
         var candidates: [(String, XCUIElement)] = [
             ("permission", springboard.alerts.buttons["Continue"]),
             ("permission", app.alerts.buttons["Continue"]),
-            ("tracking permission", springboard.alerts.buttons["Allow Tracking"]),
-            ("tracking permission", springboard.alerts.buttons["Allow"]),
             ("sheet", app.webViews.buttons.matching(continuing).firstMatch),
             // Login for Business follows "Continue as …" with a review of the access asked for.
             ("sheet review", app.webViews.buttons["Save"]),
