@@ -30,9 +30,11 @@ struct EventScreen: View {
                             heroText(event)
                         }
 
-                        if let person = event.person {
-                            CardSection(String(localized: "Host")) {
-                                PersonCardLink(person: person)
+                        if !detail.hosts.isEmpty {
+                            CardSection(detail.hosts.count == 1 ? String(localized: "Host") : String(localized: "Hosts")) {
+                                ForEach(detail.hosts) { person in
+                                    PersonCardLink(person: person)
+                                }
                             }
                         }
 
@@ -82,7 +84,7 @@ struct EventScreen: View {
                         }
 
                         if !detail.people.isEmpty {
-                            CardSection(String(localized: "Going")) {
+                            CardSection(String(localized: "Lineup")) {
                                 ForEach(detail.people) { person in
                                     PersonCardLink(person: person)
                                 }
