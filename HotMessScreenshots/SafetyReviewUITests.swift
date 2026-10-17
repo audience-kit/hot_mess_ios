@@ -7,7 +7,7 @@ import XCTest
 
 /// Automated walkthrough demonstrating safety, creator content moderation, and reporting:
 /// 1. EULA and Terms presented prior to login with explicit Zero Tolerance Policy & Content Creator definition.
-/// 2. Continue with Facebook, on a clone of the Facebook session snapshot simulator (scripts/app-review/README.md).
+/// 2. Sign in with Apple, on a clone of the base simulator, whose Apple Account is already signed in (SNAPSHOT in .env).
 /// 3. Flagging creator content on Venue and Person profiles via the (•••) menu.
 /// 4. Flagging objectionable chat messages with swift 24-hour moderation action.
 /// 5. Blocking abusive users with instant feed removal and moderation notification.
@@ -84,10 +84,10 @@ final class SafetyReviewUITests: XCTestCase {
         // Checkbox is now visibly checked
         sleep(1)
 
-        // --- STEP 2: Continue with Facebook (the simulator's Facebook session is already signed in) ---
+        // --- STEP 2: Sign in with Apple (the simulator's Apple Account is already signed in) ---
         var tabs = app.descendants(matching: .any)["main.tabs"]
         if !tabs.exists {
-            FacebookSignInHelper(app: app, dwell: dwell).signIn()
+            try AppleSignInHelper(app: app, dwell: dwell).signIn(timeout: 90)
             tabs = app.descendants(matching: .any)["main.tabs"]
         }
 
@@ -99,7 +99,7 @@ final class SafetyReviewUITests: XCTestCase {
             sleep(1)
         }
 
-        XCTAssertTrue(tabs.waitForExistence(timeout: 25), "Simulator is not signed in to main.tabs after Facebook sign-in")
+        XCTAssertTrue(tabs.waitForExistence(timeout: 25), "Simulator is not signed in to main.tabs after Sign in with Apple")
         sleep(dwell)
 
         // --- STEP 3: Flagging Creator Profiles & Content (Venues & Chat) ---

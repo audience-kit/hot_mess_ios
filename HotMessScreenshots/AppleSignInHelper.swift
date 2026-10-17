@@ -77,6 +77,7 @@ final class AppleSignInHelper {
         let deadline = Date().addingTimeInterval(timeout)
         var typedEmail = false
         var typedPassword = false
+        var choseEmail = false
 
         while Date() < deadline {
             if tabs.exists {
@@ -156,9 +157,21 @@ final class AppleSignInHelper {
                 }
             }
 
-            // Look for confirmation / Continue / Share My Email / Sign In buttons in system sheets
+            // A new account's sheet leaves Share My Email and Hide My Email unchosen, and Continue disabled until
+            // one is. The option is a row whose label also holds the address, so match its start in any container.
+            // The dimmed Continue still reports isEnabled, so choose Share My Email once rather than test the button.
+            if !choseEmail, let shareEmail = [authKit, springboard, app].lazy
+                .map({ $0.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] 'Share My Email'")).firstMatch })
+                .first(where: { $0.exists }) {
+                shareEmail.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                choseEmail = true
+                sleep(1)
+                continue
+            }
+
+            // Look for confirmation / Continue / Sign In buttons in system sheets
             let buttonPredicate = NSPredicate(
-                format: "label BEGINSWITH[c] 'Continue' OR label ==[c] 'Sign In' OR label ==[c] 'Done' OR label ==[c] 'Share My Email' OR label ==[c] 'OK'"
+                format: "label BEGINSWITH[c] 'Continue' OR label ==[c] 'Sign In' OR label ==[c] 'Done' OR label ==[c] 'OK'"
             )
             for container in systemContainers where container.state == .runningForeground || container.state == .unknown {
                 let actionButton = container.buttons.matching(buttonPredicate).firstMatch
