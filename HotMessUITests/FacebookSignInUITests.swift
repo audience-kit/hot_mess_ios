@@ -26,6 +26,12 @@ final class FacebookSignInUITests: XCTestCase {
     func testSignsInWithFacebook() throws {
         try XCTSkipUnless(XCUIApplication.hasRunnerAPI,
                           "Signs in for real, so it needs Xcode Cloud's HOTMESS_TEST_API_URL or scripts/ui-tests.py's API")
+        #if targetEnvironment(simulator)
+        // The simulator has no Facebook app, so only the web sheet's login gets it signed in.
+        let environment = ProcessInfo.processInfo.environment
+        try XCTSkipIf((environment["HOTMESS_UITEST_FB_EMAIL"] ?? "").isEmpty || (environment["HOTMESS_UITEST_FB_PASSWORD"] ?? "").isEmpty,
+                      "Set HOTMESS_UITEST_FB_EMAIL and HOTMESS_UITEST_FB_PASSWORD to a Facebook test user to sign in")
+        #endif
         let app = XCUIApplication()
         app.launchArguments = ["-HotMessUITestSignedOut"]
         app.useRunnerAPI()
