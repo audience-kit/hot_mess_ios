@@ -218,16 +218,6 @@ struct HotMessAPI: Sendable {
         try await audienceKit.graphQL(Documents.me, as: MeResponse.self, decoder: .hotMess).me?.profile?.user
     }
 
-    /// Names the signed-in account (`updateMyName`), for one Sign in with
-    /// Apple made without a name. Returns the user with it.
-    func updateMyName(firstName: String, lastName: String?) async throws -> User? {
-        try await query(
-            Documents.updateMyName,
-            variables: ["firstName": .string(firstName), "lastName": lastName.map(GraphQLValue.string) ?? .null],
-            as: UpdateMyNameResponse.self
-        ).updateMyName.profile?.user
-    }
-
     /// What the API asks of this app: the oldest version it still serves.
     /// `nil` when the status has no iOS row.
     func clientRequirement() async throws -> VersionInfo? {
@@ -870,17 +860,9 @@ extension HotMessAPI {
         }
         """
 
-        static let selfFields = "id name first_name: firstName last_name: lastName avatar_url: avatarUrl photo { cdn_url: cdnUrl }"
-
         static let me = """
         query Me {
-          me { self { \(selfFields) } }
-        }
-        """
-
-        static let updateMyName = """
-        mutation UpdateMyName($firstName: String!, $lastName: String) {
-          updateMyName(input: { firstName: $firstName, lastName: $lastName }) { self { \(selfFields) } }
+          me { self { id name first_name: firstName last_name: lastName avatar_url: avatarUrl photo { cdn_url: cdnUrl } } }
         }
         """
 
@@ -1186,16 +1168,6 @@ struct MeResponse: Decodable, Sendable {
     }
 
     let me: State?
-}
-
-struct UpdateMyNameResponse: Decodable, Sendable {
-    struct Result: Decodable, Sendable {
-        let profile: MeResponse.Payload?
-
-        private enum CodingKeys: String, CodingKey { case profile = "self" }
-    }
-
-    let updateMyName: Result
 }
 
 struct SafetyResponse: Decodable, Sendable {

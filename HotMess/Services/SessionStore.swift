@@ -327,12 +327,6 @@ final class SessionStore {
         if let refreshed = try? await currentUser() { user = refreshed }
     }
 
-    /// Names the account: Sign in with Apple gives the name only the first
-    /// time someone authorizes the app, so a later account can have none.
-    func updateName(firstName: String, lastName: String?) async throws {
-        if let named = try await api.updateMyName(firstName: firstName, lastName: lastName) { user = named }
-    }
-
     // MARK: - Private
 
     /// The signed-in user, from the audience's GraphQL `me`, with their
