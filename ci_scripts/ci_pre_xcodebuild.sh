@@ -1,14 +1,12 @@
 #!/bin/sh
-# Xcode Cloud runs this before each xcodebuild. For the test actions it points the UI tests at the server
-# for the branch being built: main talks to production, every other branch (next, feature branches) to the
+# Xcode Cloud runs this before each xcodebuild. Before build-for-testing it points the UI tests at the
+# server for the branch being built (the .xctestrun carries it to test-without-building, which runs
+# without the repository): main talks to production, every other branch (next, feature branches) to the
 # next API. A pull request build uses the branch it targets. The tests read it as HOTMESS_TEST_API_URL
 # (see XCUIApplication.runnerAPI); without it, as on a local run, the sign-in tests skip.
 set -eu
 
-case "${CI_XCODEBUILD_ACTION:-}" in
-build-for-testing | test-without-building) ;;
-*) exit 0 ;;
-esac
+[ "${CI_XCODEBUILD_ACTION:-}" = "build-for-testing" ] || exit 0
 
 branch="${CI_BRANCH:-${CI_PULL_REQUEST_TARGET_BRANCH:-}}"
 case "$branch" in
