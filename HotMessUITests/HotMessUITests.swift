@@ -18,6 +18,7 @@ final class HotMessUITests: XCTestCase {
     @MainActor
     func testAppLaunches() {
         let app = XCUIApplication()
+        app.useRunnerAPI()
         app.launch()
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
