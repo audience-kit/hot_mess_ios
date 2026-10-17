@@ -78,13 +78,17 @@ enum PresenceState: String, Codable, Hashable, Sendable {
 }
 
 /// Green when someone is in chat, a yellow ring when they'll get a push
-/// notification, nothing otherwise. Usually drawn by `Avatar(presence:)`.
+/// notification, nothing otherwise (or a gray dot, with `showsOffline`).
+/// Usually drawn by `Avatar(presence:)`.
 struct PresenceDot: View {
     let state: PresenceState
     /// 10 on 28 avatars, 12 on 40 and up. The ring adds 2 on each side.
     var size: CGFloat = 10
     /// The ring that separates the dot from the photo under it.
     var ringColor: Color = Color(.secondarySystemGroupedBackground)
+    /// Draw `.offline` as a gray dot instead of nothing: for someone a chat
+    /// room still lists after they left.
+    var showsOffline = false
 
     var body: some View {
         switch state {
@@ -106,7 +110,12 @@ struct PresenceDot: View {
             .frame(width: size, height: size)
             .modifier(PresenceRing(color: ringColor, label: String(localized: "Gets notifications")))
         case .offline:
-            EmptyView()
+            if showsOffline {
+                Circle()
+                    .fill(Color(.systemGray3))
+                    .frame(width: size, height: size)
+                    .modifier(PresenceRing(color: ringColor, label: String(localized: "Here recently")))
+            }
         }
     }
 }

@@ -262,8 +262,32 @@ final class AppModel {
         case .now:
             openNow()
             return true
+        case let .venueChat(id):
+            openVenueChat(id)
+            return true
+        case let .localeChat(id):
+            if let locale = location.locale, locale.id == id {
+                open(.localeChat(locale))
+            } else {
+                openNow()
+            }
+            return true
         case nil:
             return false
+        }
+    }
+
+    /// Opens the venue, then its chat room on top once the venue loads (the
+    /// room's route needs the venue), unless the user has gone elsewhere by
+    /// then. If it can't load, the venue screen says so.
+    private func openVenueChat(_ venueID: UUID) {
+        open(.venue(venueID))
+
+        Task {
+            guard let overview = try? await api.venue(venueID),
+                  selectedTab == .venues, venuesPath == [.venue(venueID)]
+            else { return }
+            venuesPath.append(.venueChat(overview.venue))
         }
     }
 }

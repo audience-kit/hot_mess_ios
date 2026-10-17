@@ -20,6 +20,10 @@ struct SettingsScreen: View {
     @State private var isConfirmingDelete = false
     @State private var isDeleting = false
     @State private var deleteFailed = false
+    /// Pushes about rooms the user just left: `nil` until it loads, and while
+    /// the API can't say, which hides the toggle.
+    @State private var recentChatPush: Bool?
+    @State private var isSavingRecentChatPush = false
 
     var body: some View {
         List {
@@ -27,6 +31,7 @@ struct SettingsScreen: View {
             facebookSection
             coverSection
             locationSection
+            notificationsSection
             privacySection
             feedbackSection
             aboutSection
@@ -37,6 +42,7 @@ struct SettingsScreen: View {
         .navigationTitle(String(localized: "Me"))
         .task { await model.session.refreshUser() }
         .task { await model.safety.load() }
+        .task(id: model.session.isSignedIn) { await loadRecentChatPush() }
         .confirmationDialog(
             String(localized: "Sign out of Hot Mess?"),
             isPresented: $isConfirmingSignOut,
@@ -137,6 +143,27 @@ struct SettingsScreen: View {
                         openURL(url)
                     }
                 }
+            }
+        }
+    }
+
+    /// Only for someone signed in: the setting is on their account.
+    @ViewBuilder
+    private var notificationsSection: some View {
+        if model.session.isSignedIn, let recentChatPush {
+            Section {
+                Toggle(isOn: Binding(
+                    get: { recentChatPush },
+                    set: { enabled in Task { await setRecentChatPush(enabled) } }
+                )) {
+                    Label(String(localized: "Rooms You Just Left"), systemImage: "bubble.left.and.bubble.right")
+                }
+                .disabled(isSavingRecentChatPush)
+                .accessibilityIdentifier("me.recentChatPush")
+            } header: {
+                Text("Notifications")
+            } footer: {
+                Text("Get a push when people keep talking in a chat room you left in the last 30 minutes.")
             }
         }
     }
@@ -242,6 +269,28 @@ struct SettingsScreen: View {
             try await model.deleteAccount()
         } catch {
             deleteFailed = true
+        }
+    }
+
+    private func loadRecentChatPush() async {
+        guard model.session.isSignedIn else {
+            recentChatPush = nil
+            return
+        }
+        recentChatPush = try? await model.api.recentChatPush()
+    }
+
+    /// Shows the change at once, and puts it back if the API refuses it.
+    private func setRecentChatPush(_ enabled: Bool) async {
+        let previous = recentChatPush
+        recentChatPush = enabled
+        isSavingRecentChatPush = true
+        defer { isSavingRecentChatPush = false }
+
+        do {
+            recentChatPush = try await model.api.setRecentChatPush(enabled)
+        } catch {
+            recentChatPush = previous
         }
     }
 
