@@ -785,6 +785,22 @@ struct MixinDecodingTests {
         #expect(lineupOnly.people.map(\.name) == ["Kiko Soirée"])
     }
 
+    @Test("Lists only the viewer's friends as going")
+    func eventFriendsGoing() throws {
+        let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())
+        let detail = try decode(EventDetail.self, from: base + """
+        , "going": { "attendees": { "nodes": [
+            { "friend": true, "profile": { "id": "3C3D4E5F-6071-4C8D-AEBF-2A3B4C5D6E7F", "name": "Alex Friend", "avatar_url": null } },
+            { "friend": false, "profile": { "id": "4D4E5F60-7182-4D9E-BFC0-3B4C5D6E7F80", "name": "Sam S.", "avatar_url": null } }
+        ] } } }
+        """)
+
+        #expect(detail.friendsGoing.map(\.name) == ["Alex Friend"])
+
+        let signedOut = try decode(EventDetail.self, from: base + #", "going": { "attendees": { "nodes": [] } } }"#)
+        #expect(signedOut.friendsGoing.isEmpty)
+    }
+
     @Test("An event with no venue or no cover module has no venue cover")
     func eventWithoutVenueCover() throws {
         let base = String(Fixtures.sparseEvent.trimmingCharacters(in: .whitespacesAndNewlines).dropLast())

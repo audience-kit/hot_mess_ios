@@ -750,6 +750,7 @@ extension HotMessAPI {
           events { event(id: $id) {
             \(eventFields) people { hosts { nodes { \(personFields) } } lineup { nodes { \(personFields) } } }
             ping { friend_pings: friendPings { \(pingFields) } }
+            going: rsvp { attendees(first: 100) { nodes { friend profile { id name avatar_url: avatarUrl } } } }
             tickets { cover { cover_charge: charge { \(coverChargeFields) } } }
             venue_cover: venue { venue { \(venueCoverFields) } }
           } }

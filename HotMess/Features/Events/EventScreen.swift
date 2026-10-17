@@ -90,6 +90,18 @@ struct EventScreen: View {
                                 }
                             }
                         }
+
+                        // Only friends are listed as going; the directory adds
+                        // what the attendee list leaves out (Messenger, presence).
+                        let friendsGoing = detail.friendsGoing
+                            .filter { !model.safety.isBlocked($0.id) }
+                            .map { model.friends.byID[$0.id] ?? $0 }
+                        if !friendsGoing.isEmpty {
+                            DetailSection(String(localized: "Friends Going")) {
+                                FriendStrip(friends: friendsGoing)
+                                    .padding(.horizontal, -20)
+                            }
+                        }
                     }
                     .padding(.bottom, 24)
                 }

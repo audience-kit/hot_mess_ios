@@ -236,6 +236,9 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     let hosts: [Person]
     /// Who else is on: the lineup without the hosts.
     let people: [Person]
+    /// The viewer's friends who are going, from the RSVP mixin's attendees.
+    /// Empty when signed out.
+    let friendsGoing: [Friend]
     /// The cover at its venue that night, or nil when there's none (or it
     /// sells tickets).
     let coverCharge: CoverCharge?
@@ -258,7 +261,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case people, tickets, ping
+        case people, tickets, ping, going
         case venueCover = "venue_cover"
     }
 
@@ -277,6 +280,9 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         hosts = lineup.hosts
         let hostIDs = Set(lineup.hosts.map(\.id))
         people = lineup.lineup.filter { !hostIDs.contains($0.id) }
+        // `going` is the rsvp mixin again, holding only its attendees; the API
+        // names the viewer's friends in full and flags them.
+        friendsGoing = (try? container.decodeIfPresent(EventGoingMixin.self, forKey: .going))?.friends ?? []
         coverCharge = try container.decodeIfPresent(TicketsMixin.self, forKey: .tickets)?.cover?.coverCharge
 
         var venueCover: CoverMixin?
@@ -304,6 +310,7 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         event: Event,
         hosts: [Person] = [],
         people: [Person] = [],
+        friendsGoing: [Friend] = [],
         coverCharge: CoverCharge? = nil,
         venueCoverTonight: CoverCharge? = nil,
         viewerAdmission: Admission? = nil,
@@ -312,10 +319,51 @@ struct EventDetail: Codable, Hashable, Sendable, Identifiable {
         self.event = event
         self.hosts = hosts
         self.people = people
+        self.friendsGoing = friendsGoing
         self.coverCharge = coverCharge
         self.venueCoverTonight = venueCoverTonight
         self.viewerAdmission = viewerAdmission
         self.friendPings = friendPings
+    }
+}
+
+/// An event's `rsvp` mixin selected for who's going, as
+/// `going: rsvp { attendees { nodes { friend profile { … } } } }`: only the
+/// attendees who are the viewer's friends are kept.
+struct EventGoingMixin: Decodable, Sendable {
+    let friends: [Friend]
+
+    private struct Attendee: Decodable, Sendable {
+        let friend: Bool
+        let profile: Profile
+    }
+
+    private struct Profile: Decodable, Sendable {
+        let id: UUID
+        let name: String
+        let avatarURL: URL?
+
+        enum CodingKeys: String, CodingKey {
+            case id, name
+            case avatarURL = "avatar_url"
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(UUID.self, forKey: .id)
+            name = try container.decode(String.self, forKey: .name)
+            avatarURL = try? container.decodeIfPresent(URL.self, forKey: .avatarURL)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey { case attendees }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let attendees = try container.decodeIfPresent(Nodes<Attendee>.self, forKey: .attendees)?.nodes ?? []
+        friends = attendees.filter(\.friend).map {
+            Friend(id: $0.profile.id, name: $0.profile.name, avatarURL: $0.profile.avatarURL)
+        }
     }
 }
 
