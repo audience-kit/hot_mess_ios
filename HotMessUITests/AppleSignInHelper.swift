@@ -6,17 +6,21 @@
 import XCTest
 
 enum AppleTestCredentials {
-    static let defaultEmail = "tom_test_user@hotmess.social"
+    static let defaultEmail = "tom_test_me@hotmess.social"
     static let defaultPassword = "I_am_1_test_user"
 
+    /// `HOTMESS_UITEST_APPLE_*`, else the root .env's `APPLE_TEST_USER`/`APPLE_TEST_PASSWORD` (which
+    /// scripts/test-credentials.py passes to the run), else the defaults.
     static var email: String {
-        let env = ProcessInfo.processInfo.environment["HOTMESS_UITEST_APPLE_EMAIL"]
-        return (env != nil && !env!.isEmpty) ? env! : defaultEmail
+        value("HOTMESS_UITEST_APPLE_EMAIL") ?? value("APPLE_TEST_USER") ?? defaultEmail
     }
 
     static var password: String {
-        let env = ProcessInfo.processInfo.environment["HOTMESS_UITEST_APPLE_PASSWORD"]
-        return (env != nil && !env!.isEmpty) ? env! : defaultPassword
+        value("HOTMESS_UITEST_APPLE_PASSWORD") ?? value("APPLE_TEST_PASSWORD") ?? defaultPassword
+    }
+
+    private static func value(_ key: String) -> String? {
+        ProcessInfo.processInfo.environment[key].flatMap { $0.isEmpty ? nil : $0 }
     }
 }
 
@@ -89,6 +93,11 @@ final class AppleSignInHelper {
                     sleep(dwell)
                     continue
                 }
+                // With no Apple Account on the simulator, iOS sends the person to Settings instead of the sheet.
+                if alert.buttons["Settings"].exists && !alert.textFields.firstMatch.exists {
+                    XCTFail("The simulator isn't signed in to an Apple Account (\(alert.label)). Sign it in to \(email) in Settings and rerun.")
+                    return false
+                }
                 let alertAction = alert.buttons.matching(
                     NSPredicate(format: "label BEGINSWITH[c] 'Continue' OR label ==[c] 'Sign In' OR label ==[c] 'Allow' OR label ==[c] 'OK'")
                 ).firstMatch
@@ -156,11 +165,24 @@ final class AppleSignInHelper {
 }
 
 extension XCUIApplication {
-    /// Points the app at the API the test runner started (`HOTMESS_API_URL`, passed to xcodebuild as
-    /// `TEST_RUNNER_HOTMESS_API_URL`), if there is one; otherwise the build's own API.
+    /// The API this run's app should talk to: the one scripts/ui-tests.py started (`HOTMESS_API_URL`, passed to
+    /// xcodebuild as `TEST_RUNNER_HOTMESS_API_URL`), else the one Xcode Cloud picks for the branch
+    /// (`HOTMESS_TEST_API_URL`, set by ci_scripts/ci_pre_xcodebuild.sh: production on main, the next API
+    /// elsewhere). Nil otherwise.
+    static var runnerAPI: String? {
+        let environment = ProcessInfo.processInfo.environment
+        return [environment["HOTMESS_API_URL"], environment["HOTMESS_TEST_API_URL"]]
+            .compactMap { $0 }.first { !$0.isEmpty }
+    }
+
+    /// Whether this run has a real API to sign in against. The Facebook and Apple sign-in tests need one (and
+    /// real accounts), so they're skipped without one.
+    static var hasRunnerAPI: Bool { runnerAPI != nil }
+
+    /// Points the app at `runnerAPI`, if there is one; otherwise the build's own API.
     @MainActor
     func useRunnerAPI() {
-        if let api = ProcessInfo.processInfo.environment["HOTMESS_API_URL"], !api.isEmpty {
+        if let api = Self.runnerAPI {
             launchEnvironment["HOTMESS_API_URL"] = api
         }
     }

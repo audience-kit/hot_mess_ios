@@ -15,6 +15,7 @@ final class BrowseUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = true
         app = XCUIApplication()
+        app.useRunnerAPI()
         app.launch()
 
         if !app.descendants(matching: .any)["main.tabs"].waitForExistence(timeout: 15) {

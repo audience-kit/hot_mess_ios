@@ -24,6 +24,8 @@ final class FacebookSignInUITests: XCTestCase {
 
     @MainActor
     func testSignsInWithFacebook() throws {
+        try XCTSkipUnless(XCUIApplication.hasRunnerAPI,
+                          "Signs in for real, so it needs Xcode Cloud's HOTMESS_TEST_API_URL or scripts/ui-tests.py's API")
         let app = XCUIApplication()
         app.launchArguments = ["-HotMessUITestSignedOut"]
         app.useRunnerAPI()
