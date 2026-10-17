@@ -62,6 +62,10 @@ final class VenueChatViewModel {
     /// a yellow dot. The server only says so about the user's friends, and to
     /// admins.
     private(set) var reachableUserIDs: Set<UUID> = []
+    /// People who left the room in the last 30 minutes, by user ID, whom it
+    /// keeps listing, offline, until each one's `recentUntil`. Nobody here
+    /// now is in it.
+    private(set) var recentPeople: [UUID: RecentRoomPerson] = [:]
     /// The announcement pinned under the room's title, from the history sent
     /// on joining and the room's pin frames; it can be older than the
     /// messages the room shows.
@@ -94,6 +98,8 @@ final class VenueChatViewModel {
     /// The room's subscription, while one is open.
     private var following: Task<Outcome, Never>?
     private var presenceTask: Task<Void, Never>?
+    /// Drops the next of `recentPeople` when the room stops listing them.
+    private var pruneTask: Task<Void, Never>?
     /// Bumped by `stop()`, so a `run()` waiting to reconnect knows it's over.
     private var generation = 0
 
@@ -143,17 +149,30 @@ final class VenueChatViewModel {
         pinned ?? messages.last { $0.isPinned && $0.kind == .announcement }
     }
 
-    /// Everyone else in the room now, for the Here now strip: friends first,
-    /// then everyone else, each by name. A friend shows by their full name.
-    /// Without names from the room (an older server), the name and avatar
-    /// they last posted with.
+    /// The user ("You", while they're in the room), everyone else in the
+    /// room now, for the Here now strip, then whoever was here in the last 30
+    /// minutes, offline: friends first in each, then everyone else, each by
+    /// name. A friend shows by their full name. Without names from the room
+    /// (an older server), the name and avatar they last posted with.
     var hereNow: [HereNowPerson] {
         let directory = friends?.byID ?? [:]
         var ids = onlineUserIDs
-        if let userID { ids.remove(userID) }
+        // The roster names the user too; a watcher isn't in the room.
+        var viewer: HereNowPerson?
+        if let userID {
+            ids.remove(userID)
+            if !isWatching, onlineUserIDs.contains(userID) || connectionState == .connected {
+                viewer = HereNowPerson(
+                    id: userID,
+                    name: roomPeople[userID]?.name,
+                    avatarURL: roomPeople[userID]?.avatarURL,
+                    isFriend: false,
+                    isViewer: true
+                )
+            }
+        }
 
-        let people = ids.map { id -> HereNowPerson in
-            let person = roomPeople[id]
+        func face(_ id: UUID, _ person: RoomPerson?, presence: PresenceState) -> HereNowPerson {
             let friendName = rosterFriendNames[id] ?? directory[id]?.name
             let posted = person?.name == nil || person?.avatarURL == nil
                 ? messages.last(where: { $0.userID == id && !$0.isFromListing })
@@ -163,11 +182,18 @@ final class VenueChatViewModel {
                 id: id,
                 name: friendName ?? person?.name ?? posted?.name,
                 avatarURL: person?.avatarURL ?? posted?.avatarURL ?? directory[id]?.avatarURL,
-                isFriend: person?.isFriend == true || friendName != nil
+                isFriend: person?.isFriend == true || friendName != nil,
+                presence: presence
             )
         }
 
-        return HereNowPerson.sorted(people)
+        let now = Date.now
+        let here = ids.map { face($0, roomPeople[$0], presence: .online) }
+        let recent = recentPeople.values
+            .filter { !ids.contains($0.id) && $0.id != userID && $0.recentUntil > now }
+            .map { face($0.id, $0.person, presence: $0.presence) }
+
+        return HereNowPerson.sorted(here + recent + (viewer.map { [$0] } ?? []))
     }
 
     /// Reports the position, subscribes to the room on the app's cable, and
@@ -283,13 +309,15 @@ final class VenueChatViewModel {
                     receive(message)
                 case let .range(outOfRange):
                     isOutOfRange = outOfRange
-                case let .roster(online, people, friends):
-                    applyRoster(online: online, people: people, friends: friends)
+                case let .roster(online, people, friends, recent):
+                    applyRoster(online: online, people: people, friends: friends, recent: recent)
                 case let .presence(userID, online, name, avatarURL):
                     applyPresence(userID: userID, online: online, name: name, avatarURL: avatarURL)
                 case let .reachable(userID):
                     applyPresence(userID: userID, online: false, name: nil, avatarURL: nil)
                     reachableUserIDs.insert(userID)
+                case let .recent(userID, presence, until):
+                    applyRecent(userID: userID, presence: presence, until: until)
                 case let .history(messages, pinned):
                     applyHistory(messages, pinned: pinned)
                 case let .pin(id, announcement):
@@ -375,9 +403,22 @@ final class VenueChatViewModel {
 
     /// The room's list of who's in it, sent on joining. Everyone it names is
     /// in the room, even if `online` (from an older server) left them out.
-    func applyRoster(online: Set<UUID>, people: [RoomPerson], friends roster: [Friend]) {
+    /// `recent` is who left lately, listed until their `recentUntil`.
+    func applyRoster(
+        online: Set<UUID>,
+        people: [RoomPerson],
+        friends roster: [Friend],
+        recent: [RecentRoomPerson] = [],
+        now: Date = .now
+    ) {
         roomPeople = Dictionary(people.map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
         onlineUserIDs = online.union(people.map(\.id))
+        let here = onlineUserIDs
+        recentPeople = Dictionary(
+            recent.filter { !here.contains($0.id) && $0.recentUntil > now }.map { ($0.id, $0) },
+            uniquingKeysWith: { latest, _ in latest }
+        )
+        schedulePrune()
 
         for friend in roster {
             rosterFriendNames[friend.id] = friend.name
@@ -389,6 +430,8 @@ final class VenueChatViewModel {
     /// unless the frame says otherwise.
     func applyPresence(userID: UUID, online: Bool, name: String?, avatarURL: URL?) {
         reachableUserIDs.remove(userID)
+        // Back in the room, or gone for good: either way not "here recently".
+        let recent = recentPeople.removeValue(forKey: userID)
         guard online else {
             onlineUserIDs.remove(userID)
             roomPeople[userID] = nil
@@ -396,10 +439,50 @@ final class VenueChatViewModel {
         }
 
         onlineUserIDs.insert(userID)
-        var person = roomPeople[userID] ?? RoomPerson(id: userID)
+        var person = roomPeople[userID] ?? recent?.person ?? RoomPerson(id: userID)
         if let name { person.name = name }
         if let avatarURL { person.avatarURL = avatarURL }
         roomPeople[userID] = person
+    }
+
+    /// Someone's last connection left: they're out of the room, but it keeps
+    /// listing them (with what's known about them) until `until`, offline,
+    /// or with the yellow dot when a notification still reaches them.
+    func applyRecent(userID: UUID, presence: PresenceState, until: Date, now: Date = .now) {
+        let person = roomPeople[userID] ?? recentPeople[userID]?.person ?? RoomPerson(id: userID)
+        applyPresence(userID: userID, online: false, name: nil, avatarURL: nil)
+        if presence == .push {
+            reachableUserIDs.insert(userID)
+        }
+        guard until > now, userID != self.userID else { return }
+
+        recentPeople[userID] = RecentRoomPerson(person: person, presence: presence, lastSeenAt: now, recentUntil: until)
+        schedulePrune()
+    }
+
+    /// Drops whoever the room has stopped listing by `now`.
+    func pruneRecent(now: Date = .now) {
+        recentPeople = recentPeople.filter { $0.value.recentUntil > now }
+        schedulePrune()
+    }
+
+    /// Wakes when the next of `recentPeople` is due to go, so the strip drops
+    /// them on time without another frame from the room. A host's can be
+    /// hours away; the sleep's clock keeps counting while the app is
+    /// suspended, so it fires (late at worst) on coming back, and `hereNow`
+    /// leaves out anyone past their time meanwhile.
+    private func schedulePrune() {
+        pruneTask?.cancel()
+        guard let next = recentPeople.values.map(\.recentUntil).min() else {
+            pruneTask = nil
+            return
+        }
+
+        pruneTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(0, next.timeIntervalSinceNow)))
+            guard !Task.isCancelled else { return }
+            self?.pruneRecent()
+        }
     }
 
     // MARK: - History and pins
@@ -446,6 +529,9 @@ final class VenueChatViewModel {
         onlineUserIDs = []
         roomPeople = [:]
         reachableUserIDs = []
+        recentPeople = [:]
+        pruneTask?.cancel()
+        pruneTask = nil
     }
 
     // MARK: - Sending

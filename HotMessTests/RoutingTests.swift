@@ -57,6 +57,34 @@ struct DeepLinkTests {
         #expect(DeepLink.route(for: url) == nil)
     }
 
+    @Test("Opens a room's chat from its link, as a push about a room the user left carries")
+    func chatLinks() throws {
+        let venue = try #require(URL(string: "https://hotmess.social/venues/\(id.uuidString.lowercased())/chat"))
+        let locale = try #require(URL(string: "https://hotmess.social/locales/\(id.uuidString.lowercased())/chat"))
+        let scheme = try #require(URL(string: "hotmess://venues/\(id.uuidString)/chat"))
+
+        #expect(DeepLink.destination(for: venue) == .venueChat(id))
+        #expect(DeepLink.destination(for: locale) == .localeChat(id))
+        #expect(DeepLink.destination(for: scheme) == .venueChat(id))
+        // The venue itself, without `/chat`, is still the venue.
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/venues/\(id.uuidString)")) == .route(.venue(id)))
+        // Neither a locale nor its chat without an ID leads anywhere.
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/locales/\(id.uuidString)")) == nil)
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/locales/nope/chat")) == nil)
+        #expect(DeepLink.destination(for: URL(string: "https://hotmess.social/events/\(id.uuidString)/chat")) == .route(.event(id)))
+    }
+
+    @Test("A chat push's url opens its room, and isn't a Ping")
+    func chatPush() throws {
+        let push = try #require(PingNotification(userInfo: [
+            "kind": "recent_chat", "room_id": id.uuidString, "message_id": UUID().uuidString,
+            "url": "https://hotmess.social/venues/\(id.uuidString.lowercased())/chat",
+        ]))
+
+        #expect(DeepLink.destination(for: push.url) == .venueChat(id))
+        #expect(!push.isPing)
+    }
+
     @Test("Routes each destination to the tab that owns it")
     func tabForRoute() {
         #expect(AppRoute.venue(id).tab == .venues)

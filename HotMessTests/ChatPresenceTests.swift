@@ -115,6 +115,15 @@ struct ChatPresenceFrameTests {
             "friends": [
               { "user_id": "\(aurora)", "name": "Aurora Bell" },
               { "user_id": "\(alex)", "name": "Alex Rivera" }
+            ],
+            "recent": [
+              { "user_id": "\(alex)", "name": "Alex Rivera", "avatar_url": null, "friend": true, "presence": "PUSH",
+                "last_seen_at": "2026-10-11T04:10:00Z", "recent_until": "2026-10-11T04:40:00.000Z" },
+              { "user_id": "\(jo)", "name": "Jo P.", "avatar_url": "https://example.com/j.jpg", "friend": false, "presence": "OFFLINE",
+                "last_seen_at": "2026-10-11T04:00:00Z", "recent_until": "2026-10-11T04:30:00Z" },
+              { "user_id": "\(aurora)", "name": "Aurora Bell", "friend": true, "presence": "OFFLINE",
+                "last_seen_at": null, "recent_until": "2026-10-11T09:00:00Z" },
+              { "user_id": "\(sam)", "name": "No until", "friend": false, "presence": "OFFLINE" }
             ]
           },
           "history": [
@@ -131,7 +140,7 @@ struct ChatPresenceFrameTests {
         guard events.count == 4,
               case .connected = events[0],
               case let .range(outOfRange) = events[1],
-              case let .roster(online, people, friends) = events[2],
+              case let .roster(online, people, friends, recent) = events[2],
               case let .history(messages, pinned) = events[3]
         else {
             Issue.record("Expected connected, range, roster, history")
@@ -152,6 +161,17 @@ struct ChatPresenceFrameTests {
         #expect(!samHere.isFriend)
         #expect(friends.map(\.id) == [aurora, alex])
         #expect(friends.map(\.name) == ["Aurora Bell", "Alex Rivera"])
+        // Latest to leave first; one without a `recentUntil` is dropped. An
+        // event's host who never joined has no `lastSeenAt`, and is listed
+        // until the event ends.
+        #expect(recent.map(\.id) == [alex, jo, aurora])
+        #expect(recent.map(\.presence) == [.push, .offline, .offline])
+        #expect(recent.last?.lastSeenAt == nil)
+        #expect(recent.last?.recentUntil == Date(timeIntervalSince1970: 1_791_709_200))
+        #expect(recent.first?.person.isFriend == true)
+        #expect(recent.first?.recentUntil == Date(timeIntervalSince1970: 1_791_693_600))
+        #expect(recent.first?.lastSeenAt == Date(timeIntervalSince1970: 1_791_691_800))
+        #expect(recent[1].person.avatarURL?.absoluteString == "https://example.com/j.jpg")
 
         #expect(messages.map(\.body) == ["first", "second"])
         #expect(messages.first?.presence == .push)
@@ -168,7 +188,7 @@ struct ChatPresenceFrameTests {
 
         guard events.count == 4,
               case let .range(outOfRange) = events[1],
-              case let .roster(online, people, friends) = events[2],
+              case let .roster(online, people, friends, recent) = events[2],
               case let .history(messages, pinned) = events[3]
         else {
             Issue.record("Expected a join")
@@ -178,6 +198,8 @@ struct ChatPresenceFrameTests {
         #expect(online.isEmpty)
         #expect(people.isEmpty)
         #expect(friends.isEmpty)
+        // An older server sends no `recent`.
+        #expect(recent.isEmpty)
         #expect(messages.isEmpty)
         #expect(pinned == nil)
     }
@@ -194,7 +216,7 @@ struct ChatPresenceFrameTests {
         }
         """)
 
-        guard events.count == 4, case let .roster(online, people, friends) = events[2] else {
+        guard events.count == 4, case let .roster(online, people, friends, _) = events[2] else {
             Issue.record("Expected a roster")
             return
         }
@@ -265,6 +287,32 @@ struct ChatPresenceFrameTests {
         }
 
         #expect(userID == sam)
+    }
+
+    @Test("A leave with recentUntil keeps them listed, offline or reachable, until then")
+    func recentPresence() throws {
+        let offline = events(#"{ "__typename": "ChatPresenceChanged", "user_id": "\#(sam)", "presence": "OFFLINE", "name": null, "avatar_url": null, "recent_until": "2026-10-11T04:30:00Z" }"#)
+        let push = events(#"{ "__typename": "ChatPresenceChanged", "user_id": "\#(jo)", "presence": "PUSH", "recent_until": "2026-10-11T04:30:00.000Z" }"#)
+        let back = events(#"{ "__typename": "ChatPresenceChanged", "user_id": "\#(sam)", "presence": "ONLINE", "name": "Sam K.", "recent_until": null }"#)
+
+        guard case let .recent(samID, samPresence, samUntil) = try #require(offline.first),
+              case let .recent(joID, joPresence, joUntil) = try #require(push.first)
+        else {
+            Issue.record("Expected recent")
+            return
+        }
+        #expect(samID == sam)
+        #expect(samPresence == .offline)
+        #expect(samUntil == Date(timeIntervalSince1970: 1_791_693_000))
+        #expect(joID == jo)
+        #expect(joPresence == .push)
+        #expect(joUntil == samUntil)
+
+        guard case let .presence(_, online, _, _) = try #require(back.first) else {
+            Issue.record("Expected presence")
+            return
+        }
+        #expect(online)
     }
 
     @Test("An admin crossing the room's edge changes the range")
@@ -382,10 +430,24 @@ struct HereNowTests {
         #expect(sorted.map(\.id) == [alex, aurora, me, sam, jo])
     }
 
+    @Test("People here now come before people here recently")
+    func hereBeforeRecent() {
+        let sorted = HereNowPerson.sorted([
+            HereNowPerson(id: alex, name: "Alex Rivera", avatarURL: nil, isFriend: true, presence: .push),
+            HereNowPerson(id: sam, name: "Sam K.", avatarURL: nil, isFriend: false),
+            HereNowPerson(id: jo, name: "Jo P.", avatarURL: nil, isFriend: false, presence: .offline),
+            HereNowPerson(id: aurora, name: "Aurora Bell", avatarURL: nil, isFriend: true),
+        ])
+
+        #expect(sorted.map(\.id) == [aurora, sam, alex, jo])
+    }
+
     @Test("Reads as name, friend, here now")
     func accessibility() {
         #expect(HereNowPerson(id: aurora, name: "Aurora Bell", avatarURL: nil, isFriend: true).accessibilityLabel == "Aurora Bell, friend, here now")
         #expect(HereNowPerson(id: sam, name: "Sam K.", avatarURL: nil, isFriend: false).accessibilityLabel == "Sam K., here now")
+        #expect(HereNowPerson(id: sam, name: "Sam K.", avatarURL: nil, isFriend: false, presence: .offline).accessibilityLabel == "Sam K., here recently")
+        #expect(HereNowPerson(id: aurora, name: "Aurora Bell", avatarURL: nil, isFriend: true, presence: .push).accessibilityLabel == "Aurora Bell, friend, here recently")
     }
 
     @MainActor
@@ -398,7 +460,7 @@ struct HereNowTests {
         )
     }
 
-    @Test("Leaves the user out and puts friends first, by full name")
+    @Test("Puts the user first, as You, then friends, by full name")
     @MainActor
     func viewModelOrder() {
         let directory = FriendDirectory()
@@ -416,9 +478,13 @@ struct HereNowTests {
         )
 
         let here = viewModel.hereNow
-        #expect(here.map(\.id) == [aurora, jo, sam])
-        #expect(here.first?.name == "Aurora Bell")
-        #expect(here.first?.isFriend == true)
+        #expect(here.map(\.id) == [me, aurora, jo, sam])
+        #expect(here.first?.isViewer == true)
+        #expect(here.first?.displayName == "You")
+        #expect(here.first?.presence == .online)
+        #expect(here.first?.accessibilityLabel == "You, here now")
+        #expect(here[1].name == "Aurora Bell")
+        #expect(here[1].isFriend == true)
         #expect(here.last?.isFriend == false)
         // The roster's friends reach the rest of the app.
         #expect(directory.byID[aurora]?.name == "Aurora Bell")
@@ -430,15 +496,90 @@ struct HereNowTests {
         let viewModel = makeViewModel(friends: FriendDirectory())
 
         viewModel.applyRoster(online: [me], people: [], friends: [])
-        #expect(viewModel.hereNow.isEmpty)
+        #expect(viewModel.hereNow.map(\.id) == [me])
 
         viewModel.applyPresence(userID: sam, online: true, name: "Sam K.", avatarURL: nil)
-        #expect(viewModel.hereNow.map(\.name) == ["Sam K."])
+        #expect(viewModel.hereNow.map(\.displayName) == ["You", "Sam K."])
         #expect(viewModel.onlineUserIDs.contains(sam))
 
         viewModel.applyPresence(userID: sam, online: false, name: nil, avatarURL: nil)
-        #expect(viewModel.hereNow.isEmpty)
+        #expect(viewModel.hereNow.map(\.id) == [me])
         #expect(viewModel.roomPeople[sam] == nil)
+    }
+
+    @Test("People who just left stay listed, offline, until recentUntil, and come back as here")
+    @MainActor
+    func viewModelRecent() {
+        let viewModel = makeViewModel(friends: FriendDirectory())
+        let now = Date.now
+        let soon = now.addingTimeInterval(30 * 60)
+
+        viewModel.applyRoster(
+            online: [me, sam],
+            people: [RoomPerson(id: me, name: "Rick Mark"), RoomPerson(id: sam, name: "Sam K.")],
+            friends: [],
+            recent: [
+                RecentRoomPerson(person: RoomPerson(id: jo, name: "Jo P."), presence: .offline, recentUntil: soon),
+                RecentRoomPerson(person: RoomPerson(id: alex, name: "Alex R."), presence: .offline, recentUntil: now.addingTimeInterval(-1)),
+            ],
+            now: now
+        )
+        // Alex's half hour is already up.
+        #expect(viewModel.hereNow.map(\.id) == [me, sam, jo])
+        #expect(viewModel.hereNow.last?.presence == .offline)
+
+        // Sam's last connection leaves while a notification still reaches them.
+        viewModel.applyRecent(userID: sam, presence: .push, until: soon, now: now)
+        #expect(!viewModel.onlineUserIDs.contains(sam))
+        #expect(viewModel.reachableUserIDs.contains(sam))
+        let samRecent = viewModel.hereNow.first { $0.id == sam }
+        #expect(samRecent?.name == "Sam K.")
+        #expect(samRecent?.presence == .push)
+
+        // Back in the room: here again, with the name they had.
+        viewModel.applyPresence(userID: sam, online: true, name: nil, avatarURL: nil)
+        #expect(viewModel.recentPeople[sam] == nil)
+        #expect(viewModel.hereNow.map(\.id) == [me, sam, jo])
+        #expect(viewModel.hereNow[1].presence == .online)
+        #expect(viewModel.hereNow[1].name == "Sam K.")
+
+        // Once their time is up they go.
+        viewModel.pruneRecent(now: soon)
+        #expect(viewModel.hereNow.map(\.id) == [me, sam])
+        #expect(viewModel.recentPeople.isEmpty)
+    }
+
+    @Test("An event's host stays listed for hours, without a last-seen time")
+    @MainActor
+    func viewModelHost() {
+        let viewModel = makeViewModel(friends: FriendDirectory())
+        let now = Date.now
+        let host = RecentRoomPerson(
+            person: RoomPerson(id: alex, name: "Alex R."), presence: .offline, lastSeenAt: nil,
+            recentUntil: now.addingTimeInterval(5 * 3600)
+        )
+
+        viewModel.applyRoster(online: [me], people: [], friends: [], recent: [host], now: now)
+        viewModel.pruneRecent(now: now.addingTimeInterval(4 * 3600))
+        #expect(viewModel.hereNow.map(\.id) == [me, alex])
+
+        viewModel.pruneRecent(now: now.addingTimeInterval(5 * 3600))
+        #expect(viewModel.hereNow.map(\.id) == [me])
+    }
+
+    @Test("A plain leave, from an older server, still removes them")
+    @MainActor
+    func viewModelPlainLeave() {
+        let viewModel = makeViewModel(friends: FriendDirectory())
+        viewModel.applyRoster(
+            online: [me],
+            people: [],
+            friends: [],
+            recent: [RecentRoomPerson(person: RoomPerson(id: jo, name: "Jo P."), presence: .offline, recentUntil: .now.addingTimeInterval(600))]
+        )
+
+        viewModel.applyPresence(userID: jo, online: false, name: nil, avatarURL: nil)
+        #expect(viewModel.hereNow.map(\.id) == [me])
     }
 
     @Test("History replaces the lines, and pins move the pinned announcement")

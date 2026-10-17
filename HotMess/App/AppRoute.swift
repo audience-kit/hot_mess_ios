@@ -63,6 +63,13 @@ enum AppTab: Hashable, Sendable, CaseIterable {
 enum DeepLinkDestination: Hashable, Sendable {
     case route(AppRoute)
     case now
+    /// A venue's chat room, by the venue's ID (`/venues/<id>/chat`, which a
+    /// push about a room the user just left carries): the venue, then its
+    /// room once the venue loads.
+    case venueChat(UUID)
+    /// A locale's chat room, by the locale's ID (`/locales/<id>/chat`): the
+    /// room when it's the user's locale now, else Now.
+    case localeChat(UUID)
 }
 
 /// Parses the app's deep links.
@@ -75,8 +82,16 @@ enum DeepLink {
     /// Everything the app opens from a link, pushes included.
     static func destination(for url: URL?) -> DeepLinkDestination? {
         guard let url else { return nil }
+        let segments = segments(of: url)
+        if segments.count >= 3, segments[2] == "chat", let id = UUID(uuidString: segments[1]) {
+            switch segments[0] {
+            case "venues": return .venueChat(id)
+            case "locales": return .localeChat(id)
+            default: break
+            }
+        }
         if let route = route(for: url) { return .route(route) }
-        return segments(of: url).first == "pings" ? .now : nil
+        return segments.first == "pings" ? .now : nil
     }
 
     /// A screen to push, or `nil` for a link with none (Now, or an unknown one).

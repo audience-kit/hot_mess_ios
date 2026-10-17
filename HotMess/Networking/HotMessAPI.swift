@@ -426,6 +426,21 @@ struct HotMessAPI: Sendable {
             .acceptTerms.termsAcceptedAt
     }
 
+    /// Whether the user gets a push when people keep talking in a chat room
+    /// they left in the last 30 minutes. Off until they turn it on.
+    func recentChatPush() async throws -> Bool {
+        try await query(Documents.recentChatPush, variables: [:], as: RecentChatPushResponse.self).me?.recentChatPush ?? false
+    }
+
+    /// Turns those pushes on or off, and returns the setting after the change.
+    func setRecentChatPush(_ enabled: Bool) async throws -> Bool {
+        try await query(
+            Documents.setRecentChatPush,
+            variables: ["enabled": .bool(enabled)],
+            as: SetRecentChatPushResponse.self
+        ).setRecentChatPush.recentChatPush
+    }
+
     /// Deletes the account and everything the API keeps about the user. It
     /// can't be undone; the session is gone afterwards.
     func deleteAccount() async throws {
@@ -930,6 +945,20 @@ extension HotMessAPI {
         }
         """
 
+        /// Its own query, not part of `safety`, so the rest of the user's
+        /// state still loads from a server without the setting.
+        static let recentChatPush = """
+        query RecentChatPush {
+          me { recent_chat_push: recentChatPush }
+        }
+        """
+
+        static let setRecentChatPush = """
+        mutation SetRecentChatPush($enabled: Boolean!) {
+          setRecentChatPush(input: { enabled: $enabled }) { recent_chat_push: recentChatPush }
+        }
+        """
+
         static let deleteAccount = """
         mutation DeleteAccount($confirm: Boolean!) {
           deleteAccount(input: { confirm: $confirm }) { deleted }
@@ -1220,6 +1249,23 @@ struct AcceptTermsResponse: Decodable, Sendable {
     }
 
     let acceptTerms: Payload
+}
+
+/// `me { recentChatPush }`, and `setRecentChatPush`'s payload.
+struct RecentChatPushResponse: Decodable, Sendable {
+    struct Payload: Decodable, Sendable {
+        let recentChatPush: Bool
+
+        private enum CodingKeys: String, CodingKey {
+            case recentChatPush = "recent_chat_push"
+        }
+    }
+
+    let me: Payload?
+}
+
+struct SetRecentChatPushResponse: Decodable, Sendable {
+    let setRecentChatPush: RecentChatPushResponse.Payload
 }
 
 struct DeleteAccountResponse: Decodable, Sendable {

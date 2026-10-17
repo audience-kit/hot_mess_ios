@@ -5,7 +5,8 @@
 
 import SwiftUI
 
-/// Someone in a chat room now, as the Here now strip draws them.
+/// Someone in a chat room now, or in the last 30 minutes, as the Here now
+/// strip draws them.
 struct HereNowPerson: Identifiable, Hashable, Sendable {
     let id: UUID
     /// A friend's full name, else the "First L." rooms send everyone. `nil`
@@ -13,23 +14,44 @@ struct HereNowPerson: Identifiable, Hashable, Sendable {
     let name: String?
     let avatarURL: URL?
     let isFriend: Bool
+    /// `.online` while they're in the room; `.offline` (or `.push`, when a
+    /// notification still reaches them) for someone who left in the last 30
+    /// minutes and is still listed.
+    var presence: PresenceState = .online
+    /// The user themself, shown as "You", first in the strip.
+    var isViewer = false
 
-    var displayName: String { name ?? String(localized: "Someone") }
+    /// In the room now, not only here recently.
+    var isHere: Bool { presence == .online }
 
-    /// Under their avatar.
-    var firstName: String { name?.firstNameForDisplay ?? String(localized: "Someone") }
-
-    /// What VoiceOver reads: "Aurora Bell, friend, here now".
-    var accessibilityLabel: String {
-        isFriend
-            ? String(localized: "\(displayName), friend, here now")
-            : String(localized: "\(displayName), here now")
+    var displayName: String {
+        isViewer ? String(localized: "You") : name ?? String(localized: "Someone")
     }
 
-    /// Friends first, then everyone else, each by name. People with no name
-    /// come last in their group.
+    /// Under their avatar.
+    var firstName: String {
+        isViewer ? String(localized: "You") : name?.firstNameForDisplay ?? String(localized: "Someone")
+    }
+
+    /// What VoiceOver reads: "Aurora Bell, friend, here now", or "Sam K.,
+    /// here recently" for someone who left lately.
+    var accessibilityLabel: String {
+        if isViewer { return String(localized: "You, here now") }
+        switch (isFriend, isHere) {
+        case (true, true): String(localized: "\(displayName), friend, here now")
+        case (false, true): String(localized: "\(displayName), here now")
+        case (true, false): String(localized: "\(displayName), friend, here recently")
+        case (false, false): String(localized: "\(displayName), here recently")
+        }
+    }
+
+    /// The user first, then people here now before people here recently; in
+    /// each, friends first, then everyone else, each by name. People with no
+    /// name come last in their group.
     static func sorted(_ people: some Sequence<HereNowPerson>) -> [HereNowPerson] {
         people.sorted { lhs, rhs in
+            if lhs.isViewer != rhs.isViewer { return lhs.isViewer }
+            if lhs.isHere != rhs.isHere { return lhs.isHere }
             if lhs.isFriend != rhs.isFriend { return lhs.isFriend }
 
             switch (lhs.name, rhs.name) {
@@ -77,7 +99,7 @@ struct HereNowStrip: View {
         // strip would collapse to nothing.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .center, spacing: 10) {
-                if !people.isEmpty {
+                if hereCount > 0 {
                     Text(countLabel)
                         .font(.hotMess(.caption, semibold: true))
                         .foregroundStyle(.secondary)
@@ -90,14 +112,15 @@ struct HereNowStrip: View {
                 }
 
                 ForEach(people) { person in
+                    // Nobody reports or blocks themself.
                     HereNowFace(person: person)
                         .contextMenu {
-                            if onReport != nil || onBlock != nil {
+                            if !person.isViewer, onReport != nil || onBlock != nil {
                                 safetyActions(for: person)
                             }
                         }
                         .accessibilityActions {
-                            if onReport != nil || onBlock != nil {
+                            if !person.isViewer, onReport != nil || onBlock != nil {
                                 safetyActions(for: person)
                             }
                         }
@@ -118,8 +141,14 @@ struct HereNowStrip: View {
         .accessibilityIdentifier("chat.hereNow")
     }
 
+    /// Only people in the room now count, the user included, not those here
+    /// recently.
+    private var hereCount: Int {
+        people.filter(\.isHere).count
+    }
+
     private var countLabel: String {
-        String(localized: "\(people.count) here now")
+        String(localized: "\(hereCount) here now")
     }
 
     @ViewBuilder
@@ -141,9 +170,10 @@ struct HereNowStrip: View {
     }
 }
 
-/// One person in the Here now strip: their avatar, in the room (so always
-/// with the online dot), and their first name under it. A friend gets an
-/// accent ring and a heart badge, and their name in accent ink.
+/// One person in the Here now strip: their avatar with the online dot (or,
+/// for someone here recently, faded with the offline or push dot), and their
+/// first name under it. A friend gets an accent ring and a heart badge, and
+/// their name in accent ink.
 struct HereNowFace: View {
     let person: HereNowPerson
     /// The surface behind the strip, for the rings around the dot and badge.
@@ -156,6 +186,7 @@ struct HereNowFace: View {
     var body: some View {
         VStack(spacing: 2) {
             Avatar(url: person.avatarURL, initials: person.name?.initialsForDisplay, size: Self.avatarSize)
+                .opacity(person.isHere ? 1 : 0.55)
                 .padding(Self.ringInset)
                 .overlay {
                     if person.isFriend {
@@ -164,7 +195,7 @@ struct HereNowFace: View {
                 }
                 // Drawn over the ring, which would otherwise cover half of it.
                 .overlay(alignment: .bottomTrailing) {
-                    PresenceDot(state: .online, size: 10, ringColor: surface)
+                    PresenceDot(state: person.presence, size: 10, ringColor: surface, showsOffline: true)
                         .offset(x: -1, y: -1)
                 }
                 .overlay(alignment: .topTrailing) {
@@ -233,6 +264,8 @@ private struct FriendBadge: View {
         HereNowPerson(id: UUID(), name: "Jo P.", avatarURL: nil, isFriend: false),
         HereNowPerson(id: UUID(), name: "Alex Rivera", avatarURL: nil, isFriend: true),
         HereNowPerson(id: UUID(), name: nil, avatarURL: nil, isFriend: false),
+        HereNowPerson(id: UUID(), name: "Billie J.", avatarURL: nil, isFriend: false, presence: .offline),
+        HereNowPerson(id: UUID(), name: "Robin Lee", avatarURL: nil, isFriend: true, presence: .push),
     ])
 
     VStack(spacing: 0) {

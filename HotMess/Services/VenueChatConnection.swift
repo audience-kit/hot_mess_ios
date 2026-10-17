@@ -40,8 +40,10 @@ enum VenueChatConnection {
         case range(outOfRange: Bool)
         /// Everyone in the room now, the user included, sent on joining.
         /// `people` names them, and `friends` is every one of the user's
-        /// friends, by full name, in the room or not.
-        case roster(online: Set<UUID>, people: [RoomPerson], friends: [Friend])
+        /// friends, by full name, in the room or not. `recent` is who left in
+        /// the last 30 minutes, latest to leave first, whom the room still
+        /// lists, offline; they aren't in `people`.
+        case roster(online: Set<UUID>, people: [RoomPerson], friends: [Friend], recent: [RecentRoomPerson])
         /// Someone's first socket joined the room (`true`) or their last one
         /// left. A join carries their name and avatar when the server sends them.
         case presence(userID: UUID, online: Bool, name: String?, avatarURL: URL?)
@@ -49,6 +51,11 @@ enum VenueChatConnection {
         /// reaches them: the server only says so about the user's friends, and
         /// to admins. Drawn as a yellow dot.
         case reachable(userID: UUID)
+        /// Someone's last connection left, and the room keeps listing them
+        /// until `until`, offline, or reachable by push (`.push`) for the
+        /// user's friends and admins. Sent instead of `presence` or
+        /// `reachable` by servers that keep people who were just here.
+        case recent(userID: UUID, presence: PresenceState, until: Date)
         /// The room's recent messages, oldest first, and the announcement
         /// pinned under its title (however old), sent on joining.
         case history(messages: [VenueMessage], pinned: VenueMessage?)
@@ -79,7 +86,11 @@ enum VenueChatConnection {
             __typename
             ... on ChatJoined {
               out_of_range: outOfRange
-              roster { people { user_id: userId name avatar_url: avatarUrl friend } friends { user_id: userId name } }
+              roster {
+                people { user_id: userId name avatar_url: avatarUrl friend }
+                friends { user_id: userId name }
+                recent { user_id: userId name avatar_url: avatarUrl friend presence last_seen_at: lastSeenAt recent_until: recentUntil }
+              }
               history { ...Posted }
               pinnedMessage { ...Posted }
             }
@@ -88,7 +99,7 @@ enum VenueChatConnection {
             ... on ChatMessageRemoved { message_id: messageId }
             ... on ChatPinChanged { message_id: messageId is_pinned: pinned announcement { ...Line } }
             ... on ChatRoomCleared { cleared_at: clearedAt }
-            ... on ChatPresenceChanged { user_id: userId presence name avatar_url: avatarUrl }
+            ... on ChatPresenceChanged { user_id: userId presence name avatar_url: avatarUrl recent_until: recentUntil }
             ... on ChatRangeChanged { out_of_range: outOfRange }
             ... on ChatLeft { reason }
           }
@@ -181,9 +192,10 @@ enum VenueChatConnection {
             case clearedAt = "cleared_at"
             case userID = "user_id"
             case avatarURL = "avatar_url"
+            case recentUntil = "recent_until"
         }
 
-        private enum RosterKeys: String, CodingKey { case people, friends }
+        private enum RosterKeys: String, CodingKey { case people, friends, recent }
 
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -197,6 +209,8 @@ enum VenueChatConnection {
                     .compactMap { $0.value?.person } ?? []
                 let friends = ((try? roster?.decodeIfPresent([Lenient<FriendWire>].self, forKey: .friends)) ?? nil)?
                     .compactMap { $0.value?.friend } ?? []
+                let recent = ((try? roster?.decodeIfPresent([Lenient<RecentWire>].self, forKey: .recent)) ?? nil)?
+                    .compactMap { $0.value?.person } ?? []
                 let history = ((try? container.decodeIfPresent([Lenient<Posted>].self, forKey: .history)) ?? nil)?
                     .compactMap { $0.value?.message } ?? []
                 let pinned = ((try? container.decodeIfPresent(Posted.self, forKey: .pinnedMessage)) ?? nil)?.message
@@ -205,7 +219,7 @@ enum VenueChatConnection {
                 events = [
                     .connected,
                     .range(outOfRange: outOfRange),
-                    .roster(online: Set(people.map(\.id)), people: people, friends: friends),
+                    .roster(online: Set(people.map(\.id)), people: people, friends: friends, recent: recent),
                     .history(messages: history, pinned: pinned),
                 ]
             case "ChatMessagePosted":
@@ -231,7 +245,11 @@ enum VenueChatConnection {
                     events = []
                     return
                 }
-                if presence == "PUSH" {
+                let recentUntil = ((try? container.decodeIfPresent(String.self, forKey: .recentUntil)) ?? nil)
+                    .flatMap(HotMessDecoding.date(from:))
+                if presence != "ONLINE", let recentUntil {
+                    events = [.recent(userID: userID, presence: presence == "PUSH" ? .push : .offline, until: recentUntil)]
+                } else if presence == "PUSH" {
                     events = [.reachable(userID: userID)]
                 } else {
                     events = [.presence(
@@ -307,6 +325,45 @@ enum VenueChatConnection {
         }
     }
 
+    /// One of the roster's `recent`: someone who left lately, and until when
+    /// the room lists them.
+    private struct RecentWire: Decodable {
+        let person: RecentRoomPerson?
+
+        enum CodingKeys: String, CodingKey {
+            case name, friend, presence
+            case userID = "user_id"
+            case avatarURL = "avatar_url"
+            case lastSeenAt = "last_seen_at"
+            case recentUntil = "recent_until"
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            guard let id = try? container.decodeIfPresent(UUID.self, forKey: .userID),
+                  let until = (try? container.decodeIfPresent(String.self, forKey: .recentUntil))
+                      .flatMap(HotMessDecoding.date(from:))
+            else {
+                person = nil
+                return
+            }
+            let presence = (try? container.decodeIfPresent(String.self, forKey: .presence))
+                .map { $0.uppercased() }
+            person = RecentRoomPerson(
+                person: RoomPerson(
+                    id: id,
+                    name: (try? container.decodeIfPresent(String.self, forKey: .name)).flatMap({ $0.nonBlank }),
+                    avatarURL: (try? container.decodeIfPresent(String.self, forKey: .avatarURL)).flatMap({ $0.nonBlankURL }),
+                    isFriend: (try? container.decodeIfPresent(Bool.self, forKey: .friend)) ?? false
+                ),
+                presence: presence == "PUSH" ? .push : .offline,
+                lastSeenAt: (try? container.decodeIfPresent(String.self, forKey: .lastSeenAt))
+                    .flatMap(HotMessDecoding.date(from:)),
+                recentUntil: until
+            )
+        }
+    }
+
     /// One of the roster's `friends`: an ID and a full name.
     private struct FriendWire: Decodable {
         let friend: Friend?
@@ -338,6 +395,23 @@ struct RoomPerson: Hashable, Sendable, Identifiable {
     var avatarURL: URL?
     /// The server says they're one of the user's friends.
     var isFriend = false
+}
+
+/// Someone who left a chat room in the last 30 minutes, or hosts an event on
+/// there now, whom the room keeps listing, offline, until `recentUntil`
+/// (for a host, the event's end, which can be hours away).
+struct RecentRoomPerson: Hashable, Sendable, Identifiable {
+    var person: RoomPerson
+    /// `.push` when a notification still reaches them (the server only says
+    /// so about the user's friends, and to admins), else `.offline`.
+    var presence: PresenceState
+    /// When they were last in the room. `nil` when unknown, or for a host
+    /// who posted from Backstage without ever joining.
+    var lastSeenAt: Date?
+    /// When the room stops listing them.
+    var recentUntil: Date
+
+    var id: UUID { person.id }
 }
 
 private extension String {

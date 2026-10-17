@@ -526,6 +526,9 @@ struct ChatIdentifierTests {
             #expect(query.contains("... on \(type) "))
         }
         #expect(query.contains("sender_presence: senderPresence"))
+        // Who left lately stays listed until recentUntil.
+        #expect(query.contains("recent { user_id: userId"))
+        #expect(query.contains("recent_until: recentUntil"))
 
         #expect(VenueChatConnection.subscriptionDocument(for: locale).contains("room: localeChat(localeId: $id)"))
         // A ChatPeek watches the room without being in it.
@@ -545,6 +548,17 @@ struct ChatIdentifierTests {
             "input": ["localeId": "0a1e0aac-1d01-42d1-9de5-f0279842d9c0", "message": "anyone out?"],
         ])
         #expect(HotMessAPI.Documents.sendMyChatMessage.contains("sendMyChatMessage(input: $input)"))
+    }
+
+    @Test("Reads and sets pushes about rooms the user just left")
+    func recentChatPush() throws {
+        #expect(HotMessAPI.Documents.setRecentChatPush.contains("setRecentChatPush(input: { enabled: $enabled })"))
+
+        let me = Data(#"{ "me": { "recent_chat_push": true } }"#.utf8)
+        #expect(try JSONDecoder.hotMess.decode(RecentChatPushResponse.self, from: me).me?.recentChatPush == true)
+
+        let set = Data(#"{ "setRecentChatPush": { "recent_chat_push": false } }"#.utf8)
+        #expect(try JSONDecoder.hotMess.decode(SetRecentChatPushResponse.self, from: set).setRecentChatPush.recentChatPush == false)
     }
 
     @Test("Decodes the mutation's line")
